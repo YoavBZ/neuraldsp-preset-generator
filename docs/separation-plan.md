@@ -531,7 +531,8 @@ model, on what it actually receives there: X-LANCE's output of a steered mix. Th
     the picker, the first first, and the routed comparator stays the default. For the centre hint the user's ear on
     R1's songs can overrule. R1's songs hold no side part, so for the side hint the held-out read decides.
   - `s3-choose` computes this from both decision files and the per-item reads in `feats-s3.json`, and writes
-    `trained-choice.json`. A candidate with no decision file wasn't read (S4's gate) and counts as not used.
+    `trained-choice.json`. S4 with no decision file counts as not used only when its gate kept it from the read; otherwise
+    `s3-choose` refuses, as it does without S3's decision.
   - This is the one place the held-out read chooses between candidates, so the winner's held-out numbers carry a
     small selection bias when both qualify. Each candidate's own rule outcome doesn't.
 - **After a null S4,** no further trained candidate is read on these five held-out bands without a new declaration

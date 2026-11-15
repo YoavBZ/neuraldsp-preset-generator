@@ -559,13 +559,24 @@ def choose(dec3, dec4, gap):
 def cmd_choose(_args):
     """S4's plan: S3's and S4's decisions per hint combined by `choose`. The gap per hint is the paired mean read
     (S4 minus S3) on the held-out items both have: the centre hint pools S0's held-out centred items and the split
-    set's held-out items; the side hint is S0's held-out off-centre items. A candidate with no decision file wasn't
-    read (S4's gate) and counts as not used."""
+    set's held-out items; the side hint is S0's held-out off-centre items. S4 with no decision file counts as not used
+    only when its gate kept it from the read (pick.json usable: false); otherwise this refuses, as without S3's."""
     import numpy as np
 
+    from learn import sep_s4_train as S4T
+
+    require(S4T.PHASE_S4)
     base = S0.out_dir().parent
-    decs = {w: (json.loads((base / f"{w}-decision.json").read_text()) if (base / f"{w}-decision.json").exists()
-                else {"centre_hint": "not used", "side_hint": "not used"}) for w in TRAINED}
+    if not (base / "s3-decision.json").exists():
+        raise SystemExit("S3 hasn't been decided (s3-decision.json): run s3-decide first")
+    decs = {"s3": json.loads((base / "s3-decision.json").read_text())}
+    if (base / "s4-decision.json").exists():
+        decs["s4"] = json.loads((base / "s4-decision.json").read_text())
+    else:                                         # not read only by S4's gate; otherwise it's too early
+        pk = S4T.out_dir() / "run" / "pick.json"
+        if not pk.exists() or json.loads(pk.read_text()).get("usable", True):
+            raise SystemExit("S4 is neither decided nor gated out (s4-pick usable: false): too early to choose")
+        decs["s4"] = {"centre_hint": "not used", "side_hint": "not used"}
     gaps = {"centre_hint": [], "side_hint": []}
     for set_name in ("main", "split"):
         root = S1B.set_dir(set_name)
