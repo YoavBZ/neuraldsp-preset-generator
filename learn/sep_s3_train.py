@@ -14,12 +14,20 @@ the centred guitar out of a mix steered by the hint (`learn.sep_s3`'s steering).
   checkpoint after 25 in a row, abort after 20 reloads). Validation every 1,000 steps: the median SI-SDR and the
   model's read; step 0 is the first best; a new best needs +0.1 dB and a read no worse than step 0's; it stops at 5
   evaluations without one, the abort rule, or 72 h. Resumes from `last.pt`.
+- **s3-keep** (msst-venv, CPU, beside the run; Amendment 3d): after each evaluation, `last.pt`'s weights kept as
+  `run/kept/step_N.pt` (`last.pt` is written at each evaluation, then replaced at the next).
+- **s3-pick** (Amendment 3d, after the stop): among the evaluated checkpoints whose weights are kept (`best.pt` counts
+  as its step) and whose read is no worse than step 0's, those less than 0.1 dB under the highest such median; the
+  lowest read wins. Writes `run/pick.json` with the file's sha256; **s3-apply** applies that checkpoint and records
+  it in `stems/s3/pick.json`, which `sep_s3`'s s3-feats and s3-read check.
 
     .venv/bin/python -m learn.sep_s3_train s3-cache
     ~/ndsp-presets/tools/msst-venv/bin/python -m learn.sep_s3_train s3-check
     ~/ndsp-presets/tools/msst-venv/bin/python -m learn.sep_s3_train s3-train --batch B
+    ~/ndsp-presets/tools/msst-venv/bin/python -m learn.sep_s3_train s3-keep
+    .venv/bin/python -m learn.sep_s3_train s3-pick
 
-The pure parts (the layout draw, the crop rule) are unit-tested.
+The pure parts (the layout draw, the crop rule, the checkpoint pick and the stop check) are unit-tested.
 """
 
 from __future__ import annotations
@@ -363,6 +371,46 @@ def unsteer_mono(z2, phi):
     return ((c * L - s * R) + (s * L + c * R)) / 2
 
 
+# --- Amendment 3d: the checkpoint, chosen with the read --------------------------------------------------------------
+
+PHASE_S3D = "phase_s3d"
+KEEP_FROM = 6000                  # the first step whose weights were kept
+
+
+def pick_step(evals, kept, read0, min_gain=None):
+    """Amendment 3d: the eligible evaluations are those with a read no worse than step 0's (`read0`); among the
+    eligible steps in `kept`, those whose median SI-SDR is less than `min_gain` dB under the highest eligible median;
+    the lowest read wins (a tie: the earlier step). The trainer's best step always qualifies. -> the step, or None."""
+    min_gain = MIN_GAIN_DB if min_gain is None else min_gain
+    elig = [e for e in evals if e["read"] <= read0]
+    if not elig:
+        return None
+    top = max(e["si_sdr_median"] for e in elig)
+    ok = [e for e in elig if e["step"] in kept and e["si_sdr_median"] > top - min_gain]
+    return min(ok, key=lambda e: (e["read"], e["step"]))["step"] if ok else None
+
+
+def candidates(kept_files, best_step, best_file):
+    """The checkpoints s3-pick may choose: the kept files by step, and `best.pt` as the trainer's best step when that
+    step has no kept file. -> {step: file}."""
+    out = dict(kept_files)
+    out.setdefault(best_step, best_file)
+    return out
+
+
+def stop_reason(st, saved_at, user_stop=False):
+    """How the run stopped by its own rule, judged from the state as saved (`saved_at`, state.json's mtime): PATIENCE
+    evaluations after the best, the abort (reloads over MAX_RELOADS), MAX_HOURS, or the user's stop. -> a reason, or
+    None while it hasn't stopped."""
+    if len([e for e in st["evals"] if e["step"] > st["best_step"]]) >= PATIENCE:
+        return "patience"
+    if st.get("reloads", 0) > MAX_RELOADS:
+        return "abort"
+    if (saved_at - st["t_start"]) / 3600 > MAX_HOURS:
+        return "hours"
+    return "user" if user_stop else None
+
+
 # --- the model ------------------------------------------------------------------------------------------------------------
 
 def load_model(device):
@@ -656,7 +704,7 @@ def cmd_train(args):
 
 
 def cmd_apply(args):
-    """The best checkpoint on the held-out bands' items of a set (S0's main or the split set): steer by the coarse hint
+    """s3-pick's checkpoint on the held-out bands' items of a set (S0's main or the split set): steer by the coarse hint
     (steer_mdxc's), separate, rotate back, average; 48 kHz stems in `stems/s3`, as every S0 stem."""
     import numpy as np
     import torch
@@ -665,12 +713,29 @@ def cmd_apply(args):
     from learn import separator_screen as SCR
     from learn import sep_s1b as S1B
 
+    import hashlib
+    import io
+    import pathlib
+
     S3.require(S3.PHASE_S3)
+    S3.require(PHASE_S3D)
     root = S1B.set_dir(args.set)
+    pick = json.loads((out_dir() / "run" / "pick.json").read_text())          # s3-pick's choice (Amendment 3d)
+    ck = pathlib.Path(pick["path"])
+    b = ck.read_bytes()
+    if hashlib.sha256(b).hexdigest() != pick["sha256"]:
+        raise SystemExit(f"{ck} isn't the picked file (sha256)")
+    prov = root / "stems" / "s3" / "pick.json"
+    prov.parent.mkdir(parents=True, exist_ok=True)
+    if any(prov.parent.glob("*.npz")) and (not prov.exists()
+                                           or json.loads(prov.read_text())["sha256"] != pick["sha256"]):
+        raise SystemExit(f"{prov.parent} holds stems from another checkpoint: move them aside first")
+    prov.write_text(json.dumps({"step": pick["step"], "sha256": pick["sha256"]}, indent=1))
     dev = torch.device(args.device)
     model = load_model(dev)
-    model.load_state_dict(torch.load(out_dir() / "run" / "best.pt", map_location="cpu", weights_only=True))
+    model.load_state_dict(torch.load(io.BytesIO(b), map_location="cpu", weights_only=True))
     model.eval()
+    print(f"s3-apply: step {pick['step']} ({ck.name})", flush=True)
 
     def f(a):
         with torch.no_grad():
@@ -696,6 +761,64 @@ def cmd_apply(args):
     print(f"S3 APPLY DONE: {args.set}, {n_done} stems", flush=True)
 
 
+def cmd_keep(args):
+    """Amendment 3d: `last.pt`'s weights as `run/kept/step_N.pt`, N an evaluated step (run after each evaluation)."""
+    import torch
+
+    S3.require(PHASE_S3D)
+    d = out_dir() / "run"
+    n0 = json.loads((d / "state.json").read_text())["step"]
+    if (d / "kept" / f"step_{n0}.pt").exists():
+        print(f"S3 KEEP: step {n0} already kept", flush=True)
+        return
+    ck = torch.load(d / "last.pt", map_location="cpu", weights_only=True)
+    n = int(ck["step"])
+    st = json.loads((d / "state.json").read_text())
+    if n not in {e["step"] for e in st["evals"]}:
+        raise SystemExit(f"last.pt is at step {n}, not an evaluated step: run s3-keep right after an evaluation")
+    q = d / "kept" / f"step_{n}.pt"
+    if q.exists():
+        print(f"S3 KEEP: step {n} already kept", flush=True)
+        return
+    q.parent.mkdir(exist_ok=True)
+    torch.save(ck["model"], q.with_suffix(".tmp"))
+    q.with_suffix(".tmp").replace(q)
+    print(f"S3 KEEP: step {n} -> {q}", flush=True)
+
+
+def cmd_pick(args):
+    """Amendment 3d, after the stop: the checkpoint by `pick_step`, written to `run/pick.json` with its sha256."""
+    import hashlib
+
+    S3.require(PHASE_S3D)
+    d = out_dir() / "run"
+    st = json.loads((d / "state.json").read_text())
+    why = stop_reason(st, (d / "state.json").stat().st_mtime, args.user_stop)
+    if why is None:
+        raise SystemExit("the run hasn't stopped by its rule yet (or pass --user-stop after the user stops it)")
+    kept = candidates({int(p.stem.split("_")[1]): p for p in sorted((d / "kept").glob("step_*.pt"))},
+                      st["best_step"], d / "best.pt")
+    n = pick_step(st["evals"], set(kept), st["read0"])
+    if n is None:
+        raise SystemExit("no kept checkpoint qualifies")
+    e = next(e for e in st["evals"] if e["step"] == n)
+    missing = [v["step"] for v in st["evals"] if v["step"] >= KEEP_FROM and v["step"] not in kept]
+    out = {"step": n, "path": str(kept[n]), "sha256": hashlib.sha256(kept[n].read_bytes()).hexdigest(),
+           "si_sdr_median": e["si_sdr_median"], "read": e["read"], "best_step": st["best_step"], "stop": why,
+           "kept": sorted(kept), "missing": missing, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    (d / "pick.json").write_text(json.dumps(out, indent=1))
+    print(f"S3 PICK: step {n} (median {e['si_sdr_median']:+.2f}, read {e['read']:.4f}; best by SI-SDR at "
+          f"{st['best_step']}; stop {why}; kept {sorted(kept)}; missing {missing})", flush=True)
+
+
+def check_stems(root):
+    """Amendment 3d: a set's S3 stems were made by s3-pick's checkpoint (stems/s3/pick.json against run/pick.json)."""
+    pick = json.loads((out_dir() / "run" / "pick.json").read_text())
+    prov = root / "stems" / "s3" / "pick.json"
+    if not prov.exists() or json.loads(prov.read_text())["sha256"] != pick["sha256"]:
+        raise SystemExit(f"{root.name}'s S3 stems aren't from the picked checkpoint (step {pick['step']})")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="learn.sep_s3_train")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -715,6 +838,10 @@ def main(argv=None):
     s.add_argument("--set", choices=("main", "split"), required=True)
     s.add_argument("--device", default="mps")
     s.set_defaults(fn=cmd_apply)
+    sub.add_parser("s3-keep").set_defaults(fn=cmd_keep)
+    s = sub.add_parser("s3-pick")
+    s.add_argument("--user-stop", action="store_true", help="the user stopped the run (recorded in pick.json)")
+    s.set_defaults(fn=cmd_pick)
     args = ap.parse_args(argv)
     args.fn(args)
 
