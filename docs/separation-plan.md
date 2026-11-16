@@ -621,7 +621,7 @@ Buckley, all 200 mixes, doubles included):
 
 **The pick (Amendment 3d): step 12,000** (sha256 `09f28454…`). The highest eligible median is step 11,000's +6.99, so
 the window is above +6.89: steps 8,000 (read 0.1227), 9,000 (0.1222), 11,000 (0.1202), 12,000 (0.1188) and 13,000
-(0.1206). Step 10,000 has the lowest read (0.1168) but sits outside the window (+6.86). `s3-pick` ran six minutes
+(0.1206). Step 10,000 has the lowest read (0.1168) but sits outside the window (+6.86). `s3-pick` ran seven minutes
 before the keeper's last pass saved step 13,000's weights, so `pick.json` lists 13,000 as missing. Its read is higher
 than 12,000's, so the pick is the same with it. Recomputed from the log by hand: the same.
 
@@ -650,24 +650,29 @@ The median SI-SDR, centred: S3 +5.80, `s3ens` +7.25, the comparator +7.49; off-c
 **The decisions** (`s3-decide`). Separate code (its own SI-SDR on the stems, its own interval and routing) gives the
 same numbers and the same outcome in every cell.
 - **S3:** the centre hint is **not used**. Centred, it's decided worse than `xlst_mdxc` by the read, in all five
-  bands. On split parts it doesn't beat mono. The side hint is a **picker choice**: it beats mono, and against
-  `steer_xlmdxc` both intervals cross zero.
-- **`s3ens`:** **not used** on either hint. Its rule needs a decided read gain over the comparator, and no cell has
-  one. Off-centre it's the best point estimate here (+1.27 dB, read +0.016), the size validation showed at step 10,000 (+0.014),
-  but over five bands the interval crosses zero: three bands up, two just under (−0.006, −0.008).
+  bands, and it doesn't beat mono on the read either (+0.005 [−0.050, +0.061]). On split parts it doesn't beat mono.
+  The side hint is a **picker choice**: it beats mono, and against `steer_xlmdxc` both intervals cross zero.
+- **`s3ens`:** **not used** on either hint. By S3's rule alone it would be a picker choice in every cell; Amendment
+  4's extra need, a decided read gain over the comparator, is what keeps it out, and no cell has one. Off-centre
+  it's the best point estimate here (+1.27 dB, read +0.016). Its read gain is the size validation showed at step
+  10,000 (+0.014); its SI-SDR gain is about half (+2.51 there). Over five bands the read interval crosses zero:
+  three bands up, two just under (−0.006, −0.008).
 
 **What it says.**
-- The validation band predicted S3's held-out read. Centred: −0.047 on validation at step 10,000, −0.048 held out at
-  12,000. Off-centre: −0.010 and −0.005. S3's cleaner waveform didn't carry the model's read on a centred part, so
-  retraining the front on a waveform loss doesn't serve the read there. S4 retrains the tail instead, chosen by the
-  read.
-- For a side part S3 is level with today's chain, so it goes on the picker beside it, and `steer_xlmdxc` stays the
-  default.
-- `s3ens` is undecided, not failed. Off-centre its gain matches validation in size, but five bands can't decide it.
-  By the plan these five bands can't be read again to settle it, so deciding it needs a fresh held-out set.
+- The validation band came close to S3's held-out read. Centred: −0.047 on validation at step 10,000, −0.048 held
+  out at 12,000. Off-centre: −0.010 on validation (decided worse) and −0.005 held out (level). On a centred part S3
+  isn't cleaner and reads worse, so retraining the front on a waveform loss didn't serve the read there. S4 retrains
+  the tail instead, chosen by the read.
+- For a side part S3 is level with `steer_xlmdxc`, so by the rule it goes on the picker beside it, and
+  `steer_xlmdxc` stays the default.
+- `s3ens` is undecided, not failed. Off-centre its read gain matches validation in size, but five bands can't decide
+  it. Its one read is spent, so deciding it needs a fresh held-out set.
 - Doubles: both are far ahead of the routed chain, which keeps one copy of a double. That cell is out of the rule.
-- The trained choice per hint (`s3-choose`) waits for S4. Until then, a centre hint keeps `xlst_mdxc`, and a side
-  hint keeps `steer_xlmdxc` as the default, with S3 on the picker.
+- **Next:** S4 is training (its gradient check passed and step 0 was evaluated, 2026-11-16). Its gate comes before
+  any held-out read, then `s3-choose` picks per hint among S3, S4 and `s3ens`. Until then, by the rule, a centre hint
+  keeps `xlst_mdxc`, and a side hint keeps `steer_xlmdxc` as the default with S3 on the picker. The product isn't
+  changed by this read: its default input is still the mono stem, `xlst_mdxc` is behind a flag, and neither
+  `steer_xlmdxc` nor S3 is in it yet.
 
 **What it can't say.** S0's caveats hold: built mixes, amp-sim targets, the oracle hint. Five bands make the
 band-clustered intervals wide. The comparator's held-out numbers were seen in A3's read; S3's and `s3ens`'s were
