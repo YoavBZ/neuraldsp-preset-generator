@@ -6,19 +6,23 @@ gets one lender, a D_CC example from another session that lends it other guitars
 draw; the unit's amp track is placed in that session's stereo mix at a declared exposure. Staged, cheapest first, each
 stage declared in the ledger before it runs:
 
-    # stage 0 (zero renders)
-    .venv/bin/python -m learn.preset_ladder lends                              # each unit's lender
+    # stage 0 (zero renders); every later command refuses until its controls passed
     $TORCH_PY -m learn.preset_ladder check0                                    # controls: answers reproduce, fold bans
+    .venv/bin/python -m learn.preset_ladder lends                              # each unit's lender
     $TORCH_PY -m learn.preset_ladder centres                                   # Cen, Aconst (+ all-labels centres.json)
     .venv/bin/python -m learn.preset_ladder build --rows clean-kind            # the clean track's features
     $TORCH_PY -m learn.preset_ladder predict --rows clean-kind,xl-v0           # their answers
+    .venv/bin/python -m learn.preset_ladder sic --rows sic-mix-drawn,sic-clean-kind
+    .venv/bin/python -m learn.preset_ladder subset
     .venv/bin/python -m learn.preset_ladder stage0                             # the preview and the knob-space reads
     # stage 1 (renders)
     .venv/bin/python -m learn.preset_ladder check1                             # controls: S0's items, v0 rebuilt
-    .venv/bin/python -m learn.preset_ladder build --rows mix@-3                # mix@-3, full@-3, clean@-3
+    .venv/bin/python -m learn.preset_ladder build --rows mix@-3                # mix@-3, full@-3, mixp@-3, clean@-3
     $TORCH_PY -m learn.preset_ladder predict --rows mix@-3
+    .venv/bin/python -m learn.preset_ladder sic --rows sic-mix@-3
     .venv/bin/python -m learn.preset_ladder replay                             # control: 30 stored answers re-rendered
-    .venv/bin/python -m learn.preset_ladder render --rows cen,aconst,clean-kind,mix@-3 --shard 0/3
+    .venv/bin/python -m learn.preset_ladder render --rows cen,aconst,sic-mix-drawn,sic-clean-kind,sic-mix@-3,\
+        clean-kind,mix@-3 --shard 0/3
     .venv/bin/python -m learn.preset_ladder report --stage 1
     # stage 2 (separations, then renders), declared before it runs
     ~/ndsp-presets/tools/msst-venv/bin/python -m learn.preset_ladder sep --rows xl@-3,xlnoG@-3 --device mps
@@ -53,7 +57,9 @@ RATIO_EDGES = (-12.0, -6.0)           # stage 0's bins of the guitar-to-backing 
 SETS = ("bks", "goat", "cap1", "n12", "panel")
 SUBSET_GOAT_PER_FOLD = 6              # stage 3's subset: GOAT and cap1 units per fold and class
 SUBSET_CAP1_PER_CREATOR = 3
-KNOB_GROUPS = {                       # reads_v3's three groups, then the EQ and the drive pedals' continuous knobs
+SIC_BASES = ("clean-kind", "mix@-3", "mix-drawn", "xl@-3")   # the inputs whose same-input constants are declared
+SMALL = 0.05                          # a gain under this isn't known to be heard (F65): "small" in the outcome tables
+KNOB_GROUPS = {                       # reads_v3's three groups (`knob_group` adds the EQ and the pedals)
     "drive": ("inputGain", "pr12Volume", "sw50rVolume", "sw50rLevel", "ac20Volume", "ac20Power"),
     "tone": ("pr12Treble", "pr12Bass", "sw50rTreble", "sw50rMid", "sw50rBass", "ac20Cut"),
     "cab": ("leftCabPosition", "rightCabPosition", "leftCabDistance", "rightCabDistance", "rightCabMicLevel")}
@@ -81,6 +87,47 @@ def require(stage):
     return e
 
 
+CONTROLS = {"check0": 0, "check1": 1, "replay": 1}   # each control and the stage it guards
+
+
+def control_path(name):
+    return ladder_dir() / "controls" / f"{name}.json"
+
+
+def guarding(stage):
+    """The controls a command of `stage` needs passed: every control guarding a stage up to it."""
+    return [c for c, s_ in sorted(CONTROLS.items(), key=lambda kv: (kv[1], kv[0])) if s_ <= stage]
+
+
+def control_refusal(names, sha, records):
+    """Why a command may not run, or None: each named control must have passed on today's C3r state. records:
+    {control: its stored record or None}. (Pure.)"""
+    for c in names:
+        d = records.get(c)
+        if d is None:
+            return f"the {c} control has not run (it guards stage {CONTROLS[c]}): run it first"
+        if d.get("ok") is not True:
+            return f"the {c} control failed: stage {CONTROLS[c]} stops (hand back; any way on is an amendment)"
+        if d.get("c3r_sha256") != sha:
+            return f"the {c} control ran on another C3r state: run it again"
+    return None
+
+
+def controls_ok(stage, st, names=None):
+    """Refuse (SystemExit) unless every control guarding a stage up to `stage` (or the named ones) passed today."""
+    names = guarding(stage) if names is None else names
+    recs = {c: (json.loads(control_path(c).read_text()) if control_path(c).exists() else None) for c in names}
+    why = control_refusal(names, st["sha256"], recs)
+    if why:
+        raise SystemExit(why)
+
+
+def save_control(name, st, ok, rec):
+    from learn import pipeline_fix as P
+
+    P.save(control_path(name), dict(rec, ok=bool(ok), c3r_sha256=st["sha256"], time=time.strftime("%Y-%m-%d %H:%M:%S")))
+
+
 # --- the rows (pure) -------------------------------------------------------------------------------------------------------
 
 def exposure_value(tag):
@@ -91,27 +138,38 @@ def exposure_value(tag):
 
 
 def row_info(name):
-    """A row's stage, kind and input style. kind: "stored" (C3r's own answers and scores), "constant" (one answer a
-    part), "input" (an answer a half from features). style: "train" (the signal at its own level, `half_features`, as the
-    model's training inputs) or "product" (the stem brought by the gain that takes its own mix to -12.25 LUFS)."""
+    """A row's stage (the stage that renders it), kind and input style. kind: "stored" (C3r's own answers and scores),
+    "constant" (one answer a part), "input" (an answer a half from features). style: "train" (the signal at its own
+    level, `half_features`, as the model's training inputs) or "product" (the signal brought by the gain that takes its
+    own mix to -12.25 LUFS). `render` False: answered for the knob reads only. `built_by`: the build that makes its
+    features. A same-input constant `sic-<row>` is the mean of <row>'s own answers over the other clusters' parts
+    (`cmd_sic`), rendered in <row>'s stage."""
     if name == "mix-drawn":
         return {"stage": 0, "kind": "stored", "style": "train"}
     if name in ("cen", "aconst"):
         return {"stage": 1, "kind": "constant", "style": None}
+    if name.startswith("sic-"):
+        base = name[4:]
+        if base not in SIC_BASES:
+            raise SystemExit(f"unknown row {name!r}: a same-input constant of {SIC_BASES}")
+        return {"stage": max(1, row_info(base)["stage"]), "kind": "constant", "style": None, "base": base}
     if name == "clean-kind":
-        return {"stage": 1, "kind": "input", "style": "train"}
-    if name == "xl-v0":
-        return {"stage": 2, "kind": "input", "style": "product"}
+        return {"stage": 1, "kind": "input", "style": "train", "built_by": "clean-kind"}
+    if name == "xl-v0":                    # A2s's stems: answered for stage 0's knob reads, never rendered
+        return {"stage": 0, "kind": "input", "style": "product", "render": False}
     if "@" in name:
         what, tag = name.split("@", 1)
         exposure_value(tag)
         main = tag == MAIN_EXPOSURE
+        build = f"mix@{tag}"
         if what == "mix":
-            return {"stage": 1 if main else 3, "kind": "input", "style": "train", "exposure": tag}
+            return {"stage": 1 if main else 3, "kind": "input", "style": "train", "exposure": tag, "built_by": build}
         if what == "full":                 # built beside mix@E, rendered only when a stage names it
-            return {"stage": 3, "kind": "input", "style": "train", "exposure": tag}
+            return {"stage": 3, "kind": "input", "style": "train", "exposure": tag, "built_by": build}
+        if what == "mixp":                 # noG's mid itself at the product's level: no separator, the level step
+            return {"stage": 2 if main else 3, "kind": "input", "style": "product", "exposure": tag, "built_by": build}
         if what == "clean":
-            return {"stage": 2 if main else 3, "kind": "input", "style": "product", "exposure": tag}
+            return {"stage": 2 if main else 3, "kind": "input", "style": "product", "exposure": tag, "built_by": build}
         if what in ("xl", "xlnoG"):
             return {"stage": 2 if main else 3, "kind": "input", "style": "product", "exposure": tag, "sep": True}
         if what == "xlmdxc":
@@ -442,8 +500,8 @@ def fold_models(st, which=range(4)):
         nets, recs = zip(*(P.load_run(nm, sd, "best") for sd in P.SEEDS))
         for r_ in recs:
             R.run_info_check(r_, st)
-            if r_.get("inner") or r_["models"]["best"] != r_["models"]["final"]:
-                raise SystemExit(f"{nm}-{r_['seed']}: not a read checkpoint")
+            if r_.get("inner") or r_["models"]["best"] != r_["models"]["final"] or r_.get("E") != r_.get("epochs_run"):
+                raise SystemExit(f"{nm}-{r_['seed']}: not a read checkpoint at its E (C3r's own check)")
         out[k] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], list(recs))
     return out
 
@@ -482,6 +540,8 @@ def cmd_lends(_args):
     from learn import trusted_data as T
 
     require(0)
+    st = R.state()
+    controls_ok(0, st)
     e = P.require("phase_dfix")
     croot, kept, rend, sp, _ = P.recipe_inputs(pin=e.get("phase_3_doubles"))
     stems = T.Stems(CB.ctx_for(argparse.Namespace(out=None, smoke=False)))
@@ -509,7 +569,6 @@ def cmd_lends(_args):
     pool = lender_pool(cands)
     sess = {c["section"]: c["session"] for c in cands}
     by_i = {c["i"]: c for c in cands}
-    st = R.state()
     out = {}
     for ru in units_once(R.read_units(st)):
         prt = ru["prt"]
@@ -580,12 +639,11 @@ def cmd_check0(_args):
     same = P.answers_sha(out) == P.answers_sha(stored["answers"])
     bans = fold_bans(st, units, models)
     rows = stored_rows_check(st, units)
-    rec = {"answers_reproduce": same, "answers_sha256": P.answers_sha(out), "bans": bans, "report_rows": rows,
-           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    P.save(ladder_dir() / "controls" / "check0.json", rec)
-    ok = same and not bans["problems"] and rows["max_abs_diff"] < 1e-9
+    ok = same and not bans["problems"] and not rows["mismatches"]
+    save_control("check0", st, ok, {"answers_reproduce": same, "answers_sha256": P.answers_sha(out), "bans": bans,
+                                    "report_rows": rows})
     print(f"CHECK0 {'OK' if ok else 'FAILED'}: answers reproduce {same}; ban problems {len(bans['problems'])}; "
-          f"report rows max diff {rows['max_abs_diff']:.2e}")
+          f"report-row mismatches {len(rows['mismatches'])}")
     if not ok:
         raise SystemExit("a stage 0 control failed: stage 0 stops")
 
@@ -603,11 +661,14 @@ def fold_bans(st, units, models):
         ids = set().union(*[e["ids"] for e in tr]) if tr else set()
         names = {e["unit"] for e in tr}
         _, _, info = R.rows_for("all", k, False, st)
+        held_names = sorted(e["unit"] for e in held)
         for r_ in models[k][2]:
             got = r_.get("c3r") or {}
             for f in ("train_units", "held_units", "train_records", "showings"):
                 if got.get(f) != info.get(f):
                     probs.append(f"fold {k} seed {r_['seed']}: {f} {got.get(f)} against {info.get(f)}")
+            if sorted(r_.get("real_held_units") or []) != held_names:     # the held units by name, not only counted
+                probs.append(f"fold {k} seed {r_['seed']}: its real_held_units differ from the split's held units")
         folds[k] = {"train_units": info["train_units"], "held_units": info["held_units"]}
         for ru in units:
             if ru["fold"] != k:
@@ -620,20 +681,30 @@ def fold_bans(st, units, models):
     return {"problems": probs, "folds": folds}
 
 
-def stored_rows_check(st, units):
-    """The ladder's pairing reproduces C3r's report: R-all - S per set from the stored judge files. -> max |diff|."""
-    from learn import full_controls_c3r as R
-    from learn import pipeline_fix as P
+ROW_FIELDS = ("mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")
+POOL_FIELDS = ("mean", "lo90", "hi90", "df")
 
-    rep = json.loads((R.c3r_dir() / "report.json").read_text())
-    got = rows_for_pair(st, units, val_stored(st), val_s(st))
-    diff = {}
-    for s in SETS:
-        main = [r[:3] for r in got[s] if not apart(r, units)]
-        m = P.clustered(main)["mean"]
-        want = rep["rows"]["R-all - S"][s]["mean"]
-        diff[s] = None if m is None or want is None else abs(m - want)
-    return {"diff": diff, "max_abs_diff": max(v for v in diff.values() if v is not None)}
+
+def stored_rows_check(st, units, tol=1e-9):
+    """The ladder's pairing reproduces C3r's report: R-all - S from the stored judge files, every stored field of every
+    set's row (C3r's apart rule), its directions and the deciding pool. -> {"mismatches": [...], "compared": n}."""
+    from learn import full_controls_c3r as R
+
+    rep = json.loads((R.c3r_dir() / "report.json").read_text())["rows"]["R-all - S"]
+    got = summarise(rows_for_pair(st, units, val_stored(st), val_s(st)), units)
+    bad, n = [], 0
+    for s_ in SETS:
+        for f in ROW_FIELDS + ("directions",):
+            a, b = got[s_].get(f), rep[s_].get(f)
+            n += 1
+            if (a is None) != (b is None) or (a is not None and abs(a - b) > tol):
+                bad.append(f"{s_} {f}: {a} against C3r's {b}")
+    for f in POOL_FIELDS:
+        a, b = (got["deciding_pool"] or {}).get(f), (rep["deciding_pool"] or {}).get(f)
+        n += 1
+        if (a is None) != (b is None) or (a is not None and abs(a - b) > tol):
+            bad.append(f"deciding pool {f}: {a} against C3r's {b}")
+    return {"mismatches": bad, "compared": n}
 
 
 # --- the values (zero renders) ---------------------------------------------------------------------------------------------
@@ -794,6 +865,7 @@ def cmd_centres(_args):
 
     require(0)
     st = R.state()
+    controls_ok(0, st)
     ms, hold = P.A_menu_S(), R.answer_hold(st)
     keys_of, label_of = C3.keys_fn(st["sources"]), C3.label_fn(st["sources"])
     models = fold_models(st, which=list(range(R.FOLDS)) + [None])
@@ -859,18 +931,44 @@ def cmd_centres(_args):
                 P.ANY_HALF: consts[(tag, ru["fold"], ru["amp"], ru["prt"]["cls"])]}
         save_answers(tag, ans, {"c3r_sha256": st["sha256"], "models": {str(k): v[1] for k, v in models.items()},
                                 "records_used": used, "rule": cmd_centres.__doc__})
-    P.save(ladder_dir() / "centres.json", {
-        "plan": PLAN, "ledger": f"{LEDGER_ID} {PHASES[0]}", "about": (
-            "The all-labels constants (every C3r training record, each as often as an epoch shows it; never read on the "
-            "ladder's units): cen = the training labels' centre under C3's mask; aconst = the all-labels R-all pair's "
-            "mean answer on those records' stored variant-0 inputs. Each per amp and class on that class's S, held as "
-            "C3r's answers (C3-cabS). The output gain is S's (the loudness step sets it in the product)."),
-        "hold": st["answer_tag"], "model_sha256": models[None][1], "c3r_sha256": st["sha256"],
-        "centres": {tag: {amp: {cls: consts[(tag, None, amp, cls)] for cls in ("clean", "crunch")} for amp in P.AMPS3}
-                    for tag in ("cen", "aconst")},
-        "records_used": {k: v for k, v in used.items() if k.startswith("None|")},
-        "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    adopted = json.loads((P.out_dir() / "adopted-model.json").read_text())["model"]
+    if models[None][1] != [adopted["sha256"][str(sd)]["best"] for sd in P.SEEDS]:
+        raise SystemExit("the all-labels pair differs from adopted-model.json's: centres.json would not be the "
+                         "adopted model's")
+    P.save(ladder_dir() / "centres.json", centres_doc(
+        {tag: {amp: {cls: consts[(tag, None, amp, cls)] for cls in ("clean", "crunch")} for amp in P.AMPS3}
+         for tag in CENTRE_TAGS},
+        hold=st["answer_tag"], model_sha256=models[None][1], c3r_sha256=st["sha256"],
+        records_used={k: v for k, v in used.items() if k.startswith("None|")}))
     print(f"CENTRES DONE: {len(units)} parts; all-labels centres in {ladder_dir() / 'centres.json'}")
+
+
+CENTRE_TAGS = ("cen", "aconst")
+CENTRE_ABOUT = ("The all-labels constants, never read on the ladder's units, built with the adopted all-labels R-all pair "
+                "(model_sha256, adopted-model.json's). centres.cen: the C3r training labels' centre under C3's training "
+                "mask (every training record, each as often as an epoch shows it); centres.aconst: that pair's mean "
+                "answer on those records' stored variant-0 inputs. Each [amp][class] = {select, settings}: the class's S "
+                "preset name and the full preset settings ({'module/key': value}), held as C3r's answers (hold: "
+                "C3-cabS); the output gain is S's (the product's loudness step sets it).")
+
+
+def centres_doc(centres, **meta):
+    """`centres.json`'s shape, the one Step 1's loader reads: {"centres": {"cen" | "aconst": {amp: {class: {select,
+    settings}}}}, "model_sha256", "hold", ...}; refuses anything else. (Pure.)"""
+    if set(centres) != set(CENTRE_TAGS):
+        raise SystemExit(f"centres.json: centres holds {sorted(centres)}, not {list(CENTRE_TAGS)}")
+    for tag in CENTRE_TAGS:
+        for amp in ("pr12", "sw50r", "ac20"):
+            for cls in ("clean", "crunch"):
+                x = ((centres.get(tag) or {}).get(amp) or {}).get(cls)
+                if not x or not isinstance(x.get("select"), str) or not isinstance(x.get("settings"), dict) \
+                        or not x["settings"] or not all("/" in k for k in x["settings"]):
+                    raise SystemExit(f"centres.json: centres.{tag}.{amp}.{cls} is not a full {{select, settings}}")
+    for k in ("model_sha256", "hold"):
+        if not meta.get(k):
+            raise SystemExit(f"centres.json: no {k}")
+    return dict({"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASES[0]}", "about": CENTRE_ABOUT, "centres": centres},
+                **meta, time=time.strftime("%Y-%m-%d %H:%M:%S"))
 
 
 # --- the inputs (zero renders) ---------------------------------------------------------------------------------------------
@@ -985,10 +1083,11 @@ def lender_mix(ctx, croot, kept, rend, stems_cache, unit_audio, lend, tag, sr):
 
 def cmd_build(args):
     """Input features (CPU, zero renders). `clean-kind`: the unit's amp track alone at its fold models' training inputs'
-    median loudness, both halves (`pipeline_fix.real_predict_5b2`'s clean branch). `mix@E` (with `full@E` and `clean@E`
-    from the same build): the lender mixes (`lender_mix`): mix@E is noG's mid read as the training inputs are
-    (`half_features`, no separator); full@E the same with the other guitars; clean@E the target as it sits in full's mid
-    at the product's gain (a perfect separator). -> ladder/feats/<row>/, ladder/builds/<E>/<unit>.json."""
+    median loudness, both halves (`pipeline_fix.real_predict_5b2`'s clean branch). `mix@E` (with `full@E`, `mixp@E` and
+    `clean@E` from the same build): the lender mixes (`lender_mix`): mix@E is noG's mid read as the training inputs are
+    (`half_features`, no separator); full@E the same with the other guitars; mixp@E noG's mid at the product's level (no
+    separator: the product's level step alone); clean@E the target as it sits in full's mid at the product's gain (a
+    perfect separator). -> ladder/feats/<row>/, ladder/builds/<E>/<unit>.json."""
     import argparse as AP
 
     from learn import cc_build as CB
@@ -1002,8 +1101,14 @@ def cmd_build(args):
 
     rows = parse_rows(args.rows)
     for r in rows:                                 # the clean track's features are stage 0's (its answers feed the
-        require(0 if r == "clean-kind" else row_info(r)["stage"])   # knob reads); a mix is its row's stage
+        b = row_info(r).get("built_by")            # knob reads); a mix is its row's stage
+        if b != r:
+            raise SystemExit(f"{r}: built by `build --rows {b}`" if b else f"{r}: no build makes it (`sep` or stored)")
+        require(0 if r == "clean-kind" else row_info(r)["stage"])
     st = R.state()
+    controls_ok(0, st)
+    if any(r.startswith("mix@") for r in rows):
+        controls_ok(1, st, ["check0", "check1"])
     units = units_once(R.read_units(st))
     k, n = args.shard
     mine = [ru for j, ru in enumerate(units) if j % n == k]
@@ -1052,7 +1157,12 @@ def cmd_build(args):
             for h in ("A", "B"):
                 mels[h], _, lu[h], _ = DS.step4_half(f["target"], fm, h, gp)
             save_feats(feat_path(f"clean@{tag}", ru), mels, lu, gain_db=gp)
-            rec["product_gain_db"] = gp
+            gn = DE.inference_gain_db(gm, PP.MIX_LEVEL)          # mixp@E: noG's mid itself at the product's level
+            mels, lu = {}, {}
+            for h in ("A", "B"):
+                mels[h], _, lu[h], _ = DS.step4_half(gm, gm, h, gn)
+            save_feats(feat_path(f"mixp@{tag}", ru), mels, lu, gain_db=gn)
+            rec["product_gain_db"], rec["noG_product_gain_db"] = gp, gn
             P.save(bp, rec)
             if m % 25 == 0:
                 print(f"build {tag}: {m + 1}/{len(order)} units, {(time.time() - t0) / (m + 1):.2f} s each", flush=True)
@@ -1076,6 +1186,7 @@ def cmd_predict(args):
         if row_info(r)["kind"] != "input":
             raise SystemExit(f"{r}: not an input row (`centres` makes the constants)")
     st = R.state()
+    controls_ok(0, st)
     models = fold_models(st)
     ms, hold = P.A_menu_S(), R.answer_hold(st)
     units = R.read_units(st)
@@ -1117,11 +1228,12 @@ def cmd_render(args):
 
     rows = parse_rows(args.rows)
     for r in rows:
-        if row_info(r)["kind"] == "stored":
-            raise SystemExit(f"{r}: C3r's stored renders")
+        if row_info(r)["kind"] == "stored" or row_info(r).get("render") is False:
+            raise SystemExit(f"{r}: not rendered by this plan (C3r's stored renders, or answered for the knob reads)")
         require(row_info(r)["stage"])
     ans = {r: json.loads(answers_path(r).read_text()) for r in rows}
     st = R.state()
+    controls_ok(max(row_info(r)["stage"] for r in rows), st)
     for r in rows:
         if ans[r]["c3r_sha256"] != st["sha256"]:
             raise SystemExit(f"{r}: its answers were made on another state")
@@ -1180,6 +1292,7 @@ def cmd_replay(_args):
 
     require(1)
     st = R.state()
+    controls_ok(1, st, ["check0", "check1"])
     stored = json.loads(R.answers_path("all").read_text())
     units = [ru for ru in R.read_units(st) if ru["lag"] is not None and R.judge_path("all", ru).exists()]
     dirs = sorted((ru["set"], ru["unit"], ru["amp"], h) for ru in units for h in ("A", "B"))
@@ -1199,8 +1312,7 @@ def cmd_replay(_args):
         out.append({"set": s, "unit": u, "amp": a, "search": h, "equal": AM.audio_sha(y) == want})
         print(f"replay {len(out)}/{REPLAY_N}: {'equal' if out[-1]['equal'] else 'DIFFERS'}", flush=True)
     ok = all(r["equal"] for r in out)
-    P.save(ladder_dir() / "controls" / "replay.json", {"renders": 2 * len(out), "equal": sum(r["equal"] for r in out),
-                                                      "rows": out, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    save_control("replay", st, ok, {"renders": 2 * len(out), "equal": sum(r["equal"] for r in out), "rows": out})
     print(f"REPLAY {'OK' if ok else 'FAILED'}: {sum(r['equal'] for r in out)} of {len(out)} renders equal ({2 * len(out)} "
           "renders)")
     if not ok:
@@ -1230,6 +1342,8 @@ def cmd_check1(_args):
     from learn import trusted_data as T
 
     require(1)
+    st = R.state()
+    controls_ok(0, st)
     ns = AP.Namespace(out=None, smoke=False)
     root = CB.V.out_root(ns)
     plan = {x["i"]: x for x in CB.load_plan(ns)["examples"]}
@@ -1267,7 +1381,6 @@ def cmd_check1(_args):
                  for a, b in (("L", "L"), ("R", "R"), ("target", "target"), ("others", "others")))
         s0.append({"i": i, "band": meta["band"], "equal": bool(ok)})
     pool = {str(e_["id"]): e_ for e_ in json.loads(P.wide_pool_path().read_text())["entries"]}
-    st = R.state()
     v0 = []
     for ru in units_once(R.read_units(st)):
         if ru["set"] not in ("goat", "cap1", "panel") or len(v0) >= 10:
@@ -1278,8 +1391,7 @@ def cmd_check1(_args):
         except SystemExit as err:
             v0.append({"unit": ru["unit"], "equal": False, "why": str(err)})
     ok = len(s0) == 10 and all(r["equal"] for r in s0) and len(v0) == 10 and all(r["equal"] for r in v0)
-    P.save(ladder_dir() / "controls" / "check1.json", {"s0_items": s0, "v0_units": v0, "ok": ok,
-                                                      "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    save_control("check1", st, ok, {"s0_items": s0, "v0_units": v0})
     print(f"CHECK1 {'OK' if ok else 'FAILED'}: S0 items {sum(r['equal'] for r in s0)}/{len(s0)}, v0 "
           f"{sum(r['equal'] for r in v0)}/{len(v0)}")
     if not ok:
@@ -1289,8 +1401,9 @@ def cmd_check1(_args):
 # --- the separations (msst-venv) -------------------------------------------------------------------------------------------
 
 def cmd_sep(args):
-    """A stage's stem rows (msst-venv; separations, never beside a render): each unit's lender mixes rebuilt exactly
-    (`lender_mix`; the build's mid sha256 checked), X-LANCE `gtr_mss` on full's mid (`xl@E`, the product's default) and
+    """A stage's stem rows (msst-venv; separations, never beside a render): each unit's lender mixes rebuilt
+    (`lender_mix`), their mids' features required equal to the stage 1 build's stored `mix@E` and `full@E` exactly (else
+    the stage stops: `rebuild_refusal`), X-LANCE `gtr_mss` on full's mid (`xl@E`, the product's default) and
     on noG's mid (`xlnoG@E`), `product_path.StereoCentre` on full's stereo pair (`xlmdxc@E`), each stem at the product's
     level against its own mix; stem LUFS less mix LUFS, SI-SDR and the other guitars' leak (half A) recorded.
     -> ladder/feats/<row>/, ladder/seps/<row>/<unit>.json."""
@@ -1315,6 +1428,7 @@ def cmd_sep(args):
             raise SystemExit(f"{r}: not a stem row")
         require(row_info(r)["stage"])
     st = R.state()
+    controls_ok(1, st)
     units = units_once(R.read_units(st))
     if args.subset:
         keep = set(json.loads((ladder_dir() / "subset.json").read_text())["units"])
@@ -1335,11 +1449,13 @@ def cmd_sep(args):
             raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
         prt = ru["prt"]
         for tag in sorted({row_info(r)["exposure"] for r in todo}):
-            built = json.loads(build_path(tag, ru).read_text())
             lend = dict(ld[ru["unit"]], unit=ru["unit"])
             ref = P.real_amp_track(prt["sd"], prt["track"], prt["start_s"])
             mixes, rec = lender_mix(ctx, croot, kept, rend, cache, ref, lend, tag, PS.SR)
-            same = {k_: rec[k_]["mid_sha256"] == built[k_]["mid_sha256"] for k_ in ("full", "noG")}
+            why = rebuild_refusal(mixes, {k_: load_feats(f"{w}@{tag}", ru) for k_, w in (("full", "full"),
+                                                                                         ("noG", "mix"))})
+            if why:                                # the stage-1 build and this rebuild must give the same input
+                raise SystemExit(f"{ru['unit']} at {tag}: {why}: stage {row_info(todo[0])['stage']} stops")
             for r in [r for r in todo if row_info(r)["exposure"] == tag]:
                 what = r.split("@")[0]
                 m = mixes["noG" if what == "xlnoG" else "full"]
@@ -1356,7 +1472,7 @@ def cmd_sep(args):
                     mels[hh], _, lu[hh], _ = DS.step4_half(stem, md, hh, g)
                 save_feats(feat_path(r, ru), mels, lu, gain_db=g)
                 P.save(ladder_dir() / "seps" / r / f"{ru['set']}__{fname(ru['unit'])}.json", {
-                    "unit": ru["unit"], "row": r, "rebuild_equal": same, "gain_db": g,
+                    "unit": ru["unit"], "row": r, "rebuilt_features_equal": True, "gain_db": g,
                     "stem_less_mix_lufs": float(SA.lufs(stem)) - float(SA.lufs(md)),
                     "si_sdr_A": S0.si_sdr(stem[h], m["target"][h]),
                     "leak_db_A": S0.leak_db(stem[h], m["target"][h], m["guitars"][h]) if np.any(m["guitars"][h]) else None})
@@ -1366,6 +1482,25 @@ def cmd_sep(args):
     print(f"LADDER-SEP DONE: {done} stems ({','.join(rows)})")
 
 
+def rebuild_refusal(mixes, stored):
+    """Why a rebuilt mix differs from its stored build, or None: each mid's half features (uint8 mels) must equal the
+    stored ones exactly and their LUFS within 1e-4 dB (`amp_di_compare_s.rebuild_v0`'s rule). mixes: `lender_mix`'s;
+    stored: {"full": feats, "noG": feats} from `load_feats`."""
+    import numpy as np
+
+    from learn import direct_stems as DS
+
+    for k, feats in stored.items():
+        if feats is None:
+            return f"no stored {k} build (run stage 1's build first)"
+        m = mixes[k]
+        mels, lu, _ = DS.half_features((m["L"] + m["R"]) / 2)
+        for h in ("A", "B"):
+            if not np.array_equal(mels[h], feats[h][0]) or abs(lu[h] - feats[h][1]) > 1e-4:
+                return f"the rebuilt {k} mix's half {h} features differ from the build's"
+    return None
+
+
 def cmd_subset(_args):
     """Stage 3's subset (zero renders): `subset_draw` on C3r's read units. -> ladder/subset.json."""
     from learn import full_controls_c3r as R
@@ -1373,6 +1508,7 @@ def cmd_subset(_args):
 
     require(0)
     st = R.state()
+    controls_ok(0, st)
     us = [{"set": ru["set"], "unit": ru["unit"], "fold": ru["fold"], "cls": ru["prt"]["cls"],
            "item": ru["prt"].get("item") or ru["prt"].get("di"), "creator": ru["prt"].get("creator")}
           for ru in units_once(R.read_units(st))]
@@ -1384,23 +1520,106 @@ def cmd_subset(_args):
     print(f"SUBSET: {len(got)} units, {len(parts)} parts")
 
 
+# --- the same-input constants (zero renders) -------------------------------------------------------------------------------
+
+def sic_pool(parts, p):
+    """(Pure.) The parts whose answers make part p's same-input constant: the same amp and class, from another cluster
+    and another DI file, so no answer to the same performance enters. parts, p: {key, amp, cls, cluster, di}."""
+    return [q for q in parts if q["key"] != p["key"] and q["amp"] == p["amp"] and q["cls"] == p["cls"]
+            and q["cluster"] != p["cluster"] and q["di"] != p["di"]]
+
+
+def base_answers(base):
+    from learn import full_controls_c3r as R
+
+    return json.loads((R.answers_path("all") if base == "mix-drawn" else answers_path(base)).read_text())
+
+
+def cmd_sic(args):
+    """The same-input constants (zero renders): for each named input row, a part's constant is the mean of that row's own
+    answers over every other read part on the same amp and class from another cluster and DI file (`sic_pool`), head by
+    head as `centre_of` (continuous the mean where the answer sounds, switches the share on, mics the most common),
+    through `full_space.answer_settings` and C3r's hold. Label-free and out of sample: `row - sic-row` is per-unit
+    reading alone, free of Aconst's in-sample shift. -> ladder/answers/sic-<row>.json."""
+    import numpy as np
+
+    from learn import full_controls_c3r as R
+    from learn import full_space as F
+    from learn import local_objective as LO
+    from learn import pipeline_fix as P
+
+    rows = parse_rows(args.rows)
+    for r in rows:
+        if not r.startswith("sic-"):
+            raise SystemExit(f"{r}: not a same-input constant (sic-<row>)")
+        require(row_info(r)["stage"])
+    st = R.state()
+    controls_ok(0, st)
+    ms, hold = P.A_menu_S(), R.answer_hold(st)
+    units = R.read_units(st)
+    parts = [{"key": f"{ru['unit']}|{ru['amp']}", "amp": ru["amp"], "cls": ru["prt"]["cls"],
+              "cluster": f"{ru['set']}|{ru['cluster']}", "di": ru["prt"]["di"]} for ru in units]
+    for r in rows:
+        base = row_info(r)["base"]
+        ba = base_answers(base)
+        if ba.get("c3r_sha256") != st["sha256"]:
+            raise SystemExit(f"{base}: its answers were made on another state")
+        enc = {}
+        for ru, pp in zip(units, parts):
+            a = ba["answers"].get(ru["set"], {}).get(pp["key"])
+            if a is not None:
+                enc[pp["key"]] = [F.encode(LO.tdict(x["settings"]), ru["amp"])[:6] for x in a.values()]
+        out, used, missing = {}, {}, []
+        for ru, pp in zip(units, parts):
+            pool = [q for q in sic_pool(parts, pp) if q["key"] in enc]
+            if not pool or pp["key"] not in enc:
+                missing.append(pp["key"])
+                continue
+            sel, S = ms[ru["amp"]][pp["cls"]]
+            s_enc = F.encode(dict(S), ru["amp"])
+            s_mics = [int(v) if m else None for v, m in zip(s_enc[4], s_enc[5])]
+            cont, swp, mics = centre_of([e for q in pool for e in enc[q["key"]]], len(F.CONT), len(F.SW), len(F.CAT),
+                                        s_mics)
+            stg = F.answer_settings(ru["amp"], S, np.array(cont, np.float64), swp, mics)
+            stg = P.hold_outside_space(stg, S, ru["amp"], hold) if hold is not None else P.hold_outside_space(stg, S,
+                                                                                                             ru["amp"])
+            out.setdefault(ru["set"], {})[pp["key"]] = {P.ANY_HALF: {"select": sel, "settings": LO.sdict(stg)}}
+            used[pp["key"]] = len(pool)
+        save_answers(r, out, {"c3r_sha256": st["sha256"], "base": base, "pool_parts": used, "missing": missing,
+                              "rule": cmd_sic.__doc__})
+        print(f"SIC DONE {r}: {len(used)} parts (pool {min(used.values())}-{max(used.values())}), {len(missing)} missing")
+
+
 # --- the reports (zero renders) --------------------------------------------------------------------------------------------
 
 def summarise(rows_by_set, units, lender_band=None, wd=None, seen_player=None):
     """Per set: `pipeline_fix.clustered`'s row (C3r's apart rule), with beside it clean and crunch, half A alone (the
-    product's half), without the heavy bands' lenders, cap1 and n12 by whether their DI's player trains in the fold;
-    the deciding pool and the five-set pool (`full_controls_c3r.pooled`); one row over every set clustered by DI file.
-    rows_by_set: {set: [(cluster, unit|amp, value, search)]}."""
+    product's half), cap1 and n12 by whether their DI's player trains in the fold; for a lender row (`lender_band`:
+    {unit: the lender's band}, every unit present) also without the heavier bands' lenders and by lender band within
+    each class; the deciding pool and the five-set pool (`full_controls_c3r.pooled`); one row over every set clustered by
+    DI file (and by lender band and class). rows_by_set: {set: [(cluster, unit|amp, value, search)]}."""
     from learn import full_controls_c3r as R
     from learn import pipeline_fix as P
 
-    keep = ("mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")
     cls_of = {ru["unit"] + "|" + ru["amp"]: ru["prt"]["cls"] for ru in units}
     di_of = {ru["unit"] + "|" + ru["amp"]: ru["prt"]["di"] for ru in units}
     out = {}
 
     def cl(xs):
-        return {q: P.clustered([x[:3] for x in xs]).get(q) for q in keep} if xs else None
+        return {q: P.clustered([x[:3] for x in xs]).get(q) for q in ROW_FIELDS} if xs else None
+
+    def band(r):
+        u = r[1].rsplit("|", 1)[0]
+        if u not in lender_band:
+            raise SystemExit(f"{u}: no lender (run `lends` first)")
+        return lender_band[u]
+
+    def by_band(xs):
+        res = {}
+        for c in ("clean", "crunch"):
+            for b in sorted({band(r) for r in xs if cls_of[r[1]] == c}):
+                res.setdefault(c, {})[b] = cl([r for r in xs if cls_of[r[1]] == c and band(r) == b])
+        return res
     for s in SETS:
         main = [r for r in rows_by_set[s] if not apart(r, units, wd)]
         row = dict(cl(main) or {"mean": None}, directions=len(main))
@@ -1408,8 +1627,8 @@ def summarise(rows_by_set, units, lender_band=None, wd=None, seen_player=None):
         row["crunch"] = cl([r for r in main if cls_of[r[1]] == "crunch"])
         row["half_A"] = cl([r for r in main if r[3] == "A"])
         if lender_band is not None:
-            row["without_heavy_lenders"] = cl([r for r in main if lender_band.get(r[1].rsplit("|", 1)[0])
-                                               not in HEAVY_BANDS])
+            row["without_heavy_lenders"] = cl([r for r in main if band(r) not in HEAVY_BANDS])
+            row["by_lender_band"] = by_band(main)
         if s in ("cap1", "n12") and seen_player is not None:
             row["player_trains"] = cl([r for r in main if r[1] in seen_player])
             row["player_unseen"] = cl([r for r in main if r[1] not in seen_player])
@@ -1424,12 +1643,13 @@ def summarise(rows_by_set, units, lender_band=None, wd=None, seen_player=None):
                             if all(out[s].get("mean") is not None for s in deciding) else None)
     out["five_set_pool"] = (R.pooled({s: out[s] for s in SETS}) if all(out[s].get("mean") is not None for s in SETS)
                             else None)
+    every = [(di_of[r[1]], r[1], r[2], r[3]) for s in SETS for r in rows_by_set[s] if not apart(r, units, wd)]
+    out["every_set_by_di_file"] = cl(every)
     if lender_band is not None:
         wh = {s: out[s]["without_heavy_lenders"] for s in deciding}
         out["deciding_pool_without_heavy_lenders"] = R.pooled(wh) if all(v and v.get("mean") is not None
                                                                          for v in wh.values()) else None
-    every = [(di_of[r[1]], r[1], r[2], r[3]) for s in SETS for r in rows_by_set[s] if not apart(r, units, wd)]
-    out["every_set_by_di_file"] = cl(every)
+        out["every_set_by_lender_band"] = by_band(every)
     return out
 
 
@@ -1440,18 +1660,124 @@ def decided(row):
     return "better" if row["hi90"] < 0 else "worse" if row["lo90"] > 0 else "undecided"
 
 
-STAGE_PAIRS = {   # (row, against): the declared rows of each stage's report; the primaries are PRIMARY's
+def negatives(row, deciding):
+    """For a row that drives an action when it is undecided (the audit's adversarial read): what its deciding-pool
+    interval rules out (no true gain below lo90 at 90%), each deciding set's leave-one-cluster-out range, the pool with
+    each deciding set left out, and the per-set, per-class and half-A readings. row: `summarise`'s. (Pure on it.)"""
+    from learn import full_controls_c3r as R
+
+    dp = row.get("deciding_pool") or {}
+    out = {"reading": decided(dp), "rules_out_gains_beyond": dp.get("lo90"), "pool_mean": dp.get("mean"),
+           "per_set": {s: {"reading": decided(row[s]), "mean": row[s].get("mean"),
+                           "clean": decided(row[s].get("clean")), "crunch": decided(row[s].get("crunch")),
+                           "half_A": decided(row[s].get("half_A"))} for s in deciding},
+           "pool_leaving_out": {}}
+    for s in deciding:
+        rest = {q: row[q] for q in deciding if q != s}
+        out["pool_leaving_out"][s] = R.pooled(rest) if all(v.get("mean") is not None for v in rest.values()) else None
+    return out
+
+
+def loo_range(rows_by_set, units, s):
+    """One set's leave-one-cluster-out means (`pipeline_fix.clustered`), as (min, max), C3r's apart rule."""
+    from learn import pipeline_fix as P
+
+    loo = P.clustered([r[:3] for r in rows_by_set[s] if not apart(r, units)]).get("leave_one_out") or {}
+    return (min(loo.values()), max(loo.values())) if loo else None
+
+
+Q1_INPUTS = ("mix@-3", "clean-kind")
+Q1_OUTCOMES = {   # the outcome -> what happens next (the plan's section 1); the first that holds is read
+    "reads in the exposed backed mix": "full stages 2 and 3",
+    "reads only the isolated guitar": "full stage 2 with clean@-3 beside; Steps 4 and 6 have their case",
+    "the ladder's build loses a reading": "stage 2 waits: a dated amendment locates which part of the build (the "
+                                          "lender's stems, the stereo mid, mastering, the level) loses it, reviewed "
+                                          "first",
+    "reads on one deciding set only": "full stage 2; the write-up says the pool is undecided and gives the rule's "
+                                      "false-alarm rate",
+    "a better constant, no per-unit reading": "the chosen constant goes to Step 3 as the candidate start (Step 1 "
+                                              "confirms); separator work stays parked; stage 2 shrinks to the harm "
+                                              "check (xl@-3 on the subset); then Step 5",
+    "no gain shown": "the chosen constant goes to Step 3 as the candidate start; separator work stays parked; stage 2 "
+                     "shrinks to the harm check; then Step 5; the action rests on what each primary's interval rules "
+                     "out (`negatives`), after the audit's adversarial read"}
+
+
+def q1_outcome(rows, deciding):
+    """(Pure.) Q1's outcome from stage 1's rows, the first that holds: per-unit reading (`i - sic-i` decided better on
+    the deciding pool) on mix@-3, then on clean-kind; the build losing a reading (mix-drawn reads per unit, or beats a
+    constant where neither ladder input does); a per-unit reading decided on one deciding set alone, the pool undecided;
+    a better constant (an input beats Cen or Aconst on the pool, with no per-unit reading); else no gain shown. The
+    constant for Steps 1 and 3: Aconst if `aconst - cen` is decided better, else Cen. rows: {"a - b": summarise row}."""
+    def d(name, s=None):
+        r = rows.get(name) or {}
+        return decided(r.get("deciding_pool") if s is None else r.get(s))
+    inputs = Q1_INPUTS + ("mix-drawn",)
+    reads = {i: d(f"{i} - sic-{i}") == "better" for i in inputs}
+    beats = {i: "better" in (d(f"{i} - cen"), d(f"{i} - aconst")) for i in inputs}
+    one_set = {i: [s for s in deciding if d(f"{i} - sic-{i}", s) == "better"] for i in Q1_INPUTS}
+    if reads["mix@-3"]:
+        out = "reads in the exposed backed mix"
+    elif reads["clean-kind"]:
+        out = "reads only the isolated guitar"
+    elif reads["mix-drawn"] or (beats["mix-drawn"] and not beats["mix@-3"] and not beats["clean-kind"]):
+        out = "the ladder's build loses a reading"
+    elif any(one_set.values()):
+        out = "reads on one deciding set only"
+    elif beats["mix@-3"] or beats["clean-kind"]:
+        out = "a better constant, no per-unit reading"
+    else:
+        out = "no gain shown"
+    return {"outcome": out, "next": Q1_OUTCOMES[out], "reads_per_unit": reads, "beats_a_constant": beats,
+            "per_unit_worse": {i: d(f"{i} - sic-{i}") == "worse" for i in inputs}, "one_set": one_set,
+            "aconst - cen": d("aconst - cen"),
+            "constant_for_steps_1_and_3": "Aconst" if d("aconst - cen") == "better" else "Cen"}
+
+
+def q2q3_outcome(rows, stage1):
+    """(Pure.) Stage 2's readings and stage 3's triggers. Q2: `xl@-3 - cen` and `xl@-3 - sic-xl@-3`. Q3: the separator
+    alone (`xlnoG@-3 - mixp@-3`), the level step (`mixp@-3 - mix@-3`), the other guitars (`xl@-3 - xlnoG@-3`). A
+    perfect separator buys a heard-size gain when `clean@-3 - xl@-3` is decided better with a mean beyond -SMALL.
+    Stage 3: xlmdxc and xl-real when the other guitars' cost is decided (worse); the exposure rows when a -3 dB input
+    row beats Cen or `mix@-3 - mix-drawn` is decided either way; pooling when any input's `i - sic-i` is decided better
+    in stage 1 or 2. stage1: stage 1's report rows."""
+    def d(name, src=rows):
+        return decided((src.get(name) or {}).get("deciding_pool"))
+    head = (rows.get("clean@-3 - xl@-3") or {}).get("deciding_pool") or {}
+    beats = [n for n in ("mix@-3 - cen", "xl@-3 - cen", "xlnoG@-3 - cen", "mixp@-3 - cen")
+             if d(n, rows if n in rows else stage1) == "better"]
+    reading = [n for n in ("mix@-3 - sic-mix@-3", "clean-kind - sic-clean-kind", "mix-drawn - sic-mix-drawn")
+               if d(n, stage1) == "better"] + (["xl@-3 - sic-xl@-3"] if d("xl@-3 - sic-xl@-3") == "better" else [])
+    return {"q2": {"xl@-3 - cen": d("xl@-3 - cen"), "xl@-3 - sic-xl@-3": d("xl@-3 - sic-xl@-3")},
+            "q3": {"separator alone": d("xlnoG@-3 - mixp@-3"), "level step": d("mixp@-3 - mix@-3"),
+                   "other guitars": d("xl@-3 - xlnoG@-3")},
+            "perfect_separator_heard_size_gain": decided(head) == "better" and head.get("mean") is not None
+            and head["mean"] <= -SMALL,
+            "stage3": {"xlmdxc_and_xl_real": d("xl@-3 - xlnoG@-3") == "worse",
+                       "exposure_rows": bool(beats) or d("mix@-3 - mix-drawn", stage1) in ("better", "worse"),
+                       "exposure_because": beats, "pool": bool(reading), "pool_because": reading}}
+
+
+STAGE_PAIRS = {   # (row, against): the declared rows of each stage's report; the rule's rows are PRIMARY's
     0: [("mix-drawn", "S"), ("mix-drawn", "RcBG"), ("mix-drawn", "RcGk"), ("mix-drawn", "Rcs2")],
-    1: [("clean-kind", "cen"), ("mix@-3", "cen"), ("clean-kind", "aconst"), ("mix@-3", "aconst"),
-        ("mix-drawn", "cen"), ("mix-drawn", "aconst"), ("aconst", "cen"), ("cen", "S"), ("aconst", "S"),
-        ("clean-kind", "S"), ("mix@-3", "S"), ("mix@-3", "mix-drawn"), ("clean-kind", "mix-drawn"),
-        ("clean-kind", "mix@-3"), ("label", "cen")],
-    2: [("xl@-3", "cen"), ("xlnoG@-3", "mix@-3"), ("xl@-3", "xlnoG@-3"), ("xl@-3", "aconst"), ("xl@-3", "S"),
-        ("clean@-3", "xl@-3"), ("clean@-3", "cen"), ("xl-v0", "mix-drawn"), ("xl@-3", "mix@-3")],
+    1: [("mix@-3", "sic-mix@-3"), ("clean-kind", "sic-clean-kind"), ("mix-drawn", "sic-mix-drawn"),
+        ("mix@-3", "cen"), ("mix@-3", "aconst"), ("clean-kind", "cen"), ("clean-kind", "aconst"),
+        ("mix-drawn", "cen"), ("mix-drawn", "aconst"), ("aconst", "cen"),
+        ("cen", "S"), ("aconst", "S"), ("clean-kind", "S"), ("mix@-3", "S"), ("mix-drawn", "S"),
+        ("sic-mix@-3", "cen"), ("sic-clean-kind", "cen"), ("sic-mix-drawn", "cen"),
+        ("mix@-3", "mix-drawn"), ("clean-kind", "mix-drawn"), ("clean-kind", "mix@-3"), ("label", "cen")],
+    2: [("xl@-3", "cen"), ("xl@-3", "sic-xl@-3"), ("xlnoG@-3", "mixp@-3"), ("mixp@-3", "mix@-3"),
+        ("xl@-3", "xlnoG@-3"), ("xl@-3", "aconst"), ("xl@-3", "S"), ("clean@-3", "xl@-3"), ("clean@-3", "cen"),
+        ("xlnoG@-3", "cen"), ("mixp@-3", "cen"), ("sic-xl@-3", "cen"), ("xl@-3", "mix@-3"), ("xlnoG@-3", "mix@-3")],
 }
-PRIMARY = {1: [("clean-kind", "cen"), ("mix@-3", "cen"), ("clean-kind", "aconst"), ("mix@-3", "aconst")],
-           2: [("xl@-3", "cen"), ("xlnoG@-3", "mix@-3"), ("xl@-3", "xlnoG@-3")]}
-LENDER_ROWS = ("mix@", "full@", "clean@", "xl@", "xlnoG@", "xlmdxc@")
+PRIMARY = {1: STAGE_PAIRS[1][:10],
+           2: [("xl@-3", "cen"), ("xl@-3", "sic-xl@-3"), ("xlnoG@-3", "mixp@-3"), ("mixp@-3", "mix@-3"),
+               ("xl@-3", "xlnoG@-3")]}
+LENDER_ROWS = ("mix@", "full@", "mixp@", "clean@", "xl@", "xlnoG@", "xlmdxc@", "sic-mix@", "sic-xl@")
+
+
+def is_lender_row(name):
+    return any(name.startswith(p) for p in LENDER_ROWS)
 
 
 def value_fn(st, name):
@@ -1464,51 +1790,78 @@ def value_fn(st, name):
     return val_row(name)
 
 
+def stage_answers(stage):
+    """The answers a stage's knob reads cover: every row of its pairs with an answers file (zero renders)."""
+    from learn import full_controls_c3r as R
+
+    names = {n for a, b in STAGE_PAIRS[stage] for n in (a, b)} - {"S", "label", "RcBG", "RcGk", "Rcs2"}
+    out = {}
+    for n in sorted(names):
+        p = R.answers_path("all") if n == "mix-drawn" else answers_path(n)
+        if p.exists():
+            out[n] = json.loads(p.read_text())["answers"]
+    return out
+
+
 def cmd_report(args):
     """A stage's report (zero renders): every declared pair of that stage (`STAGE_PAIRS`), ln(d_row / d_against) on the
-    held half, per set and pooled with C3r's rules (`summarise`); beside each, the share of the Cen-to-label gap it closes
-    and the missing directions; the primaries' outcome (`decided`). -> ladder/report-stage<n>.json."""
+    held half, per set and pooled with C3r's rules (`summarise`); beside each, the share of the Cen-to-label gap it closes;
+    for each rule row the adversarial read of a negative (`negatives`); the stage's outcome (`q1_outcome`,
+    `q2q3_outcome`); the knob reads of its answers. -> ladder/report-stage<n>.json."""
     from learn import full_controls_c3r as R
     from learn import pipeline_fix as P
 
     require(args.stage)
-    if args.stage not in STAGE_PAIRS:
-        raise SystemExit(f"stage {args.stage}'s rows are declared with its ledger phase (STAGE_PAIRS)")
+    if args.stage not in STAGE_PAIRS or args.stage == 0:
+        raise SystemExit(f"stage {args.stage}: `stage0` reads stage 0; stage 3's rows are declared with its phase")
     st = R.state()
+    controls_ok(args.stage, st)
     units = R.read_units(st)
-    ld = lends()["units"] if (ladder_dir() / "lends.json").exists() else {}
-    band = {u: v["band"] for u, v in ld.items()}
+    pairs = STAGE_PAIRS[args.stage]
+    band = None
+    if any(is_lender_row(n) for a, b in pairs for n in (a, b)):
+        band = {u: v["band"] for u, v in lends()["units"].items()}      # refuses when `lends` hasn't run
     seen = R.player_seen(st, units)
     fns = {}
-    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASES[args.stage]}", "stage": args.stage, "rows": {}}
-    cen_vals = None
-    for a, b in STAGE_PAIRS[args.stage]:
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASES[args.stage]}", "stage": args.stage, "rows": {}, "negatives": {}}
+    lab = None
+    for a, b in pairs:
         for nm in (a, b):
             if nm not in fns:
                 fns[nm] = value_fn(st, nm)
         got = rows_for_pair(st, units, fns[a], fns[b])
-        lb = band if any(a.startswith(p) or b.startswith(p) for p in LENDER_ROWS) else None
-        row = summarise(got, units, lb, seen_player=seen)
+        row = summarise(got, units, band if is_lender_row(a) or is_lender_row(b) else None, seen_player=seen)
         row["directions_read"] = sum(len(v) for v in got.values())
         if b == "cen" and a != "label":
-            if cen_vals is None:
-                cen_vals = {s: {(r[1], r[3]): r[2] for r in v} for s, v in
-                            rows_for_pair(st, units, value_fn(st, "label"), fns["cen"]).items()}
+            if lab is None:
+                lab = {s: {(r[1], r[3]): r[2] for r in v} for s, v in
+                       rows_for_pair(st, units, value_fn(st, "label"), value_fn(st, "cen")).items()}
             row["gap_share"] = {s: dict(zip(("share", "directions"), gap_share({(r[1], r[3]): r[2] for r in got[s]},
-                                                                                cen_vals[s]))) for s in SETS}
-        out["rows"][f"{a} - {b}"] = row
-    out["primaries"] = {f"{a} - {b}": decided(out["rows"][f"{a} - {b}"]["deciding_pool"])
-                        for a, b in PRIMARY.get(args.stage, [])}
+                                                                                lab[s]))) for s in SETS}
+        name = f"{a} - {b}"
+        out["rows"][name] = row
+        if (a, b) in PRIMARY.get(args.stage, []):
+            out["negatives"][name] = dict(negatives(row, row["deciding_sets"]),
+                                          leave_one_cluster_out={s: loo_range(got, units, s) for s in row["deciding_sets"]})
+    deciding = out["rows"][f"{pairs[0][0]} - {pairs[0][1]}"]["deciding_sets"]
+    if args.stage == 1:
+        out["q1"] = q1_outcome(out["rows"], deciding)
+    if args.stage == 2:
+        s1 = json.loads((ladder_dir() / "report-stage1.json").read_text())["rows"]
+        out["q2q3"] = q2q3_outcome(out["rows"], s1)
+    out["knob_read"] = knob_read(st, units, stage_answers(args.stage))
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     P.save(ladder_dir() / f"report-stage{args.stage}.json", out)
     for name, row in out["rows"].items():
         dp = row.get("deciding_pool") or {}
         print(f"{name}: pool {dp.get('mean')} [{dp.get('lo90')}, {dp.get('hi90')}]; "
               + "; ".join(f"{s} {(row[s] or {}).get('mean')}" for s in SETS))
-    print("PRIMARIES", json.dumps(out["primaries"]))
+    print("OUTCOME", json.dumps(out.get("q1") or out.get("q2q3")))
 
 
 # --- stage 0 (zero renders) ------------------------------------------------------------------------------------------------
+
+STAGE0_ANSWERS = ("cen", "aconst", "clean-kind", "xl-v0", "sic-mix-drawn", "sic-clean-kind")
 
 def v0_ratios(st, units):
     """Per unit, the stored variant-0 input's levels: the lender's drawn guitar-to-backing ratio (against a backing that
@@ -1533,30 +1886,67 @@ def v0_ratios(st, units):
     return out
 
 
-def knob_values(settings, amp, label=None):
-    """{head name: unit value} of the K.space continuous heads in KNOB_GROUPS that sound in the setting."""
+GROUP_NAMES = ("drive", "tone", "cab", "eq", "pedals")
+
+
+def knob_group(module, key):
+    """(Pure.) A continuous head's knob group: reads_v3's drive, tone and cab keys; the amp's EQ ("eq"); the drive
+    pedals' and the compressor's knobs ("pedals"); None for the rest (time effects, gate, doubler: held or at S)."""
+    for g, keys in KNOB_GROUPS.items():
+        if key in keys:
+            return g
+    if module.endswith("EQ"):
+        return "eq"
+    if module in ("drive1", "drive2", "compressor"):
+        return "pedals"
+    return None
+
+
+def knob_values(settings, amp):
+    """{head name: unit value} of the continuous heads in a knob group that sound in the setting."""
     from learn import full_space as F
     from learn import local_objective as LO
 
-    x = LO.tdict(settings)
-    c, cm, *_ = F.encode(x, amp)
+    c, cm, *_ = F.encode(LO.tdict(settings), amp)
     D = F.by_name()
-    want = {k for v in KNOB_GROUPS.values() for k in v}
-    return {n: float(c[j]) for j, n in enumerate(F.CONT) if cm[j] > 0 and D[n].key in want}
+    return {n: float(c[j]) for j, n in enumerate(F.CONT) if cm[j] > 0 and knob_group(D[n].module, D[n].key)}
 
 
 def group_of(name):
     from learn import full_space as F
 
-    key = F.by_name()[name].key
-    return next(g for g, v in KNOB_GROUPS.items() if key in v)
+    d = F.by_name()[name]
+    return knob_group(d.module, d.key)
+
+
+def is_constant(row):
+    return row in ("cen", "aconst") or row.startswith("sic-")
+
+
+def mean_shift(per_row, per_const):
+    """(Pure.) How far a row's mean answer sits from a constant's, per knob group: per (fold, amp, class, head) cell the
+    mean over its parts and halves of (answer less the part's constant), then over cells the RMS and the mean absolute
+    shift. per_row: [(cell, part, head, value)]; per_const: {(part, head): value}. -> {group: {...}}."""
+    by = {}
+    for cell, part, head, v in per_row:
+        c = per_const.get((part, head))
+        if c is not None:
+            by.setdefault((cell, head), []).append(v - c)
+    out = {}
+    for g in GROUP_NAMES:
+        ms = [sum(v) / len(v) for (cell, head), v in by.items() if group_of(head) == g]
+        out[g] = {"cells": len(ms), "rms_shift": math.sqrt(sum(m * m for m in ms) / len(ms)) if ms else None,
+                  "mean_abs_shift": sum(abs(m) for m in ms) / len(ms) if ms else None}
+    return out
 
 
 def knob_read(st, units, answers_by_row):
-    """Stage 0's knob-space reads (descriptive): per row and group, the within-cell r of the answers with the labels
-    (cells: set, fold, amp, class and head), the answers' within-cell spread against the labels', and the share of
-    knob values where the answer is farther from the label than the cell's mean label of the other clusters is; per
-    pair of input rows, how far a unit's answer moves between the inputs against how far answers differ between units."""
+    """The knob-space reads (descriptive, zero renders): per row and knob group, the within-cell r of the answers with
+    the labels (cells: set, fold, amp, class and head), the answers' within-cell spread against the labels' (and in unit
+    terms), and the share of knob values where the answer is farther from the label than the cell's mean label of the
+    other clusters is; per pair of input rows, how far a part's answer moves between the inputs against how far answers
+    differ between parts; per input row, how far its mean answer sits from Aconst's and from Cen's in each (fold, amp,
+    class) cell (`mean_shift`): a decided `R-all - Aconst` is read with it."""
     from learn import local_objective as LO
 
     src = st["sources"]
@@ -1565,24 +1955,25 @@ def knob_read(st, units, answers_by_row):
         s = src.get((ru["unit"], ru["amp"]))
         if s is not None:
             labs[(ru["unit"], ru["amp"])] = knob_values(LO.sdict(LO.tdict(s["label"])), ru["amp"])
-    out = {"rows": {}, "moves": {}}
-    vals = {}
+    out = {"rows": {}, "moves": {}, "mean_shift": {}}
+    vals, flat = {}, {}
     for row, ans in answers_by_row.items():
-        per = []
+        per, allv = [], []
         for ru in units:
             a = ans.get(ru["set"], {}).get(f"{ru['unit']}|{ru['amp']}")
-            lab = labs.get((ru["unit"], ru["amp"]))
-            if a is None or lab is None:
+            if a is None:
                 continue
+            lab = labs.get((ru["unit"], ru["amp"]))
+            part = (ru["unit"], ru["amp"])
             for h, x in a.items():
-                av = knob_values(x["settings"], ru["amp"])
-                for n, v in av.items():
-                    if n in lab:
+                for n, v in knob_values(x["settings"], ru["amp"]).items():
+                    allv.append(((ru["fold"], ru["amp"], ru["prt"]["cls"]), part, n, v))
+                    if lab is not None and n in lab:
                         cell = (ru["set"], ru["fold"], ru["amp"], ru["prt"]["cls"], n)
-                        per.append((cell, (ru["unit"], ru["amp"], h), ru["cluster"], n, v, lab[n]))
-        vals[row] = per
+                        per.append((cell, part + (h,), ru["cluster"], n, v, lab[n]))
+        vals[row], flat[row] = per, allv
         res = {}
-        for g in KNOB_GROUPS:
+        for g in GROUP_NAMES:
             xs = [p for p in per if group_of(p[3]) == g]
             da = within_cell([(p[0], p[1] + (p[3],), p[4]) for p in xs])
             dl = within_cell([(p[0], p[1] + (p[3],), p[5]) for p in xs])
@@ -1600,9 +1991,9 @@ def knob_read(st, units, answers_by_row):
                 lose += abs(p[4] - p[5]) > abs(sum(others) / len(others) - p[5])
             res[g] = {"values": len(ks), "r_within_cell": corr([da[k] for k in ks], [dl[k] for k in ks]),
                       "answer_spread_over_label_spread": (sd(da) / sd(dl)) if ks and sd(dl) else None,
-                      "loses_to_cell_mean": lose / n_ if n_ else None}
+                      "answer_within_cell_rms": sd(da), "loses_to_cell_mean": lose / n_ if n_ else None}
         out["rows"][row] = res
-    names = [r for r in answers_by_row if r not in ("cen", "aconst")]
+    names = [r for r in answers_by_row if not is_constant(r)]
     for i, a in enumerate(names):
         for b in names[i + 1:]:
             va = {(p[1], p[3]): (p[0], p[4]) for p in vals[a]}
@@ -1614,6 +2005,12 @@ def knob_read(st, units, answers_by_row):
             dev = within_cell([(va[k][0], k, va[k][1]) for k in ks])
             between = math.sqrt(sum(v ** 2 for v in dev.values()) / len(dev)) if dev else None
             out["moves"][f"{a} vs {b}"] = {"values": len(ks), "rms_move": mv, "rms_between_units": between}
+    for c in ("aconst", "cen"):
+        if c not in flat:
+            continue
+        cv = {(part, n): v for _, part, n, v in flat[c]}
+        for r in names:
+            out["mean_shift"][f"{r} vs {c}"] = mean_shift(flat[r], cv)
     return out
 
 
@@ -1642,6 +2039,7 @@ def cmd_stage0(_args):
 
     require(0)
     st = R.state()
+    controls_ok(0, st)
     units = R.read_units(st)
     rat = v0_ratios(st, units)
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASES[0]}", "stage": 0, "rows": {}, "by_ratio": {}}
@@ -1670,13 +2068,11 @@ def cmd_stage0(_args):
     dr = sorted(v["drawn"] for v in rat.values())
     out["drawn_ratio_quartiles"] = dr[len(dr) // 4], dr[len(dr) // 2], dr[3 * len(dr) // 4]
     ans = {"mix-drawn": json.loads(R.answers_path("all").read_text())["answers"]}
-    for r in ("cen", "aconst", "clean-kind", "xl-v0"):
-        if answers_path(r).exists():
-            ans[r] = json.loads(answers_path(r).read_text())["answers"]
+    for r in STAGE0_ANSWERS:                       # each made by stage 0's commands; a missing one refuses
+        ans[r] = json.loads(answers_path(r).read_text())["answers"]
     out["knob_read"] = knob_read(st, units, ans)
-    if (ladder_dir() / "lends.json").exists():
-        L = lends()
-        out["lenders"] = {k: L[k] for k in ("candidates", "pool", "silent_out", "lent_by")}
+    L = lends()
+    out["lenders"] = {k: L[k] for k in ("candidates", "pool", "pool_by_band", "silent_out", "lent_by")}
     out["r1_exposures"] = r1_exposures()
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     P.save(ladder_dir() / "report-stage0.json", out)
@@ -1701,6 +2097,9 @@ def main(argv=None):
     p = sub.add_parser("predict")
     p.add_argument("--rows", required=True)
     p.set_defaults(fn=cmd_predict)
+    c = sub.add_parser("sic")
+    c.add_argument("--rows", required=True)
+    c.set_defaults(fn=cmd_sic)
     sub.add_parser("stage0").set_defaults(fn=cmd_stage0)
     sub.add_parser("check1").set_defaults(fn=cmd_check1)
     sub.add_parser("replay").set_defaults(fn=cmd_replay)

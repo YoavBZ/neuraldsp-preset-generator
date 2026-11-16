@@ -12,18 +12,37 @@ from learn import preset_ladder as L  # noqa: E402
 def test_rows_carry_their_stage_kind_and_input_style():
     assert L.row_info("mix-drawn") == {"stage": 0, "kind": "stored", "style": "train"}
     assert L.row_info("cen")["kind"] == L.row_info("aconst")["kind"] == "constant"
-    assert L.row_info("clean-kind") == {"stage": 1, "kind": "input", "style": "train"}
+    assert L.row_info("clean-kind") == {"stage": 1, "kind": "input", "style": "train", "built_by": "clean-kind"}
     assert L.row_info("mix@-3")["stage"] == 1 and L.row_info("mix@-3")["style"] == "train"
     assert L.row_info("mix@0")["stage"] == L.row_info("mix@drawn")["stage"] == 3
     assert L.row_info("xl@-3") == {"stage": 2, "kind": "input", "style": "product", "exposure": "-3", "sep": True}
     assert L.row_info("xlnoG@-3")["stage"] == 2 and L.row_info("clean@-3")["stage"] == 2
     assert "sep" not in L.row_info("clean@-3")                     # a perfect separator needs no separation
+    assert L.row_info("mixp@-3") == {"stage": 2, "kind": "input", "style": "product", "exposure": "-3",
+                                     "built_by": "mix@-3"}         # the level step alone, built beside mix@-3
+    for r in ("full@-3", "clean@-3", "mixp@-3"):
+        assert L.row_info(r)["built_by"] == "mix@-3"
     assert L.row_info("xlmdxc@-3")["stage"] == 3 and L.row_info("full@-3")["stage"] == 3
-    assert L.row_info("xl-v0")["stage"] == 2
-    for bad in ("mix@-6", "xl", "stem@-3", "mix@"):
+    assert L.row_info("xl-v0") == {"stage": 0, "kind": "input", "style": "product", "render": False}
+    for bad in ("mix@-6", "xl", "stem@-3", "mix@", "sic-cen", "sic-xlnoG@-3"):
         with pytest.raises(SystemExit):
             L.row_info(bad)
     assert L.parse_rows("cen,aconst,,mix@-3") == ["cen", "aconst", "mix@-3"]
+
+
+def test_same_input_constants_are_rendered_in_their_inputs_stage():
+    assert L.row_info("sic-mix-drawn") == {"stage": 1, "kind": "constant", "style": None, "base": "mix-drawn"}
+    assert L.row_info("sic-clean-kind")["stage"] == L.row_info("sic-mix@-3")["stage"] == 1
+    assert L.row_info("sic-xl@-3")["stage"] == 2
+
+
+def test_the_same_input_pool_leaves_out_the_parts_own_cluster_and_di_file():
+    P_ = lambda k, amp, cls, cl, di: {"key": k, "amp": amp, "cls": cls, "cluster": cl, "di": di}   # noqa: E731
+    parts = [P_("a", "sw50r", "clean", "goat|i1", "goat/i1"), P_("b", "sw50r", "clean", "goat|i1", "goat/i1"),
+             P_("c", "sw50r", "clean", "cap1|cr", "goat/i1"),   # another cluster, the same performance
+             P_("d", "sw50r", "clean", "goat|i2", "goat/i2"), P_("e", "pr12", "clean", "goat|i3", "goat/i3"),
+             P_("f", "sw50r", "crunch", "goat|i4", "goat/i4"), P_("g", "sw50r", "clean", "bks|x", "x.wav")]
+    assert [q["key"] for q in L.sic_pool(parts, parts[0])] == ["d", "g"]
 
 
 def test_exposure_tags_are_declared_ones():
@@ -248,6 +267,168 @@ def test_decided_reads_the_interval_only():
     assert L.decided(None) is None and L.decided({"lo90": None, "hi90": None}) is None
 
 
+# --- the controls and the outputs' shapes -------------------------------------------------------------------------------
+
+def test_a_command_refuses_until_its_stages_controls_passed_on_todays_state():
+    ok = {"ok": True, "c3r_sha256": "s"}
+    assert L.guarding(0) == ["check0"] and L.guarding(1) == ["check0", "check1", "replay"]
+    assert L.guarding(2) == L.guarding(1)
+    assert L.control_refusal(["check0"], "s", {"check0": ok}) is None
+    assert "has not run" in L.control_refusal(["check0"], "s", {})
+    assert "failed" in L.control_refusal(["check0"], "s", {"check0": {"ok": False, "c3r_sha256": "s"}})
+    assert "another C3r state" in L.control_refusal(["check0"], "t", {"check0": ok})
+    assert "replay" in L.control_refusal(L.guarding(1), "s", {"check0": ok, "check1": ok})
+
+
+def _centres():
+    x = {"select": "S preset", "settings": {"parameters/inputGain": "-3"}}
+    return {t: {a: {c: x for c in ("clean", "crunch")} for a in ("pr12", "sw50r", "ac20")} for t in ("cen", "aconst")}
+
+
+def test_centres_json_keeps_the_shape_step_1_reads():
+    doc = L.centres_doc(_centres(), hold="C3-cabS", model_sha256=["a", "b"])
+    assert set(doc["centres"]) == {"cen", "aconst"} and doc["hold"] == "C3-cabS" and doc["model_sha256"] == ["a", "b"]
+    assert doc["centres"]["cen"]["sw50r"]["clean"] == {"select": "S preset", "settings": {"parameters/inputGain": "-3"}}
+    bad = _centres()
+    del bad["aconst"]["ac20"]["crunch"]
+    with pytest.raises(SystemExit):
+        L.centres_doc(bad, hold="C3-cabS", model_sha256=["a"])
+    bad = _centres()
+    bad["cen"]["pr12"]["clean"] = {"select": "x", "settings": {"inputGain": "0"}}   # not "module/key"
+    with pytest.raises(SystemExit):
+        L.centres_doc(bad, hold="C3-cabS", model_sha256=["a"])
+    with pytest.raises(SystemExit):
+        L.centres_doc(dict(_centres(), extra={}), hold="C3-cabS", model_sha256=["a"])
+    with pytest.raises(SystemExit):
+        L.centres_doc(_centres(), hold="C3-cabS")                     # no model_sha256
+
+
+# --- the outcome rules --------------------------------------------------------------------------------------------------
+
+def _rows(better=(), worse=(), set_better=()):
+    """Report rows: every named row 'better' or 'worse' on the deciding pool, the rest undecided; set_better: (row, set)."""
+    names = {f"{a} - {b}" for a, b in L.STAGE_PAIRS[1] + L.STAGE_PAIRS[2]}
+    iv = lambda r: ({"mean": -0.1, "lo90": -0.2, "hi90": -0.01} if r == "b" else      # noqa: E731
+                    {"mean": 0.1, "lo90": 0.01, "hi90": 0.2} if r == "w" else {"mean": 0.0, "lo90": -0.1, "hi90": 0.1})
+    out = {}
+    for n in names:
+        r = "b" if n in better else "w" if n in worse else "u"
+        out[n] = {"deciding_pool": iv(r), **{s: iv("b" if (n, s) in set_better else "u") for s in ("bks", "goat", "panel")}}
+    return out
+
+
+def test_q1s_outcome_needs_a_per_unit_reading_to_call_it_reading():
+    dec = ("bks", "goat", "panel")
+    q = L.q1_outcome(_rows(better={"mix@-3 - sic-mix@-3"}), dec)
+    assert q["outcome"] == "reads in the exposed backed mix"
+    q = L.q1_outcome(_rows(better={"mix@-3 - cen", "aconst - cen"}), dec)       # a better constant, not reading
+    assert q["outcome"] == "a better constant, no per-unit reading" and q["constant_for_steps_1_and_3"] == "Aconst"
+    assert L.q1_outcome(_rows(better={"clean-kind - sic-clean-kind"}), dec)["outcome"] == "reads only the isolated guitar"
+    q = L.q1_outcome(_rows(better={"mix-drawn - cen"}), dec)                    # the training input reads, the ladder not
+    assert q["outcome"] == "the ladder's build loses a reading" and q["constant_for_steps_1_and_3"] == "Cen"
+    assert L.q1_outcome(_rows(better={"mix-drawn - sic-mix-drawn"}), dec)["outcome"] == "the ladder's build loses a reading"
+    q = L.q1_outcome(_rows(set_better={("mix@-3 - sic-mix@-3", "goat")}), dec)
+    assert q["outcome"] == "reads on one deciding set only" and q["one_set"]["mix@-3"] == ["goat"]
+    q = L.q1_outcome(_rows(), dec)
+    assert q["outcome"] == "no gain shown" and q["constant_for_steps_1_and_3"] == "Cen"
+    assert L.q1_outcome(_rows(worse={"aconst - cen"}), dec)["constant_for_steps_1_and_3"] == "Cen"
+    q = L.q1_outcome(_rows(worse={"mix@-3 - sic-mix@-3"}), dec)
+    assert q["per_unit_worse"]["mix@-3"] and q["outcome"] == "no gain shown"
+    for o in L.Q1_OUTCOMES:
+        assert L.Q1_OUTCOMES[o]
+
+
+def test_stage_2s_readings_and_stage_3s_triggers_are_stated_rules():
+    s1 = _rows()
+    q = L.q2q3_outcome(_rows(), s1)
+    assert q["stage3"] == {"xlmdxc_and_xl_real": False, "exposure_rows": False, "exposure_because": [], "pool": False,
+                           "pool_because": []}
+    q = L.q2q3_outcome(_rows(worse={"xl@-3 - xlnoG@-3"}, better={"xl@-3 - cen"}), s1)
+    assert q["stage3"]["xlmdxc_and_xl_real"] and q["stage3"]["exposure_because"] == ["xl@-3 - cen"]
+    assert q["q3"]["other guitars"] == "worse" and q["q2"]["xl@-3 - cen"] == "better"
+    q = L.q2q3_outcome(_rows(), _rows(worse={"mix@-3 - mix-drawn"}))
+    assert q["stage3"]["exposure_rows"] and not q["stage3"]["pool"]
+    q = L.q2q3_outcome(_rows(), _rows(better={"clean-kind - sic-clean-kind"}))
+    assert q["stage3"]["pool_because"] == ["clean-kind - sic-clean-kind"]
+    r = _rows(better={"clean@-3 - xl@-3"})
+    assert L.q2q3_outcome(r, s1)["perfect_separator_heard_size_gain"]          # mean -0.1, beyond SMALL
+    r["clean@-3 - xl@-3"]["deciding_pool"]["mean"] = -0.03
+    assert not L.q2q3_outcome(r, s1)["perfect_separator_heard_size_gain"]
+    assert set(L.PRIMARY[1]) <= set(L.STAGE_PAIRS[1]) and set(L.PRIMARY[2]) <= set(L.STAGE_PAIRS[2])
+    assert not any("xl-v0" in a or "xl-v0" in b for a, b in L.STAGE_PAIRS[2])   # xl-v0 is answered, not rendered
+
+
+def test_negatives_say_what_the_interval_rules_out_and_read_each_set_left_out():
+    iv = lambda m, lo, hi, n: {"mean": m, "lo90": lo, "hi90": hi, "clusters": n,          # noqa: E731
+                               "clean": None, "crunch": None, "half_A": None}
+    row = {"bks": iv(-0.02, -0.06, 0.02, 8), "goat": iv(0.0, -0.02, 0.02, 130), "panel": iv(-0.05, -0.2, 0.1, 5),
+           "deciding_pool": {"mean": -0.023, "lo90": -0.07, "hi90": 0.024}}
+    n = L.negatives(row, ("bks", "goat", "panel"))
+    assert n["reading"] == "undecided" and n["rules_out_gains_beyond"] == -0.07
+    assert set(n["pool_leaving_out"]) == {"bks", "goat", "panel"}
+    assert n["pool_leaving_out"]["panel"]["mean"] == pytest.approx(-0.01)
+    assert n["per_set"]["goat"]["reading"] == "undecided"
+
+
+def test_the_summary_reads_each_lender_band_by_class_and_refuses_a_missing_lender():
+    units = [{"set": s, "unit": f"{s}{j}", "amp": "sw50r", "cluster": f"{s}c{j % 3}",
+              "prt": {"cls": ("clean", "crunch")[j % 2], "di": f"{s}d{j % 3}"}} for s in L.SETS for j in range(6)]
+    rows = {s: [(u["cluster"], u["unit"] + "|sw50r", -0.01 * (1 + j % 4), h) for j, u in
+                enumerate(x for x in units if x["set"] == s) for h in ("A", "B")] for s in L.SETS}
+    band = {u["unit"]: ("Forkupines" if j % 3 else "Ale Lak") for j, u in enumerate(units)}
+    got = L.summarise(rows, units, band, wd=set())
+    assert set(got["bks"]["by_lender_band"]) == {"clean", "crunch"}
+    assert "Ale Lak" in got["every_set_by_lender_band"]["crunch"] or "Ale Lak" in got["every_set_by_lender_band"]["clean"]
+    assert got["bks"]["without_heavy_lenders"]["parts"] < got["bks"]["parts"]
+    assert got["deciding_pool_without_heavy_lenders"] is not None
+    with pytest.raises(SystemExit):
+        L.summarise(rows, units, {}, wd=set())
+    plain = L.summarise(rows, units, None, wd=set())
+    assert "by_lender_band" not in plain["bks"] and "every_set_by_lender_band" not in plain
+
+
+# --- the knob reads -----------------------------------------------------------------------------------------------------
+
+def test_knob_groups_cover_the_trained_continuous_heads_and_leave_the_effects_out():
+    assert L.knob_group("parameters", "inputGain") == "drive" and L.knob_group("sw50rAmp", "sw50rMid") == "tone"
+    assert L.knob_group("cabParameters", "rightCabMicLevel") == "cab"
+    assert L.knob_group("ac20EQ", "ac20EQBand4") == "eq" and L.knob_group("pr12EQ", "pr12EQHpf") == "eq"
+    assert L.knob_group("drive2", "drive2Gain") == L.knob_group("compressor", "compressorMix") == "pedals"
+    for m, k in (("delay", "delayMix"), ("reverb", "reverbMix"), ("parameters", "gateThreshold"),
+                 ("parameters", "doublerSpread"), ("cabParameters", "leftCabPan")):
+        assert L.knob_group(m, k) is None
+
+
+def test_the_mean_shift_is_the_cells_mean_answer_less_the_constant():
+    pytest.importorskip("numpy")                           # group_of reads full_space's head table
+    from learn import full_space as F
+
+    tone = next(n for n in F.CONT if F.by_name()[n].key == "sw50rMid")
+    drive = next(n for n in F.CONT if F.by_name()[n].key == "inputGain")
+    cell = (0, "sw50r", "clean")
+    per = [(cell, "p1", tone, 0.6), (cell, "p2", tone, 0.4), (cell, "p1", drive, 0.9)]
+    const = {("p1", tone): 0.3, ("p2", tone): 0.3, ("p1", drive): 0.9}
+    got = L.mean_shift(per, const)
+    assert got["tone"]["cells"] == 1 and got["tone"]["rms_shift"] == pytest.approx(0.2)
+    assert got["drive"]["rms_shift"] == pytest.approx(0.0) and got["cab"]["cells"] == 0
+
+
+def test_a_rebuilt_mix_must_give_the_stored_features_exactly():
+    np = pytest.importorskip("numpy")
+    from learn import direct_stems as DS
+
+    rng = np.random.default_rng(1)
+    m = {k: {"L": rng.normal(0, 0.1, 480000), "R": rng.normal(0, 0.1, 480000)} for k in ("full", "noG")}
+    feats = {}
+    for k, v in m.items():
+        mels, lu, _ = DS.half_features((v["L"] + v["R"]) / 2)
+        feats[k] = {h: (mels[h], lu[h]) for h in ("A", "B")}
+    assert L.rebuild_refusal(m, feats) is None
+    m2 = {"full": dict(m["full"], L=m["full"]["L"] * 1.5), "noG": m["noG"]}
+    assert "differ" in L.rebuild_refusal(m2, feats)
+    assert "no stored" in L.rebuild_refusal(m, {"full": feats["full"], "noG": None})
+
+
 # --- the machine --------------------------------------------------------------------------------------------------------
 
 def test_renders_and_separations_are_registered_with_the_cap():
@@ -256,7 +437,8 @@ def test_renders_and_separations_are_registered_with_the_cap():
     py = "/x/.venv/bin/python"
     assert any(re.search(p, f"{py} -u -m learn.preset_ladder render --rows cen --shard 0/3") for p in LO.RENDERS)
     assert any(re.search(p, f"{py} -u -m learn.preset_ladder replay") for p in LO.RENDERS)
-    for cmd in ("report --stage 1", "build --rows mix@-3", "predict --rows mix@-3", "stage0", "lends"):
+    for cmd in ("report --stage 1", "build --rows mix@-3", "predict --rows mix@-3", "stage0", "lends",
+                "sic --rows sic-mix@-3"):
         assert not any(re.search(p, f"{py} -m learn.preset_ladder {cmd}") for p in LO.RENDERS)
     assert any(re.search(p, f"{py} -u -m learn.preset_ladder sep --rows xl@-3") for p in LO.SEPARATIONS)
     assert not any(re.search(p, f"{py} -m learn.preset_ladder render --rows cen") for p in LO.SEPARATIONS)
