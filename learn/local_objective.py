@@ -162,7 +162,8 @@ RENDERS = (r"-m learn\.song_relabel (render-new|probe)\b", r"-m learn\.ks_extend
            r"-m learn\.full_controls_c2b c2b-search\b",          # docs/full-controls-plan.md (C2b)
            r"-m learn\.full_controls_c2r c2r-search\b",          # docs/full-controls-plan.md (C2r)
            r"-m learn\.full_controls_c3r c3r-render\b",          # docs/full-controls-plan.md (C3r's read)
-           r"-m learn\.preset_ladder (render|replay)\b")          # docs/preset-ladder-plan.md (the ladder's renders)
+           r"-m learn\.preset_ladder (render|replay)\b",          # docs/preset-ladder-plan.md (the ladder's renders)
+           r"-m learn\.real_song_exam render\b")                 # docs/real-song-exam-plan.md (the judge renders)
 # Separations that need the machine to themselves (amendment 3): no render starts beside one.
 SEPARATIONS = (r"-m learn\.local_objective_1c separate\b", r"-m learn\.separator_screen (separate|identity)\b",
                r"-m learn\.separate\b", r"-m learn\.known_answer separate\b",
