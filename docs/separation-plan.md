@@ -698,7 +698,8 @@ non-double mixes):
 | 6,000 | +9.12 | +6.92 | 0.0927 |
 | 7,000 | +9.12 | +6.94 | 0.0941 |
 
-The median kept rising, while the read rose back to step 0's level after step 2,000.
+The median crept up (+8.99 at step 1,000 to +9.12), while after step 2,000 the read rose back toward step 0's
+(0.0972 at 5,000, 0.0941 at 7,000).
 
 **The gate (`s4-pick`): step 2,000, usable, barely.** Its paired read gain over step 0 is +0.0065, with the item
 bootstrap's lo90 at +0.0006. Separate code with a t-interval gives lo90 +0.00007. 69 of the 136 mixes read better.
@@ -727,27 +728,36 @@ over the comparator, and no cell has one. Separate code gives the same numbers a
 
 **What it says.**
 - On a centred part, retraining the tail didn't help the read either. S4's stem is cleaner by SI-SDR (+1.10 dB,
-  undecided), but its read is a little worse in all five bands (−0.005, the interval just crossing zero). On split
+  undecided, mostly from Dunning Kruger's +4.01; the other bands +0.02 to +1.03, the median +0.25), but its read is
+  a little worse: −0.005 [−0.010, +0.001], undecided, below zero in every band. On split
   parts it's level by SI-SDR, with the read lower in all four bands. S3 retrained the front and S4 the tail, chosen
   by the read; neither improved the model's read on a centred part over `xlst_mdxc`.
-- The validation band didn't predict S4's read. Its gain (+0.0065) was small, barely decided and the best of eight
-  evaluations, and it didn't hold out. It had come close for S3, where the gap was larger (−0.047). One validation
-  band is a weak guide to a gain this small.
+- By stratum, the validation band foresaw S4's held-out read (descriptive, post hoc, the gate's item bootstrap).
+  Step 2,000 against step 0 read worse on the 63 centred mixes, −0.013 [−0.018, −0.008] with 16 better, and better
+  on the 73 off-centre ones, +0.023 [+0.013, +0.034] with 53 better. The gate's pooled +0.0065 mixes the two. Held
+  out, both kept their sign and shrank: centred −0.005, off-centre +0.011, neither decided. The gate pools the
+  strata, as declared, so it let through a pick that validation already showed worse on centred mixes. A later
+  declaration should gate per stratum.
 - Off-centre, S4 is undecided, not failed: +1.55 dB and read +0.011, four bands up and one down (Dunning Kruger,
   −0.036). `s3ens` showed a similar lead there (+0.016, three of five). The two aren't independent evidence: they
   share the bands, the comparator and S3's training data.
 - Doubles: S4 is far ahead of the routed chain, which keeps one copy of a double. That cell is out of the rule.
 - **The stop rule.** S4 is null, so by the plan no further trained candidate is read on these five bands without a
-  new declaration that weighs a fresh held-out set. The best by the results is today's routed chain: `xlst_mdxc`
+  new declaration that weighs a fresh held-out set. The best by the measuring stick is today's routed chain: `xlst_mdxc`
   for a centre hint, and `steer_xlmdxc` for a side hint with S3 beside it on the picker.
 - **The product** isn't changed by this read. Its default input is still the mono stem, `xlst_mdxc` is behind a
   flag, and neither `steer_xlmdxc` nor S3 is in it.
-- **Next:** any new separator candidate, or settling the off-centre leads, needs a fresh held-out set. That's a new
-  declaration, so it goes to the user first.
+- **Next:** by the plan, the measuring stick's choice goes to the user's ear on R1's songs, which decides the
+  product's default. Their parts are centred, so that's `xlst_mdxc` against today's mono stem; the user's ranking
+  page for them is open, with one song started. The side hint is an oracle here, so a side part without a person
+  needs a side detector. Any further trained candidate, or settling the off-centre leads, needs a new declaration
+  that weighs a fresh held-out set, so it goes to the user first.
 
 **What it can't say.** S0's caveats hold: built mixes, amp-sim targets, the oracle hint. Five bands make the
 band-clustered intervals wide. The comparator's held-out numbers were seen in A3's read and S3's. S4's were not
-seen before this read. The trained choice carries a small selection bias, as the plan notes.
+seen before this read. No hint had more than one qualifier, so `s3-choose` chose nothing by the held-out read and
+adds no selection bias. Three candidates were read on the same bands, so one qualifying by chance was more likely
+(Amendment 4).
 
 **Files:** `s0/read-s3-s4-main.json`, `s1b-split/read-s3-s4-split.json`, `s4-decision.json` and
 `trained-choice.json` beside them, and `s4/run/pick.json`.
