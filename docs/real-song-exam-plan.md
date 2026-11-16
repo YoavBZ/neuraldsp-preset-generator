@@ -79,9 +79,9 @@ track and judge lag come from the existing contexts (`pipeline_fix.vreal_ctx`, `
 - **The released mix.** Each preview's sha256 must equal `alignment.json`'s. It is decoded whole (libsndfile, the
   alignment's own decoder) to a neutral-named float WAV at its source rate, so the product reads the very samples the
   alignment measured. A crop's place in the file is its session time less the stored per-crop offset (`alignment.json`,
-  session frame − preview frame). Each stage F crop's GCC check is re-run on the decoded file and must equal the stored
-  one; T3's crop (never measured in its preview) gets the same check here, and a failure drops the unit from the
-  released-mix arms (a stop, for a decision before going on). Each crop's unity sum must match its `mix.wav`, and each
+  session frame − preview frame). Each stage F crop must sit in `alignment.json`'s crops at its own window, and its
+  GCC check is re-run on the decoded file and must equal the stored one; T3's crop (never measured in its preview)
+  gets the same check here, and a failure drops the unit from the released-mix arms (a stop, for a decision before going on). Each crop's unity sum must match its `mix.wav`, and each
   session DI its `di.wav` (correlation at least 0.999), which ties the time bases.
 - **The unity sum** (for M-unity only): the session's unity mono sum of the crop's `included_mix_tracks`, whole song
   (`mix_previews.unity_sum`), as a float WAV at 48 kHz.
@@ -124,19 +124,40 @@ at this branch's commit, checked to name no V-real title or band).
 - **A fresh root,** `~/gtr-q`, holding only the venv (the routing study's, copied whole, checked to run as itself), the
   plugin, the runs' settings and this exam's runs. The routing study's own folder (`~/gtr-session`) holds runs on these
   same songs, their results and arms, so it is not used.
+- **One run at a time** (`--workers 1`): the sandbox's temp folders are shared between runs.
 - **Each run's settings** are the routing study's (which deny reading the data root, `~/projects`, the session
-  transcripts and the temp scratch space) plus `~/.claude`, `~/gtr-session` and every other run's folder of this exam.
+  transcripts and the temp scratch space), plus a read-deny for every entry of the home folder but `~/gtr-q` and the
+  venv's base interpreter (`~/.pyenv`) (so `~/shortlist-sandboxes`, which holds earlier song-only research on two of
+  these songs, `~/.codex`, `~/.claude.json` and the shell and Python histories are denied), for every `~/.claude`
+  entry but Claude Code's own shell files (`shell-snapshots`, `session-env`), for every entry of the sandbox's shared
+  temp (`/tmp/claude-501`) but the run's own folder there, and for every other run's folder; edits are denied in the
+  plugin and the venv; `TMPDIR` is set to the run's own `tmp` folder. The lists are made at each run's start.
+- **The prompt asks the run to keep every file, temporary ones too, in its own folder** (`./tmp` for scratch).
+- **The shared folders are hashed** (the plugin's bytes, the venv's file sizes and times, Python's bytecode caches left
+  out) before and after each run and at collection; a change stops the research for the user.
 - Each gets the whole song as `song-NN.flac` (rewritten with no metadata; this copy alone is clipped to ±1), the title
   and artist, the span, pack Morgan, no listening page, an empty data folder (so no learned notes), and no model flag.
   A run with no result is asked once more with the re-check's non-answer.
-- **The audit (guard 5)** excludes a run on any of: a tool call naming the project's data, repository, documents, tests
-  or the earlier routing runs; a call naming a path outside the run's own folder, the plugin, the venv, the factory
-  presets (`/Library/Audio/`) and ordinary scratch space (`/tmp`, `/var/folders`), or under Claude's own scratch space;
-  a relative `../` in a call; the user's account name (any case) in a web search or fetch; a web result naming the
-  project; a file tool's result naming the repository, the earlier runs, Claude's folders, the data root's `learn`,
-  `references`, `listening` or `handover` folders, or another run's folder. Other outside paths a result names are
-  recorded, not a stop (the plugin's own text names its default data root). A wrong plugin version or model, or no
-  readable result, excludes it too.
+- **The audit (guard 5)** excludes a run on any of:
+  - a tool call naming the project's data, repository, documents, tests or earlier research (the routing runs,
+    `~/shortlist-sandboxes`);
+  - a call naming a path outside the run's own folder, the plugin, the venv and the factory presets (`/Library/Audio/`),
+    other than ordinary scratch space (`/tmp`, `/var/folders`, recorded); the sandbox's shared Claude temps
+    (`/tmp/claude-501`, `/tmp/claude`) are a stop but for the run's own folder in them;
+  - a shell command run on a bare `/` (`cd /`, `find /`), or a file tool given `/`;
+  - a `..` in a shell command or a file tool's path that resolves (a relative path against the run's folder) outside
+    those roots;
+  - the user's account name (any case) in a web search or fetch; a web result naming the project;
+  - a file tool's result naming a home path outside the allowed roots (but a path the plugin's own text names, such as
+    its default data root), a file in a shared Claude temp other than the run's own, or another run's folder.
+  - Recorded, not a stop, for the independent audit: scratch paths named in calls and results, the shared temp's own
+    name echoed in a result, the plugin's own paths quoted in results, and any other path a result names.
+  - A wrong plugin version or model, or no readable result, excludes it too.
+- **The expected exclusion rate,** from this audit replayed on the routing re-check's 83 stored transcripts (same
+  model, prompt style and sandbox; paths remapped to this root; zero renders): 24 of 83 (29%) excluded, 23 of them for
+  writing a spec to a shared Claude temp (`$TMPDIR` in the sandbox) and 1 for a `..` out of the run. Those runs had
+  neither the keep-in-your-folder line nor their own `TMPDIR`, so the rate here should be lower; at 29% a unit ends with
+  no R after its one rerun about 8% of the time (about one unit in ten).
 
 **When research fails** (declared now, the orchestrator's default):
 - A unit takes its first run that passed. `research-prepare --again` makes a fresh folder only for a unit whose runs were
@@ -144,6 +165,10 @@ at this branch's commit, checked to name no V-real title or band).
 - A unit that still has no passing run has no R: M runs on the label's class (so it has no M-lab), the unit leaves the
   primary row (M − R) and the other R rows, and stays in every other row. The count is stated beside the primary.
 - If no unit gets a passing run (the runner does not work here), the exam stops and hands back for the user.
+
+**When the product fails** (declared now): a chain arm that ends without a `preset.json` (a stage refused or crashed)
+is logged and the chain goes on with the other runs (M-x, M-unity and M-lab skip a unit whose M failed); `answers` then
+refuses, and the exam stops before any judge render for the user's decision.
 
 ## The guards (each a stop; before any judge render)
 
@@ -155,7 +180,7 @@ at this branch's commit, checked to name no V-real title or band).
 3. The adopted pair's checkpoints hash to their run records and to `adopted-model.json`.
 4. **The chain wrapper reproduces one stored R1 run** (`r1/cut-it-out`): from that run's stored window files, the
    answers, the stem features, the 12 stock-DI renders' loudness, the pick's distances (to 1e-9), the pick, the output
-   gain and the written preset must equal the stored ones. It proves the wrapper, the environments, the model, the stock
+   gain (its whole record) and the written preset must equal the stored ones. It proves the wrapper, the environments, the model, the stock
    DIs and the renderer reproduce R1's stages from the answers to the written preset; it does not test the selector,
    X-LANCE or `xlst_mdxc`. It reads `window.npz`, which holds 10 s of the R1 song's mix and its stem, copied to
    `exam/r1-repro/work` (nothing of it goes to git); the song's own file is not read, and the window stage is not
@@ -195,6 +220,8 @@ at this branch's commit, checked to name no V-real title or band).
   oracle: the amp is picked on the half it is scored on); L − S and M − S on V-real-10, and (M − S) / (L − S); M − FT,
   M − D_fix and M − RcG on M's amp (stored). The R rows read the units with R; R-route's, the units with R-route.
 - **The loudness row:** M's render loudness against S's of M's own class on M's amp (EX-Sm where the classes differ).
+- The report prints, beside the primary row, its held halves, those dropped (S not finite), the refused answers scored
+  as S, and the units without R.
 - **Zero-render tables:** research's class against the label; each chain window (start, how chosen, exposure, overlap
   with the crop, the target's DI activity in it); each amp pick and its cosine margin; M's knob distance from C and
   C-own; M's movement between its input variants against its movement between units of one class (the review's "is it
@@ -239,7 +266,9 @@ carries the goal check.
 ## The stop rule
 
 One build, one read. No arm, span, class, window or preset changes after the first judge render. The score rows are
-reported once every judge file exists and the guards pass; the page is read once. A rerun happens only for a failed
+reported once every judge file exists and the guards pass, and the report's sha256 goes into `phase_exam_outcome`; the
+report refuses if any report exists. The page is read once: `score` refuses once `score.json` exists (and keeps the raw
+export beside it), and `page --force` refuses once answers exist. A rerun happens only for a failed
 guard, and is reported. Nothing is adopted. Afterwards V-real is recorded as read once more; a later candidate is
 compared with these stored renders, hash-checked, and its read declared as such.
 
@@ -291,6 +320,10 @@ compared with these stored renders, hash-checked, and its read declared as such.
 - **M-x and M-unity** start at M's own window, so each changes one stage; the planner's commands reran the selector.
 - **The guards gate** the chain, the renders and the report, and their records are hashed into the ledger; the classes
   and `research.json` are checked and locked between the chain and the answers.
+- **The research runs go one at a time** with per-run settings that deny the whole home folder but this root and the
+  venv's interpreter, the shared temps but each run's own folder, and edits to the plugin and the venv; the plugin and
+  the venv are hashed around each run; the audit's rate on the stored re-check transcripts is stated above.
+- **A product failure** (a chain arm without a preset) stops before the answers, for the user.
 - **S of M's class** (EX-Sm) is rendered where the classes differ, for the loudness row.
 - **The report** drops a held half where S is not finite, as the plan says, and stops only on a missing answer; it
   runs once.

@@ -80,25 +80,28 @@ PLUGIN = WORK / "plugin"
 VENV = WORK / "venv"
 SETTINGS_DIR = WORK / "settings"
 OLD_WORK = pathlib.Path.home() / "gtr-session"    # the routing study's runs on these songs: denied to every run
-DENY = ("~/ndsp-presets/**", "//Users/yoavbz/ndsp-presets/**", "//Users/yoavbz/projects/**", "~/.claude/**",
-        "//private/tmp/claude-501/**", "~/gtr-session/**", "//Users/yoavbz/gtr-session/**")
+HOME = str(pathlib.Path.home())
+HOME_KEEP = ("gtr-q", ".pyenv")       # the home entries a run may read: this root, and the venv's base interpreter
+CLAUDE_KEEP = ("shell-snapshots", "session-env")   # Claude Code's own shell files a sandboxed command reads
+CLAUDE_TMP = ("/private/tmp/claude-501", "/tmp/claude-501", "/private/tmp/claude", "/tmp/claude")   # the sandbox's
+#             shared temps (Claude Code's $TMPDIR inside its sandbox): a stop, but for the run's own folder in them
 PLUGIN_PARTS = ("skills", "scripts", "packs", "reference", "analysis", "format", "match", "samples", ".claude-plugin",
                 "pyproject.toml", "LICENSE", "NOTICE.md")   # the routing study's scrubbed plugin
 LEAK_CALLS = ("ndsp-presets", "/Users/yoavbz/projects", "YoavBZ", "neuraldsp-preset-generator/docs", "validation-",
               "generate-routing", "real-song-exam", "mix-previews", "pipeline-fix", "learn/trusted-data",
-              "gtr-session", ".claude/projects")
+              "gtr-session", ".claude/projects", "shortlist-sandboxes")
 LEAK_RESULTS = ("YoavBZ/neuraldsp-preset-generator", "real-song-exam", "validation-crops")
 ACCOUNT = "yoavbz"                    # the user's account name: never in a web search or fetch (case-insensitive)
 RESEARCH_TOOLS = ("WebSearch", "WebFetch")
 FILE_TOOLS = ("Bash", "Read", "Glob", "Grep", "Edit", "Write", "NotebookEdit")
-ALLOWED_ROOTS = ("/Library/Audio/", "/tmp/", "/private/tmp/", "/private/var/folders/", "/var/folders/")   # the
-#                 factory presets and the installed plugin, and scratch space, beside the run's own paths
-PATH_RE = re.compile(r"""(?:^|(?<=[\s"'=(<>|;&,]))(~(?=/|\s|$|["'])[^\s"'\\;|&<>()]*|/(?:Users|private|tmp|var|Volumes|opt|"""
-                     r"""home|Library|Applications|System)\b[^\s"'\\;|&<>()]*)""")
-SENSITIVE_CALL = ("ndsp-presets", "/projects", "gtr-session", "/.claude", "claude-")   # a stop in a call, wherever
-SENSITIVE_RESULT = ("/projects/", "gtr-session", "/.claude/", "claude-", "ndsp-presets/learn", "ndsp-presets/references",
-                    "ndsp-presets/listening", "ndsp-presets/handover")   # a stop in a file tool's result (the plugin's
-#                     own text names its default data root and its auditions and tools folders: recorded, no stop)
+ALLOWED_ROOTS = ("/Library/Audio/",)  # the factory presets and the installed plugin, beside the run's own paths
+SCRATCH_ROOTS = ("/tmp/", "/private/tmp/", "/var/folders/", "/private/var/folders/")   # recorded, not a stop
+PATH_RE = re.compile(r"""(?:^|(?<=[\s"'=(<>|;&,]))(~(?=/|\s|$|["'])[^\s"'\\;|&<>()]*|/(?:Users|private|tmp|var|Volumes|"""
+                     r"""opt|home|Library|Applications|System)\b[^\s"'\\;|&<>()]*)""")
+ROOT_RE = re.compile(r"""(?:^|[\s;&|(])(?:cd|ls|find|du|tree|grep|egrep|rg|cat|stat|mdfind|locate|fd|tar|cp|rsync|"""
+                     r"""open|python3?)\b[^;&|\n]*?\s/(?=$|[\s;&|)])""")   # a shell command on a bare "/" (cd /, find /)
+PATH_KEYS = ("file_path", "path", "notebook_path")   # the file tools' path inputs
+TOKEN_RE = re.compile(r"""[^\s"';&|()<>]+""")
 TITLE_NAMES = (r"wickerman", r"eat the feeder", r"femme", r"wall of death", r"colour me red", r"diesel ?13",
                r"let'?s dance", r"szymon", r"get out of bed", r"magician'?s nephew", r"zeno", r"it was my fault",
                r"atlantis bound", r"cambridge")
@@ -106,6 +109,9 @@ PROMPT = """I'd like a Morgan Amps Suite preset for the electric guitar in "{son
 
 The file ./{audio} is the whole song; the part I mean is the electric guitar playing from {start} to {end} in that
 file. Use the generate skill of the neuraldsp-preset-generator plugin.
+
+Keep every file you write, temporary ones too, inside this folder (use ./tmp for scratch files), not in /tmp or
+anywhere else.
 
 To save you asking: the pack is Morgan Amps Suite; I don't want the listening page; don't install anything or save
 notes. Run the plugin's Python scripts with {python} and pass --data-dir {data} where a script takes it.
@@ -378,7 +384,7 @@ def text_of(obj):
     return "" if obj is None else str(obj)
 
 
-def paths_in(text, home=str(pathlib.Path.home())):
+def paths_in(text, home=HOME):
     """The absolute (or ~) paths a tool call's or result's text names, each normalised (`..` resolved, ~ expanded)."""
     out = []
     for m in PATH_RE.finditer(text):
@@ -388,21 +394,85 @@ def paths_in(text, home=str(pathlib.Path.home())):
     return out
 
 
+def under(p, roots):
+    return any(p == os.path.normpath(str(r)) or p.startswith(os.path.normpath(str(r)).rstrip("/") + "/") for r in roots)
+
+
 def outside(paths, allowed):
-    """The paths not under any of `allowed` (absolute roots: the run's own folder, the plugin, the venv, ALLOWED_ROOTS)."""
-    roots = [os.path.normpath(str(a)) for a in allowed]
-    return sorted({p for p in paths if not any(p == r or p.startswith(r.rstrip("/") + "/") for r in roots)})
+    """The paths not under any of `allowed` (absolute roots)."""
+    return sorted({p for p in paths if not under(p, allowed)})
 
 
-def audit_transcript(lines, allowed=(), runs_root=None):
-    """The research run's audit (plan guard 5). Excludes the run: a tool call naming the project's data, repository,
-    tests or the earlier routing runs (LEAK_CALLS); a call naming a path outside `allowed` (the run's own folder, the
-    plugin, the venv, the factory presets, scratch space) or under a sensitive root (SENSITIVE_CALL), or a relative
-    `../`; the user's account name in a web search or fetch; a web result naming the project (LEAK_RESULTS); a file
-    tool's result naming a path under SENSITIVE_RESULT or another run's folder (under `runs_root`). Every other outside
-    path a result names is recorded ("result_paths"), not a stop: the plugin's own text names its default data root.
-    lines: the stream-json text. -> {calls, leaks, seen, outside_calls, result_paths, result_leaks, tools, init}."""
+def own_tmp(folder):
+    """A run's own folder in the sandbox's shared temp (Claude Code names it after the run's working folder)."""
+    name = str(folder).replace("/", "-")
+    return tuple(f"{r}/{name}" for r in CLAUDE_TMP)
+
+
+def dotdot(text, allowed, cwd=None):
+    """`..` components that may leave the run: each token with a `..` component, resolved (an absolute or ~ path as
+    it is, a relative one against the run's folder `cwd`), outside `allowed`. -> [token]."""
+    out = []
+    for tok in TOKEN_RE.findall(text):
+        if not re.search(r"(?:^|/)\.\.(?:/|$)", tok):
+            continue
+        if tok.startswith(("/", "~")):
+            p = os.path.normpath(HOME + tok[1:] if tok.startswith("~") else tok)
+        else:
+            p = os.path.normpath(os.path.join(str(cwd or "/nonexistent-cwd"), tok))
+        if not under(p, allowed):
+            out.append(tok)
+    return out
+
+
+def targets_root(name, inp):
+    """A tool call aimed at the file system's root: a shell command on a bare "/", or a file tool given "/"."""
+    if name == "Bash":
+        return bool(ROOT_RE.search(str((inp or {}).get("command", ""))))
+    return any(str((inp or {}).get(k, "")).rstrip() == "/" for k in PATH_KEYS)
+
+
+def call_paths_text(name, inp):
+    """The text of a call that names files: a shell command, or a file tool's path inputs."""
+    if name == "Bash":
+        return str((inp or {}).get("command", ""))
+    return "\n".join(str((inp or {}).get(k, "")) for k in PATH_KEYS)
+
+
+def classify(p, allowed, own, runs, plugin_text, result):
+    """One named path's verdict: "ok" (the run's own paths, the plugin, the venv, the factory presets, its own temp),
+    "tmp" (other scratch space: recorded), "plugin text" (a result quoting the plugin's own text: recorded), "stop"
+    (the shared Claude temp, another run, anything else in a call; in a result, a home path outside the allowed roots)
+    or "recorded" (any other result path)."""
+    if under(p, own):
+        return "ok"
+    if result and p in CLAUDE_TMP:
+        return "tmp"                                    # the shared temp's own name (an echoed $TMPDIR), not its files
+    if under(p, CLAUDE_TMP) or (runs and p.startswith(runs.rstrip("/") + "/") and not under(p, allowed)):
+        return "stop"
+    if under(p, allowed):
+        return "ok"
+    if result and p in plugin_text:
+        return "plugin text"
+    if under(p, SCRATCH_ROOTS):
+        return "tmp"
+    if not result:
+        return "stop"
+    return "stop" if p == HOME or p.startswith(HOME + "/") else "recorded"
+
+
+def audit_transcript(lines, allowed=(), runs_root=None, own=(), plugin_text=frozenset()):
+    """The research run's audit (plan guard 5). A stop (the run is excluded): a tool call naming the project's data,
+    repository, documents, tests or earlier research (LEAK_CALLS); a call naming a path outside `allowed` (the run's own
+    folder, the plugin, the venv, the factory presets) other than ordinary scratch space, or in the sandbox's shared
+    Claude temp but for the run's own folder there (`own`), or another run's folder; a call targeting `/`; a `..` that
+    may leave the run; the user's account name in a web search or fetch; a web result naming the project
+    (LEAK_RESULTS); a file tool's result naming a home path outside the allowed roots (but the plugin's own text,
+    `plugin_text`), the shared Claude temp or another run. Recorded, not a stop: scratch paths (`tmp_calls`,
+    `tmp_results`) and other result paths (`result_paths`). lines: the stream-json text. -> {calls, leaks, seen,
+    outside_calls, result_leaks, tmp_calls, tmp_results, plugin_text_results, result_paths, tools, init}."""
     calls, web_calls, results, file_results, tools, init = [], [], [], [], {}, (None, None, None)
+    file_calls, root_calls = [], 0
     names = {}
     for line in lines:
         try:
@@ -418,6 +488,8 @@ def audit_transcript(lines, allowed=(), runs_root=None):
             if c.get("type") == "tool_use":
                 text = text_of(c.get("input"))
                 calls.append(text)
+                file_calls.append(call_paths_text(c.get("name"), c.get("input")))
+                root_calls += targets_root(c.get("name"), c.get("input"))
                 names[c.get("id")] = c.get("name")
                 tools[c.get("name")] = tools.get(c.get("name"), 0) + 1
                 if c.get("name") in RESEARCH_TOOLS:
@@ -429,18 +501,34 @@ def audit_transcript(lines, allowed=(), runs_root=None):
                     results.append(text)
                 elif tool in FILE_TOOLS:
                     file_results.append(text)
+    runs = os.path.normpath(str(runs_root)) if runs_root else None
     leaks = {m for m in LEAK_CALLS for call in calls if m in call}
     leaks |= {"account name in a web call" for w in web_calls if ACCOUNT in w.lower()}
-    leaks |= {"../ in a call" for call in calls if re.search(r"(?<![\w/.])\.\./", call)}
-    cp = [p for call in calls for p in paths_in(call)]
-    oc = sorted(set(outside(cp, allowed) if allowed else []) | {p for p in cp if any(s in p for s in SENSITIVE_CALL)})
-    rall = [p for r in file_results for p in paths_in(r)]
-    rp = outside(rall, allowed) if allowed else []
-    runs = os.path.normpath(str(runs_root or RUNS))
-    rl = sorted({p for p in rall if any(s in p for s in SENSITIVE_RESULT)} | {p for p in rp if p.startswith(runs + "/")})
+    if root_calls:
+        leaks.add("a call targets /")
+    cwd = allowed[0] if allowed else None
+    dd = sorted({tok for call in file_calls for tok in dotdot(call, allowed, cwd)})
+    if dd:
+        leaks.add(f".. that may leave the run: {dd[:3]}")
+    verdict = {"oc": set(), "tc": set(), "rl": set(), "tr": set(), "pt": set(), "rp": set()}
+    for call in calls:
+        for p in paths_in(call):
+            v = classify(p, allowed, own, runs, plugin_text, False)
+            if v == "stop":
+                verdict["oc"].add(p)
+            elif v == "tmp":
+                verdict["tc"].add(p)
+    for r in file_results:
+        for p in paths_in(r):
+            v = classify(p, allowed, own, runs, plugin_text, True)
+            key = {"stop": "rl", "tmp": "tr", "plugin text": "pt", "recorded": "rp"}.get(v)
+            if key:
+                verdict[key].add(p)
     seen = sorted({m for m in LEAK_RESULTS for r in results if m in r})
-    return {"calls": len(calls), "leaks": sorted(leaks), "seen": seen, "outside_calls": oc, "result_paths": rp,
-            "result_leaks": rl, "tools": tools, "init": init}
+    return {"calls": len(calls), "leaks": sorted(leaks), "seen": seen, "outside_calls": sorted(verdict["oc"]),
+            "result_leaks": sorted(verdict["rl"]), "tmp_calls": sorted(verdict["tc"]),
+            "tmp_results": sorted(verdict["tr"]), "plugin_text_results": sorted(verdict["pt"]),
+            "result_paths": sorted(verdict["rp"]), "tools": tools, "init": init}
 
 
 def audit_why(au):
@@ -450,17 +538,66 @@ def audit_why(au):
             + [f"a file tool's result names {p}" for p in au["result_leaks"]])
 
 
-def run_settings(tag, others, base):
-    """One research run's sandbox settings: the routing study's (`base`), its reads also denied the earlier routing
-    runs and every other run's folder of this exam."""
+def plugin_paths(root):
+    """Every path the plugin's own text names (`paths_in` over its text files): a result quoting it is not a leak."""
+    out = set()
+    for f in pathlib.Path(root).rglob("*"):
+        if f.is_file() and f.suffix.lower() in (".md", ".json", ".py", ".txt", ".toml"):
+            out |= set(paths_in(f.read_text(errors="ignore")))
+    return frozenset(out)
+
+
+def run_settings(tag, others, base, home_entries, claude_entries, tmp_entries, folder=None):
+    # tmp_entries: {shared temp root: [its entries]}
+    """One research run's sandbox settings: the routing study's (`base`), plus read-denies for every home entry but this
+    root and the venv's base interpreter (HOME_KEEP), every ~/.claude entry but Claude Code's own shell files
+    (CLAUDE_KEEP), every entry of the shared Claude temp but the run's own, and every other run's folder; edits denied
+    in the plugin and the venv; TMPDIR set to the run's own tmp folder."""
     s = json.loads(json.dumps(base))
     deny = list(s["permissions"]["deny"])
-    for d in DENY + tuple(f"//{str(RUNS / o).lstrip('/')}/**" for o in sorted(others) if o != tag):
-        r = f"Read({d})"
-        if r not in deny:
-            deny.append(r)
+
+    def add(rule):
+        if rule not in deny:
+            deny.append(rule)
+    for e in sorted(home_entries):
+        if e not in HOME_KEEP and e != ".claude":
+            add(f"Read(~/{e})")
+            add(f"Read(~/{e}/**)")
+    for e in sorted(claude_entries):
+        if e not in CLAUDE_KEEP:
+            add(f"Read(~/.claude/{e})")
+            add(f"Read(~/.claude/{e}/**)")
+    mine = {pathlib.PurePosixPath(x).name for x in own_tmp(folder or (RUNS / tag))}
+    for r, entries in sorted(tmp_entries.items()):
+        for e in sorted(entries):
+            if e not in mine:
+                add(f"Read(/{r}/{e})")
+                add(f"Read(/{r}/{e}/**)")
+    for o in sorted(others):
+        if o != tag:
+            add(f"Read(/{RUNS / o}/**)")
+    for d in (PLUGIN, VENV):
+        add(f"Edit(/{d}/**)")
     s["permissions"]["deny"] = deny
+    s["env"] = {**(s.get("env") or {}), "TMPDIR": str((folder or (RUNS / tag)) / "tmp")}
     return s
+
+
+def tree_sha(root, contents=True):
+    """One hash of a folder: every file's path and (with `contents`) its bytes, else its size and mtime; Python's
+    bytecode caches (`__pycache__`, written when a run imports a module) are left out."""
+    h = hashlib.sha256()
+    for f in sorted(pathlib.Path(root).rglob("*")):
+        if "__pycache__" in f.parts or f.suffix == ".pyc":
+            continue
+        if f.is_file() or f.is_symlink():
+            h.update(str(f.relative_to(root)).encode())
+            if contents and f.is_file():
+                h.update(f.read_bytes())
+            else:
+                st = f.lstat()
+                h.update(f"{st.st_size}|{st.st_mtime_ns}".encode())
+    return h.hexdigest()
 
 
 def pick_run(runs):
@@ -859,6 +996,8 @@ def cmd_inputs(args):
                                  "the released-mix arms (decide before going on)")
             stored = e["crops"].get(slug) or {}
             same = stored.get("crop_s") == [round(a / 48000, 2), round(b / 48000, 2)]   # T3's crop: another window
+            if parts[slug]["kind"] == "stagef" and not same:
+                raise SystemExit(f"{slug}: a stage F crop not in alignment.json's crops at its window")
             if same:                                   # stage F's: the stored check must reproduce on the decoded file
                 sc = stored.get("crop_gcc_check") or {}
                 if (not stored.get("covered") or chk["deviation_samples"] != sc.get("deviation_samples")
@@ -1154,7 +1293,8 @@ def cmd_r1_repro(_args):
     out["passes"] = bool(out["answers_equal"] and out["pick"][0] == out["pick"][1] and out["settings_equal"]
                          and out["render_lufs_equal"] and out["preset_file_values_equal"]
                          and len(a1["stem_feat"]) == len(a0["stem_feat"]) and feat <= REPRO_TOL
-                         and out["distances_max_abs_diff"] <= REPRO_TOL and a1["gain_db"] == a0["gain_db"])
+                         and out["distances_max_abs_diff"] <= REPRO_TOL and a1["gain_db"] == a0["gain_db"]
+                         and p1["output_gain"] == p0["output_gain"])
     P.save(ex_dir() / "r1-repro.json", out)
     print(json.dumps(out, indent=1))
     if not out["passes"]:
@@ -1210,7 +1350,17 @@ def build_root():
         raise SystemExit(f"the scrubbed plugin names V-real titles or bands: {hits}")
     version = json.loads((PLUGIN / ".claude-plugin" / "plugin.json").read_text())["version"]
     return {"commit": commit, "version": version, "files_checked": n, "path": str(PLUGIN), "venv": str(VENV),
-            "venv_prefix": chk.stdout.strip()}
+            "venv_prefix": chk.stdout.strip(), "plugin_tree_sha256": tree_sha(PLUGIN),
+            "venv_tree_sha256": tree_sha(VENV, contents=False)}
+
+
+def shared_unchanged(m):
+    """The plugin (its bytes) and the venv (its files' sizes and times) as built: runs must not change them."""
+    got = {"plugin_tree_sha256": tree_sha(PLUGIN), "venv_tree_sha256": tree_sha(VENV, contents=False)}
+    bad = [k for k, v in got.items() if m["plugin"].get(k) != v]
+    if bad:
+        raise SystemExit(f"the research runs' shared folders changed ({bad}): stop for the user")
+    return got
 
 
 def cmd_research_prepare(args):
@@ -1289,21 +1439,27 @@ def claude_run(folder, prompt, log, settings, resume=None):
 
 
 def cmd_research_route(args):
-    """Each prepared folder through a fresh sandboxed `claude -p` with the scrubbed plugin; its settings deny the data
-    root, the repository, the session transcripts, the earlier routing runs and every other run's folder; a run with no
-    result.json is asked once more with the re-check's non-answer. Wall time recorded."""
-    from concurrent.futures import ThreadPoolExecutor
-
+    """Each prepared folder, one at a time (the sandbox's temp is shared), through a fresh sandboxed `claude -p` with the
+    scrubbed plugin (`run_settings`: every home entry but this root and the venv's interpreter, every other run and the
+    shared Claude temp but the run's own denied; the plugin and the venv not editable); a run with no result.json is
+    asked once more with the re-check's non-answer. The plugin and the venv are hashed before and after each run (a
+    change stops the research). Wall time recorded."""
     GR = _gr()
     entry()
+    if args.workers != 1:
+        raise SystemExit("research runs one at a time (--workers 1): runs would share the sandbox's temp")
     m = research_map()
     todo = sorted(t for t in m["runs"] if not (RUNS / t / "transcript.jsonl").exists())
     SETTINGS_DIR.mkdir(parents=True, exist_ok=True)
-    for tag in todo:
-        P.save(SETTINGS_DIR / f"{tag}.json", run_settings(tag, list(m["runs"]), GR.SETTINGS))
 
     def one(tag):
         folder, st = RUNS / tag, SETTINGS_DIR / f"{tag}.json"
+        shared_unchanged(m)
+        (folder / "tmp").mkdir(exist_ok=True)
+        P.save(st, run_settings(tag, list(m["runs"]), GR.SETTINGS, [p.name for p in pathlib.Path.home().iterdir()],
+                                [p.name for p in (pathlib.Path.home() / ".claude").iterdir()],
+                                {r: [p.name for p in pathlib.Path(r).iterdir()] for r in CLAUDE_TMP
+                                 if r.startswith("/private/") and pathlib.Path(r).is_dir()}, folder))
         t0 = time.time()
         with open(folder / "transcript.jsonl", "w") as log:
             claude_run(folder, (folder / "prompt.txt").read_text(), log, st)
@@ -1317,11 +1473,11 @@ def cmd_research_route(args):
         (folder / "asked.txt").write_text("yes\n" if asked else "no\n")
         (folder / "wall.json").write_text(json.dumps({"seconds": round(time.time() - t0, 1),
                                                       "end": time.strftime("%Y-%m-%d %H:%M:%S")}))
+        shared_unchanged(m)
         return tag, ("result" if (folder / "result.json").exists() else "NO RESULT") + (", asked" if asked else "")
 
-    with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        for tag, status in pool.map(one, todo):
-            print(tag, status, flush=True)
+    for tag in todo:
+        print(*one(tag), flush=True)
     print(f"EXAM RESEARCH-ROUTE DONE: {len(todo)} runs")
 
 
@@ -1346,7 +1502,9 @@ def cmd_research_collect(_args):
     GR = _gr()
     entry()
     m = research_map()
+    shared_unchanged(m)
     pack = load_pack("morgan")
+    ptext = plugin_paths(PLUGIN)
     root, plan, drift, dirs, parts, ms = P.vreal_ctx()
     runs, by_unit = {}, {}
     for tag, r in sorted(m["runs"].items(), key=lambda kv: kv[1]["made"]):
@@ -1354,7 +1512,8 @@ def cmd_research_collect(_args):
         if not (folder / "transcript.jsonl").exists():
             raise SystemExit(f"{tag}: not run")
         au = audit_transcript((folder / "transcript.jsonl").read_text().splitlines(),
-                              allowed=(folder, PLUGIN, VENV, *ALLOWED_ROOTS), runs_root=RUNS)
+                              allowed=(folder, PLUGIN, VENV, *ALLOWED_ROOTS), runs_root=RUNS, own=own_tmp(folder),
+                              plugin_text=ptext)
         session, plugins, model = au.pop("init")
         version = next((p.get("version") for p in plugins or [] if p.get("name") == "neuraldsp-preset-generator"), None)
         why = audit_why(au)
@@ -1374,8 +1533,8 @@ def cmd_research_collect(_args):
         if not why:
             try:
                 row.update(build_r(folder, res, r["unit"], pack, GR, R1E, LO))
-            except (RuntimeError, SystemExit, ValueError, KeyError, TypeError) as e:
-                why.append(f"presets: {e}")
+            except (RuntimeError, SystemExit, ValueError, KeyError, TypeError, StopIteration) as e:
+                why.append(f"presets: {e or type(e).__name__}")
         row["excluded"] = bool(why)
         runs[tag] = row
         by_unit.setdefault(r["unit"], []).append((r["made"], tag, row["excluded"]))
@@ -1445,8 +1604,8 @@ def build_r(folder, res, key, pack, GR, R1E, LO):
         names.append("route")
         GR._replay(cmd, pathlib.Path(tpl), d / "replay.xml", folder)
         names.append("replay")
-    except (RuntimeError, ValueError, KeyError) as e:
-        route_error = str(e)
+    except (RuntimeError, ValueError, KeyError, StopIteration) as e:   # _replay's next() on a malformed command
+        route_error = str(e) or type(e).__name__
     presets = {}
     for name in names:
         s, ed = R1E.parse_preset(d / f"{name}.xml", pack)
@@ -1541,9 +1700,11 @@ def cmd_chain(args):
             waited = 0
             if arm == "Mlab":
                 m = chain_dir("M", u["key"])
+                if not all((m / f).exists() for f in ("window.json", "window.npz", "preset.json")):
+                    print(f"[{arm}] {u['key']}: M has no window or preset; skipped", flush=True)
+                    failed.append(f"{arm}|{u['key']} (no M)")
+                    continue
                 for f in ("window.json", "window.npz"):
-                    if not (m / f).exists():
-                        raise SystemExit(f"{u['key']}: M-lab needs M's {f}")
                     if not (w / f).exists():
                         shutil.copy2(m / f, w / f)
             else:
@@ -1564,7 +1725,8 @@ def cmd_chain(args):
             print(f"[{arm}] {u['key']} exit {rc} in {sec:.0f} s", flush=True)
             if rc:
                 failed.append(f"{arm}|{u['key']}")
-    print(f"EXAM CHAIN DONE: {len(log)} runs logged, failed {failed}", flush=True)
+    print(f"EXAM CHAIN DONE: {len(log)} runs logged, failed {failed}"
+          + (" (a product failure: answers refuses; hand back for the user)" if failed else ""), flush=True)
 
 
 def cmd_cpick(_args):
@@ -2078,6 +2240,9 @@ def cmd_report(args):
     out["tables"] = json.loads((ex_dir() / "tables.json").read_text())
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     P.save(rp, out)
+    pr = out["rows"]["M - R (primary)"]
+    print(f"primary: {pr['directions']} held halves, {pr['base_dropped']} dropped (S not finite), "
+          f"{pr['refused_scored_as_S']} refused answers scored as S; units without R: {out['units_without_R']}")
     for name, r in out["rows"].items():
         c = r.get("all")
         if not c or c["mean"] is None:
@@ -2087,6 +2252,7 @@ def cmd_report(args):
         print(f"{name:<34} {c['mean']:+.3f}{iv}  bands {c['clusters_negative']}/{c['clusters']} better; parts "
               f"{c['parts_negative']}/{c['parts']}; part-weighted {c['part_weighted']:+.3f}")
     print(json.dumps({k: out[k] for k in ("share_of_headroom", "L_fresh_vs_stored", "output_gain_not_scored")}, indent=1))
+    print(f"record in the ledger's phase_exam_outcome: the report {rp.name}, sha256 {sha_file(rp)}")
     print("EXAM REPORT DONE")
 
 
@@ -2209,6 +2375,8 @@ def cmd_page(args):
     entry()
     P.require(PHASE_EAR)
     kp = ex_dir() / "page" / "key.json"
+    if (ex_dir() / "page" / "score.json").exists() or list((ex_dir() / "page").glob("answers-*")):
+        raise SystemExit("the page's answers exist: it is read once, never rebuilt")
     if kp.exists() and not args.force:
         raise SystemExit(f"{kp} exists: a rebuild hides the listener's stored answers (--force)")
     ans, amp_of = load_answers()
@@ -2280,6 +2448,8 @@ def cmd_score(args):
     """The page's read (plan section 8) from the listener's export (its last JSON line) -> exam/page/score.json."""
     entry()
     P.require(PHASE_EAR)
+    if (ex_dir() / "page" / "score.json").exists():
+        raise SystemExit("score.json exists: the page is read once")
     key = json.loads((ex_dir() / "page" / "key.json").read_text())
     for it in key["items"]:
         it["letters"] = {k: tuple(v) for k, v in it["letters"].items()}
@@ -2287,6 +2457,7 @@ def cmd_score(args):
     ex = json.loads(last)
     if ex.get("build") != key["build"]:
         raise SystemExit(f"{args.answers}: build {ex.get('build')}, this page's is {key['build']}")
+    shutil.copy2(args.answers, ex_dir() / "page" / f"answers-{key['build']}.txt")      # the raw export, for the audit
     rep = ear_read(key["items"], ex["answers"])
     rep["build"] = key["build"]
     P.save(ex_dir() / "page" / "score.json", rep)
@@ -2303,7 +2474,7 @@ def main(argv=None):
     rp.add_argument("--again", nargs="*", help="units whose run failed a guard: a fresh folder each")
     rp.set_defaults(fn=cmd_research_prepare)
     rr = sub.add_parser("research-route")
-    rr.add_argument("--workers", type=int, default=3)
+    rr.add_argument("--workers", type=int, default=1, help="1 only: the runs share the sandbox's temp")
     rr.set_defaults(fn=cmd_research_route)
     sub.add_parser("research-collect").set_defaults(fn=cmd_research_collect)
     ch = sub.add_parser("chain")

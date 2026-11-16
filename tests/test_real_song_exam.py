@@ -178,55 +178,87 @@ def ev_res(i, content):
 
 
 def test_audit_excludes_project_calls_and_flags_research_results():
-    run, plug, venv = "/Users/u/gtr-q/runs/abcde", "/Users/u/gtr-q/plugin", "/Users/u/gtr-q/venv"
-    allowed = (run, plug, venv, *X.ALLOWED_ROOTS)
-    ev = [{"type": "system", "subtype": "init", "session_id": "s1", "model": "m", "plugins": []},
-          ev_use("t1", "WebSearch", {"query": "Wickerman Eat The Feeder guitar"}),
-          ev_use("t2", "Bash", {"command": "ls ~/ndsp-presets/learn/exam"}),
-          ev_res("t1", "see github.com/YoavBZ/neuraldsp-preset-generator"),
-          ev_res("t2", [{"type": "text", "text": "YoavBZ/neuraldsp-preset-generator"}])]
-    au = X.audit_transcript([json.dumps(e) for e in ev] + ["not json"], allowed)
+    h = X.HOME
+    run, plug, venv, runs = f"{h}/gtr-q/runs/abcde", f"{h}/gtr-q/plugin", f"{h}/gtr-q/venv", f"{h}/gtr-q/runs"
+    allowed, own = (run, plug, venv, *X.ALLOWED_ROOTS), X.own_tmp(run)
+    kw = {"allowed": allowed, "runs_root": runs, "own": own, "plugin_text": frozenset({f"{h}/ndsp-presets"})}
+    init = {"type": "system", "subtype": "init", "session_id": "s1", "model": "m", "plugins": []}
+
+    def audit(*evs):
+        return X.audit_transcript([json.dumps(e) for e in (init, *evs)] + ["not json"], **kw)
+    au = audit(ev_use("t1", "WebSearch", {"query": "Wickerman Eat The Feeder guitar"}),
+               ev_use("t2", "Bash", {"command": "ls ~/ndsp-presets/learn/exam"}),
+               ev_res("t1", "see github.com/YoavBZ/neuraldsp-preset-generator"),
+               ev_res("t2", [{"type": "text", "text": "YoavBZ/neuraldsp-preset-generator"}]))
     assert au["init"] == ("s1", [], "m") and au["calls"] == 2
     assert "ndsp-presets" in au["leaks"] and au["seen"] == ["YoavBZ/neuraldsp-preset-generator"]   # web results only
     assert any("ndsp-presets" in p for p in au["outside_calls"]) and X.audit_why(au)
-    ok = [ev[0], ev_use("t3", "WebSearch", {"query": "Femme Wall Of Death guitar rig"}),
-          ev_use("t4", "Bash", {"command": f"cd {run} && {venv}/bin/python {plug}/scripts/show.py "
-                                           "'/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/Neural DSP/Hair Metal.xml'"}),
-          ev_use("t5", "Read", {"file_path": f"{plug}/skills/generate/../../reference/preset-spec.md"}),
-          ev_use("t6", "WebFetch", {"url": "https://example.com/learn/guitar", "prompt": "rig"}),
-          ev_res("t4", "data_root_origin: ~/ndsp-presets (installed-plugin default)")]
-    ok += [ev_use("t13", "Write", {"file_path": "/tmp/spec.json", "content": "{}"})]
-    au = X.audit_transcript([json.dumps(e) for e in ok], allowed, runs_root="/Users/u/gtr-q/runs")
-    assert X.audit_why(au) == [] and au["result_paths"]                       # a result's own path: recorded, no stop
-    for bad, why in ((ev_use("t7", "Bash", {"command": "cat ../xyzab/result.json"}), "../ in a call"),
-                     (ev_use("t8", "Read", {"file_path": "/Users/u/gtr-q/runs/xyzab/result.json"}), "outside"),
-                     (ev_use("t9", "Glob", {"pattern": "*", "path": "/Users/u/gtr-session/runs"}), "gtr-session"),
-                     (ev_use("t10", "WebSearch", {"query": "yoavbz guitar presets"}), "account name"),
-                     (ev_use("t11", "Bash", {"command": "ls ~"}), "outside")):
-        au = X.audit_transcript([json.dumps(ev[0]), json.dumps(bad)], allowed, runs_root="/Users/u/gtr-q/runs")
+    assert own[:2] == (f"/private/tmp/claude-501/{run.replace('/', '-')}", f"/tmp/claude-501/{run.replace('/', '-')}")
+    au = audit(ev_use("t3", "WebSearch", {"query": "Femme Wall Of Death guitar rig"}),
+               ev_use("t4", "Bash", {"command": f"cd {run} && {venv}/bin/python {plug}/scripts/show.py "
+                                                "'/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/Neural DSP/Hair Metal.xml'"}),
+               ev_use("t5", "Read", {"file_path": f"{plug}/skills/generate/../../reference/preset-spec.md"}),
+               ev_use("t6", "WebFetch", {"url": "https://example.com/learn/guitar", "prompt": "rig"}),
+               ev_use("t7", "Read", {"file_path": f"{plug}/.claude-plugin/plugin.json"}),
+               ev_use("t8", "Write", {"file_path": f"{own[0]}/spec.json", "content": "{}"}),
+               ev_use("t9", "Write", {"file_path": "/tmp/spec.json", "content": "{}"}),
+               ev_use("t10", "Bash", {"command": "python ./tmp/x.py && ls ./out"}),
+               ev_res("t4", f"data_root_origin: ~/ndsp-presets (installed-plugin default)\nusing /opt/homebrew/lib/x"),
+               ev_res("t10", "/var/folders/ab/T/x.wav"))
+    assert X.audit_why(au) == [], X.audit_why(au)
+    assert au["tmp_calls"] == ["/tmp/spec.json"] and au["tmp_results"] == ["/var/folders/ab/T/x.wav"]
+    assert au["plugin_text_results"] == [f"{h}/ndsp-presets"] and au["result_paths"] == ["/opt/homebrew/lib/x"]
+    for bad, why in ((ev_use("b1", "Bash", {"command": "cat ../xyzab/result.json"}), ".. that may leave"),
+                     (ev_use("b2", "Bash", {"command": "cd .. && ls"}), ".. that may leave"),
+                     (ev_use("b3", "Bash", {"command": "cd / && ls Users"}), "targets /"),
+                     (ev_use("b4", "Bash", {"command": "find / -name result.json"}), "targets /"),
+                     (ev_use("b5", "Read", {"file_path": f"{runs}/xyzab/result.json"}), "outside"),
+                     (ev_use("b6", "Glob", {"pattern": "*", "path": f"{h}/gtr-session/runs"}), "gtr-session"),
+                     (ev_use("b7", "WebSearch", {"query": "YoavBZ guitar presets"}), "account name"),
+                     (ev_use("b8", "Bash", {"command": "ls ~"}), "outside"),
+                     (ev_use("b9", "Write", {"file_path": "/tmp/claude-501/spec.json", "content": "{}"}), "outside"),
+                     (ev_use("b12", "Write", {"file_path": "/tmp/claude/spec.json", "content": "{}"}), "outside"),
+                     (ev_use("b10", "Read", {"file_path": f"{plug}/../runs/xyzab/prompt.txt"}), ".. that may leave"),
+                     (ev_use("b11", "Read", {"file_path": f"{h}/shortlist-sandboxes/x/notes.md"}), "shortlist")):
+        au = audit(bad)
         assert any(why in w for w in X.audit_why(au)), (bad, X.audit_why(au))
-    for res_ in ("/Users/u/gtr-session/runs/01", "/Users/u/gtr-q/runs/xyzab/result.json",
-                 "/private/tmp/claude-501/x/scratchpad/a.md"):
-        au = X.audit_transcript([json.dumps(e) for e in (ev[0], ev_use("t12", "Bash", {"command": "find . -name x"}),
-                                                         ev_res("t12", f"found\n{res_}"))], allowed,
-                                runs_root="/Users/u/gtr-q/runs")
+    for res_ in (f"{h}/gtr-session/runs/01", f"{runs}/xyzab/result.json", "/private/tmp/claude-501/x/scratchpad/a.md",
+                 f"{h}/shortlist-sandboxes/drag_me_down/notes.md", f"{h}/.zsh_history"):
+        au = audit(ev_use("t12", "Bash", {"command": "grep -r guitar ."}), ev_res("t12", f"found\n{res_}"))
         assert au["result_leaks"] == [res_] and X.audit_why(au), res_
-    au = X.audit_transcript([json.dumps(e) for e in (ev[0], ev_use("t14", "Write", {"file_path": "/private/tmp/claude-501/a"}))],
-                            allowed)
-    assert X.audit_why(au)                                                   # Claude's scratch space, not ordinary /tmp
 
 
 def test_research_settings_reruns_and_the_run_picked():
     base = {"sandbox": {"enabled": True}, "permissions": {"deny": ["Read(~/ndsp-presets/**)"]}}
-    s = X.run_settings("aaaaa", ["aaaaa", "bbbbb"], base)
+    s = X.run_settings("aaaaa", ["aaaaa", "bbbbb"], base, ["gtr-q", ".pyenv", "ndsp-presets", "shortlist-sandboxes",
+                                                            ".codex", ".zsh_history", ".claude"],
+                       ["projects", "plugins", "shell-snapshots", "session-env"],
+                       {"/private/tmp/claude-501": [str(X.RUNS / "aaaaa").replace("/", "-"), "-Users-yoavbz-projects-x"]})
     deny = s["permissions"]["deny"]
-    assert f"Read(//{str(X.RUNS / 'bbbbb').lstrip('/')}/**)" in deny and not any("aaaaa" in d for d in deny)
-    assert "Read(~/gtr-session/**)" in deny and deny.count("Read(~/ndsp-presets/**)") == 1
+    for e in ("shortlist-sandboxes", ".codex", ".zsh_history"):
+        assert f"Read(~/{e})" in deny and f"Read(~/{e}/**)" in deny
+    assert not any(f"~/{e}" in d for e in ("gtr-q", ".pyenv") for d in deny) and "Read(~/.claude)" not in deny
+    assert "Read(~/.claude/plugins/**)" in deny and not any("shell-snapshots" in d or "session-env" in d for d in deny)
+    assert "Read(//private/tmp/claude-501/-Users-yoavbz-projects-x/**)" in deny
+    assert not any(str(X.RUNS / "aaaaa").replace("/", "-") in d for d in deny)            # its own temp folder
+    assert f"Read(/{X.RUNS / 'bbbbb'}/**)" in deny and not any("runs/aaaaa" in d for d in deny)
+    assert f"Edit(/{X.PLUGIN}/**)" in deny and f"Edit(/{X.VENV}/**)" in deny
+    assert s["env"]["TMPDIR"] == str(X.RUNS / "aaaaa" / "tmp") and deny.count("Read(~/ndsp-presets/**)") == 1
     assert base["permissions"]["deny"] == ["Read(~/ndsp-presets/**)"]          # the routing study's own untouched
     assert X.pick_run([("2", "b", False), ("1", "a", False)]) == "a"          # the first that passed, never a later draw
     assert X.pick_run([("1", "a", True), ("2", "b", False)]) == "b" and X.pick_run([("1", "a", True)]) is None
     assert X.again_refusal([True]) is None
     assert X.again_refusal([False]) and X.again_refusal([True, True]) and X.again_refusal([])
+
+
+def test_tree_sha_ignores_bytecode_and_sees_edits(tmp_path):
+    (tmp_path / "a.py").write_text("x = 1")
+    h0 = X.tree_sha(tmp_path)
+    (tmp_path / "__pycache__").mkdir()
+    (tmp_path / "__pycache__" / "a.cpython-314.pyc").write_bytes(b"\0")
+    assert X.tree_sha(tmp_path) == h0
+    (tmp_path / "a.py").write_text("x = 2")
+    assert X.tree_sha(tmp_path) != h0
 
 
 def test_chain_argv_changes_one_stage_each():
