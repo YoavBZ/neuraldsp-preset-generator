@@ -118,16 +118,39 @@ def test_stratified_uses_unit_attributes():
     assert r["centred"]["mean"] == pytest.approx(-0.1) and r["v_real_10"]["parts"] == 2
 
 
-def test_centre_answers_shape():
-    st = {"select": 1, "settings": {"parameters/inputGain": "0"}}
-    doc = {"all_labels": {"Cen": {a: {"clean": st, "crunch": st} for a in X.AMPS},
-                          "Aconst": {f"{a}|{c}": st for a in X.AMPS for c in ("clean", "crunch")}}}
-    assert X.centre_answers(doc, "Cen")["pr12"]["crunch"] == st
-    assert X.centre_answers(doc, "Aconst")["ac20"]["clean"] == st
+def ladder_doc(sel=None):
+    """centres.json as the ladder writes it (`preset_ladder.cmd_centres` at b9f2d25f)."""
+    selects = {"pr12": 1, "sw50r": 2, "ac20": 0}
+    st = lambda a: {"select": selects[a] if sel is None else sel, "settings": {f"{a}Amp/{a}Volume": "0.5",   # noqa: E731
+                                                                               "parameters/inputGain": "0"}}
+    return {"plan": "p", "hold": "C3-cabS", "model_sha256": ["s1", "s2"], "c3r_sha256": "c",
+            "centres": {tag: {a: {"clean": st(a), "crunch": st(a)} for a in X.AMPS} for tag in ("cen", "aconst")},
+            "records_used": {}, "time": "t"}
+
+
+def test_centre_answers_read_the_ladders_shape():
+    doc = ladder_doc()
+    c = X.centre_answers(doc, "cen")
+    assert c["pr12"]["crunch"]["select"] == 1 and c["ac20"]["clean"]["settings"]["ac20Amp/ac20Volume"] == "0.5"
+    assert X.centre_answers(doc, "aconst")["sw50r"]["clean"]["select"] == 2
+    assert X.CENTRE_NAMES == {"EX-C": "cen", "EX-Cown": "aconst"}
+    alt = {"all_labels": {"Cen": doc["centres"]["cen"], "Aconst": doc["centres"]["aconst"]}}
+    assert X.centre_answers(alt, "cen") == c                                  # the ladder's other shape, read alike
     with pytest.raises(SystemExit):
-        X.centre_answers({"all_labels": {"Cen": {"pr12": {"clean": st}}}}, "Cen")
+        X.centre_answers(ladder_doc(sel=2), "cen")                              # a pr12 centre selecting another amp
+    bad = ladder_doc()
+    del bad["centres"]["cen"]["ac20"]["crunch"]
     with pytest.raises(SystemExit):
-        X.centre_answers({}, "Cen")
+        X.centre_answers(bad, "cen")
+    with pytest.raises(SystemExit):
+        X.centre_answers({}, "cen")
+
+
+def test_centres_refusal_ties_them_to_the_adopted_pair():
+    doc = ladder_doc()
+    assert X.centres_refusal(doc, ["s1", "s2"]) is None
+    assert "model_sha256" in X.centres_refusal(doc, ["s1", "x"])
+    assert "hold" in X.centres_refusal(dict(doc, hold="K.space"), ["s1", "s2"])
 
 
 def test_knob_distance():
@@ -146,21 +169,85 @@ def test_knob_distance():
     assert d["switches_differ"] == 1 and d["choices_differ"] == 0
 
 
+def ev_use(i, name, inp):
+    return {"type": "assistant", "message": {"content": [{"type": "tool_use", "id": i, "name": name, "input": inp}]}}
+
+
+def ev_res(i, content):
+    return {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": i, "content": content}]}}
+
+
 def test_audit_excludes_project_calls_and_flags_research_results():
+    run, plug, venv = "/Users/u/gtr-q/runs/abcde", "/Users/u/gtr-q/plugin", "/Users/u/gtr-q/venv"
+    allowed = (run, plug, venv, *X.ALLOWED_ROOTS)
     ev = [{"type": "system", "subtype": "init", "session_id": "s1", "model": "m", "plugins": []},
-          {"type": "assistant", "message": {"content": [
-              {"type": "tool_use", "id": "t1", "name": "WebSearch", "input": {"query": "Wickerman Eat The Feeder guitar"}},
-              {"type": "tool_use", "id": "t2", "name": "Bash", "input": {"command": "ls ~/ndsp-presets/learn/exam"}}]}},
-          {"type": "user", "message": {"content": [
-              {"type": "tool_result", "tool_use_id": "t1", "content": "see github.com/YoavBZ/neuraldsp-preset-generator"},
-              {"type": "tool_result", "tool_use_id": "t2", "content": "YoavBZ/neuraldsp-preset-generator"}]}}]
-    au = X.audit_transcript([json.dumps(e) for e in ev] + ["not json"])
+          ev_use("t1", "WebSearch", {"query": "Wickerman Eat The Feeder guitar"}),
+          ev_use("t2", "Bash", {"command": "ls ~/ndsp-presets/learn/exam"}),
+          ev_res("t1", "see github.com/YoavBZ/neuraldsp-preset-generator"),
+          ev_res("t2", [{"type": "text", "text": "YoavBZ/neuraldsp-preset-generator"}])]
+    au = X.audit_transcript([json.dumps(e) for e in ev] + ["not json"], allowed)
     assert au["init"] == ("s1", [], "m") and au["calls"] == 2
-    assert "ndsp-presets" in au["leaks"] and "/learn/" in au["leaks"]
-    assert au["seen"] == ["YoavBZ/neuraldsp-preset-generator"]                  # from WebSearch only
-    clean = X.audit_transcript([json.dumps(ev[0]), json.dumps({"type": "assistant", "message": {"content": [
-        {"type": "tool_use", "id": "t3", "name": "WebSearch", "input": {"query": "Femme Wall Of Death"}}]}})])
-    assert clean["leaks"] == [] and clean["seen"] == []
+    assert "ndsp-presets" in au["leaks"] and au["seen"] == ["YoavBZ/neuraldsp-preset-generator"]   # web results only
+    assert any("ndsp-presets" in p for p in au["outside_calls"]) and X.audit_why(au)
+    ok = [ev[0], ev_use("t3", "WebSearch", {"query": "Femme Wall Of Death guitar rig"}),
+          ev_use("t4", "Bash", {"command": f"cd {run} && {venv}/bin/python {plug}/scripts/show.py "
+                                           "'/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/Neural DSP/Hair Metal.xml'"}),
+          ev_use("t5", "Read", {"file_path": f"{plug}/skills/generate/../../reference/preset-spec.md"}),
+          ev_use("t6", "WebFetch", {"url": "https://example.com/learn/guitar", "prompt": "rig"}),
+          ev_res("t4", "data_root_origin: ~/ndsp-presets (installed-plugin default)")]
+    ok += [ev_use("t13", "Write", {"file_path": "/tmp/spec.json", "content": "{}"})]
+    au = X.audit_transcript([json.dumps(e) for e in ok], allowed, runs_root="/Users/u/gtr-q/runs")
+    assert X.audit_why(au) == [] and au["result_paths"]                       # a result's own path: recorded, no stop
+    for bad, why in ((ev_use("t7", "Bash", {"command": "cat ../xyzab/result.json"}), "../ in a call"),
+                     (ev_use("t8", "Read", {"file_path": "/Users/u/gtr-q/runs/xyzab/result.json"}), "outside"),
+                     (ev_use("t9", "Glob", {"pattern": "*", "path": "/Users/u/gtr-session/runs"}), "gtr-session"),
+                     (ev_use("t10", "WebSearch", {"query": "yoavbz guitar presets"}), "account name"),
+                     (ev_use("t11", "Bash", {"command": "ls ~"}), "outside")):
+        au = X.audit_transcript([json.dumps(ev[0]), json.dumps(bad)], allowed, runs_root="/Users/u/gtr-q/runs")
+        assert any(why in w for w in X.audit_why(au)), (bad, X.audit_why(au))
+    for res_ in ("/Users/u/gtr-session/runs/01", "/Users/u/gtr-q/runs/xyzab/result.json",
+                 "/private/tmp/claude-501/x/scratchpad/a.md"):
+        au = X.audit_transcript([json.dumps(e) for e in (ev[0], ev_use("t12", "Bash", {"command": "find . -name x"}),
+                                                         ev_res("t12", f"found\n{res_}"))], allowed,
+                                runs_root="/Users/u/gtr-q/runs")
+        assert au["result_leaks"] == [res_] and X.audit_why(au), res_
+    au = X.audit_transcript([json.dumps(e) for e in (ev[0], ev_use("t14", "Write", {"file_path": "/private/tmp/claude-501/a"}))],
+                            allowed)
+    assert X.audit_why(au)                                                   # Claude's scratch space, not ordinary /tmp
+
+
+def test_research_settings_reruns_and_the_run_picked():
+    base = {"sandbox": {"enabled": True}, "permissions": {"deny": ["Read(~/ndsp-presets/**)"]}}
+    s = X.run_settings("aaaaa", ["aaaaa", "bbbbb"], base)
+    deny = s["permissions"]["deny"]
+    assert f"Read(//{str(X.RUNS / 'bbbbb').lstrip('/')}/**)" in deny and not any("aaaaa" in d for d in deny)
+    assert "Read(~/gtr-session/**)" in deny and deny.count("Read(~/ndsp-presets/**)") == 1
+    assert base["permissions"]["deny"] == ["Read(~/ndsp-presets/**)"]          # the routing study's own untouched
+    assert X.pick_run([("2", "b", False), ("1", "a", False)]) == "a"          # the first that passed, never a later draw
+    assert X.pick_run([("1", "a", True), ("2", "b", False)]) == "b" and X.pick_run([("1", "a", True)]) is None
+    assert X.again_refusal([True]) is None
+    assert X.again_refusal([False]) and X.again_refusal([True, True]) and X.again_refusal([])
+
+
+def test_chain_argv_changes_one_stage_each():
+    inp = {"units": {"u": {"mix": "/m.wav", "unity": "k", "offset_samples": 48000 * 3,
+                           "crops": {"s": {"file_s": [20.0, 30.0]}}, "span": {"file_s": [10.0, 40.0],
+                                                                                 "session_s": [13.0, 43.0]}}},
+           "unity": {"k": {"file": "/u.wav"}}}
+    res = {"units": {"u": {"cls_model": "crunch"}}}
+    u = {"key": "u", "members": ["s"], "cls": "clean"}
+
+    def arg(a, flag, **kw):
+        v = X.chain_argv(a, u, inp, res, **kw)
+        return v[v.index(flag) + 1] if flag in v else None
+    assert arg("M", "--part") == "10.000000" and arg("M", "--cls") == "crunch" and arg("M", "--start") is None
+    assert arg("Mlab", "--cls") == "clean" and arg("Mlab", "--part") == "10.000000"
+    assert arg("Mcrop", "--start") == "20.000000"
+    assert arg("Mx", "--start", m_start=25.0) == "25.000000" and arg("Mx", "--version", m_start=25.0) == "xlst_mdxc"
+    assert arg("Munity", "--start", m_start=25.0) == "28.000000" and arg("Munity", "--song", m_start=25.0) == "/u.wav"
+    assert arg("Munity", "--part", m_start=25.0) is None
+    with pytest.raises(SystemExit):
+        X.chain_argv("Mx", u, inp, res)
 
 
 def test_names_in_and_the_prompt():
@@ -224,9 +311,12 @@ def test_page_player_and_cards():
 
 
 def test_row_specs_are_declared_once():
-    names = [r[0] for r in X.row_specs()]
+    specs = X.row_specs()
+    names = [r[0] for r in specs]
     assert names[0] == "M - R (primary)" and len(names) == len(set(names))
-    assert {r[3] for r in X.row_specs()} == {"all", "v10", "lab"}
+    assert {r[3] for r in specs} == {"all", "v10", "lab", "r", "rroute"}
+    assert all(r[3] in ("r", "rroute") for r in specs if "EX-R" in (r[1][0], r[2][0]) or "EX-Rroute" in (r[1][0], r[2][0]))
+    assert any("oracle" in n for n in names if "best amp" in n)
 
 
 def test_render_is_counted_against_the_cap():
@@ -237,3 +327,37 @@ def test_render_is_counted_against_the_cap():
     assert any(re.search(p, "python -u -m learn.real_song_exam render --shard 0/3") for p in LO.RENDERS)
     for cmd in ("chain", "answers", "report", "c-pick"):
         assert not any(re.search(p, f"python -m learn.real_song_exam {cmd}") for p in LO.RENDERS)
+    assert any(re.search(p, "/x/msst-venv/bin/python -m learn.product_path separate SONG --out D") for p in LO.SEPARATIONS)
+    assert not any(re.search(p, f"/x/python -m learn.product_path {c} D") for p in LO.SEPARATIONS
+                   for c in ("answers", "render", "pick"))
+
+
+def test_guards_gate_what_follows(tmp_path, monkeypatch):
+    g, r = tmp_path / "guards.json", tmp_path / "r1-repro.json"
+    monkeypatch.setattr(X, "guard_files", lambda: {"guards_json": g, "r1_repro_json": r})
+    with pytest.raises(SystemExit):
+        X.require_guards()                                                  # neither has run
+    g.write_text(json.dumps({"passes": True}))
+    r.write_text(json.dumps({"passes": False}))
+    with pytest.raises(SystemExit):
+        X.require_guards()                                                  # the R1 reproduction failed
+    r.write_text(json.dumps({"passes": True}))
+    got = X.require_guards()
+    assert set(got) == {"guards_json", "r1_repro_json"} and got["guards_json"] == X.sha_file(g)
+
+
+def test_the_lock_refuses_a_changed_research_file(tmp_path, monkeypatch):
+    res, inp = tmp_path / "research.json", tmp_path / "inputs.json"
+    res.write_text("{}")
+    inp.write_text("{}")
+    lock = tmp_path / "lock.json"
+    monkeypatch.setattr(X, "research_dir", lambda: tmp_path)
+    monkeypatch.setattr(X, "inputs_path", lambda: inp)
+    monkeypatch.setattr(X, "chain_lock", lambda: lock)
+    with pytest.raises(SystemExit):
+        X.check_lock()                                                      # the chain has not started
+    lock.write_text(json.dumps({"hashes": {"research_json": X.sha_file(res), "inputs_json": X.sha_file(inp)}}))
+    X.check_lock()
+    res.write_text('{"units": {}}')
+    with pytest.raises(SystemExit):
+        X.check_lock()

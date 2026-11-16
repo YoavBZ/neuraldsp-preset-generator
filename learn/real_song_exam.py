@@ -64,24 +64,41 @@ CROP_SD_TOL, CROP_R_TOL = 0.5, 0.005  # the decoded file's crop check against al
 MATCH_R = 0.999                       # a crop's mix and DI must correlate this well with the session's
 TAG = "EX-"
 ONE = ("EX-R", "EX-Rwet", "EX-Rroute", "EX-M", "EX-Mx", "EX-Mlab", "EX-Mcrop", "EX-Munity", "EX-Cpick", "EX-Cm",
-       "EX-Cownm", "EX-S")            # one preset per slug, on its own amp
+       "EX-Cownm", "EX-S", "EX-Sm")   # one preset per slug, on its own amp
 THREE = ("EX-M3", "EX-C", "EX-Cown")  # every amp
 HALVED = ("EX-L",)                    # per search half
 TAGS = ONE + THREE + HALVED
-CHAIN = ("M", "Mcrop", "Munity", "Mlab", "Mx")    # the order the chain runs them (Mx, on the CPU, last)
-CHAIN_TAG = {"M": "EX-M", "Mx": "EX-Mx", "Mlab": "EX-Mlab", "Mcrop": "EX-Mcrop", "Munity": "EX-Munity"}
+CHAIN = ("M", "Mcrop", "Munity", "Mlab", "Mx")    # the order the chain runs them (M first: M-unity and M-x read M's
+CHAIN_TAG = {"M": "EX-M", "Mx": "EX-Mx", "Mlab": "EX-Mlab", "Mcrop": "EX-Mcrop", "Munity": "EX-Munity"}   # window)
 STORED = {"FT": "FV-P2b-ft-stem", "D_fix": "DV-P2b-dfix-stem", "RcG": "DV-RcG"}   # F41/F42's renders, beside
 CENTRES = "ladder/centres.json"       # Step 2's stage 0 writes it (the orchestrator's choice, 2026-11-16)
-CENTRE_NAMES = {"EX-C": "Cen", "EX-Cown": "Aconst"}
-WORK = pathlib.Path.home() / "gtr-session"        # outside the data root and the repo: the agents' sandbox
-RUNS = WORK / "runs3"
-PLUGIN = WORK / "plugin-q"
+CENTRE_NAMES = {"EX-C": "cen", "EX-Cown": "aconst"}   # the ladder's `centres` keys
+ADOPTED_BASE = "C3r-all"
+WORK = pathlib.Path.home() / "gtr-q"  # a fresh root, outside the data root and the repo, holding only the venv, the
+RUNS = WORK / "runs"                  # plugin, the runs' settings and this exam's runs
+PLUGIN = WORK / "plugin"
+VENV = WORK / "venv"
+SETTINGS_DIR = WORK / "settings"
+OLD_WORK = pathlib.Path.home() / "gtr-session"    # the routing study's runs on these songs: denied to every run
+DENY = ("~/ndsp-presets/**", "//Users/yoavbz/ndsp-presets/**", "//Users/yoavbz/projects/**", "~/.claude/**",
+        "//private/tmp/claude-501/**", "~/gtr-session/**", "//Users/yoavbz/gtr-session/**")
 PLUGIN_PARTS = ("skills", "scripts", "packs", "reference", "analysis", "format", "match", "samples", ".claude-plugin",
                 "pyproject.toml", "LICENSE", "NOTICE.md")   # the routing study's scrubbed plugin
 LEAK_CALLS = ("ndsp-presets", "/Users/yoavbz/projects", "YoavBZ", "neuraldsp-preset-generator/docs", "validation-",
-              "generate-routing", "real-song-exam", "mix-previews", "pipeline-fix", "/learn/")
+              "generate-routing", "real-song-exam", "mix-previews", "pipeline-fix", "learn/trusted-data",
+              "gtr-session", ".claude/projects")
 LEAK_RESULTS = ("YoavBZ/neuraldsp-preset-generator", "real-song-exam", "validation-crops")
+ACCOUNT = "yoavbz"                    # the user's account name: never in a web search or fetch (case-insensitive)
 RESEARCH_TOOLS = ("WebSearch", "WebFetch")
+FILE_TOOLS = ("Bash", "Read", "Glob", "Grep", "Edit", "Write", "NotebookEdit")
+ALLOWED_ROOTS = ("/Library/Audio/", "/tmp/", "/private/tmp/", "/private/var/folders/", "/var/folders/")   # the
+#                 factory presets and the installed plugin, and scratch space, beside the run's own paths
+PATH_RE = re.compile(r"""(?:^|(?<=[\s"'=(<>|;&,]))(~(?=/|\s|$|["'])[^\s"'\\;|&<>()]*|/(?:Users|private|tmp|var|Volumes|opt|"""
+                     r"""home|Library|Applications|System)\b[^\s"'\\;|&<>()]*)""")
+SENSITIVE_CALL = ("ndsp-presets", "/projects", "gtr-session", "/.claude", "claude-")   # a stop in a call, wherever
+SENSITIVE_RESULT = ("/projects/", "gtr-session", "/.claude/", "claude-", "ndsp-presets/learn", "ndsp-presets/references",
+                    "ndsp-presets/listening", "ndsp-presets/handover")   # a stop in a file tool's result (the plugin's
+#                     own text names its default data root and its auditions and tools folders: recorded, no stop)
 TITLE_NAMES = (r"wickerman", r"eat the feeder", r"femme", r"wall of death", r"colour me red", r"diesel ?13",
                r"let'?s dance", r"szymon", r"get out of bed", r"magician'?s nephew", r"zeno", r"it was my fault",
                r"atlantis bound", r"cambridge")
@@ -281,20 +298,41 @@ def stratified(rows, attrs):
 
 
 def centre_answers(doc, name):
-    """Step 2's all-labels constant `name` ("Cen" or "Aconst") from ladder/centres.json -> {amp: {cls: {select?,
-    settings}}}. The expected shape: doc["all_labels"][name][amp][cls] = {"select", "settings": {"module/key": v}};
-    "amp|cls" keys are read too. Refuses any other shape."""
-    block = ((doc or {}).get("all_labels") or {}).get(name)
+    """Step 2's all-labels constant `name` ("cen", the labels' centre, or "aconst", the model's own constant) from
+    ladder/centres.json, the ladder's shape: doc["centres"][name][amp][cls] = {"select", "settings": {"module/key":
+    v}}. (The ladder's uncommitted all_labels.Cen / all_labels.Aconst variant is read the same.) -> {amp: {cls: {select
+    (int), settings}}}; refuses anything else."""
+    block = ((doc or {}).get("centres") or {}).get(name)
+    if block is None:
+        block = ((doc or {}).get("all_labels") or {}).get({"cen": "Cen", "aconst": "Aconst"}.get(name, name))
     if not isinstance(block, dict):
-        raise SystemExit(f"{CENTRES}: no all_labels.{name}")
+        raise SystemExit(f"{CENTRES}: no centres.{name}")
     out = {}
     for a in AMPS:
         for c in ("clean", "crunch"):
-            v = (block.get(a) or {}).get(c) if isinstance(block.get(a), dict) else block.get(f"{a}|{c}")
-            if not isinstance(v, dict) or not isinstance(v.get("settings"), dict) or not v["settings"]:
-                raise SystemExit(f"{CENTRES}: all_labels.{name} has no settings for {a} {c}")
-            out.setdefault(a, {})[c] = v
+            v = (block.get(a) or {}).get(c) if isinstance(block.get(a), dict) else None
+            if not isinstance(v, dict) or not isinstance(v.get("settings"), dict) or not v["settings"] \
+                    or not all("/" in k for k in v["settings"]):
+                raise SystemExit(f"{CENTRES}: centres.{name}.{a}.{c} is not a full {{select, settings}}")
+            try:
+                sel = int(v["select"])
+            except (KeyError, TypeError, ValueError):
+                raise SystemExit(f"{CENTRES}: centres.{name}.{a}.{c} has no amp select") from None
+            if SELECT_AMP.get(sel) != a:
+                raise SystemExit(f"{CENTRES}: centres.{name}.{a}.{c} selects {SELECT_AMP.get(sel)}")
+            out.setdefault(a, {})[c] = {"select": sel, "settings": v["settings"]}
     return out
+
+
+def centres_refusal(doc, adopted_sha, hold_prefix="C3-cabS"):
+    """Why ladder/centres.json may not be read as the adopted pair's constants, or None: its `model_sha256` must be the
+    adopted pair's (both seeds, adopted-model.json's order) and its `hold` C3-cabS. (Pure.)"""
+    got = list((doc or {}).get("model_sha256") or [])
+    if got != list(adopted_sha):
+        return f"{CENTRES}: model_sha256 {[g[:12] for g in got]} is not the adopted pair's"
+    if not str((doc or {}).get("hold") or "").startswith(hold_prefix):
+        return f"{CENTRES}: hold {doc.get('hold')!r} is not {hold_prefix}"
+    return None
 
 
 def knob_distance(a, b, amp, params):
@@ -329,11 +367,42 @@ def knob_distance(a, b, amp, params):
             "n_cont": len(cont), "switches_differ": sw, "choices_differ": en}
 
 
-def audit_transcript(lines):
-    """The research run's audit (plan guard 5): a tool call naming the project's data, repository or tests excludes the
-    run; a research tool's result naming the project is flagged (and excludes it too). lines: the stream-json text.
-    -> {calls, leaks, seen, tools, init: (session, plugins, model)}."""
-    calls, results, tools, init = [], [], {}, (None, None, None)
+def text_of(obj):
+    """Every string inside a tool call's input or a result's content, one a line (keys left out)."""
+    if isinstance(obj, str):
+        return obj
+    if isinstance(obj, dict):
+        return "\n".join(text_of(v) for v in obj.values())
+    if isinstance(obj, list):
+        return "\n".join(text_of(v) for v in obj)
+    return "" if obj is None else str(obj)
+
+
+def paths_in(text, home=str(pathlib.Path.home())):
+    """The absolute (or ~) paths a tool call's or result's text names, each normalised (`..` resolved, ~ expanded)."""
+    out = []
+    for m in PATH_RE.finditer(text):
+        p = m.group(1).rstrip(".,:")
+        p = home + p[1:] if p.startswith("~") else p
+        out.append(os.path.normpath(p))
+    return out
+
+
+def outside(paths, allowed):
+    """The paths not under any of `allowed` (absolute roots: the run's own folder, the plugin, the venv, ALLOWED_ROOTS)."""
+    roots = [os.path.normpath(str(a)) for a in allowed]
+    return sorted({p for p in paths if not any(p == r or p.startswith(r.rstrip("/") + "/") for r in roots)})
+
+
+def audit_transcript(lines, allowed=(), runs_root=None):
+    """The research run's audit (plan guard 5). Excludes the run: a tool call naming the project's data, repository,
+    tests or the earlier routing runs (LEAK_CALLS); a call naming a path outside `allowed` (the run's own folder, the
+    plugin, the venv, the factory presets, scratch space) or under a sensitive root (SENSITIVE_CALL), or a relative
+    `../`; the user's account name in a web search or fetch; a web result naming the project (LEAK_RESULTS); a file
+    tool's result naming a path under SENSITIVE_RESULT or another run's folder (under `runs_root`). Every other outside
+    path a result names is recorded ("result_paths"), not a stop: the plugin's own text names its default data root.
+    lines: the stream-json text. -> {calls, leaks, seen, outside_calls, result_paths, result_leaks, tools, init}."""
+    calls, web_calls, results, file_results, tools, init = [], [], [], [], {}, (None, None, None)
     names = {}
     for line in lines:
         try:
@@ -347,14 +416,72 @@ def audit_transcript(lines):
             continue
         for c in content:
             if c.get("type") == "tool_use":
-                calls.append(json.dumps(c.get("input")))
+                text = text_of(c.get("input"))
+                calls.append(text)
                 names[c.get("id")] = c.get("name")
                 tools[c.get("name")] = tools.get(c.get("name"), 0) + 1
-            elif c.get("type") == "tool_result" and names.get(c.get("tool_use_id")) in RESEARCH_TOOLS:
-                results.append(json.dumps(c.get("content")))
-    leaks = sorted({m for m in LEAK_CALLS for call in calls if m in call})
+                if c.get("name") in RESEARCH_TOOLS:
+                    web_calls.append(text)
+            elif c.get("type") == "tool_result":
+                text = text_of(c.get("content"))
+                tool = names.get(c.get("tool_use_id"))
+                if tool in RESEARCH_TOOLS:
+                    results.append(text)
+                elif tool in FILE_TOOLS:
+                    file_results.append(text)
+    leaks = {m for m in LEAK_CALLS for call in calls if m in call}
+    leaks |= {"account name in a web call" for w in web_calls if ACCOUNT in w.lower()}
+    leaks |= {"../ in a call" for call in calls if re.search(r"(?<![\w/.])\.\./", call)}
+    cp = [p for call in calls for p in paths_in(call)]
+    oc = sorted(set(outside(cp, allowed) if allowed else []) | {p for p in cp if any(s in p for s in SENSITIVE_CALL)})
+    rall = [p for r in file_results for p in paths_in(r)]
+    rp = outside(rall, allowed) if allowed else []
+    runs = os.path.normpath(str(runs_root or RUNS))
+    rl = sorted({p for p in rall if any(s in p for s in SENSITIVE_RESULT)} | {p for p in rp if p.startswith(runs + "/")})
     seen = sorted({m for m in LEAK_RESULTS for r in results if m in r})
-    return {"calls": len(calls), "leaks": leaks, "seen": seen, "tools": tools, "init": init}
+    return {"calls": len(calls), "leaks": sorted(leaks), "seen": seen, "outside_calls": oc, "result_paths": rp,
+            "result_leaks": rl, "tools": tools, "init": init}
+
+
+def audit_why(au):
+    """The reasons an audited run is excluded (empty: it passes)."""
+    return (list(au["leaks"]) + [f"seen in research results: {s}" for s in au["seen"]]
+            + [f"a call names a path outside the run: {p}" for p in au["outside_calls"]]
+            + [f"a file tool's result names {p}" for p in au["result_leaks"]])
+
+
+def run_settings(tag, others, base):
+    """One research run's sandbox settings: the routing study's (`base`), its reads also denied the earlier routing
+    runs and every other run's folder of this exam."""
+    s = json.loads(json.dumps(base))
+    deny = list(s["permissions"]["deny"])
+    for d in DENY + tuple(f"//{str(RUNS / o).lstrip('/')}/**" for o in sorted(others) if o != tag):
+        r = f"Read({d})"
+        if r not in deny:
+            deny.append(r)
+    s["permissions"]["deny"] = deny
+    return s
+
+
+def pick_run(runs):
+    """A unit's research run: its first run that passed the audit (a rerun exists only when every earlier run was
+    excluded), else None. runs: [(made, tag, excluded)]."""
+    for made, tag, excluded in sorted(runs):
+        if not excluded:
+            return tag
+    return None
+
+
+def again_refusal(unit_runs):
+    """Why a unit may not get a fresh research folder, or None: only when it has runs, all excluded, and at most one
+    rerun (two runs in all). unit_runs: [excluded flags]."""
+    if not unit_runs:
+        return "it has no run yet"
+    if not all(unit_runs):
+        return "it has a run that passed"
+    if len(unit_runs) >= 2:
+        return "it was rerun once already"
+    return None
 
 
 def names_in(text, words=TITLE_NAMES):
@@ -547,14 +674,41 @@ def load_inputs(hashed=True):
 
 
 def load_research():
+    """research.json: every unit with its model class (research's, or the label's where no run passed); at least one
+    unit with R, else a stop for the user (plan, "When research fails")."""
     p = research_dir() / "research.json"
     if not p.exists():
         raise SystemExit(f"{p}: run research-collect first")
     r = json.loads(p.read_text())
-    missing = [u["key"] for u in units() if (r["units"].get(u["key"]) or {}).get("cls") is None]
-    if missing:
-        raise SystemExit(f"research has no audited class for {missing}")
+    if set(r["units"]) != {u["key"] for u in units()} or any(v.get("cls_model") not in ("clean", "crunch")
+                                                           for v in r["units"].values()):
+        raise SystemExit("research.json does not give every unit a model class")
+    if not any(not v.get("no_research") for v in r["units"].values()):
+        raise SystemExit("no unit has R: stop for the user's decision")
     return r
+
+
+def guard_files():
+    """{name: path} of the guards' records the chain, the renders and the report need passed."""
+    return {"guards_json": ex_dir() / "guards.json", "r1_repro_json": ex_dir() / "r1-repro.json"}
+
+
+def require_guards():
+    """Guards 2, 3, 4 and 7's first half (exam/guards.json, exam/r1-repro.json) must exist and pass. -> {name: sha256}."""
+    out = {}
+    for name, p in guard_files().items():
+        if not p.exists():
+            raise SystemExit(f"{p.name} is missing: run `guards` and `r1-repro` first")
+        if json.loads(p.read_text()).get("passes") is not True:
+            raise SystemExit(f"{p.name} did not pass: stop")
+        out[name] = sha_file(p)
+    return out
+
+
+def chain_lock():
+    """The chain's record of the research and inputs it ran on (written at its first start): a later change of either
+    refuses the answers (fix 6)."""
+    return ex_dir() / "chain" / "lock.json"
 
 
 def crop_dir(slug, parts):
@@ -822,7 +976,7 @@ def c3r_sources(name="C3r-all"):
         names = [pathlib.Path(P.session_of(sec)).name]
         return (None, names) if x is None else (x["band"], names + [pathlib.Path(x["session_dir"]).name,
                                                                     inv[x["di"]].get("song")])
-    src, cnt = [], {"plugin_rows": 0, "real_units": {}, "unit_backings": 0, "pool_entries": 0}
+    src, cnt = [], {"plugin_rows": 0, "real_units": {}, "unit_backings": 0, "pool_entries": 0, "stock_dis": 0}
     ids = sorted({i for r_ in recs for i in r_["train_ids"] + r_["held_ids"] if i < P.REAL_ROW0})
     for i in ids:
         src.append((f"plugin row {i}", *of_section(kept[i]["section"])))
@@ -874,11 +1028,26 @@ def c3r_sources(name="C3r-all"):
     for x in pool:
         src.append((f"pool entry {x['id']}", *of_entry(x)))
         cnt["pool_entries"] += 1
+    from learn import amp_di_compare as A1
+
+    n12 = st["units"].get("n12") or {}
+    for cls, stock in json.loads((A1.a1_dir() / "plan.json").read_text())["stock"].items():
+        for s in stock:                                # the amp pick's four stock DIs (A1's), by their sessions
+            di = str(s["di"])
+            band = (n12.get(s.get("unit")) or {}).get("player") or (inv.get(di) or {}).get("band") \
+                or pathlib.PurePosixPath(di).parent.name
+            src.append((f"stock DI {cls} {di}", band, [pathlib.PurePosixPath(di).parent.name, di,
+                                                       (inv.get(di) or {}).get("song")]))
+            cnt["stock_dis"] += 1
     return src, cnt, inv
 
 
-def c3r_leak_guard(name="C3r-all"):
-    """No V-real band or song (`vreal_songs`) in any training input of the adopted pair; refuses on any."""
+def c3r_leak_guard(name=ADOPTED_BASE):
+    """No V-real band or song (`vreal_songs`) in any training input of the adopted pair, nor in the amp pick's stock DIs;
+    refuses on any."""
+    a = json.loads((P.out_dir() / "adopted-model.json").read_text())
+    if a["model"]["base"] != name:
+        raise SystemExit(f"adopted-model.json's base is {a['model']['base']}, not {name}")
     src, cnt, inv = c3r_sources(name)
     songs = P.vreal_songs(inv)
     bad = P.leaks_of([(w, b, [n for n in ns if n]) for w, b, ns in src], P.VREAL_BANDS, songs)
@@ -920,6 +1089,7 @@ def cmd_guards(_args):
     if not pc["passes"] or pc["n"] != P.S_CONTROL_N:
         raise SystemExit(f"S's positive control fails: {pc}")
     out["s_positive_control"] = pc
+    out["passes"] = True                                # every guard above refuses on a failure
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     P.save(ex_dir() / "guards.json", out)
     print(json.dumps({k: (v if k != "leakage" else {x: y for x, y in v.items() if x != "vreal_song_keys"})
@@ -938,6 +1108,7 @@ def run_model_preset(argv, log, env=None):
 
 
 R1_SONG = "cut-it-out"
+REPRO_TOL = 1e-9                      # the stem features and the pick's distances: equal to float precision
 
 
 def cmd_r1_repro(_args):
@@ -981,7 +1152,9 @@ def cmd_r1_repro(_args):
            "output_gain": [p1["output_gain"], p0["output_gain"]],
            "preset_file_values_equal": R1E.same_preset(x1, x0)}
     out["passes"] = bool(out["answers_equal"] and out["pick"][0] == out["pick"][1] and out["settings_equal"]
-                         and out["render_lufs_equal"] and out["preset_file_values_equal"])
+                         and out["render_lufs_equal"] and out["preset_file_values_equal"]
+                         and len(a1["stem_feat"]) == len(a0["stem_feat"]) and feat <= REPRO_TOL
+                         and out["distances_max_abs_diff"] <= REPRO_TOL and a1["gain_db"] == a0["gain_db"])
     P.save(ex_dir() / "r1-repro.json", out)
     print(json.dumps(out, indent=1))
     if not out["passes"]:
@@ -996,11 +1169,31 @@ def research_map():
     return json.loads(p.read_text()) if p.exists() else {"plan": PLAN, "runs": {}}
 
 
-def build_plugin():
-    """The scrubbed plugin (the routing study's parts at this checkout's HEAD), checked to name no V-real title or
-    band. -> {commit, version, files}."""
+def check_inputs_files(inp):
+    """The decoded mixes and unity sums still hash to inputs.json's (and so to the ledger's record)."""
+    for song, s in inp["songs"].items():
+        if sha_file(s["file"]) != s["sha256"]:
+            raise SystemExit(f"{song}: the decoded mix changed since inputs.json")
+    for k, u in inp["unity"].items():
+        if sha_file(u["file"]) != u["sha256"]:
+            raise SystemExit(f"unity sum {k}: changed since inputs.json")
+
+
+def build_root():
+    """The fresh research root (WORK): the routing study's venv copied in whole (no download), the scrubbed plugin (the
+    routing study's parts at this checkout's HEAD), checked to name no V-real title or band. -> {commit, version, ...}."""
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=PLUGIN_ROOT, capture_output=True, text=True,
                             check=True).stdout.strip()
+    WORK.mkdir(exist_ok=True)
+    extra = sorted(p.name for p in WORK.iterdir() if p.name not in ("venv", "plugin", "runs", "settings"))
+    if extra:
+        raise SystemExit(f"{WORK} holds more than the venv, the plugin, the settings and the runs: {extra}")
+    if not VENV.exists():
+        subprocess.run(["cp", "-a", str(OLD_WORK / "venv"), str(VENV)], check=True)
+    chk = subprocess.run([str(VENV / "bin" / "python"), "-c", "import sys, numpy, scipy, soundfile; print(sys.prefix)"],
+                         capture_output=True, text=True)
+    if chk.returncode or os.path.normpath(chk.stdout.strip()) != os.path.normpath(str(VENV)):
+        raise SystemExit(f"the copied venv does not run as itself: {chk.stdout.strip()} {chk.stderr.strip()[-200:]}")
     if not PLUGIN.exists():
         PLUGIN.mkdir(parents=True)
         arc = subprocess.run(["git", "archive", commit, *PLUGIN_PARTS], cwd=PLUGIN_ROOT, capture_output=True, check=True)
@@ -1010,38 +1203,47 @@ def build_plugin():
         if f.is_file() and f.suffix.lower() in (".md", ".json", ".py", ".txt", ".toml", ".yaml", ".yml", ".xml", ".csv",
                                                 ".html", ".js", ".sh", ""):
             n += 1
-            try:
-                found = names_in(f.read_text(errors="ignore"))
-            except OSError:
-                continue
+            found = names_in(f.read_text(errors="ignore"))
             if found:
                 hits[str(f.relative_to(PLUGIN))] = found
     if hits:
         raise SystemExit(f"the scrubbed plugin names V-real titles or bands: {hits}")
     version = json.loads((PLUGIN / ".claude-plugin" / "plugin.json").read_text())["version"]
-    return {"commit": commit, "version": version, "files": n, "path": str(PLUGIN)}
+    return {"commit": commit, "version": version, "files_checked": n, "path": str(PLUGIN), "venv": str(VENV),
+            "venv_prefix": chk.stdout.strip()}
 
 
 def cmd_research_prepare(args):
     """One neutral run folder per unit (RUNS/<tag>: the whole song as song-NN.flac, rewritten with no metadata and
-    clipped to +-1 for the copy only; the prompt; an empty data folder); `--again KEY` adds a fresh folder for a unit
-    whose run failed a guard. The map from tag to unit stays in the data root, outside the agents' reach."""
+    clipped to +-1 for the copy only; the prompt; an empty data folder) in the fresh root. `--again KEY` adds one fresh
+    folder for a unit whose runs were all excluded, once (plan, "When research fails"). The map from tag to unit stays
+    in the data root, outside the agents' reach."""
     import numpy as np
     import soundfile as sf
 
     GR = _gr()
     entry()
     inp = load_inputs()
+    check_inputs_files(inp)
     m = research_map()
     if "plugin" not in m:
-        m["plugin"] = build_plugin()
-    if not (WORK / "settings.json").exists() or json.loads((WORK / "settings.json").read_text()) != GR.SETTINGS:
-        raise SystemExit(f"{WORK / 'settings.json'} is not the routing study's sandbox settings")
+        m["plugin"] = build_root()
     have = {r["unit"] for r in m["runs"].values()}
-    todo = [u for u in units() if u["key"] not in have] if not args.again else [
-        u for u in units() if u["key"] in args.again]
-    if args.again and len(todo) != len(args.again):
-        raise SystemExit(f"--again: unknown units {set(args.again) - {u['key'] for u in todo}}")
+    if args.again:
+        col = research_dir() / "research.json"
+        done = json.loads(col.read_text())["runs"] if col.exists() else {}
+        for k in args.again:
+            mine = [t for t, r in m["runs"].items() if r["unit"] == k]
+            if any(t not in done for t in mine):
+                raise SystemExit(f"--again {k}: collect its runs first (research-collect)")
+            why = again_refusal([done[t]["excluded"] for t in mine])
+            if why:
+                raise SystemExit(f"--again {k}: refused, {why}")
+        todo = [u for u in units() if u["key"] in args.again]
+        if len(todo) != len(set(args.again)):
+            raise SystemExit(f"--again: unknown units {set(args.again) - {u['key'] for u in todo}}")
+    else:
+        todo = [u for u in units() if u["key"] not in have]
     rng = random.Random(f"{SEED}|research|{len(m['runs'])}")
     order = todo[:]
     rng.shuffle(order)
@@ -1061,7 +1263,7 @@ def cmd_research_prepare(args):
         sf.write(str(folder / audio), np.clip(x, -1.0, 1.0 - 2.0 ** -23), sr, subtype="PCM_24")
         a, b = r["span"]["file_s"]
         prompt = PROMPT.format(song=r["song"], artist=r["artist"], audio=audio, start=GR._clock(a), end=GR._clock(b),
-                               python=WORK / "venv" / "bin" / "python", data=folder / "data")
+                               python=VENV / "bin" / "python", data=folder / "data")
         (folder / "prompt.txt").write_text(prompt)
         m["runs"][tag] = {"unit": u["key"], "nn": nn, "span_file_s": [a, b], "audio_sha256": sha_file(folder / audio),
                           "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest(),
@@ -1071,29 +1273,47 @@ def cmd_research_prepare(args):
     print(f"EXAM RESEARCH-PREPARE DONE: {len(order)} folders under {RUNS}; plugin {m['plugin']['version']}")
 
 
+def claude_run(folder, prompt, log, settings, resume=None):
+    """The routing re-check's headless call (`generate_routing._claude`: its model, tools and flags) on this root: the
+    run's own settings file, the plugin and the venv."""
+    GR = _gr()
+    argv = ["claude", "-p", prompt, "--model", GR.RECHECK_MODEL, "--settings", str(settings), "--setting-sources", "",
+            "--plugin-dir", str(PLUGIN), "--add-dir", str(PLUGIN), "--add-dir", str(VENV),
+            "--allowedTools", "Bash,Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Skill",
+            "--disallowedTools", "SendMessage,ListAgents,Task,Agent,Workflow,"
+            "Artifact,ArtifactComments,ArtifactData,CronCreate,RemoteTrigger",
+            "--permission-mode", "acceptEdits", "--output-format", "stream-json", "--verbose"]
+    if resume:
+        argv += ["--resume", resume]
+    return subprocess.run(argv, cwd=folder, stdout=log, stderr=subprocess.STDOUT, timeout=3600)
+
+
 def cmd_research_route(args):
-    """Each prepared folder through a fresh sandboxed `claude -p` with the scrubbed plugin (the routing study's
-    `_claude`: its settings, model and tools); a run with no result.json is asked once more with the re-check's
-    non-answer. Wall time and turns recorded."""
+    """Each prepared folder through a fresh sandboxed `claude -p` with the scrubbed plugin; its settings deny the data
+    root, the repository, the session transcripts, the earlier routing runs and every other run's folder; a run with no
+    result.json is asked once more with the re-check's non-answer. Wall time recorded."""
     from concurrent.futures import ThreadPoolExecutor
 
     GR = _gr()
     entry()
     m = research_map()
     todo = sorted(t for t in m["runs"] if not (RUNS / t / "transcript.jsonl").exists())
+    SETTINGS_DIR.mkdir(parents=True, exist_ok=True)
+    for tag in todo:
+        P.save(SETTINGS_DIR / f"{tag}.json", run_settings(tag, list(m["runs"]), GR.SETTINGS))
 
     def one(tag):
-        folder = RUNS / tag
+        folder, st = RUNS / tag, SETTINGS_DIR / f"{tag}.json"
         t0 = time.time()
         with open(folder / "transcript.jsonl", "w") as log:
-            GR._claude(folder, PLUGIN, (folder / "prompt.txt").read_text(), log)
+            claude_run(folder, (folder / "prompt.txt").read_text(), log, st)
         asked = False
         if not (folder / "result.json").exists():
             session, _, _ = GR._session_id(folder / "transcript.jsonl")
             if session:
                 asked = True
                 with open(folder / "transcript.jsonl", "a") as log:
-                    GR._claude(folder, PLUGIN, GR.NON_ANSWER, log, resume=session)
+                    claude_run(folder, GR.NON_ANSWER, log, st, resume=session)
         (folder / "asked.txt").write_text("yes\n" if asked else "no\n")
         (folder / "wall.json").write_text(json.dumps({"seconds": round(time.time() - t0, 1),
                                                       "end": time.strftime("%Y-%m-%d %H:%M:%S")}))
@@ -1113,10 +1333,11 @@ def out_of(command, flag):
 
 
 def cmd_research_collect(_args):
-    """Per run: the audit (guard 5: a tool call naming the data root, the repository or the project's tests excludes
-    it), the plugin version and model; R's class; its presets: R-wet the agent's file, R that file with the amp's dry
-    recipe (its tonal edits kept, its time effects off: the routing study's tonal arm), R-route the agent's template
-    made dry; the agent's command replayed beside. One unit takes its latest run that passed. -> research.json."""
+    """Per run: the audit (guard 5, `audit_transcript`), the plugin version and model; R's class; its presets (R-wet the
+    agent's file; R that file with its amp's dry recipe: its tonal edits kept, its time effects off, the routing
+    study's tonal arm; R-route the agent's template made dry with the template's own amp; the agent's command replayed
+    beside). A unit takes its first run that passed; a unit with none has no R (plan, "When research fails"). No unit
+    with a pass: a stop for the user. -> research.json."""
     from packs.loader import load_pack
 
     from learn import local_objective as LO
@@ -1127,15 +1348,16 @@ def cmd_research_collect(_args):
     m = research_map()
     pack = load_pack("morgan")
     root, plan, drift, dirs, parts, ms = P.vreal_ctx()
-    runs, per_unit = {}, {}
+    runs, by_unit = {}, {}
     for tag, r in sorted(m["runs"].items(), key=lambda kv: kv[1]["made"]):
         folder = RUNS / tag
         if not (folder / "transcript.jsonl").exists():
             raise SystemExit(f"{tag}: not run")
-        au = audit_transcript((folder / "transcript.jsonl").read_text().splitlines())
+        au = audit_transcript((folder / "transcript.jsonl").read_text().splitlines(),
+                              allowed=(folder, PLUGIN, VENV, *ALLOWED_ROOTS), runs_root=RUNS)
         session, plugins, model = au.pop("init")
         version = next((p.get("version") for p in plugins or [] if p.get("name") == "neuraldsp-preset-generator"), None)
-        why = list(au["leaks"]) + [f"seen in research results: {s}" for s in au["seen"]]
+        why = audit_why(au)
         if version != m["plugin"]["version"]:
             why.append(f"plugin version {version}")
         if model != GR.RECHECK_MODEL:
@@ -1146,74 +1368,95 @@ def cmd_research_collect(_args):
         except (OSError, ValueError):
             why.append("no readable result.json")
         wall = json.loads((folder / "wall.json").read_text()) if (folder / "wall.json").exists() else {}
-        row = {"unit": r["unit"], "audit": au, "version": version, "model": model, "excluded": bool(why), "why": why,
+        row = {"unit": r["unit"], "made": r["made"], "audit": au, "version": version, "model": model, "why": why,
                "asked": (folder / "asked.txt").read_text().strip() == "yes" if (folder / "asked.txt").exists() else None,
                "seconds": wall.get("seconds"), "result": res}
         if not why:
             try:
                 row.update(build_r(folder, res, r["unit"], pack, GR, R1E, LO))
-            except (RuntimeError, SystemExit, ValueError, KeyError) as e:
-                row.update(excluded=True, why=[f"presets: {e}"])
+            except (RuntimeError, SystemExit, ValueError, KeyError, TypeError) as e:
+                why.append(f"presets: {e}")
+        row["excluded"] = bool(why)
         runs[tag] = row
-        if not row["excluded"]:
-            per_unit[r["unit"]] = tag
+        by_unit.setdefault(r["unit"], []).append((r["made"], tag, row["excluded"]))
     out = {"plan": PLAN, "plugin": m["plugin"], "runs": runs, "units": {}}
     for u in units():
-        tag = per_unit.get(u["key"])
-        row = runs.get(tag) if tag else None
-        if row is None:
-            out["units"][u["key"]] = {"cls": None, "why": "no run passed"}
+        tag = pick_run(by_unit.get(u["key"], []))
+        if tag is None:
+            n = len(by_unit.get(u["key"], []))
+            out["units"][u["key"]] = {"cls": None, "cls_model": u["cls"], "label": u["cls"], "agrees": True,
+                                      "no_research": True, "runs": n,
+                                      "why": "no run passed" + ("" if n >= 2 else "; one rerun allowed (--again)")}
             continue
+        row = runs[tag]
         sel_s, s_settings = ms[row["amp"]][u["cls"]] if row["cls_model"] == u["cls"] else (None, None)
+        rt = row["presets"].get("route")
         out["units"][u["key"]] = {
             "tag": tag, "cls": row["cls"], "cls_model": row["cls_model"], "heavier": row["cls"] != row["cls_model"],
             "label": u["cls"], "agrees": row["cls_model"] == u["cls"], "amp": row["amp"], "template": row["template"],
-            "presets": row["presets"],
-            "route_is_S": (None if s_settings is None else
-                           row["presets"]["route"]["settings"] == LO.sdict(s_settings)
-                           and row["presets"]["route"]["select"] == sel_s)}
+            "presets": row["presets"], "route_error": row.get("route_error"), "no_research": False,
+            "route_is_S": (None if s_settings is None or rt is None or rt["select"] != sel_s else
+                           rt["settings"] == LO.sdict(s_settings))}
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     P.save(research_dir() / "research.json", out)
     for k, v in out["units"].items():
-        print(f"{k:<52} {v.get('cls')!s:<8} label {v.get('label', '-')!s:<7} amp {v.get('amp')} "
-              f"{'' if v.get('cls') else v.get('why')}")
-    print(f"excluded runs: {[t for t, r in runs.items() if r['excluded']]}")
+        print(f"{k:<52} {v.get('cls')!s:<8} label {v['label']:<7} amp {v.get('amp')} "
+              f"{v['why'] if v.get('no_research') else ''}")
+    print(f"excluded runs: {[(t, r['why']) for t, r in runs.items() if r['excluded']]}")
     secs = [r["seconds"] for r in runs.values() if r.get("seconds")]
     if secs:
         print(f"wall time per run: median {statistics.median(secs) / 60:.1f} min, {min(secs) / 60:.1f}-"
               f"{max(secs) / 60:.1f}")
+    n_r = sum(not v["no_research"] for v in out["units"].values())
+    print(f"units with R: {n_r} of {len(out['units'])}")
+    if n_r == 0:
+        raise SystemExit("no unit has a passing research run: the runner does not work here; stop for the user")
     print("EXAM RESEARCH-COLLECT DONE")
 
 
 def build_r(folder, res, key, pack, GR, R1E, LO):
-    """R-wet, R and R-route of one passed run (see `cmd_research_collect`) -> {cls, cls_model, amp, template, presets}."""
+    """R-wet, R and R-route of one passed run (see `cmd_research_collect`). R-route failing leaves R and R-wet standing
+    (`route_error`). -> {cls, cls_model, amp, template, presets, replay_equal, route_error}."""
     cmd = res["apply_command"]
     tpl = out_of(cmd, "--template")
-    if not tpl or not pathlib.Path(tpl).exists():
-        raise ValueError(f"the command's template {tpl!r} is missing")
+    if tpl and not pathlib.Path(tpl).is_absolute():
+        tpl = str((folder / tpl).resolve())
     wet = res.get("preset") or out_of(cmd, "--out")
+    if not wet:
+        raise ValueError("no preset named")
     wet = (folder / wet) if not pathlib.Path(wet).is_absolute() else pathlib.Path(wet)
     if not wet.exists() or folder.resolve() not in wet.resolve().parents:
         raise ValueError(f"the preset {wet} is not a file the run wrote")
     d = research_dir() / "presets" / key
     d.mkdir(parents=True, exist_ok=True)
     shutil.copy2(wet, d / "wet.xml")
-    GR._replay(cmd, pathlib.Path(tpl), d / "replay.xml", folder)
     sel, _ = R1E.parse_preset(d / "wet.xml", pack)
     amp = SELECT_AMP[sel]
     if res.get("amp") and res["amp"] != amp:
         raise ValueError(f"result.json's amp {res['amp']} is not the preset's {amp}")
     GR._apply(["--template", str(d / "wet.xml"), "--recipe", f"dry/{amp}", "--strip-irs", "--out", str(d / "tonal.xml")],
               d)
-    GR._apply(["--template", tpl, "--recipe", f"dry/{amp}", "--strip-irs", "--out", str(d / "route.xml")], d)
+    names, route_error, replay_equal = ["wet", "tonal"], None, None
+    try:
+        if not tpl or not pathlib.Path(tpl).exists():
+            raise ValueError(f"the command's template {tpl!r} is missing")
+        t_amp = SELECT_AMP[R1E.parse_preset(pathlib.Path(tpl), pack)[0]]
+        GR._apply(["--template", tpl, "--recipe", f"dry/{t_amp}", "--strip-irs", "--out", str(d / "route.xml")], d)
+        names.append("route")
+        GR._replay(cmd, pathlib.Path(tpl), d / "replay.xml", folder)
+        names.append("replay")
+    except (RuntimeError, ValueError, KeyError) as e:
+        route_error = str(e)
     presets = {}
-    for name in ("wet", "tonal", "route", "replay"):
+    for name in names:
         s, ed = R1E.parse_preset(d / f"{name}.xml", pack)
         presets[name] = {"path": str(d / f"{name}.xml"), "sha256": sha_file(d / f"{name}.xml"), "select": s,
                          "settings": LO.sdict(ed)}
+    if "replay" in presets:
+        replay_equal = presets["replay"]["settings"] == presets["wet"]["settings"]
     cls = str(res.get("gain_class", "")).lower()
     return {"cls": cls, "cls_model": model_class(cls), "amp": amp, "template": tpl, "presets": presets,
-            "replay_equal": presets["replay"]["settings"] == presets["wet"]["settings"]}
+            "replay_equal": replay_equal, "route_error": route_error}
 
 
 # --- the chain (the model path's arms) --------------------------------------------------------------------------------
@@ -1244,8 +1487,10 @@ def wait_mps(log=print):
         time.sleep(30)
 
 
-def chain_argv(arm, u, inp, res):
-    """The product's command for one arm on one unit (`scripts/model_preset.py`, its default version unless M-x)."""
+def chain_argv(arm, u, inp, res, m_start=None):
+    """The product's command for one arm on one unit (`scripts/model_preset.py`). M and M-lab: the span with
+    `--part` (the selector); M-crop: `--start` at the crop; M-x and M-unity: `--start` at M's own window (`m_start`,
+    in file time; M-unity's in session time), so each changes one stage."""
     r = inp["units"][u["key"]]
     w = chain_dir(arm, u["key"])
     cls = u["cls"] if arm == "Mlab" else res["units"][u["key"]]["cls_model"]
@@ -1254,9 +1499,13 @@ def chain_argv(arm, u, inp, res):
             "--out", str(w / "model.xml"), "--name", "exam", "--force"]
     if arm == "Mcrop":
         return argv + ["--start", f"{r['crops'][u['members'][0]]['file_s'][0]:.6f}"]
-    span = r["span"]["session_s"] if arm == "Munity" else r["span"]["file_s"]
-    argv += ["--part", f"{span[0]:.6f}", f"{span[1]:.6f}", "--part-from", "the user"]
-    return argv + (["--version", "xlst_mdxc"] if arm == "Mx" else [])
+    if arm in ("Mx", "Munity"):
+        if m_start is None:
+            raise SystemExit(f"{arm} {u['key']}: needs M's window")
+        s = m_start + (r["offset_samples"] / 48000 if arm == "Munity" else 0.0)
+        return argv + ["--start", f"{s:.6f}"] + (["--version", "xlst_mdxc"] if arm == "Mx" else [])
+    span = r["span"]["file_s"]
+    return argv + ["--part", f"{span[0]:.6f}", f"{span[1]:.6f}", "--part-from", "the user"]
 
 
 def needs_lab(u, res):
@@ -1268,7 +1517,15 @@ def cmd_chain(args):
     M-lab (where research's class is not the label's; M's window copied in, so only the class changes), M-x (CPU).
     A done run is kept. -> chain/<arm>/<unit>/, chain/log.json; the last line "EXAM CHAIN DONE"."""
     entry()
+    require_guards()
     inp, res = load_inputs(), load_research()
+    check_inputs_files(inp)
+    lock = {"research_json": sha_file(research_dir() / "research.json"), "inputs_json": sha_file(inputs_path())}
+    if chain_lock().exists():
+        if json.loads(chain_lock().read_text())["hashes"] != lock:
+            raise SystemExit("research.json or inputs.json changed since the chain started: stop")
+    else:
+        P.save(chain_lock(), {"hashes": lock, "start": time.strftime("%Y-%m-%d %H:%M:%S")})
     logp = ex_dir() / "chain" / "log.json"
     log = json.loads(logp.read_text()) if logp.exists() else {}
     arms = [a for a in CHAIN if not args.arms or a in args.arms.split(",")]
@@ -1291,8 +1548,16 @@ def cmd_chain(args):
                         shutil.copy2(m / f, w / f)
             else:
                 waited = wait_mps(lambda s: print(s, flush=True))
+            m_start = None
+            if arm in ("Mx", "Munity"):
+                mw = chain_dir("M", u["key"]) / "window.json"
+                if not (chain_dir("M", u["key"]) / "preset.json").exists():
+                    print(f"[{arm}] {u['key']}: M has no preset; skipped", flush=True)
+                    failed.append(f"{arm}|{u['key']} (no M)")
+                    continue
+                m_start = float(json.loads(mw.read_text())["start_s"])
             print(f"[{arm}] {u['key']} start {time.strftime('%H:%M:%S')}", flush=True)
-            rc, sec = run_model_preset(chain_argv(arm, u, inp, res), w / "run.log")
+            rc, sec = run_model_preset(chain_argv(arm, u, inp, res, m_start), w / "run.log")
             log[f"{arm}|{u['key']}"] = {"rc": rc, "seconds": sec, "waited_mps_s": waited,
                                         "end": time.strftime("%Y-%m-%d %H:%M:%S")}
             P.save(logp, log)
@@ -1307,8 +1572,10 @@ def cmd_cpick(_args):
     class the chain told the model (12 renders each), then `product_path pick` per unit with M's stem features and
     class. -> cpick/units/<unit>/preset.json."""
     entry()
+    require_guards()
     inp, res = load_inputs(), load_research()
-    cen = centre_answers(json.loads((P.out_dir() / CENTRES).read_text()), "Cen")
+    check_lock()
+    cen = load_centres()["EX-C"]
     classes = sorted({res["units"][u["key"]]["cls_model"] for u in units()})
     m0 = json.loads((chain_dir("M", units()[0]["key"]) / "answers.json").read_text())
     root, plan, drift, dirs, parts, ms = P.vreal_ctx()
@@ -1317,10 +1584,10 @@ def cmd_cpick(_args):
         if (d / "renders.json").exists():
             continue
         d.mkdir(parents=True, exist_ok=True)
-        ans = {a: {"select": cen[a][cls].get("select", ms[a][cls][0]), "settings": cen[a][cls]["settings"],
-                   "amp_p": None} for a in AMPS}
+        ans = {a: {"select": cen[a][cls]["select"], "settings": cen[a][cls]["settings"], "amp_p": None} for a in AMPS}
         P.save(d / "answers.json", {"cls": cls, "gain_db": None, "model_lufs": m0["model_lufs"], "answers": ans,
-                                    "stem_feat": [], "what": "C (ladder/centres.json all_labels.Cen), for its renders"})
+                                    "stem_feat": [], "what": "C (ladder/centres.json centres.cen), for its renders",
+                                    "centres_json": sha_file(P.out_dir() / CENTRES)})
         done = subprocess.run([main_py(), "-m", "learn.product_path", "render", str(d)], cwd=PLUGIN_ROOT, env=child_env())
         if done.returncode:
             raise SystemExit(f"C-pick's renders for {cls} failed")
@@ -1346,6 +1613,29 @@ def cmd_cpick(_args):
 
 # --- the answers files and the zero-render tables ---------------------------------------------------------------------
 
+def load_centres():
+    """Step 2's all-labels constants, checked to be the adopted pair's (its model_sha256 and C3-cabS hold).
+    -> {"EX-C": cen, "EX-Cown": aconst}, each {amp: {cls: {select, settings}}}."""
+    p = P.out_dir() / CENTRES
+    if not p.exists():
+        raise SystemExit(f"{p} does not exist yet: Step 2's stage 0 writes it; hand back")
+    doc = json.loads(p.read_text())
+    a = json.loads((P.out_dir() / "adopted-model.json").read_text())
+    why = centres_refusal(doc, [a["model"]["sha256"][str(sd)]["best"] for sd in P.SEEDS])
+    if why:
+        raise SystemExit(why)
+    return {t: centre_answers(doc, n) for t, n in CENTRE_NAMES.items()}
+
+
+def check_lock():
+    """research.json and inputs.json are the chain's (fix 6): refuses if either changed after the chain started."""
+    if not chain_lock().exists():
+        raise SystemExit("the chain has not started: no lock")
+    want = json.loads(chain_lock().read_text())["hashes"]
+    got = {"research_json": sha_file(research_dir() / "research.json"), "inputs_json": sha_file(inputs_path())}
+    if want != got:
+        raise SystemExit(f"research.json or inputs.json changed since the chain started ({want} vs {got}): stop")
+
 def zt_label(slug, amp, search):
     return json.loads((P.DATA / f"learn/arm-a-mega53/F-perfect-sep/ZT/{slug}/{amp}/{search}.json").read_text())
 
@@ -1357,18 +1647,23 @@ def page_l_amp(slug, search):
 
 def cmd_answers(_args):
     """Every arm's answers (zero renders) -> vreal/answers/EX-*.json, and the zero-render tables -> exam/tables.json.
-    Prints each file's sha256 for the ledger's phase_exam_answers (renders refuse without them)."""
+    Refuses if research.json or inputs.json changed since the chain started, or if any chain run's or C-pick's class is
+    not the one it should hold (research's model class; the label's for M-lab). Prints each file's sha256 (and the
+    guards' records') for the ledger's phase_exam_answers (renders refuse without them)."""
     from learn import local_objective as LO
 
     e = entry()
     if (e.get(PHASE_ANSWERS) or {}).get("hashes"):
         raise SystemExit("the answers' hashes are in the ledger: answers are written once")
+    gshas = require_guards()
     inp, res = load_inputs(), load_research()
+    check_lock()
     root, plan, drift, dirs, parts, ms = P.vreal_ctx()
     v10 = set(plan["vreal"]["v_real_10"])
     out = {t: {} for t in TAGS}
     meta = {t: {} for t in TAGS}
-    model_cls = {}
+    model_cls, wrong = {}, []
+    s_stored = json.loads(P.vreal_answers_path("S").read_text())["answers"]
     for u in units():
         k = u["key"]
         ru = res["units"][k]
@@ -1380,48 +1675,59 @@ def cmd_answers(_args):
             if not (d / "preset.json").exists():
                 raise SystemExit(f"{arm} {k}: no preset.json (the chain has not finished)")
             pr = json.loads((d / "preset.json").read_text())
+            ans = json.loads((d / "answers.json").read_text())
+            want = u["cls"] if arm == "Mlab" else ru["cls_model"]
+            if pr["cls"] != want or ans["cls"] != want:
+                wrong.append(f"{arm} {k}: class {pr['cls']}/{ans['cls']}, not {want}")
             for slug in u["members"]:
                 out[tag][f"{slug}|{pr['amp']}"] = {ANY: {"select": pr["select"], "settings": pr["settings"]}}
-            meta[tag][k] = {"preset_json": sha_file(d / "preset.json"), "window_json": sha_file(d / "window.json")}
+            meta[tag][k] = {"preset_json": sha_file(d / "preset.json"), "answers_json": sha_file(d / "answers.json"),
+                            "window_json": sha_file(d / "window.json"), "cls": pr["cls"]}
             if arm == "M":
-                ans = json.loads((d / "answers.json").read_text())
                 for slug in u["members"]:
                     for a in AMPS:
                         out["EX-M3"][f"{slug}|{a}"] = {ANY: {"select": ans["answers"][a]["select"],
                                                              "settings": ans["answers"][a]["settings"]}}
                     sel, S = ms[pr["amp"]][u["cls"]]
-                    s_ans = json.loads(P.vreal_answers_path("S").read_text())["answers"][f"{slug}|{pr['amp']}"][ANY]
+                    s_ans = s_stored[f"{slug}|{pr['amp']}"][ANY]
                     if P.answers_sha(s_ans) != P.answers_sha({"select": sel, "settings": LO.sdict(S)}):
                         raise SystemExit(f"{slug}: phase 4's stored S is not the live copy's")
                     out["EX-S"][f"{slug}|{pr['amp']}"] = {ANY: s_ans}
-        for name, tag in (("tonal", "EX-R"), ("wet", "EX-Rwet"), ("route", "EX-Rroute")):
-            p = ru["presets"][name]
-            if sha_file(p["path"]) != p["sha256"]:
-                raise SystemExit(f"{k} {name}: the preset changed since research-collect")
-            for slug in u["members"]:
-                out[tag][f"{slug}|{SELECT_AMP[p['select']]}"] = {ANY: {"select": p["select"], "settings": p["settings"]}}
+                    if ru["cls_model"] != u["cls"]:                # S of M's class on M's amp: the loudness row's
+                        sel2, S2 = ms[pr["amp"]][ru["cls_model"]]
+                        out["EX-Sm"][f"{slug}|{pr['amp']}"] = {ANY: {"select": sel2, "settings": LO.sdict(S2)}}
+        if not ru.get("no_research"):
+            for name, tag in (("tonal", "EX-R"), ("wet", "EX-Rwet"), ("route", "EX-Rroute")):
+                p = ru["presets"].get(name)
+                if p is None:                                  # R-route failed alone: R and R-wet stand
+                    continue
+                if sha_file(p["path"]) != p["sha256"]:
+                    raise SystemExit(f"{k} {name}: the preset changed since research-collect")
+                for slug in u["members"]:
+                    out[tag][f"{slug}|{SELECT_AMP[p['select']]}"] = {ANY: {"select": p["select"],
+                                                                           "settings": p["settings"]}}
         cp = ex_dir() / "cpick" / "units" / k / "preset.json"
         if not cp.exists():
             raise SystemExit(f"{k}: no C-pick preset (run c-pick)")
         pc = json.loads(cp.read_text())
+        if pc["cls"] != ru["cls_model"]:
+            wrong.append(f"C-pick {k}: class {pc['cls']}, not {ru['cls_model']}")
+        meta["EX-Cpick"][k] = {"preset_json": sha_file(cp), "cls": pc["cls"]}
         for slug in u["members"]:
             out["EX-Cpick"][f"{slug}|{pc['amp']}"] = {ANY: {"select": pc["select"], "settings": pc["settings"]}}
-    doc = json.loads((P.out_dir() / CENTRES).read_text())
-    cen = {t: centre_answers(doc, n) for t, n in CENTRE_NAMES.items()}
-    m_amp = {s: k.split("|")[1] for k in out["EX-M"] for s in [k.split("|")[0]]}
+    if wrong:
+        raise SystemExit(f"classes paired wrongly: {wrong}")
+    cen = load_centres()
+    m_amp = {k.split("|")[0]: k.split("|")[1] for k in out["EX-M"]}
     for u in units():
         for slug in u["members"]:
             for tag in ("EX-C", "EX-Cown"):
                 for a in AMPS:
-                    v = cen[tag][a][u["cls"]]
-                    out[tag][f"{slug}|{a}"] = {ANY: {"select": v.get("select", ms[a][u["cls"]][0]),
-                                                     "settings": v["settings"]}}
+                    out[tag][f"{slug}|{a}"] = {ANY: dict(cen[tag][a][u["cls"]])}
             if model_cls[u["key"]] != u["cls"]:
                 a = m_amp[slug]
                 for tag, base in (("EX-Cm", "EX-C"), ("EX-Cownm", "EX-Cown")):
-                    v = cen[base][a][model_cls[u["key"]]]
-                    out[tag][f"{slug}|{a}"] = {ANY: {"select": v.get("select", ms[a][model_cls[u['key']]][0]),
-                                                     "settings": v["settings"]}}
+                    out[tag][f"{slug}|{a}"] = {ANY: dict(cen[base][a][model_cls[u["key"]]])}
             if slug in v10:
                 for a in AMPS:
                     sel, S = ms[a][u["cls"]]
@@ -1432,17 +1738,20 @@ def cmd_answers(_args):
                         out["EX-L"].setdefault(f"{slug}|{a}", {})[search] = {"select": sel, "settings": best}
     shas = {}
     common = {"plan": PLAN, "ledger": f"{P.LEDGER_ID} {PHASE_ANSWERS}", "inputs_json": sha_file(inputs_path()),
-              "research_json": sha_file(research_dir() / "research.json")}
+              "research_json": sha_file(research_dir() / "research.json"),
+              "centres_json": sha_file(P.out_dir() / CENTRES)}
     what = {"EX-R": "research's preset with the amp's dry recipe (tonal edits kept, time effects off)",
-            "EX-Rwet": "research's preset as written", "EX-Rroute": "research's template made dry",
+            "EX-Rwet": "research's preset as written", "EX-Rroute": "research's template made dry (its own amp's recipe)",
             "EX-M": "the model path (default version) on the released mix", "EX-M3": "M's answers on all three amps",
-            "EX-Mx": "the model path with --version xlst_mdxc", "EX-Mlab": "M with the label's class (M's window)",
-            "EX-Mcrop": "the model path with --start at the crop", "EX-Munity": "the model path on the unity sum",
+            "EX-Mx": "the model path with --version xlst_mdxc at M's window", "EX-Mlab": "M with the label's class (M's window)",
+            "EX-Mcrop": "the model path with --start at the crop", "EX-Munity": "the model path on the unity sum at M's window",
             "EX-Cpick": "the stock-DI pick on C's presets", "EX-C": "Step 2's labels' centre (all labels), label class",
             "EX-Cown": "Step 2's model's own constant (all labels), label class",
             "EX-Cm": "C on M's class and amp, where research's class is not the label's",
             "EX-Cownm": "C-own on M's class and amp, where research's class is not the label's",
-            "EX-S": "phase 4's S on M's amp, re-rendered (identical check)", "EX-L": "the stored ZT label (settings.best)"}
+            "EX-S": "phase 4's S on M's amp, re-rendered (identical check)",
+            "EX-Sm": "S of M's class on M's amp, where research's class is not the label's (the loudness row)",
+            "EX-L": "the stored ZT label (settings.best)"}
     for t in TAGS:
         P.save(answers_path(t), {**common, "tag": t, "what": what[t], "meta": meta.get(t), "answers": out[t],
                                  "time": time.strftime("%Y-%m-%d %H:%M:%S")})
@@ -1450,10 +1759,12 @@ def cmd_answers(_args):
     tables = zero_render_tables(inp, res, out)
     P.save(ex_dir() / "tables.json", tables)
     shas["tables_json"] = sha_file(ex_dir() / "tables.json")
+    shas.update(gshas)
     print(json.dumps({k: v for k, v in tables.items() if k in ("classes", "picks")}, indent=1)[:4000])
     print(f"record in the ledger's {P.LEDGER_ID} entry before any judge render: \"{PHASE_ANSWERS}\": "
           + json.dumps({"hashes": shas}, indent=1))
-    print(f"groups to render: {sum(len(v) for v in out.values())}, renders {2 * sum(len(g) for v in out.values() for g in v.values())}")
+    print(f"groups to render: {sum(len(v) for v in out.values())}, renders "
+          f"{2 * sum(len(g) for v in out.values() for g in v.values())}")
     print("EXAM ANSWERS DONE")
 
 
@@ -1473,7 +1784,7 @@ def zero_render_tables(inp, res, out):
         k = u["key"]
         ru = res["units"][k]
         t["classes"][k] = {"label": u["cls"], "research": ru["cls"], "model": ru["cls_model"], "agrees": ru["agrees"],
-                           "amp": ru["amp"]}
+                           "amp": ru.get("amp"), "no_research": bool(ru.get("no_research"))}
         r = inp["units"][k]
         first = u["members"][0]
         di = io.load(session_di(crop_dir(first, parts))).mono().astype(np.float64)
@@ -1534,8 +1845,9 @@ def unhashed(e):
             bad.append(f"{t}: no answers file")
         elif want.get(t) != sha_file(p):
             bad.append(f"{t}: not the ledger's")
-    if want.get("tables_json") != (sha_file(ex_dir() / "tables.json") if (ex_dir() / "tables.json").exists() else None):
-        bad.append("tables.json: not the ledger's")
+    for name, p in {"tables_json": ex_dir() / "tables.json", **guard_files()}.items():
+        if not p.exists() or want.get(name) != sha_file(p):
+            bad.append(f"{p.name}: not the ledger's")
     return bad
 
 
@@ -1586,6 +1898,7 @@ def cmd_render(args):
     from learn import trusted_data as T
 
     e = entry()
+    require_guards()
     bad = unhashed(e)
     if bad:
         raise SystemExit(f"renders refuse until the answers' hashes are in the ledger: {bad}")
@@ -1640,6 +1953,7 @@ def cmd_render(args):
                     cp.parent.mkdir(parents=True, exist_ok=True)
                     np.save(cp, np.asarray(y, np.float64))
             rec["renders"] = 2 * len(ans[t][key])
+            rec["time"] = time.strftime("%Y-%m-%d %H:%M:%S")       # the audit checks the hashes were in the ledger first
             if t == "EX-S":
                 old = (stored_s.get(key) or {}).get("render_sha256")
                 rec.update(recheck_of="S", recheck_sha256=old, identical=old == rec["render_sha256"])
@@ -1655,14 +1969,15 @@ def cmd_render(args):
 # --- the report (zero renders) ----------------------------------------------------------------------------------------
 
 def row_specs():
-    """The declared rows (plan section 7): (name, spec a, spec b, scope); scope "all", "v10" or "lab"."""
+    """The declared rows (plan section 7): (name, spec a, spec b, scope). Scopes: "all" (every slug), "r" (the slugs with
+    R: a unit with no passing research run leaves these rows), "rroute" (with R-route), "lab" (with M-lab), "v10"."""
     M, R = ("EX-M", "own"), ("EX-R", "own")
     S3 = ("S", "all")
-    rows = [("M - R (primary)", M, R, "all"),
+    rows = [("M - R (primary)", M, R, "r"),
             ("M - S", M, S3, "all"), ("M - S on M's amp", M, ("S", "at:EX-M"), "all"),
-            ("R - S", R, S3, "all"), ("R - S on R's amp", R, ("S", "at:EX-R"), "all"),
-            ("R-wet - R", ("EX-Rwet", "own"), R, "all"), ("R - R-route", R, ("EX-Rroute", "own"), "all"),
-            ("R-route - S", ("EX-Rroute", "own"), S3, "all")]
+            ("R - S", R, S3, "r"), ("R - S on R's amp", R, ("S", "at:EX-R"), "r"),
+            ("R-wet - R", ("EX-Rwet", "own"), R, "r"), ("R - R-route", R, ("EX-Rroute", "own"), "rroute"),
+            ("R-route - S", ("EX-Rroute", "own"), S3, "rroute")]
     rows += [(f"M3 - S on {a}", ("EX-M3", f"amp:{a}"), ("S", f"amp:{a}"), "all") for a in AMPS]
     rows += [("M3 - S (three amps)", ("EX-M3", "all"), S3, "all"),
              ("M - C on M's amp", M, ("EX-C", "at:EX-M", "EX-Cm"), "all"),
@@ -1672,7 +1987,8 @@ def row_specs():
              ("C-pick - S", ("EX-Cpick", "own"), S3, "all"),
              ("M-x - M", ("EX-Mx", "own"), M, "all"), ("M-lab - M", ("EX-Mlab", "own"), M, "lab"),
              ("M-crop - M", ("EX-Mcrop", "own"), M, "all"), ("M-unity - M", ("EX-Munity", "own"), M, "all"),
-             ("M - M3 (three amps' mean)", M, ("EX-M3", "all"), "all"), ("M - M3's best amp", M, ("EX-M3", "best"), "all"),
+             ("M - M3 (three amps' mean)", M, ("EX-M3", "all"), "all"),
+             ("M - M3's best amp (an oracle: the amp picked on the half it is scored on)", M, ("EX-M3", "best"), "all"),
              ("L - S", ("EX-L", "all"), S3, "v10"), ("M - S (V-real-10)", M, S3, "v10")]
     rows += [(f"M - {n} on M's amp (stored)", M, (t, "at:EX-M"), "all") for n, t in STORED.items()]
     return rows
@@ -1681,11 +1997,15 @@ def row_specs():
 def cmd_report(args):
     """The rows, once every judge record exists and the guards pass (plan section 6): the answers' hashes the ledger's,
     every record from today's answers, EX-S identical to phase 4's S renders, S's positive control; L's fresh values
-    beside the stored ones; M against M3 on M's amp (the output gain is not scored). -> exam/report-<label>.json."""
+    beside the stored ones; M against M3 on M's amp (the output gain is not scored). A held half where S is not finite
+    drops from every row (counted); only a missing answer stops. Refuses if any report exists: V-real is read once.
+    -> exam/report-<label>.json."""
     entry()
+    require_guards()
     rp = ex_dir() / f"report-{args.label}.json"
-    if rp.exists():
-        raise SystemExit(f"{rp.name} exists: V-real is read once")
+    done = sorted(p.name for p in ex_dir().glob("report-*.json"))
+    if done:
+        raise SystemExit(f"{done} exists: V-real is read once")
     bad = unhashed(P.ledger_entry())
     if bad:
         raise SystemExit(f"the answers' hashes are not the ledger's: {bad}")
@@ -1713,13 +2033,16 @@ def cmd_report(args):
     attrs = attrs_of(inp)
     band_of = {s: PR.VREAL[s][0] for s in PR.VREAL}
     unit_of = {s: P.vreal_part_key(s) for s in PR.VREAL}
-    scopes = {"all": set(PR.VREAL), "v10": v10, "lab": set(amp_of["EX-Mlab"])}
+    scopes = {"all": set(PR.VREAL), "v10": v10, "lab": set(amp_of["EX-Mlab"]), "r": set(amp_of["EX-R"]),
+              "rroute": set(amp_of["EX-Rroute"])}
+    out_scope = {k: len(v) for k, v in scopes.items()}
     out = {"plan": PLAN, "ledger": f"{P.LEDGER_ID} {PHASE}", "s_positive_control": pc, "s_recheck_identical":
-           len(recs["EX-S"]), "rows": {}}
+           len(recs["EX-S"]), "scope_slugs": out_scope,
+           "units_without_R": sorted({unit_of[s] for s in scopes["all"] - scopes["r"]}), "rows": {}}
     for name, a, b, scope in row_specs():
         rows, cnt = exam_rows(judge, amp_of, a, b, scopes[scope], band_of, unit_of)
-        if not cnt["complete"] and scope != "lab":
-            raise SystemExit(f"{name}: incomplete {cnt}")
+        if cnt["missing"]:
+            raise SystemExit(f"{name}: {cnt['missing']} held halves without an answer {cnt}")
         out["rows"][name] = {"a": a, "b": b, "scope": scope, **cnt, **stratified(rows, attrs)} if rows else {
             "a": a, "b": b, "scope": scope, **cnt, "all": None}
     ms_ = out["rows"]["M - S (V-real-10)"]["all"]
@@ -1747,9 +2070,9 @@ def cmd_report(args):
                 inv.append(abs(math.log(x / y)))
     out["output_gain_not_scored"] = {"M vs M3 on M's amp, max |ln ratio|": max(inv), "n": len(inv)}
     loud = {}
-    for s, a in amp_of["EX-M"].items():
-        m_l, s_l = recs["EX-M"][f"{s}|{a}"]["lufs"][ANY], recs["EX-S"][f"{s}|{a}"]["lufs"][ANY]
-        loud[s] = m_l - s_l
+    for s, a in amp_of["EX-M"].items():                  # against S of M's own class (EX-Sm where the classes differ)
+        sref = recs["EX-Sm"].get(f"{s}|{a}") or recs["EX-S"][f"{s}|{a}"]
+        loud[s] = recs["EX-M"][f"{s}|{a}"]["lufs"][ANY] - sref["lufs"][ANY]
     out["loudness_M_minus_S_db"] = {"per_slug": loud, "median_abs": statistics.median(abs(v) for v in loud.values()),
                                     "band_mean": P.clustered([(band_of[s], unit_of[s], v) for s, v in loud.items()])}
     out["tables"] = json.loads((ex_dir() / "tables.json").read_text())
@@ -1894,7 +2217,7 @@ def cmd_page(args):
     ups = []
     for u in page_units():
         s = u["slug"]
-        amps = {c: amp_of[t].get(s) for c, t in tags.items() if t != "EX-L"}
+        amps = {c: amp_of[t][s] for c, t in tags.items() if t != "EX-L" and s in amp_of[t]}   # a unit with no R: 3
         hk = {c: ANY for c in amps}
         if any(k.startswith(s + "|") for k in ans["EX-L"]):
             amps["L"], hk["L"] = page_l_amp(s, u["search"]), u["search"]

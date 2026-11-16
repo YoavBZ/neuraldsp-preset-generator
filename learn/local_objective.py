@@ -172,7 +172,8 @@ SEPARATIONS = (r"-m learn\.local_objective_1c separate\b", r"-m learn\.separator
                r"-m learn\.xlance_finetune (prep|separate|vreal-stems)\b",  # D_F5ft's stems (ROADMAP (b))
                r"-m learn\.trusted_data_t3_bk (control|build)\b",  # D_F5bk's remixed stems (clean/crunch pool step 3)
                r"-m learn\.cc_build build\b",                    # D_CC's mixes and stems (clean/crunch pool step 2)
-               r"-m learn\.preset_ladder sep\b")                 # docs/preset-ladder-plan.md (the ladder's stems)
+               r"-m learn\.preset_ladder sep\b",                 # docs/preset-ladder-plan.md (the ladder's stems)
+               r"-m learn\.product_path separate\b")             # the model path's separations (the exam's chain, R1)
 DISK_GUARD_GB = 31.0             # the ML plan's 30 GB rule, as the other steps apply it
 MB_PER_RENDER = 0.7              # measured: 48 step-0b 10-s 16-bit FLACs, mean 0.48 MB, max 0.68 MB
 PEAK_TO = 0.99

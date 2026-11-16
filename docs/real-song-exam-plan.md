@@ -99,18 +99,18 @@ track and judge lag come from the existing contexts (`pipeline_fix.vreal_ctx`, `
 
 | Arm | What it is | How it is made |
 |---|---|---|
-| **S** | The label class's factory start on each amp | Stored (`vreal/judge/S`, 33 groups); re-rendered on M's amp for every slug (EX-S, 11 groups), required identical |
+| **S** | The label class's factory start on each amp | Stored (`vreal/judge/S`, 33 groups); re-rendered on M's amp for every slug (EX-S, 11 groups), required identical; S of M's class on M's amp beside (EX-Sm) where research's class differs, for the loudness row |
 | **R** | generate's default, from research | One blinded headless run per unit (below). Its preset with the amp's dry recipe: its tonal edits kept, its time effects off (the routing study's tonal arm) |
 | R-wet | R as written | The agent's own file |
-| R-route | R's start alone | The agent's template with the dry recipe |
-| **M** (primary) | The model path as shipped | `model_preset.py --song MIX --cls <R's class> --part A B --part-from "the user"`, default version. A heavier route runs as crunch and is flagged |
+| R-route | R's start alone | The agent's template with its own amp's dry recipe (a relative template path resolved against the run's folder); if only R-route fails, R and R-wet stand |
+| **M** (primary) | The model path as shipped | `model_preset.py --song MIX --cls <R's class> --part A B --part-from "the user"`, default version. A heavier route runs as crunch and is flagged; a unit with no passing research run runs on the label's class |
 | M3 | M's answers on all three amps | From M's `answers.json` |
-| M-x | M with `--version xlst_mdxc` | Same command |
+| M-x | M with `--version xlst_mdxc` | `--start` at M's own window, so only the separation changes |
 | M-lab | M with the label's class | Only where R's class differs; M's window is copied in, so only the class changes |
 | M-crop | M with `--start` at the crop | No selector (read 3's window) |
-| M-unity | M on the unity-sum song | Mono, so no `xlst_mdxc` twin |
-| **C** | Step 2's labels' centre (all labels) | `ladder/centres.json`, the label class on all three amps; on M's class and amp beside (EX-Cm) where research's class differs |
-| C-own | Step 2's model's own constant (all labels) | As C (EX-Cown, EX-Cownm) |
+| M-unity | M on the unity-sum song | `--start` at M's own window (in session time), so only the input changes. Mono, so no `xlst_mdxc` twin |
+| **C** | Step 2's labels' centre (all labels) | `ladder/centres.json`'s `centres.cen` (the ladder's shape), its `model_sha256` required to be the adopted pair's and its `hold` C3-cabS; the label class on all three amps; on M's class and amp beside (EX-Cm) where research's class differs |
+| C-own | Step 2's model's own constant (all labels) | `centres.aconst`, the same checks: so it is the adopted pair's own constant (EX-Cown, EX-Cownm) |
 | C-pick | C through the model path's pick | `product_path render` once per class on C's three presets (24 stock-DI renders), then `product_path pick` per unit with M's stem features |
 | **L** | The stored search label, as ceiling | `arm-a-mega53/F-perfect-sep/ZT` `settings.best` per slug, amp and search half (V-real-10 only), re-rendered, judged on the held half. 52 evaluations over the core controls: a lower bound on the headroom |
 
@@ -118,32 +118,62 @@ track and judge lag come from the existing contexts (`pipeline_fix.vreal_ctx`, `
 - **Effects:** every model-path arm keeps the time effects the model path writes (S's, off); research's effects are not
   added. The amp track is dry, and J0 was never validated on effects. Only R-wet carries the agent's effects.
 
-**The research runs.** One fresh headless `claude -p` per unit, the routing study's runner (`research/generate_routing.py`
-`_claude`: its sandbox settings, which deny reading the data root, the repository and the session transcripts; its
-model, Claude Opus 5.5; its tools), with the scrubbed plugin (the routing study's plugin parts at this branch's commit,
-checked to name no V-real title or band), in a neutral folder outside the data root. Each gets the whole song as
-`song-NN.flac` (rewritten with no metadata; this copy alone is clipped to ±1), the title and artist, the span, pack
-Morgan, no listening page, an empty data folder (so no learned notes), and no model flag. A run with no result is asked
-once more with the re-check's non-answer. The audit (guard 5) excludes a run whose tool calls name the data root, the
-repository, its documents or this exam, or whose web results name the project; an excluded run is rerun once in a fresh
-folder, and the rerun is reported.
+**The research runs.** One fresh headless `claude -p` per unit, the routing re-check's call (`research/generate_routing.py`
+`_claude`: its model, Claude Opus 5.5, its tools and flags), with the scrubbed plugin (the routing study's plugin parts
+at this branch's commit, checked to name no V-real title or band).
+- **A fresh root,** `~/gtr-q`, holding only the venv (the routing study's, copied whole, checked to run as itself), the
+  plugin, the runs' settings and this exam's runs. The routing study's own folder (`~/gtr-session`) holds runs on these
+  same songs, their results and arms, so it is not used.
+- **Each run's settings** are the routing study's (which deny reading the data root, `~/projects`, the session
+  transcripts and the temp scratch space) plus `~/.claude`, `~/gtr-session` and every other run's folder of this exam.
+- Each gets the whole song as `song-NN.flac` (rewritten with no metadata; this copy alone is clipped to ±1), the title
+  and artist, the span, pack Morgan, no listening page, an empty data folder (so no learned notes), and no model flag.
+  A run with no result is asked once more with the re-check's non-answer.
+- **The audit (guard 5)** excludes a run on any of: a tool call naming the project's data, repository, documents, tests
+  or the earlier routing runs; a call naming a path outside the run's own folder, the plugin, the venv, the factory
+  presets (`/Library/Audio/`) and ordinary scratch space (`/tmp`, `/var/folders`), or under Claude's own scratch space;
+  a relative `../` in a call; the user's account name (any case) in a web search or fetch; a web result naming the
+  project; a file tool's result naming the repository, the earlier runs, Claude's folders, the data root's `learn`,
+  `references`, `listening` or `handover` folders, or another run's folder. Other outside paths a result names are
+  recorded, not a stop (the plugin's own text names its default data root). A wrong plugin version or model, or no
+  readable result, excludes it too.
+
+**When research fails** (declared now, the orchestrator's default):
+- A unit takes its first run that passed. `research-prepare --again` makes a fresh folder only for a unit whose runs were
+  all excluded, and only once (two runs at most); a passing R is never replaced by a later draw.
+- A unit that still has no passing run has no R: M runs on the label's class (so it has no M-lab), the unit leaves the
+  primary row (M − R) and the other R rows, and stays in every other row. The count is stated beside the primary.
+- If no unit gets a passing run (the runner does not work here), the exam stops and hands back for the user.
 
 ## The guards (each a stop; before any judge render)
 
 1. The ledger holds `phase_exam` (every command checks).
-2. **The leakage guard, extended to C3r-all:** no V-real band or song in any training input of the adopted pair: W's
-   plugin and held rows, every real unit of BKS, GOAT, cap1, n12 and the panel (a capture unit by its DI's band and
-   session), each real unit's 25 backings from its stored inputs, and every backing-pool entry.
+2. **The leakage guard, extended to C3r-all:** the adopted base is C3r-all, and no V-real band or song is in any
+   training input of the adopted pair (W's plugin and held rows, every real unit of BKS, GOAT, cap1, n12 and the panel,
+   a capture unit by its DI's band and session, each real unit's 25 backings from its stored inputs, every backing-pool
+   entry) nor among the amp pick's four stock DIs (A1's).
 3. The adopted pair's checkpoints hash to their run records and to `adopted-model.json`.
 4. **The chain wrapper reproduces one stored R1 run** (`r1/cut-it-out`): from that run's stored window files, the
-   answers, the 12 stock-DI renders, the pick and the written preset must equal the stored ones. The window stage is not
-   reproduced: it needs the song's audio, which stays sealed.
+   answers, the stem features, the 12 stock-DI renders' loudness, the pick's distances (to 1e-9), the pick, the output
+   gain and the written preset must equal the stored ones. It proves the wrapper, the environments, the model, the stock
+   DIs and the renderer reproduce R1's stages from the answers to the written preset; it does not test the selector,
+   X-LANCE or `xlst_mdxc`. It reads `window.npz`, which holds 10 s of the R1 song's mix and its stem, copied to
+   `exam/r1-repro/work` (nothing of it goes to git); the song's own file is not read, and the window stage is not
+   reproduced (it would need the song's audio, which stays sealed).
 5. Research transcripts are audited (above) before R's class is used.
 6. Every arm's answers file is hashed into the ledger (`phase_exam_answers`) before the first judge render; the renders
-   and the report refuse otherwise.
+   and the report refuse otherwise. Each judge record carries its time, so the audit can check the order.
 7. S's positive control passes (`s_positive_control`, 60 of 60), and EX-S's renders are identical to phase 4's.
 8. L's fresh judge values are set beside the stored ones; a gap above `K.REPEAT_TOL` is reported, and the fresh values
    are used.
+
+- **The guards gate what follows:** `chain`, `c-pick`, `answers`, `render` and `report` refuse unless `exam/guards.json`
+  (guards 2, 3 and 7's stored half) and `exam/r1-repro.json` (guard 4) exist and passed; both files' sha256 go into
+  `phase_exam_answers`.
+- **The classes are checked:** the chain records `research.json`'s and `inputs.json`'s sha256 when it starts;
+  `c-pick` and `answers` refuse if either changed, and `answers` refuses if any chain run's or C-pick's class is not
+  research's model class (the label's for M-lab). The decoded mixes and unity sums are re-hashed at `research-prepare`
+  and `chain`.
 
 ## Scoring and statistics
 
@@ -153,15 +183,18 @@ folder, and the rerun is reported.
   row.
 - **Value:** ln of the distance on the held half. A one-preset arm gives one value per slug and half; S, C, C-own and
   M3 on "three amps" are the mean of ln over the amps; L is read on its held half only. A held half where S is not
-  finite on some amp drops for every row; a refused answer scores as S on its amp (the established V-real rules).
+  finite on some amp drops for every row (counted; not a stop); a refused answer scores as S on its amp (the
+  established V-real rules). Only a missing answer stops the report.
 - **Unit:** the part (10), in its band (7); Wickerman ElecGtr2 and 3 average into one unit.
 - **Interval:** band-weighted mean, 90% band-clustered t, 6 df (`pipeline_fix.clustered`).
 - **Beside every row:** part-weighted, bands and parts on each side, leave one band out, clean (2 bands) and crunch (5),
   dense and sparse, centred and off-centre, V-real-10.
 - **Rows** (`row_specs`): M − R (primary); M − S, M − S on M's amp; R − S, R − S on R's amp; R-wet − R, R − R-route,
   R-route − S; M3 − S per amp and on three amps; M − C and M − C-own on M's amp; M − C-pick; C − S, C-own − S,
-  C-pick − S; M-x − M; M-lab − M (its units only); M-crop − M; M-unity − M; M − M3's mean, M − M3's best amp; L − S and
-  M − S on V-real-10, and (M − S) / (L − S); M − FT, M − D_fix and M − RcG on M's amp (stored).
+  C-pick − S; M-x − M; M-lab − M (its units only); M-crop − M; M-unity − M; M − M3's mean, M − M3's best amp (an
+  oracle: the amp is picked on the half it is scored on); L − S and M − S on V-real-10, and (M − S) / (L − S); M − FT,
+  M − D_fix and M − RcG on M's amp (stored). The R rows read the units with R; R-route's, the units with R-route.
+- **The loudness row:** M's render loudness against S's of M's own class on M's amp (EX-Sm where the classes differ).
 - **Zero-render tables:** research's class against the label; each chain window (start, how chosen, exposure, overlap
   with the crop, the target's DI activity in it); each amp pick and its cosine margin; M's knob distance from C and
   C-own; M's movement between its input variants against its movement between units of one class (the review's "is it
@@ -188,6 +221,21 @@ folder, and the rerun is reported.
   one listener"; otherwise "not known by ear". By L0's simulation a model truly ahead on 75% of items clears about half
   the time.
 
+## The independent audit (declared; the planner's section 12)
+
+A separate script, by an independent agent, that imports nothing from `learn/real_song_exam.py` or
+`learn/pipeline_fix.py`, before anything is written up:
+- recomputes every row from the raw judge files with its own value, drop and interval code;
+- re-derives each preset: M's amp is the least of its stored distances and its output gain follows the loudness rule;
+  C and C-own equal `ladder/centres.json`'s entries; L equals the stored ZT label; R equals the agent's file with its
+  amp's dry recipe (effects off); C-pick's amp is the least of its distances;
+- checks that each answers file's sha256 was in the ledger (the commit's time) before the first judge record's `time`,
+  and that the guards' records were in it too;
+- re-renders 6 seeded groups in its own process and compares the render hashes;
+- re-derives the page's read from the listener's raw export and each letter from the key.
+An independent reviewer reads the plan and the code before any run, and the results before the write-up. Each brief
+carries the goal check.
+
 ## The stop rule
 
 One build, one read. No arm, span, class, window or preset changes after the first judge render. The score rows are
@@ -202,13 +250,15 @@ compared with these stored renders, hash-checked, and its read declared as such.
 | Chain runs, default version | up to 40 (M, M-crop, M-unity, M-lab) | R1: 7 runs in about 7.5 min |
 | Chain runs, `xlst_mdxc` | 10 | 2.5 min of CPU for a 28-s part (`reference/model-path.md`) |
 | Stock-DI renders inside the chain | up to 600, plus C-pick's 24 and the R1 reproduction's 12 | included above |
-| Judge renders | about 540: one-preset arms 9 × 22 (M-lab at most 22), three-amp arms 3 × 66, L 120, EX-S 22 | F41: 660 in about 9 min on 3 shards |
+| Judge renders | at most about 600: one-preset arms 8 × 22, M-lab, EX-Cm, EX-Cownm and EX-Sm at most 22 each, EX-S 22, three-amp arms 3 × 66, L 120 | F41: 660 in about 9 min on 3 shards |
 | Page renders | none (the judged renders are played) | |
 | Research runs | 10 headless | the routing re-check's 83 runs: median 1.5 min each (1.0 to 2.7), from their transcripts |
-| **Renders in all** | **about 1,180 (cap 1,400)** | |
+| **Renders in all** | **at most about 1,240 (cap 1,400)** | |
 
 - At most 3 render processes machine-wide (`local_objective._wait_cap`; the render command is registered in
   `local_objective.RENDERS`), each render primed in its own process; launched with `setopt no_bg_nice`.
+  `product_path separate` is registered in `local_objective.SEPARATIONS`, so other jobs' renders wait for the chain's
+  separations (and R1's).
 - The chain runs one at a time and waits before each separation while any other MPS job (a separation, or a training)
   runs. Disk: about 0.8 GB of inputs (decoded mixes and unity sums), about 0.3 GB of chain work, about 0.2 GB of kept
   page renders; the 31 GB guard holds every render.
@@ -219,19 +269,31 @@ compared with these stored renders, hash-checked, and its read declared as such.
 
 - **CP2 (inputs and guards):** `$MAIN -m learn.real_song_exam inputs`; the printed `phase_exam_inputs` record committed
   to the ledger; `$MAIN -m learn.real_song_exam guards`; `$MAIN -m learn.real_song_exam r1-repro` (12 renders);
-  `research-prepare`, `research-route` (background), `research-collect`.
+  `research-prepare`, `research-route` (background), `research-collect`; if a unit's runs were all excluded,
+  `research-prepare --again KEY`, `research-route`, `research-collect` once.
 - **CP3 (the chain):** `chain` launched detached (`zsh -c 'setopt no_bg_nice; nohup caffeinate -i $MAIN -u -m
   learn.real_song_exam chain > LOG 2>&1 &'`, its PID recorded; the done line `EXAM CHAIN DONE`); then `c-pick` (needs
   `ladder/centres.json`) and `answers`, whose printed `phase_exam_answers` record is committed before any judge render.
-- **CP4 (the judge and the report):** three shards of `$MAIN -u -m learn.real_song_exam render --shard k/3` launched
-  detached the same way (each log's done line `EXAM RENDER DONE k/3`); then `report --label exam`.
+- **CP4 (the judge and the report):** three shards, `render --shard 0/3`, `--shard 1/3` and `--shard 2/3`, launched
+  detached the same way (each log's done line `EXAM RENDER DONE 0/3` and so on); then `report --label exam` (it
+  refuses if any report exists: V-real is read once).
 - **CP5 (the page):** `page`; the user's export read by `score --answers FILE` after the sitting.
 
 ## Changes from the planner's plan, and why
 
-- **C** is Step 2's all-labels constants (the orchestrator's choice), not R-all's out-of-fold answers through
-  `rc_setting`; the model's own constant is a second arm, C-own. Where research's class differs from the label's, C and
-  C-own are also rendered on M's class and amp, so M − C compares like with like and C − S stays on the label's class.
+- **C** is Step 2's all-labels constants (the orchestrator's choice), read in the ladder's own shape
+  (`centres.cen`, `centres.aconst`) and checked to be the adopted pair's (`model_sha256`, `hold`), not R-all's
+  out-of-fold answers through `rc_setting`; the model's own constant is a second arm, C-own. Where research's class
+  differs from the label's, C and C-own are also rendered on M's class and amp, so M − C compares like with like and
+  C − S stays on the label's class.
+- **The research runs** use a fresh root, per-run settings and a wider audit (above), and the research-failure rule is
+  declared ("When research fails"): the plan said only "rerun once".
+- **M-x and M-unity** start at M's own window, so each changes one stage; the planner's commands reran the selector.
+- **The guards gate** the chain, the renders and the report, and their records are hashed into the ledger; the classes
+  and `research.json` are checked and locked between the chain and the answers.
+- **S of M's class** (EX-Sm) is rendered where the classes differ, for the loudness row.
+- **The report** drops a held half where S is not finite, as the plan says, and stops only on a missing answer; it
+  runs once.
 - **Guard 4** reproduces the answers, renders, pick and preset from the stored R1 window, not the window: re-running
   the selector would read the R1 song's audio, which the rules keep sealed.
 - **S's re-render** covers M's amp on every slug (11 groups), not 10 seeded groups: the same identical check, and it
@@ -241,8 +303,8 @@ compared with these stored renders, hash-checked, and its read declared as such.
 - **The page's L** plays on the amp its stored label scores best on the page's search half (the plan said "its own
   amp" without a rule). It Was My Fault ElecGtr1 has no stored label, so its card holds three letters, not four.
 - **Closeness is optional** on the page, as on C4's, ranks required.
-- **The judge render count** is about 540, not "at most 448": R-wet, R-route, C-own and M3's three amps are rendered
-  beside. In all about 1,180 renders, inside the plan's cap of 1,400.
+- **The judge render count** is at most about 600, not "at most 448": R-wet, R-route, C-own, M3's three amps, EX-Cm,
+  EX-Cownm and EX-Sm are rendered beside. In all at most about 1,240 renders, inside the plan's cap of 1,400.
 - **The research runs' data folder is empty,** as in the routing study, so no learned notes reach them; an installed
   plugin would read the user's own notes.
 - **The research copy of the song is FLAC, clipped to ±1**; the model path reads the exact float decode.
@@ -288,5 +350,6 @@ compared with these stored renders, hash-checked, and its read declared as such.
   run takes now.
 - That the stored ZT labels render to their stored scores under the fresh-render rule (guard 8 reports it).
 - X-LANCE's seconds per clip here; the plan uses R1's wall time per run.
-- `ladder/centres.json`'s exact shape: the loader expects `all_labels.<Cen|Aconst>.<amp>.<class>` = `{select,
-  settings}` (or `"amp|class"` keys) and refuses anything else, before any render.
+- `ladder/centres.json` itself (Step 2 writes it): the loader reads the ladder's `centres.<cen|aconst>.<amp>.<class>`
+  = `{select, settings}` (its `all_labels.<Cen|Aconst>` variant alike), checks each select names its amp, the file's
+  `model_sha256` and `hold`, and refuses anything else at `c-pick`, before any judge render.
