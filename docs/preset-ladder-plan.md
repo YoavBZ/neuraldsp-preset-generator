@@ -47,13 +47,15 @@ Every read is by the score: ln(d_row / d_against) on the held half, below zero c
 are reported, also as a share of the Cen-to-label gap.
 
 **The constants** (section 4): Cen (the training labels' centre), Aconst (the model's own mean answer on its training
-inputs) and, for each input i, **`sic-i`**, i's same-input constant: the mean of i's own answers over every other read
-part on the same amp and class from another cluster and DI file. `i - sic-i` is per-unit reading alone: both sides
-read the same kind of input, so a better-placed mean can't pass for reading.
+inputs) and, for each input i, **`sic-i`**, i's same-input constant: the mean of i's own answers over the other read
+parts of the part's own fold on the same amp and class, from another cluster and sharing no DI file or creator. Those
+parts were answered by the same fold model, which trained on none of them nor on the part, so `i - sic-i` is per-unit
+reading: both sides read the same kind of input through the same model, and a better-placed mean can't pass for
+reading.
 
 | # | Question | Rule rows (deciding pool) | Stage |
 |---|---|---|---|
-| Q1 | Does R-all read per unit, or is it a constant? | for i in `mix@-3`, `clean-kind`, `mix-drawn`: `i - sic-i`, `i - cen`, `i - aconst`; and `aconst - cen` | 1 |
+| Q1 | Does R-all read per unit, or is it a constant? | for i in `mix@-3`, `clean-kind`, `mix-drawn`: `i - sic-i`, `i - cen`, `i - aconst`; `aconst - cen`; `mix@-3 - mix-drawn` | 1 |
 | Q2 | On product-like input, does the model path beat a constant, and read per unit? | `xl@-3 - cen`; `xl@-3 - sic-xl@-3` | 2 |
 | Q3 | What do the separator, the product's level step and the other guitars each cost? | `xlnoG@-3 - mixp@-3` (the separator alone); `mixp@-3 - mix@-3` (the level step alone); `xl@-3 - xlnoG@-3` (the other guitars) | 2 |
 | Q4 | Does `xlst_mdxc` buy it back? Does exposure? | `xlmdxc@-3 - xl@-3`; each row at drawn, −3 and 0 dB | 3 |
@@ -66,24 +68,27 @@ together, and the other guitars are then removed at the same gains, so the targe
 
 | # | Outcome | When | Next |
 |---|---|---|---|
-| 1 | reads in the exposed backed mix | `mix@-3 - sic-mix@-3` reads better | Full stages 2 and 3. |
-| 2 | reads only the isolated guitar | `clean-kind - sic-clean-kind` reads better | Full stage 2, `clean@-3` beside; Steps 4 and 6 have their case. |
-| 3 | the ladder's build loses a reading | `mix-drawn - sic-mix-drawn` reads better, or `mix-drawn` beats Cen or Aconst where neither ladder input does | Stage 2 waits. A dated amendment locates which part of the build (the lender's stems, the stereo mid, mastering, the level) loses what the training input keeps, reviewed first. |
-| 4 | reads on one deciding set only | `mix@-3 - sic-mix@-3` or `clean-kind - sic-clean-kind` reads better on BKS, GOAT or the panel alone, the pool undecided | Full stage 2 (a reading on one set is not "no gain"); the write-up gives the set, the pool interval and this outcome's false-alarm rate. |
-| 5 | a better constant, no per-unit reading | `mix@-3` or `clean-kind` beats Cen or Aconst on the pool, with no per-unit reading | The chosen constant (below) goes to Step 3 as the candidate start (Step 1 confirms on songs). Separator work stays parked. Stage 2 shrinks to the harm check (`xl@-3` on the subset: 148 separations, 456 answers). Then Step 5. |
-| 6 | no gain shown | none of the above | As 5. The action rests on what each rule row's interval rules out, not on an absence: the report gives each row's lower end (no true gain beyond it, at 90%), its reading per set, per class, on half A, with each cluster and each deciding set left out (`negatives`), and the audit reads it adversarially first (section 8). |
+| 1 | reads in the exposed backed mix | `mix@-3 - sic-mix@-3` reads better | Full stage 2; stage 3 by its triggers, which this outcome fires (exposure and pooling). |
+| 2 | reads only the isolated guitar | `clean-kind - sic-clean-kind` reads better | Full stage 2, `clean@-3` beside; stage 3 by its triggers, which this outcome fires (the exposure rows are Step 4's case; pooling); Step 6 has its case. |
+| 3 | the ladder's build loses a reading | `mix-drawn - sic-mix-drawn` reads better and `mix@-3 - mix-drawn` reads worse (a loss in the build is decided) | Stage 2 waits. A dated amendment locates which part of the build (the lender's stems, the stereo mid, mastering, the level) loses what the training input keeps, reviewed first. |
+| 4 | reads per unit on the training input only | `mix-drawn - sic-mix-drawn` reads better, no loss decided | Full stage 2; the write-up says the ladder's inputs are undecided, not that the build loses the reading. |
+| 5 | reads on one deciding set only | `mix@-3 - sic-mix@-3` or `clean-kind - sic-clean-kind` reads better on BKS, GOAT or the panel alone while its pool row is undecided | Full stage 2 (a reading on one set is not "no gain"); the write-up gives the set, the pool interval and this outcome's false-alarm bound. A pool row read worse doesn't take this outcome. |
+| 6 | a better constant, no per-unit reading | `mix@-3`, `clean-kind` or `mix-drawn` beats Cen or Aconst on the pool, with no per-unit reading; read with the knob reads' mean shift (section 4) | The model's mean answer beats the label constant without reading per unit, so the evidence favours the model's own placement over Cen. Stage 2 shrinks to the harm check (`xl@-3` on the subset: 148 separations, 456 answers), whose `xl@-3 - cen` decides whether the chosen constant replaces the model path at Step 3: it does unless the model path reads better than Cen there. Separator work stays parked. Then Step 5. |
+| 7 | no gain shown | none of the above | The chosen constant goes to Step 3 as the candidate start (Step 1 confirms on songs). Separator work stays parked. Stage 2 shrinks to the harm check. Then Step 5. The action rests on what each rule row's interval rules out, not on an absence: the report gives each row's lower end (no true gain beyond it, at 90%), its reading per set, per class, on half A, with each cluster and each deciding set left out (`negatives`), and the audit reads it adversarially first (section 8). |
 
 - **The constant for Steps 1 and 3:** Aconst if `aconst - cen` reads better, else Cen (undecided keeps Cen, the
   simpler, label-defined one). `centres.json` holds both; the report names the choice.
 - **`i - sic-i` read worse** (per-unit variation hurting) is reported beside; the outcome follows the table.
 - **What the pool is:** BKS, GOAT and the panel weighted equally, so its variance is dominated by the panel's 5 DI
-  files; a pool row resolves about ±0.02 to ±0.055 (section 7). Outcome 6, the likeliest, is a statement about sizes the
+  files; a pool row resolves about ±0.02 to ±0.055 (section 7). Outcome 7, the likeliest, is a statement about sizes the
   interval rules out, never "no effect".
 - **False alarms** (no effect anywhere; one tail of a 90% interval is 5%; bounds assume independent rows, and the rows
-  share units and a model, so the true rates are lower): outcome 1 or 2, two rows, at most 9.8%; outcomes 1 to 3, five
-  rows, at most 22.6%; outcome 4 alone, six per-set rows, at most 26.5%; outcome 5 alone, four rows, at most 18.5%;
-  anything but outcome 6, fifteen rows, at most 54%. The asymmetry is deliberate: a false reading costs only a full
-  stage 2 (800 separations and about 2 h of renders), while outcome 6 parks work.
+  share units and a model, so the true rates are lower): outcome 1 or 2, two rows, at most 9.8%; outcomes 1 to 4 (a
+  per-unit reading on the pool), three rows, at most 14.3%, of which outcome 3 needs two rows and so at most 5%;
+  outcome 5 alone, six per-set rows, at most 26.5%; outcome 6 alone, six rows, at most 26.5%; anything but outcome 7,
+  fifteen rows, at most 54%. The asymmetry is deliberate: a false reading in outcomes 1, 2, 4 or 5 costs only a full
+  stage 2 (800 separations and about 2 h of renders); a false outcome 3 costs an amendment before stage 2; outcomes 6
+  and 7 park work and so are read adversarially.
 
 **Stage 2's rule rows** (`q2q3_outcome`, computed in `report --stage 2`):
 
@@ -94,11 +99,20 @@ together, and the other guitars are then removed at the same gains, so the targe
 | Q3: the other guitars read worse (a cost) | Its size is the target any separator work must recover by the preset; stage 3 runs `xlmdxc` and `xl-real`. |
 | Q3: the separator alone reads worse | Step 6 (fine-tune on the product's input) gets a measured target. |
 | Q3: the level step reads worse | The product's level step costs by itself: a level fix comes before any separator work. |
-| `clean@-3 - xl@-3` | The most a perfect separator could buy. It is **heard-size** when it reads better with a mean beyond −0.05 (F65: under about 0.05 a score difference isn't known to be heard); otherwise **small**, and separator training stays parked. |
+| `clean@-3 - xl@-3`, the most a perfect separator could buy (`separator_ceiling`) | **"heard-size gain"**: reads better with a mean beyond −0.05; separator work has a measured ceiling. **"a gain shown, not of heard size"**: reads better, mean within −0.05; reported, separator training stays parked. **"small"**: not better and the interval rules out a heard-size gain (lo90 above −0.05); parked. **"undecided, not shown"**: a heard-size gain neither shown nor ruled out; parked because the review's gate asks for a shown gain, said so in the write-up, and read adversarially by the audit. |
 
-**Stage 3's triggers** (computed in `report --stage 2`): `xlmdxc` and `xl-real` when the other guitars' row reads
-worse; the exposure rows (drawn and 0 dB) when a −3 dB input row (`mix@-3`, `mixp@-3`, `xlnoG@-3`, `xl@-3`) beats Cen
-or `mix@-3 - mix-drawn` reads either way; `pool` when any input's `i - sic-i` reads better in stage 1 or 2.
+The −0.05 floor is a deviation from the review's gate, which asks for "a preset-level gain from oracle separation" with
+no size: under about 0.05 a score difference isn't known to be heard (F65), so a decided gain under that size is
+reported apart and doesn't open separator training.
+
+**Stage 3, one rule: a row runs only when its trigger fires** (computed in `report --stage 2`):
+- `xlmdxc` and `xl-real`: when the other guitars' row (`xl@-3 - xlnoG@-3`) reads worse;
+- the exposure rows (drawn and 0 dB): when Q1 read outcome 1 or 2; when any of `mix@-3 - cen`, `clean-kind - cen`,
+  `mixp@-3 - cen`, `xlnoG@-3 - cen`, `xl@-3 - cen`, `clean@-3 - cen` reads better; when any −3 dB or clean per-unit
+  reading does (`mix@-3 - sic-mix@-3`, `clean-kind - sic-clean-kind`, `xl@-3 - sic-xl@-3`); or when `mix@-3 -
+  mix-drawn` reads either way;
+- `pool`: when any input's `i - sic-i` reads better in stage 1 or 2.
+Every trigger row that doesn't fire is in the report's `negatives` and the audit's adversarial read (section 8).
 
 | Q4 | Next |
 |---|---|
@@ -204,16 +218,19 @@ sharing a DI file or creator with a fold-k unit enters (`centres` refuses otherw
   (`mean_shift`: the row's mean answer less Aconst's, and less Cen's). The rule reads per-unit reading from the
   same-input constants instead.
 - **The same-input constants `sic-i`** (`sic`, zero renders): for input i and part p, the mean of i's own answers over
-  every other read part on p's amp and class from another cluster and another DI file (`sic_pool`, so no answer to p's
-  performance enters), head by head as Cen's rule on the answers' sounding heads, then the same hold. Label-free and out
-  of sample. Declared for `mix@-3`, `clean-kind`, `mix-drawn` (stage 1) and `xl@-3` (stage 2). The pool crosses sets (a
-  part's constant includes other sets' answers on its amp and class), so `i - sic-i` counts set-level differences in
-  the answers as reading too.
+  the other read parts of p's own fold on p's amp and class, from another cluster and sharing no DI file or creator
+  with p (`sic_pool`, C3r's entry identities), head by head as Cen's rule on the answers' sounding heads, then the same
+  hold. Those parts were answered by p's own fold model, which trained on none of them nor on p, so the constant is
+  label-free, out of sample, and free of the fold models' offsets (between folds the fold-mean answers differ by a
+  median half of the within-fold spread, the review measured). Pools hold 8 to 29 parts (none empty). Declared for
+  `mix@-3`, `clean-kind`, `mix-drawn` (made in stage 0 or 1, rendered in stage 1) and `xl@-3` (stage 2). The pool
+  spans the fold's sets, so `i - sic-i` counts set-level differences in the answers within a fold as reading too.
 - Each constant is one answer per part, rendered once and judged on both halves.
 - **The all-labels versions of Cen and Aconst** (every training record, the all-labels R-all pair, which `centres`
   checks equals `adopted-model.json`'s), never read on these units, go to `PF/ladder/centres.json` for Steps 1 and 3,
   in this shape (`centres_doc` refuses any other): `{"plan", "ledger", "about", "centres": {"cen" | "aconst": {amp:
-  {class: {"select": the class's S preset name, "settings": {"module/key": value} (the full preset settings)}}}},
+  {class: {"select": the class's S selection, the pipeline's int (as C3r's answers store it), "settings":
+  {"module/key": value} (the full preset settings)}}}},
   "hold": "C3-cabS", "model_sha256": [the adopted pair's two sha256], "c3r_sha256", "records_used", "time"}`, for amps
   `pr12`, `sw50r`, `ac20` and classes `clean`, `crunch`. The output gain is S's (the product's loudness step sets it).
   The shape won't change without a dated note here.
@@ -254,9 +271,10 @@ of the lender draw took 31 s, a unit's two mixes 0.4–0.7 s, and one same-input
   sound, F11).
 - **Stage 1.** `check1` and `replay` first; a failure stops the stage: no later command runs (section 8). Then Q1 by
   section 1's rule, computed in the report. **Stop and report**; the outcome sets stage 2's size.
-- **Stage 2.** Full, or under outcome 5 or 6 only `xl@-3` on the subset. Reads Q2 and Q3, and stage 3's triggers.
-  **Stop and report.**
-- **Stage 3** runs a row only when section 1's triggers name it. **Stop: the step ends.**
+- **Stage 2.** Full, or under outcome 6 or 7 only `xl@-3` on the subset; under outcome 3 it waits for the amendment.
+  Reads Q2 and Q3, and stage 3's triggers. **Stop and report.**
+- **Stage 3** runs a row only when section 1's triggers fire for it, whatever Q1 read (outcomes 1 and 2 fire the
+  exposure and pooling triggers). **Stop: the step ends.**
 - One build and one read a stage. A change after a read is a dated amendment here before the next stage, reviewed
   first. Renders used are reported, not capped.
 
@@ -267,7 +285,8 @@ of the lender draw took 31 s, a unit's two mixes 0.4–0.7 s, and one same-input
 - **The deciding pool:** `C3R.pooled` over BKS, GOAT and the panel, weighted equally (`deciding_sets`), as C3r. cap1
   shares GOAT's DI files, so it is read beside, with one row over every set clustered by DI file.
 - **Beside every row:** per set, clean and crunch, cluster- and part-weighted means, clusters agreeing in sign, half A
-  alone, cap1 and n12 by whether their DI's player trains in the fold, and the share of the Cen-to-label gap; for every
+  alone, cap1 and n12 by whether their DI's player trains in the fold, without H4's real_out units and the panel
+  band-weighted (C3r's readings), and the share of the Cen-to-label gap; for every
   lender row (one whose input or constant is built on a lender mix) also without the heavier bands' lenders (per set and
   on the pool) and **per lender band within each class**, per set and over every set.
 - **The lender rows are conditional on these six sessions.** Clustering by DI file, item or creator carries the units'
@@ -287,7 +306,8 @@ of the lender draw took 31 s, a unit's two mixes 0.4–0.7 s, and one same-input
 refuses unless the controls guarding its stage passed on today's state** (`controls_ok`): `check0` guards stage 0
 (`lends`, `centres`, `build`, `predict`, `sic`, `subset`, `stage0`); `check1` and `replay` guard stage 1 (`build`'s
 mixes need `check1`; `render` of a stage-1 or later row, `sep` and `report` need all three). A failure stops the stage
-and is handed back; any way on is a dated amendment, reviewed first.
+and is handed back; any way on is a dated amendment, reviewed first, and a failed control's record is never
+overwritten (`save_control` refuses; the amendment moves it aside, never deletes it).
 
 **Stage 0 (`check0`):**
 - The ladder's answer code reproduces `c3r/answers/all.json` from the stored variant-0 inputs (equal sha256).
@@ -295,7 +315,8 @@ and is handed back; any way on is a dated amendment, reviewed first.
   equal the run records' own counts, and its held units equal each run's `real_held_units` by name; no read part's unit
   trains in its model or shares an identity with a training unit.
 - The ladder's pairing reproduces C3r's report row R-all − S on every stored field of every set (mean, interval,
-  clusters, signs, part weights, directions) and on the deciding pool.
+  clusters, signs, part weights, directions), its readings without H4's real_out units and the panel's band-weighted
+  one, and on the deciding pool (97 fields).
 - `centres` refuses a constant that would use a record of the part's fold or sharing an identity with a fold-k unit,
   and an all-labels pair other than `adopted-model.json`'s.
 
@@ -313,7 +334,8 @@ and is handed back; any way on is a dated amendment, reviewed first.
   amendment's to declare.
 - A unit with a silent stem half stays in, as the product would read it, and is counted.
 
-**Stage 2:** `sep` rebuilds each unit's mixes and requires their mids' half features to equal the stage 1 build's
+**Stage 2:** `sep` starts only with no render job or render server running and no other MPS user
+(`sep_blockers`). It rebuilds each unit's mixes and requires their mids' half features to equal the stage 1 build's
 stored `mix@E` and `full@E` exactly (uint8 mels equal, LUFS within 1e-4 dB, `amp_di_compare_s.rebuild_v0`'s rule):
 `build` runs in `.venv` and `sep` in the msst-venv, whose numpy and scipy differ. A difference stops the stage.
 
@@ -322,10 +344,13 @@ rule row from the judge files, per set and pooled, to 1e-4. It rebuilds Cen for 
 three same-input constants from the answers, re-derives the fold bans from the run records, and checks every answer's
 input features against the row's recipe on a seeded sample. It tries to break each decided row: one cluster left out,
 clean and crunch apart, cap1 by whether its DI's player trains in the fold. **It reads the negatives that drive an
-action adversarially** (the user's rule: undecided is not failed): when Q1 reads outcome 5 or 6 (which parks separator
-work and shrinks stage 2) or Q2 reads "not shown better", it asks why each rule row might be a false negative: per set,
-per class, on half A, with each cluster and each deciding set left out (the report's `negatives`), and it states the
-gain each interval rules out and the power behind it. Results are written up only after it.
+action adversarially** (the user's rule: undecided is not failed): when Q1 reads outcome 6 or 7 (which parks separator
+work and shrinks stage 2), when Q2 reads "not shown better", when the perfect separator's ceiling reads "small" or
+"undecided, not shown" (which parks separator training), and for every stage 3 trigger row that doesn't fire (the
+other guitars' row, which skips `xlmdxc` and `xl-real`; the exposure and pooling rows), it asks why each might be a
+false negative: per set, per class, on half A, with each cluster and each deciding set left out (the report's
+`negatives`, which covers every Q1 rule row, Q2, Q3, `clean@-3 - xl@-3` and the trigger rows), and it states the gain
+each interval rules out and the power behind it. Results are written up only after it.
 
 ## 9. Code and the commands
 
@@ -419,6 +444,9 @@ in `docs/ROADMAP.md`'s step 0.
 6. After the review (2026-11-17): the Forkupines-heavy section draw stands (no new draw), with the per-band reporting
    coded and the conditional intervals stated; same-input constants carry Q1's per-unit test; the level step is split
    from the separator (`mixp@-3`); `xl-v0` isn't rendered; `centres.json` keeps its shape for Step 1.
+7. After the second review (2026-11-17): the same-input constants come from the part's own fold; "the build loses a
+   reading" needs a decided loss; one stage 3 rule; the −0.05 heard-size floor stated as a deviation from the review's
+   gate.
 
 ## 14. Changes from the planner's draft, and after the review
 
@@ -451,7 +479,8 @@ The planner's draft is `~/ndsp-presets/handover/2026-11-16/plan-step2.md`; its n
 1. **Q1's rule rewritten** (section 1): reading needs a per-unit test (`i - sic-i`), so a better-placed constant is
    its own outcome ("a better constant"); `aconst - cen` chooses the constant Steps 1 and 3 take; `mix-drawn` reading
    where the ladder inputs don't is "the build loses a reading"; a reading on one deciding set alone is its own outcome;
-   outcome 6 rests on what the intervals rule out; the false-alarm bounds are stated. `q1_outcome` computes it.
+   "no gain shown" (then outcome 6, now 7) rests on what the intervals rule out; the false-alarm bounds are stated.
+   `q1_outcome` computes it.
 2. **Per-lender-band rows coded** for every lender pair, by class, per set and over every set; sections 7 and 12 state
    that the lender rows are conditional on these six sessions.
 3. **Aconst's mean shift measured** (`mean_shift` in the knob reads): per (fold, amp, class) cell and knob group, each
@@ -474,3 +503,27 @@ The planner's draft is `~/ndsp-presets/handover/2026-11-16/plan-step2.md`; its n
   refuses a row another build makes); the fold bans compare held units by name; the run check includes C3r's
   `E == epochs_run`; the stored-row check compares every field.
 - **`centres.json`'s shape stated** (section 4), checked by `centres_doc`, built with the adopted all-labels pair.
+
+**After the second review (2026-11-17, five required fixes, one bug, the optional items):**
+1. **The same-input constants come from the part's own fold** (answered by the same model, which never saw the part),
+   with no shared cluster, DI file or creator (C3r's entry identities). Before, about 75% of a pool came from other
+   folds, whose models had trained on the part, and the fold models' offsets pushed `i - sic-i` towards "worse"; a
+   creator leak in 4 cap1 and n12 pools is closed. Pools now hold 8 to 29 parts.
+2. **Outcome 3 needs a decided loss** (`mix@-3 - mix-drawn` reads worse, now a rule row); `mix-drawn` reading per unit
+   with no loss decided is its own outcome, "reads per unit on the training input only", and runs stage 2 in full;
+   `mix-drawn` beating Cen or Aconst without a per-unit reading moves to "a better constant". The false-alarm bounds and
+   their costs are recomputed.
+3. **Outcome 5 (one set) needs its pool row undecided**, in the code as in the plan.
+4. **"Small" means the interval rules out a heard-size gain** (lo90 above −0.05); otherwise "undecided, not shown",
+   still parked by the review's gate and said so; the floor is stated as a deviation from that gate. `clean@-3 -
+   xl@-3` and every stage 3 trigger row are in `negatives` and the audit's list.
+5. **Stage 3 has one rule:** a row runs only when its trigger fires; Q1's outcomes 1 and 2, `clean-kind` and `clean@-3`
+   beating Cen, and any −3 dB or clean per-unit reading fire the exposure rows.
+- **The bug:** `centres_doc` now takes `select` as the pipeline's int (C3r's answers store `select: 1`); the tests use
+  it.
+- **Also:** under "a better constant" the harm check's `xl@-3 - cen` decides whether a constant replaces the model path
+  at Step 3; a failed control's record is never overwritten; the replay docstring no longer says `mix-drawn` is
+  re-rendered; `sic` makes answers under stage 0's phase (rendering needs the row's own); C3r's band-weighted panel row
+  and its row without H4's real_out units are restored (and the stored-row check compares them: 97 fields); `sep`
+  refuses while a render or another MPS user runs; the ledger carries the 54% bound.
+

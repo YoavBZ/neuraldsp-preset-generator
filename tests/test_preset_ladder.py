@@ -36,13 +36,22 @@ def test_same_input_constants_are_rendered_in_their_inputs_stage():
     assert L.row_info("sic-xl@-3")["stage"] == 2
 
 
-def test_the_same_input_pool_leaves_out_the_parts_own_cluster_and_di_file():
-    P_ = lambda k, amp, cls, cl, di: {"key": k, "amp": amp, "cls": cls, "cluster": cl, "di": di}   # noqa: E731
-    parts = [P_("a", "sw50r", "clean", "goat|i1", "goat/i1"), P_("b", "sw50r", "clean", "goat|i1", "goat/i1"),
-             P_("c", "sw50r", "clean", "cap1|cr", "goat/i1"),   # another cluster, the same performance
-             P_("d", "sw50r", "clean", "goat|i2", "goat/i2"), P_("e", "pr12", "clean", "goat|i3", "goat/i3"),
-             P_("f", "sw50r", "crunch", "goat|i4", "goat/i4"), P_("g", "sw50r", "clean", "bks|x", "x.wav")]
+def test_the_same_input_pool_is_the_parts_own_fold_with_no_shared_cluster_di_or_creator():
+    P_ = lambda k, f, amp, cls, cl, ids: {"key": k, "fold": f, "amp": amp, "cls": cls, "cluster": cl,   # noqa: E731
+                                          "ids": set(ids)}
+    parts = [P_("a", 0, "sw50r", "clean", "goat|i1", {("di", "goat/i1")}),
+             P_("b", 0, "sw50r", "clean", "goat|i1", {("di", "goat/i1")}),          # the same cluster
+             P_("c", 0, "sw50r", "clean", "cap1|cr", {("di", "goat/i1"), ("creator", "cr")}),   # the same DI file
+             P_("d", 0, "sw50r", "clean", "goat|i2", {("di", "goat/i2")}),
+             P_("e", 0, "pr12", "clean", "goat|i3", {("di", "goat/i3")}),           # another amp
+             P_("f", 0, "sw50r", "crunch", "goat|i4", {("di", "goat/i4")}),         # another class
+             P_("g", 0, "sw50r", "clean", "bks|x", {("di", "x.wav")}),
+             P_("h", 1, "sw50r", "clean", "goat|i5", {("di", "goat/i5")})]          # another fold's model
     assert [q["key"] for q in L.sic_pool(parts, parts[0])] == ["d", "g"]
+    n = [P_("n", 0, "sw50r", "clean", "n12|cr", {("di", "lib.wav"), ("creator", "cr")}),
+         P_("m", 0, "sw50r", "clean", "cap1|cr", {("di", "goat/i9"), ("creator", "cr")}),    # the same creator
+         P_("o", 0, "sw50r", "clean", "cap1|zz", {("di", "goat/i8"), ("creator", "zz")})]
+    assert [q["key"] for q in L.sic_pool(n, n[0])] == ["o"]
 
 
 def test_exposure_tags_are_declared_ones():
@@ -281,14 +290,14 @@ def test_a_command_refuses_until_its_stages_controls_passed_on_todays_state():
 
 
 def _centres():
-    x = {"select": "S preset", "settings": {"parameters/inputGain": "-3"}}
+    x = {"select": 1, "settings": {"parameters/inputGain": "-3"}}      # select: the pipeline's int, as C3r's
     return {t: {a: {c: x for c in ("clean", "crunch")} for a in ("pr12", "sw50r", "ac20")} for t in ("cen", "aconst")}
 
 
 def test_centres_json_keeps_the_shape_step_1_reads():
     doc = L.centres_doc(_centres(), hold="C3-cabS", model_sha256=["a", "b"])
     assert set(doc["centres"]) == {"cen", "aconst"} and doc["hold"] == "C3-cabS" and doc["model_sha256"] == ["a", "b"]
-    assert doc["centres"]["cen"]["sw50r"]["clean"] == {"select": "S preset", "settings": {"parameters/inputGain": "-3"}}
+    assert doc["centres"]["cen"]["sw50r"]["clean"] == {"select": 1, "settings": {"parameters/inputGain": "-3"}}
     bad = _centres()
     del bad["aconst"]["ac20"]["crunch"]
     with pytest.raises(SystemExit):
@@ -301,6 +310,26 @@ def test_centres_json_keeps_the_shape_step_1_reads():
         L.centres_doc(dict(_centres(), extra={}), hold="C3-cabS", model_sha256=["a"])
     with pytest.raises(SystemExit):
         L.centres_doc(_centres(), hold="C3-cabS")                     # no model_sha256
+    for bad_sel in ("1", True, None):
+        bad = _centres()
+        bad["aconst"]["sw50r"]["crunch"] = {"select": bad_sel, "settings": {"parameters/inputGain": "0"}}
+        with pytest.raises(SystemExit):
+            L.centres_doc(bad, hold="C3-cabS", model_sha256=["a"])
+
+
+def test_a_failed_control_record_is_never_overwritten():
+    assert L.overwrite_refusal(None) is None and L.overwrite_refusal({"ok": True}) is None
+    assert "amendment" in L.overwrite_refusal({"ok": False})
+
+
+def test_a_separation_waits_for_renders_and_any_mps_user():
+    ps = [(1, "/x/python -m learn.preset_ladder sep --rows xl@-3 --device mps"), (2, "au_render_server x"),
+          (3, "/x/python -m learn.other render"), (4, "/x/python train.py --device mps")]
+    rend = lambda ps_, own: [p for p, c in ps_ if p not in own and "render" in c and "au_" not in c]   # noqa: E731
+    mps = lambda ps_, own: [p for p, c in ps_ if p not in own and "--device mps" in c]               # noqa: E731
+    why = L.sep_blockers(ps, {1}, rend, mps)
+    assert len(why) == 2 and "[3]" in why[0] and "[2]" in why[0] and "[4]" in why[1]
+    assert L.sep_blockers(ps[:1], {1}, rend, mps) == []
 
 
 # --- the outcome rules --------------------------------------------------------------------------------------------------
@@ -324,23 +353,31 @@ def test_q1s_outcome_needs_a_per_unit_reading_to_call_it_reading():
     q = L.q1_outcome(_rows(better={"mix@-3 - cen", "aconst - cen"}), dec)       # a better constant, not reading
     assert q["outcome"] == "a better constant, no per-unit reading" and q["constant_for_steps_1_and_3"] == "Aconst"
     assert L.q1_outcome(_rows(better={"clean-kind - sic-clean-kind"}), dec)["outcome"] == "reads only the isolated guitar"
-    q = L.q1_outcome(_rows(better={"mix-drawn - cen"}), dec)                    # the training input reads, the ladder not
-    assert q["outcome"] == "the ladder's build loses a reading" and q["constant_for_steps_1_and_3"] == "Cen"
-    assert L.q1_outcome(_rows(better={"mix-drawn - sic-mix-drawn"}), dec)["outcome"] == "the ladder's build loses a reading"
+    q = L.q1_outcome(_rows(better={"mix-drawn - cen"}), dec)        # a better constant on the training input
+    assert q["outcome"] == "a better constant, no per-unit reading" and q["constant_for_steps_1_and_3"] == "Cen"
+    q = L.q1_outcome(_rows(better={"mix-drawn - sic-mix-drawn"}, worse={"mix@-3 - mix-drawn"}), dec)
+    assert q["outcome"] == "the ladder's build loses a reading" and q["build_loss_decided"]
+    q = L.q1_outcome(_rows(better={"mix-drawn - sic-mix-drawn"}), dec)                 # no loss decided
+    assert q["outcome"] == "reads per unit on the training input only"
     q = L.q1_outcome(_rows(set_better={("mix@-3 - sic-mix@-3", "goat")}), dec)
     assert q["outcome"] == "reads on one deciding set only" and q["one_set"]["mix@-3"] == ["goat"]
+    q = L.q1_outcome(_rows(set_better={("mix@-3 - sic-mix@-3", "goat")}, worse={"mix@-3 - sic-mix@-3"}), dec)
+    assert q["outcome"] == "no gain shown" and q["one_set"]["mix@-3"] == []    # one set needs the pool undecided
     q = L.q1_outcome(_rows(), dec)
     assert q["outcome"] == "no gain shown" and q["constant_for_steps_1_and_3"] == "Cen"
     assert L.q1_outcome(_rows(worse={"aconst - cen"}), dec)["constant_for_steps_1_and_3"] == "Cen"
     q = L.q1_outcome(_rows(worse={"mix@-3 - sic-mix@-3"}), dec)
     assert q["per_unit_worse"]["mix@-3"] and q["outcome"] == "no gain shown"
-    for o in L.Q1_OUTCOMES:
-        assert L.Q1_OUTCOMES[o]
+    assert set(L.Q1_OUTCOMES) == {"reads in the exposed backed mix", "reads only the isolated guitar",
+                                  "the ladder's build loses a reading", "reads per unit on the training input only",
+                                  "reads on one deciding set only", "a better constant, no per-unit reading",
+                                  "no gain shown"}
+    assert "xl@-3 - cen decides" in L.Q1_OUTCOMES["a better constant, no per-unit reading"]
 
 
-def test_stage_2s_readings_and_stage_3s_triggers_are_stated_rules():
+def test_stage_2s_readings_and_stage_3s_triggers_are_one_stated_rule():
     s1 = _rows()
-    q = L.q2q3_outcome(_rows(), s1)
+    q = L.q2q3_outcome(_rows(), s1, {"outcome": "no gain shown"})
     assert q["stage3"] == {"xlmdxc_and_xl_real": False, "exposure_rows": False, "exposure_because": [], "pool": False,
                            "pool_because": []}
     q = L.q2q3_outcome(_rows(worse={"xl@-3 - xlnoG@-3"}, better={"xl@-3 - cen"}), s1)
@@ -348,14 +385,33 @@ def test_stage_2s_readings_and_stage_3s_triggers_are_stated_rules():
     assert q["q3"]["other guitars"] == "worse" and q["q2"]["xl@-3 - cen"] == "better"
     q = L.q2q3_outcome(_rows(), _rows(worse={"mix@-3 - mix-drawn"}))
     assert q["stage3"]["exposure_rows"] and not q["stage3"]["pool"]
-    q = L.q2q3_outcome(_rows(), _rows(better={"clean-kind - sic-clean-kind"}))
+    q = L.q2q3_outcome(_rows(), _rows(better={"clean-kind - sic-clean-kind"}),
+                       {"outcome": "reads only the isolated guitar"})
     assert q["stage3"]["pool_because"] == ["clean-kind - sic-clean-kind"]
-    r = _rows(better={"clean@-3 - xl@-3"})
-    assert L.q2q3_outcome(r, s1)["perfect_separator_heard_size_gain"]          # mean -0.1, beyond SMALL
-    r["clean@-3 - xl@-3"]["deciding_pool"]["mean"] = -0.03
-    assert not L.q2q3_outcome(r, s1)["perfect_separator_heard_size_gain"]
+    assert "clean-kind - sic-clean-kind" in q["stage3"]["exposure_because"]          # outcome 2 is Step 4's case
+    assert "Q1: reads only the isolated guitar" in q["stage3"]["exposure_because"]
+    for n in ("clean-kind - cen",):
+        assert L.q2q3_outcome(_rows(), _rows(better={n}))["stage3"]["exposure_because"] == [n]
+    for n in ("clean@-3 - cen", "xl@-3 - sic-xl@-3"):
+        assert n in L.q2q3_outcome(_rows(better={n}), s1)["stage3"]["exposure_because"]
+    assert L.q2q3_outcome(_rows(better={"xl@-3 - sic-xl@-3"}), s1)["stage3"]["pool_because"] == ["xl@-3 - sic-xl@-3"]
     assert set(L.PRIMARY[1]) <= set(L.STAGE_PAIRS[1]) and set(L.PRIMARY[2]) <= set(L.STAGE_PAIRS[2])
+    assert ("mix@-3", "mix-drawn") in L.PRIMARY[1]
+    assert ("clean@-3", "xl@-3") in L.NEGATIVES[2] and ("xl@-3", "xlnoG@-3") in L.NEGATIVES[2]
+    stage1_rows = {f"{a} - {b}" for a, b in L.STAGE_PAIRS[1]}
+    stage2_rows = {f"{a} - {b}" for a, b in L.STAGE_PAIRS[2]}
+    assert set(L.EXPOSURE_TRIGGERS[1]) | set(L.POOL_TRIGGERS[1]) <= stage1_rows
+    assert set(L.EXPOSURE_TRIGGERS[2]) | set(L.POOL_TRIGGERS[2]) <= stage2_rows
+    assert set(L.EXPOSURE_TRIGGERS[2]) | set(L.POOL_TRIGGERS[2]) <= {f"{a} - {b}" for a, b in L.NEGATIVES[2]}
     assert not any("xl-v0" in a or "xl-v0" in b for a, b in L.STAGE_PAIRS[2])   # xl-v0 is answered, not rendered
+
+
+def test_the_perfect_separators_ceiling_calls_only_a_ruled_out_gain_small():
+    assert L.separator_ceiling({"mean": -0.1, "lo90": -0.18, "hi90": -0.02}) == "heard-size gain"
+    assert L.separator_ceiling({"mean": -0.03, "lo90": -0.05, "hi90": -0.01}) == "a gain shown, not of heard size"
+    assert L.separator_ceiling({"mean": 0.0, "lo90": -0.04, "hi90": 0.04}) == "small"
+    assert L.separator_ceiling({"mean": -0.02, "lo90": -0.09, "hi90": 0.05}) == "undecided, not shown"
+    assert L.separator_ceiling(None) is None
 
 
 def test_negatives_say_what_the_interval_rules_out_and_read_each_set_left_out():
@@ -376,14 +432,19 @@ def test_the_summary_reads_each_lender_band_by_class_and_refuses_a_missing_lende
     rows = {s: [(u["cluster"], u["unit"] + "|sw50r", -0.01 * (1 + j % 4), h) for j, u in
                 enumerate(x for x in units if x["set"] == s) for h in ("A", "B")] for s in L.SETS}
     band = {u["unit"]: ("Forkupines" if j % 3 else "Ale Lak") for j, u in enumerate(units)}
-    got = L.summarise(rows, units, band, wd=set())
+    for u in units:
+        if u["set"] == "panel":
+            u["band"] = "B" + u["cluster"][-1]
+    got = L.summarise(rows, units, band, wd=set(), real_out={"bks0"})
     assert set(got["bks"]["by_lender_band"]) == {"clean", "crunch"}
     assert "Ale Lak" in got["every_set_by_lender_band"]["crunch"] or "Ale Lak" in got["every_set_by_lender_band"]["clean"]
     assert got["bks"]["without_heavy_lenders"]["parts"] < got["bks"]["parts"]
     assert got["deciding_pool_without_heavy_lenders"] is not None
+    assert got["bks"]["without_real_out"]["directions"] == got["bks"]["directions"] - 2   # bks0's two halves out
+    assert got["panel"]["band_weighted"]["clusters"] == 3
     with pytest.raises(SystemExit):
-        L.summarise(rows, units, {}, wd=set())
-    plain = L.summarise(rows, units, None, wd=set())
+        L.summarise(rows, units, {}, wd=set(), real_out=set())
+    plain = L.summarise(rows, units, None, wd=set(), real_out=set())
     assert "by_lender_band" not in plain["bks"] and "every_set_by_lender_band" not in plain
 
 

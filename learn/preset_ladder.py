@@ -122,10 +122,23 @@ def controls_ok(stage, st, names=None):
         raise SystemExit(why)
 
 
+def overwrite_refusal(existing):
+    """(Pure.) Why a control's record may not be overwritten, or None: a failed record stays (any way on after a failed
+    control is an amendment, which moves the record aside first, never deletes it)."""
+    if existing is not None and existing.get("ok") is not True:
+        return ("this control failed before: its record stays; any way on is a dated amendment, which moves the "
+                "record aside (never deletes it) before the control runs again")
+    return None
+
+
 def save_control(name, st, ok, rec):
     from learn import pipeline_fix as P
 
-    P.save(control_path(name), dict(rec, ok=bool(ok), c3r_sha256=st["sha256"], time=time.strftime("%Y-%m-%d %H:%M:%S")))
+    p = control_path(name)
+    why = overwrite_refusal(json.loads(p.read_text()) if p.exists() else None)
+    if why:
+        raise SystemExit(f"{p}: {why}")
+    P.save(p, dict(rec, ok=bool(ok), c3r_sha256=st["sha256"], time=time.strftime("%Y-%m-%d %H:%M:%S")))
 
 
 # --- the rows (pure) -------------------------------------------------------------------------------------------------------
@@ -699,6 +712,12 @@ def stored_rows_check(st, units, tol=1e-9):
             n += 1
             if (a is None) != (b is None) or (a is not None and abs(a - b) > tol):
                 bad.append(f"{s_} {f}: {a} against C3r's {b}")
+    for s_, k in [(q, "without_real_out") for q in SETS] + [("panel", "band_weighted")]:
+        for f in ROW_FIELDS:
+            a, b = (got[s_].get(k) or {}).get(f), (rep[s_].get(k) or {}).get(f)
+            n += 1
+            if (a is None) != (b is None) or (a is not None and abs(a - b) > tol):
+                bad.append(f"{s_} {k} {f}: {a} against C3r's {b}")
     for f in POOL_FIELDS:
         a, b = (got["deciding_pool"] or {}).get(f), (rep["deciding_pool"] or {}).get(f)
         n += 1
@@ -961,7 +980,8 @@ def centres_doc(centres, **meta):
         for amp in ("pr12", "sw50r", "ac20"):
             for cls in ("clean", "crunch"):
                 x = ((centres.get(tag) or {}).get(amp) or {}).get(cls)
-                if not x or not isinstance(x.get("select"), str) or not isinstance(x.get("settings"), dict) \
+                sel = x.get("select") if x else None   # the pipeline's select is the amp's index (an int, as C3r's)
+                if not x or isinstance(sel, bool) or not isinstance(sel, int) or not isinstance(x.get("settings"), dict) \
                         or not x["settings"] or not all("/" in k for k in x["settings"]):
                     raise SystemExit(f"centres.json: centres.{tag}.{amp}.{cls} is not a full {{select, settings}}")
     for k in ("model_sha256", "hold"):
@@ -1278,8 +1298,8 @@ def cmd_render(args):
 
 def cmd_replay(_args):
     """Stage 1's render control: REPLAY_N stored R-all answers (a seeded sample of C3r's read directions) re-rendered as
-    C3r rendered them; each render's sha256 must equal C3r's stored one, or old and new renders can't be compared (then
-    `mix-drawn` is re-rendered under its own row). -> ladder/controls/replay.json; a mismatch stops stage 1."""
+    C3r rendered them; each render's sha256 must equal C3r's stored one, or old and new renders can't be compared.
+    -> ladder/controls/replay.json; a mismatch stops stage 1 (any way on is an amendment)."""
     import numpy as np
 
     from learn import audibility_measure as AM
@@ -1400,6 +1420,21 @@ def cmd_check1(_args):
 
 # --- the separations (msst-venv) -------------------------------------------------------------------------------------------
 
+def sep_blockers(ps, own, rendering, mps_users):
+    """(Pure on its inputs.) Why a separation may not start now, or []: the plan's machine rules, no render job or render
+    server running (separations before renders) and no other MPS user (one MPS job at a time). ps: [(pid, command)];
+    rendering(ps, own) and mps_users(ps, own) -> [pid] (`local_objective.others_rendering`, `real_mix_test.mps_users`)."""
+    out = []
+    srv = [p for p, c in ps if p not in own and "au_render_server" in c]
+    jobs = rendering(ps, own)
+    if jobs or srv:
+        out.append(f"renders are running (jobs {jobs}, render servers {srv})")
+    mps = mps_users(ps, own)
+    if mps:
+        out.append(f"another process may hold the MPS: {mps}")
+    return out
+
+
 def cmd_sep(args):
     """A stage's stem rows (msst-venv; separations, never beside a render): each unit's lender mixes rebuilt
     (`lender_mix`), their mids' features required equal to the stage 1 build's stored `mix@E` and `full@E` exactly (else
@@ -1429,6 +1464,16 @@ def cmd_sep(args):
         require(row_info(r)["stage"])
     st = R.state()
     controls_ok(1, st)
+    if args.device == "mps":
+        import os
+
+        from learn import ks_extend as X
+        from learn import local_objective as LO
+        from learn import real_mix_test as RMT
+
+        why = sep_blockers(X._ps(), {os.getpid(), os.getppid()}, LO.others_rendering, RMT.mps_users)
+        if why:
+            raise SystemExit("not now: " + "; ".join(why))
     units = units_once(R.read_units(st))
     if args.subset:
         keep = set(json.loads((ladder_dir() / "subset.json").read_text())["units"])
@@ -1523,10 +1568,12 @@ def cmd_subset(_args):
 # --- the same-input constants (zero renders) -------------------------------------------------------------------------------
 
 def sic_pool(parts, p):
-    """(Pure.) The parts whose answers make part p's same-input constant: the same amp and class, from another cluster
-    and another DI file, so no answer to the same performance enters. parts, p: {key, amp, cls, cluster, di}."""
-    return [q for q in parts if q["key"] != p["key"] and q["amp"] == p["amp"] and q["cls"] == p["cls"]
-            and q["cluster"] != p["cluster"] and q["di"] != p["di"]]
+    """(Pure.) The parts whose answers make part p's same-input constant: p's own fold (answered by the same model, which
+    trained on none of them nor on p), the same amp and class, another cluster, and no shared identity (C3r's entry
+    `ids`: the DI file and a capture's creator), so no answer to p's performance or by p's creator enters.
+    parts, p: {key, fold, amp, cls, cluster, ids}."""
+    return [q for q in parts if q["key"] != p["key"] and q["fold"] == p["fold"] and q["amp"] == p["amp"]
+            and q["cls"] == p["cls"] and q["cluster"] != p["cluster"] and not (q["ids"] & p["ids"])]
 
 
 def base_answers(base):
@@ -1536,11 +1583,13 @@ def base_answers(base):
 
 
 def cmd_sic(args):
-    """The same-input constants (zero renders): for each named input row, a part's constant is the mean of that row's own
-    answers over every other read part on the same amp and class from another cluster and DI file (`sic_pool`), head by
-    head as `centre_of` (continuous the mean where the answer sounds, switches the share on, mics the most common),
-    through `full_space.answer_settings` and C3r's hold. Label-free and out of sample: `row - sic-row` is per-unit
-    reading alone, free of Aconst's in-sample shift. -> ladder/answers/sic-<row>.json."""
+    """The same-input constants (zero renders; stage 0's phase, as answers): for each named input row, a part's constant
+    is the mean of that row's own answers over the other read parts of its fold on the same amp and class, from another
+    cluster and sharing no DI file or creator (`sic_pool`), head by head as `centre_of` (continuous the mean where the
+    answer sounds, switches the share on, mics the most common), through `full_space.answer_settings` and C3r's hold.
+    Label-free, out of sample and from the part's own model: `row - sic-row` is per-unit reading, free of Aconst's
+    in-sample shift and of the fold models' offsets. A part with an empty pool is counted and left out.
+    -> ladder/answers/sic-<row>.json."""
     import numpy as np
 
     from learn import full_controls_c3r as R
@@ -1549,16 +1598,17 @@ def cmd_sic(args):
     from learn import pipeline_fix as P
 
     rows = parse_rows(args.rows)
+    require(0)                                     # making answers is zero renders; rendering needs the row's stage
     for r in rows:
         if not r.startswith("sic-"):
             raise SystemExit(f"{r}: not a same-input constant (sic-<row>)")
-        require(row_info(r)["stage"])
     st = R.state()
     controls_ok(0, st)
     ms, hold = P.A_menu_S(), R.answer_hold(st)
     units = R.read_units(st)
-    parts = [{"key": f"{ru['unit']}|{ru['amp']}", "amp": ru["amp"], "cls": ru["prt"]["cls"],
-              "cluster": f"{ru['set']}|{ru['cluster']}", "di": ru["prt"]["di"]} for ru in units]
+    ent = {e["unit"]: e for e in st["entries"]}
+    parts = [{"key": f"{ru['unit']}|{ru['amp']}", "fold": ru["fold"], "amp": ru["amp"], "cls": ru["prt"]["cls"],
+              "cluster": f"{ru['set']}|{ru['cluster']}", "ids": ent[ru["unit"]]["ids"]} for ru in units]
     for r in rows:
         base = row_info(r)["base"]
         ba = base_answers(base)
@@ -1587,14 +1637,25 @@ def cmd_sic(args):
             used[pp["key"]] = len(pool)
         save_answers(r, out, {"c3r_sha256": st["sha256"], "base": base, "pool_parts": used, "missing": missing,
                               "rule": cmd_sic.__doc__})
-        print(f"SIC DONE {r}: {len(used)} parts (pool {min(used.values())}-{max(used.values())}), {len(missing)} missing")
+        print(f"SIC DONE {r}: {len(used)} parts (pool {min(used.values()) if used else 0}-"
+              f"{max(used.values()) if used else 0}), {len(missing)} missing")
 
 
 # --- the reports (zero renders) --------------------------------------------------------------------------------------------
 
-def summarise(rows_by_set, units, lender_band=None, wd=None, seen_player=None):
+def real_out_units():
+    """H4's real_out units (`pipeline_fix.h4_exclusions`), read beside as C3r reads them (cached)."""
+    from learn import pipeline_fix as P
+
+    if "real_out" not in _W_DIS:
+        _W_DIS["real_out"] = set(P.h4_exclusions()["real_out"])
+    return _W_DIS["real_out"]
+
+
+def summarise(rows_by_set, units, lender_band=None, wd=None, seen_player=None, real_out=None):
     """Per set: `pipeline_fix.clustered`'s row (C3r's apart rule), with beside it clean and crunch, half A alone (the
-    product's half), cap1 and n12 by whether their DI's player trains in the fold; for a lender row (`lender_band`:
+    product's half), cap1 and n12 by whether their DI's player trains in the fold, C3r's two readings beside (without
+    H4's real_out units; the panel band-weighted); for a lender row (`lender_band`:
     {unit: the lender's band}, every unit present) also without the heavier bands' lenders and by lender band within
     each class; the deciding pool and the five-set pool (`full_controls_c3r.pooled`); one row over every set clustered by
     DI file (and by lender band and class). rows_by_set: {set: [(cluster, unit|amp, value, search)]}."""
@@ -1603,6 +1664,8 @@ def summarise(rows_by_set, units, lender_band=None, wd=None, seen_player=None):
 
     cls_of = {ru["unit"] + "|" + ru["amp"]: ru["prt"]["cls"] for ru in units}
     di_of = {ru["unit"] + "|" + ru["amp"]: ru["prt"]["di"] for ru in units}
+    band_of = {ru["unit"] + "|" + ru["amp"]: ru.get("band") for ru in units if ru["set"] == "panel"}
+    real_out = real_out_units() if real_out is None else set(real_out)
     out = {}
 
     def cl(xs):
@@ -1626,6 +1689,10 @@ def summarise(rows_by_set, units, lender_band=None, wd=None, seen_player=None):
         row["clean"] = cl([r for r in main if cls_of[r[1]] == "clean"])
         row["crunch"] = cl([r for r in main if cls_of[r[1]] == "crunch"])
         row["half_A"] = cl([r for r in main if r[3] == "A"])
+        ro = [r for r in main if r[1].rsplit("|", 1)[0] not in real_out]        # C3r's: H4's real_out read beside
+        row["without_real_out"] = dict(cl(ro), directions=len(ro)) if ro else None
+        if s == "panel":                                                       # C3r's: the panel band-weighted
+            row["band_weighted"] = cl([(band_of[r[1]], r[1], r[2], r[3]) for r in main])
         if lender_band is not None:
             row["without_heavy_lenders"] = cl([r for r in main if band(r) not in HEAVY_BANDS])
             row["by_lender_band"] = by_band(main)
@@ -1688,91 +1755,129 @@ def loo_range(rows_by_set, units, s):
 
 Q1_INPUTS = ("mix@-3", "clean-kind")
 Q1_OUTCOMES = {   # the outcome -> what happens next (the plan's section 1); the first that holds is read
-    "reads in the exposed backed mix": "full stages 2 and 3",
-    "reads only the isolated guitar": "full stage 2 with clean@-3 beside; Steps 4 and 6 have their case",
+    "reads in the exposed backed mix": "full stage 2; stage 3 by its triggers (this outcome fires the exposure and "
+                                       "pool triggers)",
+    "reads only the isolated guitar": "full stage 2 with clean@-3 beside; stage 3 by its triggers (this outcome fires "
+                                      "the exposure and pool triggers: Step 4's case); Step 6 has its case",
     "the ladder's build loses a reading": "stage 2 waits: a dated amendment locates which part of the build (the "
-                                          "lender's stems, the stereo mid, mastering, the level) loses it, reviewed "
-                                          "first",
-    "reads on one deciding set only": "full stage 2; the write-up says the pool is undecided and gives the rule's "
-                                      "false-alarm rate",
-    "a better constant, no per-unit reading": "the chosen constant goes to Step 3 as the candidate start (Step 1 "
-                                              "confirms); separator work stays parked; stage 2 shrinks to the harm "
-                                              "check (xl@-3 on the subset); then Step 5",
+                                          "lender's stems, the stereo mid, mastering, the level) loses what the "
+                                          "training input keeps, reviewed first",
+    "reads per unit on the training input only": "full stage 2 (no loss in the build is decided); the write-up says "
+                                                 "the ladder's inputs are undecided",
+    "reads on one deciding set only": "full stage 2; the write-up gives the set, the undecided pool and this "
+                                      "outcome's false-alarm bound",
+    "a better constant, no per-unit reading": "the model's mean answer beats the label constant but doesn't read per "
+                                              "unit: stage 2 shrinks to the harm check (xl@-3 on the subset), whose "
+                                              "xl@-3 - cen decides whether the chosen constant replaces the model path "
+                                              "at Step 3 (it does unless the model path reads better than Cen there); "
+                                              "separator work stays parked; then Step 5",
     "no gain shown": "the chosen constant goes to Step 3 as the candidate start; separator work stays parked; stage 2 "
-                     "shrinks to the harm check; then Step 5; the action rests on what each primary's interval rules "
+                     "shrinks to the harm check; then Step 5; the action rests on what each rule row's interval rules "
                      "out (`negatives`), after the audit's adversarial read"}
 
 
 def q1_outcome(rows, deciding):
-    """(Pure.) Q1's outcome from stage 1's rows, the first that holds: per-unit reading (`i - sic-i` decided better on
-    the deciding pool) on mix@-3, then on clean-kind; the build losing a reading (mix-drawn reads per unit, or beats a
-    constant where neither ladder input does); a per-unit reading decided on one deciding set alone, the pool undecided;
-    a better constant (an input beats Cen or Aconst on the pool, with no per-unit reading); else no gain shown. The
-    constant for Steps 1 and 3: Aconst if `aconst - cen` is decided better, else Cen. rows: {"a - b": summarise row}."""
+    """(Pure.) Q1's outcome from stage 1's rows, the first that holds:
+    1. `mix@-3 - sic-mix@-3` reads better on the deciding pool (per-unit reading in the exposed backed mix);
+    2. `clean-kind - sic-clean-kind` reads better;
+    3. `mix-drawn - sic-mix-drawn` reads better and `mix@-3 - mix-drawn` reads worse (a loss in the build is decided);
+    4. `mix-drawn - sic-mix-drawn` reads better, no loss decided;
+    5. a ladder input's `i - sic-i` reads better on one deciding set while its pool row is undecided;
+    6. any of mix@-3, clean-kind, mix-drawn beats Cen or Aconst on the pool, with no per-unit reading (a better
+       constant; read with the knob reads' mean shift);
+    7. no gain shown.
+    The constant for Steps 1 and 3: Aconst if `aconst - cen` reads better, else Cen. rows: {"a - b": summarise row}."""
     def d(name, s=None):
         r = rows.get(name) or {}
         return decided(r.get("deciding_pool") if s is None else r.get(s))
     inputs = Q1_INPUTS + ("mix-drawn",)
     reads = {i: d(f"{i} - sic-{i}") == "better" for i in inputs}
     beats = {i: "better" in (d(f"{i} - cen"), d(f"{i} - aconst")) for i in inputs}
-    one_set = {i: [s for s in deciding if d(f"{i} - sic-{i}", s) == "better"] for i in Q1_INPUTS}
+    one_set = {i: ([s for s in deciding if d(f"{i} - sic-{i}", s) == "better"]
+                   if d(f"{i} - sic-{i}") == "undecided" else []) for i in Q1_INPUTS}
+    loss = d("mix@-3 - mix-drawn") == "worse"
     if reads["mix@-3"]:
         out = "reads in the exposed backed mix"
     elif reads["clean-kind"]:
         out = "reads only the isolated guitar"
-    elif reads["mix-drawn"] or (beats["mix-drawn"] and not beats["mix@-3"] and not beats["clean-kind"]):
+    elif reads["mix-drawn"] and loss:
         out = "the ladder's build loses a reading"
+    elif reads["mix-drawn"]:
+        out = "reads per unit on the training input only"
     elif any(one_set.values()):
         out = "reads on one deciding set only"
-    elif beats["mix@-3"] or beats["clean-kind"]:
+    elif any(beats.values()):
         out = "a better constant, no per-unit reading"
     else:
         out = "no gain shown"
     return {"outcome": out, "next": Q1_OUTCOMES[out], "reads_per_unit": reads, "beats_a_constant": beats,
-            "per_unit_worse": {i: d(f"{i} - sic-{i}") == "worse" for i in inputs}, "one_set": one_set,
-            "aconst - cen": d("aconst - cen"),
+            "build_loss_decided": loss, "per_unit_worse": {i: d(f"{i} - sic-{i}") == "worse" for i in inputs},
+            "one_set": one_set, "aconst - cen": d("aconst - cen"),
             "constant_for_steps_1_and_3": "Aconst" if d("aconst - cen") == "better" else "Cen"}
 
 
-def q2q3_outcome(rows, stage1):
+def separator_ceiling(row):
+    """(Pure.) `clean@-3 - xl@-3` on the deciding pool, the most a perfect separator could buy: "heard-size gain" (reads
+    better, mean beyond -SMALL); "a gain shown, not of heard size" (reads better, mean within -SMALL); "small" (not
+    better, and the interval rules out a heard-size gain: lo90 > -SMALL); else "undecided, not shown" (a heard-size
+    gain neither shown nor ruled out)."""
+    r = row or {}
+    if r.get("lo90") is None or r.get("hi90") is None:
+        return None
+    if decided(r) == "better":
+        return "heard-size gain" if r["mean"] <= -SMALL else "a gain shown, not of heard size"
+    return "small" if r["lo90"] > -SMALL else "undecided, not shown"
+
+
+EXPOSURE_TRIGGERS = {   # stage 3's exposure rows run when any of these reads better (stage 1's or stage 2's row)
+    1: ("mix@-3 - cen", "clean-kind - cen", "mix@-3 - sic-mix@-3", "clean-kind - sic-clean-kind"),
+    2: ("mixp@-3 - cen", "xlnoG@-3 - cen", "xl@-3 - cen", "clean@-3 - cen", "xl@-3 - sic-xl@-3")}
+POOL_TRIGGERS = {1: ("mix@-3 - sic-mix@-3", "clean-kind - sic-clean-kind", "mix-drawn - sic-mix-drawn"),
+                 2: ("xl@-3 - sic-xl@-3",)}
+
+
+def q2q3_outcome(rows, stage1, q1=None):
     """(Pure.) Stage 2's readings and stage 3's triggers. Q2: `xl@-3 - cen` and `xl@-3 - sic-xl@-3`. Q3: the separator
-    alone (`xlnoG@-3 - mixp@-3`), the level step (`mixp@-3 - mix@-3`), the other guitars (`xl@-3 - xlnoG@-3`). A
-    perfect separator buys a heard-size gain when `clean@-3 - xl@-3` is decided better with a mean beyond -SMALL.
-    Stage 3: xlmdxc and xl-real when the other guitars' cost is decided (worse); the exposure rows when a -3 dB input
-    row beats Cen or `mix@-3 - mix-drawn` is decided either way; pooling when any input's `i - sic-i` is decided better
-    in stage 1 or 2. stage1: stage 1's report rows."""
-    def d(name, src=rows):
+    alone (`xlnoG@-3 - mixp@-3`), the level step (`mixp@-3 - mix@-3`), the other guitars (`xl@-3 - xlnoG@-3`). The
+    perfect separator's ceiling (`separator_ceiling`). Stage 3, one rule, a row runs only when its trigger fires:
+    `xlmdxc` and `xl-real` when the other guitars read worse; the exposure rows when Q1 read outcome 1 or 2, when any
+    `EXPOSURE_TRIGGERS` row reads better, or when `mix@-3 - mix-drawn` reads either way; pooling when any
+    `POOL_TRIGGERS` row reads better. stage1: stage 1's report rows; q1: its `q1_outcome`."""
+    def d(name, src):
         return decided((src.get(name) or {}).get("deciding_pool"))
-    head = (rows.get("clean@-3 - xl@-3") or {}).get("deciding_pool") or {}
-    beats = [n for n in ("mix@-3 - cen", "xl@-3 - cen", "xlnoG@-3 - cen", "mixp@-3 - cen")
-             if d(n, rows if n in rows else stage1) == "better"]
-    reading = [n for n in ("mix@-3 - sic-mix@-3", "clean-kind - sic-clean-kind", "mix-drawn - sic-mix-drawn")
-               if d(n, stage1) == "better"] + (["xl@-3 - sic-xl@-3"] if d("xl@-3 - sic-xl@-3") == "better" else [])
-    return {"q2": {"xl@-3 - cen": d("xl@-3 - cen"), "xl@-3 - sic-xl@-3": d("xl@-3 - sic-xl@-3")},
-            "q3": {"separator alone": d("xlnoG@-3 - mixp@-3"), "level step": d("mixp@-3 - mix@-3"),
-                   "other guitars": d("xl@-3 - xlnoG@-3")},
-            "perfect_separator_heard_size_gain": decided(head) == "better" and head.get("mean") is not None
-            and head["mean"] <= -SMALL,
-            "stage3": {"xlmdxc_and_xl_real": d("xl@-3 - xlnoG@-3") == "worse",
-                       "exposure_rows": bool(beats) or d("mix@-3 - mix-drawn", stage1) in ("better", "worse"),
-                       "exposure_because": beats, "pool": bool(reading), "pool_because": reading}}
+    exp = [n for n in EXPOSURE_TRIGGERS[1] if d(n, stage1) == "better"] + \
+        [n for n in EXPOSURE_TRIGGERS[2] if d(n, rows) == "better"]
+    if d("mix@-3 - mix-drawn", stage1) in ("better", "worse"):
+        exp.append("mix@-3 - mix-drawn")
+    q1_fires = (q1 or {}).get("outcome") in ("reads in the exposed backed mix", "reads only the isolated guitar")
+    if q1_fires:
+        exp.append(f"Q1: {q1['outcome']}")
+    pool = [n for n in POOL_TRIGGERS[1] if d(n, stage1) == "better"] + \
+        [n for n in POOL_TRIGGERS[2] if d(n, rows) == "better"]
+    return {"q2": {"xl@-3 - cen": d("xl@-3 - cen", rows), "xl@-3 - sic-xl@-3": d("xl@-3 - sic-xl@-3", rows)},
+            "q3": {"separator alone": d("xlnoG@-3 - mixp@-3", rows), "level step": d("mixp@-3 - mix@-3", rows),
+                   "other guitars": d("xl@-3 - xlnoG@-3", rows)},
+            "perfect_separator": separator_ceiling((rows.get("clean@-3 - xl@-3") or {}).get("deciding_pool")),
+            "stage3": {"xlmdxc_and_xl_real": d("xl@-3 - xlnoG@-3", rows) == "worse",
+                       "exposure_rows": bool(exp), "exposure_because": exp, "pool": bool(pool), "pool_because": pool}}
 
 
 STAGE_PAIRS = {   # (row, against): the declared rows of each stage's report; the rule's rows are PRIMARY's
     0: [("mix-drawn", "S"), ("mix-drawn", "RcBG"), ("mix-drawn", "RcGk"), ("mix-drawn", "Rcs2")],
     1: [("mix@-3", "sic-mix@-3"), ("clean-kind", "sic-clean-kind"), ("mix-drawn", "sic-mix-drawn"),
         ("mix@-3", "cen"), ("mix@-3", "aconst"), ("clean-kind", "cen"), ("clean-kind", "aconst"),
-        ("mix-drawn", "cen"), ("mix-drawn", "aconst"), ("aconst", "cen"),
+        ("mix-drawn", "cen"), ("mix-drawn", "aconst"), ("aconst", "cen"), ("mix@-3", "mix-drawn"),
         ("cen", "S"), ("aconst", "S"), ("clean-kind", "S"), ("mix@-3", "S"), ("mix-drawn", "S"),
         ("sic-mix@-3", "cen"), ("sic-clean-kind", "cen"), ("sic-mix-drawn", "cen"),
-        ("mix@-3", "mix-drawn"), ("clean-kind", "mix-drawn"), ("clean-kind", "mix@-3"), ("label", "cen")],
+        ("clean-kind", "mix-drawn"), ("clean-kind", "mix@-3"), ("label", "cen")],
     2: [("xl@-3", "cen"), ("xl@-3", "sic-xl@-3"), ("xlnoG@-3", "mixp@-3"), ("mixp@-3", "mix@-3"),
-        ("xl@-3", "xlnoG@-3"), ("xl@-3", "aconst"), ("xl@-3", "S"), ("clean@-3", "xl@-3"), ("clean@-3", "cen"),
-        ("xlnoG@-3", "cen"), ("mixp@-3", "cen"), ("sic-xl@-3", "cen"), ("xl@-3", "mix@-3"), ("xlnoG@-3", "mix@-3")],
+        ("xl@-3", "xlnoG@-3"), ("clean@-3", "xl@-3"), ("xlnoG@-3", "cen"), ("mixp@-3", "cen"), ("clean@-3", "cen"),
+        ("xl@-3", "aconst"), ("xl@-3", "S"), ("sic-xl@-3", "cen"), ("xl@-3", "mix@-3"), ("xlnoG@-3", "mix@-3")],
 }
-PRIMARY = {1: STAGE_PAIRS[1][:10],
-           2: [("xl@-3", "cen"), ("xl@-3", "sic-xl@-3"), ("xlnoG@-3", "mixp@-3"), ("mixp@-3", "mix@-3"),
-               ("xl@-3", "xlnoG@-3")]}
+PRIMARY = {1: STAGE_PAIRS[1][:11],          # Q1's rule rows (q1_outcome reads each)
+           2: STAGE_PAIRS[2][:5]}           # Q2's and Q3's
+NEGATIVES = {1: PRIMARY[1],                 # the rows whose undecided reading drives an action: read adversarially
+             2: STAGE_PAIRS[2][:9]}         # Q2, Q3, the separator's ceiling and stage 3's triggers
 LENDER_ROWS = ("mix@", "full@", "mixp@", "clean@", "xl@", "xlnoG@", "xlmdxc@", "sic-mix@", "sic-xl@")
 
 
@@ -1840,15 +1945,15 @@ def cmd_report(args):
                                                                                 lab[s]))) for s in SETS}
         name = f"{a} - {b}"
         out["rows"][name] = row
-        if (a, b) in PRIMARY.get(args.stage, []):
+        if (a, b) in NEGATIVES.get(args.stage, []):
             out["negatives"][name] = dict(negatives(row, row["deciding_sets"]),
                                           leave_one_cluster_out={s: loo_range(got, units, s) for s in row["deciding_sets"]})
     deciding = out["rows"][f"{pairs[0][0]} - {pairs[0][1]}"]["deciding_sets"]
     if args.stage == 1:
         out["q1"] = q1_outcome(out["rows"], deciding)
     if args.stage == 2:
-        s1 = json.loads((ladder_dir() / "report-stage1.json").read_text())["rows"]
-        out["q2q3"] = q2q3_outcome(out["rows"], s1)
+        s1 = json.loads((ladder_dir() / "report-stage1.json").read_text())
+        out["q2q3"] = q2q3_outcome(out["rows"], s1["rows"], s1.get("q1"))
     out["knob_read"] = knob_read(st, units, stage_answers(args.stage))
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     P.save(ladder_dir() / f"report-stage{args.stage}.json", out)
