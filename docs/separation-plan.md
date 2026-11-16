@@ -596,6 +596,91 @@ The MPS after S3's stop, up to 48 h. About 7 GB of disk, 44 GB free.
 - The comparator's held-out numbers were already seen in A3's read. This blend's basis is the validation band only.
 - **What it changes.** Nothing in S3's or S4's run, rule or pick. It adds one candidate, read once with the others.
 
+## S3 and `s3ens` results (read 2026-11-16)
+
+**The run.** 13,000 steps on the MPS, about 26 hours at 0.15 steps a second, no step skipped. It stopped on patience
+after step 13,000: five evaluations without a median 0.1 dB over step 8,000's +6.94. The validation curve (Adam
+Buckley, all 200 mixes, doubles included):
+
+| Step | Median SI-SDR | Mean | Read |
+|---|---|---|---|
+| 0 | −6.78 | −8.62 | 0.1923 |
+| 1,000 | +5.75 | +4.90 | 0.1364 |
+| 2,000 | +5.89 | +4.74 | 0.1318 |
+| 3,000 | +6.07 | +5.09 | 0.1377 |
+| 4,000 | +6.14 | +5.26 | 0.1369 |
+| 5,000 | +6.63 | +5.67 | 0.1364 |
+| 6,000 | +6.58 | +5.62 | 0.1191 |
+| 7,000 | +6.81 | +5.87 | 0.1358 |
+| 8,000 | +6.94 | +5.99 | 0.1227 |
+| 9,000 | +6.92 | +5.80 | 0.1222 |
+| 10,000 | +6.86 | +5.89 | 0.1168 |
+| 11,000 | +6.99 | +5.95 | 0.1202 |
+| 12,000 | +6.94 | +6.03 | 0.1188 |
+| 13,000 | +6.95 | +5.97 | 0.1206 |
+
+**The pick (Amendment 3d): step 12,000** (sha256 `09f28454…`). The highest eligible median is step 11,000's +6.99, so
+the window is above +6.89: steps 8,000 (read 0.1227), 9,000 (0.1222), 11,000 (0.1202), 12,000 (0.1188) and 13,000
+(0.1206). Step 10,000 has the lowest read (0.1168) but sits outside the window (+6.86). `s3-pick` ran seven minutes
+before the keeper's last pass saved step 13,000's weights, so `pick.json` lists 13,000 as missing. Its read is higher
+than 12,000's, so the pick is the same with it. Recomputed from the log by hand: the same.
+
+**The held-out read,** by S3's rule on the five held-out bands: 120 S0 items and the split set's 38. Band-clustered t,
+90%, df 4; the split set has no Dunning Kruger item, so df 3. A read gain is a drop in the model's cosine distance.
+Against the routed comparator (`xlst_mdxc` for a centre hint, `steer_xlmdxc` for a side hint), with the bands whose
+mean gain is above zero where it matters:
+
+| Cell | S3, SI-SDR | S3, read | `s3ens`, SI-SDR | `s3ens`, read |
+|---|---|---|---|---|
+| Centred (39) | −0.57 [−3.71, +2.57] | **−0.048** [−0.073, −0.022], 0 of 5 bands | +0.89 [−1.28, +3.06] | −0.002 [−0.019, +0.014] |
+| Off-centre (49) | +0.17 [−2.31, +2.64] | −0.005 [−0.048, +0.038] | +1.27 [−0.68, +3.22] | +0.016 [−0.008, +0.039], 3 of 5 |
+| Split (38) | −1.34 [−3.58, +0.89] | −0.018 [−0.064, +0.028] | +0.02 [−0.93, +0.98] | +0.010 [−0.017, +0.036] |
+| Double (32, descriptive) | +17.99 | +0.225 | +17.98 | +0.212 |
+
+Against mono, the rule's first test:
+
+| Cell | S3, SI-SDR | S3, read | `s3ens`, SI-SDR | `s3ens`, read |
+|---|---|---|---|---|
+| Centred | +6.74 [+1.87, +11.61] | +0.005 [−0.050, +0.061] | +8.20 [+3.66, +12.74] | +0.050 [+0.004, +0.097] |
+| Off-centre | +11.21 [+6.50, +15.91] | +0.064 [+0.020, +0.109] | +12.31 [+7.76, +16.85] | +0.085 [+0.044, +0.126] |
+| Split | +3.47 [−0.64, +7.59] | +0.037 [−0.042, +0.117] | +4.84 [+1.04, +8.64] | +0.065 [+0.002, +0.129] |
+
+The median SI-SDR, centred: S3 +5.80, `s3ens` +7.25, the comparator +7.49; off-centre: +8.88, +9.73 and +9.64.
+
+**The decisions** (`s3-decide`). Separate code (its own SI-SDR on the stems, its own interval and routing) gives the
+same numbers and the same outcome in every cell.
+- **S3:** the centre hint is **not used**. Centred, it's decided worse than `xlst_mdxc` by the read, in all five
+  bands, and it doesn't beat mono on the read either (+0.005 [−0.050, +0.061]). On split parts it doesn't beat mono.
+  The side hint is a **picker choice**: it beats mono, and against `steer_xlmdxc` both intervals cross zero.
+- **`s3ens`:** **not used** on either hint. By S3's rule alone it would be a picker choice in every cell; Amendment
+  4's extra need, a decided read gain over the comparator, is what keeps it out, and no cell has one. Off-centre
+  it's the best point estimate here (+1.27 dB, read +0.016). Its read gain is the size validation showed at step
+  10,000 (+0.014); its SI-SDR gain is about half (+2.51 there). Over five bands the read interval crosses zero:
+  three bands up, two just under (−0.006, −0.008).
+
+**What it says.**
+- The validation band came close to S3's held-out read. Centred: −0.047 on validation at step 10,000, −0.048 held
+  out at 12,000. Off-centre: −0.010 on validation (decided worse) and −0.005 held out (level). On a centred part S3
+  isn't cleaner and reads worse, so retraining the front on a waveform loss didn't serve the read there. S4 retrains
+  the tail instead, chosen by the read.
+- For a side part S3 is level with `steer_xlmdxc`, so by the rule it goes on the picker beside it, and
+  `steer_xlmdxc` stays the default.
+- `s3ens` is undecided, not failed. Off-centre its read gain matches validation in size, but five bands can't decide
+  it. Its one read is spent, so deciding it needs a fresh held-out set.
+- Doubles: both are far ahead of the routed chain, which keeps one copy of a double. That cell is out of the rule.
+- **Next:** S4 is training (its gradient check passed and step 0 was evaluated, 2026-11-16). Its gate comes before
+  any held-out read, then `s3-choose` picks per hint among S3, S4 and `s3ens`. Until then, by the rule, a centre hint
+  keeps `xlst_mdxc`, and a side hint keeps `steer_xlmdxc` as the default with S3 on the picker. The product isn't
+  changed by this read: its default input is still the mono stem, `xlst_mdxc` is behind a flag, and neither
+  `steer_xlmdxc` nor S3 is in it yet.
+
+**What it can't say.** S0's caveats hold: built mixes, amp-sim targets, the oracle hint. Five bands make the
+band-clustered intervals wide. The comparator's held-out numbers were seen in A3's read; S3's and `s3ens`'s were
+not seen before this read. R1's songs hold no side part, so the ear can't check S3's side-hint result there.
+
+**Files:** `s0/read-s3-s3-main.json`, `s1b-split/read-s3-s3-split.json`, the same for `s3ens`, and
+`s3-decision.json` and `s3ens-decision.json` beside them.
+
 ## What it can't say
 
 S0's mixes are built, not mastered records. Their panning is drawn, not each song's own. E1e's targets are mono, so
