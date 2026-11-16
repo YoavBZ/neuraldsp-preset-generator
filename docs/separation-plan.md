@@ -681,6 +681,87 @@ not seen before this read. R1's songs hold no side part, so the ear can't check 
 **Files:** `s0/read-s3-s3-main.json`, `s1b-split/read-s3-s3-split.json`, the same for `s3ens`, and
 `s3-decision.json` and `s3ens-decision.json` beside them.
 
+## S4 results and the trained choice (read 2026-11-16)
+
+**The run.** 7,000 steps on the MPS at batch 1 × accumulation 4, about 8 hours, no step skipped. It stopped on
+patience: five evaluations without a read 0.002 under step 2,000's. The validation curve (Adam Buckley, the 136
+non-double mixes):
+
+| Step | Median SI-SDR | Mean | Read |
+|---|---|---|---|
+| 0 (`steer_xlmdxc`) | +8.17 | +5.41 | 0.0948 |
+| 1,000 | +8.99 | +6.56 | 0.0918 |
+| 2,000 | +9.01 | +6.74 | **0.0883** |
+| 3,000 | +9.06 | +6.87 | 0.0897 |
+| 4,000 | +9.06 | +6.66 | 0.0913 |
+| 5,000 | +9.06 | +6.77 | 0.0972 |
+| 6,000 | +9.12 | +6.92 | 0.0927 |
+| 7,000 | +9.12 | +6.94 | 0.0941 |
+
+The median crept up (+8.99 at step 1,000 to +9.12), while after step 2,000 the read rose back toward step 0's
+(0.0972 at 5,000, 0.0941 at 7,000).
+
+**The gate (`s4-pick`): step 2,000, usable, barely.** Its paired read gain over step 0 is +0.0065, with the item
+bootstrap's lo90 at +0.0006. Separate code with a t-interval gives lo90 +0.00007. 69 of the 136 mixes read better.
+It is also the best of eight evaluations, so this gain is optimistic.
+
+**The held-out read,** by S3's rule on the same five held-out bands and items as S3's. Against the routed comparator:
+
+| Cell | SI-SDR | Read | Bands with a read gain |
+|---|---|---|---|
+| Centred (39) | +1.10 [−0.50, +2.70] | −0.005 [−0.010, +0.001] | 0 of 5 |
+| Off-centre (49) | +1.55 [−1.18, +4.28] | +0.011 [−0.029, +0.051] | 4 of 5 |
+| Split (38) | −0.08 [−0.42, +0.25] | −0.014 [−0.029, +0.001] | 0 of 4 |
+| Double (32, descriptive) | +12.71 | +0.239 | 5 of 5 |
+
+Against mono it wins in every counted cell. Centred: +8.41 [+4.88, +11.94], read +0.048 [+0.008, +0.089].
+Off-centre: +12.59 [+7.50, +17.69], read +0.080 [+0.057, +0.103]. Split: +4.73 [+1.56, +7.90], read +0.042
+[+0.011, +0.072]. The median SI-SDR, centred: S4 +7.74, the comparator +7.49. Off-centre: +10.50 and +9.64.
+
+**The decision** (`s3-decide --what s4`): **not used** on either hint. S4's picker choice needs a decided read gain
+over the comparator, and no cell has one. Separate code gives the same numbers and the same outcome in every cell.
+
+**The trained choice** (`s3-choose`, `trained-choice.json`):
+- **Centre hint:** no trained candidate qualifies, so it keeps `xlst_mdxc`, with nothing on the picker.
+- **Side hint:** only S3 qualifies, as a picker choice. `steer_xlmdxc` stays the default and S3 goes on the picker
+  beside it.
+
+**What it says.**
+- On a centred part, retraining the tail didn't help the read either. S4's stem is cleaner by SI-SDR (+1.10 dB,
+  undecided, mostly from Dunning Kruger's +4.01; the other bands +0.02 to +1.03, the median +0.25), but its read is
+  a little worse: −0.005 [−0.010, +0.001], undecided, below zero in every band. On split
+  parts it's level by SI-SDR, with the read lower in all four bands. S3 retrained the front and S4 the tail, chosen
+  by the read; neither improved the model's read on a centred part over `xlst_mdxc`.
+- By stratum, the validation band foresaw S4's held-out read (descriptive, post hoc, the gate's item bootstrap).
+  Step 2,000 against step 0 read worse on the 63 centred mixes, −0.013 [−0.018, −0.008] with 16 better, and better
+  on the 73 off-centre ones, +0.023 [+0.013, +0.034] with 53 better. The gate's pooled +0.0065 mixes the two. Held
+  out, both kept their sign and shrank: centred −0.005, off-centre +0.011, neither decided. The gate pools the
+  strata, as declared, so it let through a pick that validation already showed worse on centred mixes. A later
+  declaration should gate per stratum.
+- Off-centre, S4 is undecided, not failed: +1.55 dB and read +0.011, four bands up and one down (Dunning Kruger,
+  −0.036). `s3ens` showed a similar lead there (+0.016, three of five). The two aren't independent evidence: they
+  share the bands, the comparator and S3's training data.
+- Doubles: S4 is far ahead of the routed chain, which keeps one copy of a double. That cell is out of the rule.
+- **The stop rule.** S4 is null, so by the plan no further trained candidate is read on these five bands without a
+  new declaration that weighs a fresh held-out set. The best by the measuring stick is today's routed chain: `xlst_mdxc`
+  for a centre hint, and `steer_xlmdxc` for a side hint with S3 beside it on the picker.
+- **The product** isn't changed by this read. Its default input is still the mono stem, `xlst_mdxc` is behind a
+  flag, and neither `steer_xlmdxc` nor S3 is in it.
+- **Next:** by the plan, the measuring stick's choice goes to the user's ear on R1's songs, which decides the
+  product's default. Their parts are centred, so that's `xlst_mdxc` against today's mono stem; the user's ranking
+  page for them is open, with one song started. The side hint is an oracle here, so a side part without a person
+  needs a side detector. Any further trained candidate, or settling the off-centre leads, needs a new declaration
+  that weighs a fresh held-out set, so it goes to the user first.
+
+**What it can't say.** S0's caveats hold: built mixes, amp-sim targets, the oracle hint. Five bands make the
+band-clustered intervals wide. The comparator's held-out numbers were seen in A3's read and S3's. S4's were not
+seen before this read. No hint had more than one qualifier, so `s3-choose` chose nothing by the held-out read and
+adds no selection bias. Three candidates were read on the same bands, so one qualifying by chance was more likely
+(Amendment 4).
+
+**Files:** `s0/read-s3-s4-main.json`, `s1b-split/read-s3-s4-split.json`, `s4-decision.json` and
+`trained-choice.json` beside them, and `s4/run/pick.json`.
+
 ## What it can't say
 
 S0's mixes are built, not mastered records. Their panning is drawn, not each song's own. E1e's targets are mono, so
