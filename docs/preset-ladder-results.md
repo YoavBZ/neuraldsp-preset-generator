@@ -89,9 +89,11 @@ narrower than the exact t; no reading changes.
 - Rows against a constant resolve about ±0.03 on GOAT and ±0.055 on the pool, not the ±0.02 the plan gave for
   model-against-model rows; every Q1 rule row is against a constant.
 
-## Stage 1: waiting
+## Stage 1: running
 
 `check1` passed (10 of 10 stored S0 items and 10 of 10 variant-0 inputs rebuilt exactly); the `mix@-3` build, its
-answers and `sic-mix@-3` are made (zero renders). The replay control crashed before its first render:
-`song_bank.measure`, the DI treatment every render applies, reads `learn/direc/cache/average-fold2.npy` (sha256
-9aa3c3bf…), which the 2026-11-14 cleanup removed. Nothing is rendered until that file is back with that sha256.
+answers and `sic-mix@-3` are made (zero renders). The replay control first crashed before its first render: the
+2026-11-14 cleanup had removed `learn/direc/cache/average-fold2.npy`, which `song_bank.measure` (the DI treatment every
+render applies) reads. Restored bit-exact on 2026-11-17 (sha256 9aa3c3bf…e9a8, rebuilt by inverting 16 stored treated
+DIs against their raw DIs), the replay passed: 30 of 30 kept renders equal C3r's stored ones. Stage 1's 8,640 renders
+started 2026-11-17 05:35 on three shards.

@@ -571,4 +571,9 @@ Stage 0 ran on 2026-11-17 (zero renders) and its independent audit stands with c
 - **Renders wait** for `song_bank.measure`'s average spectrum (`learn/direc/cache/average-fold2.npy`, sha256 9aa3c3bf…),
   lost in the 2026-11-14 cleanup; stage 1's replay control crashed before its first render. Nothing is substituted: a
   rebuilt file must match that sha256, or the change is an amendment.
+- **The average spectrum restored (2026-11-17).** `learn/direc/cache/average-fold2.npy` is back, bit-exact: its sha256
+  equals the pinned 9aa3c3bf…e9a8 (checked here). It was rebuilt by inverting 16 stored treated DIs against their raw
+  DIs, and it regenerates all 16 bit for bit, so it is the same file and no amendment is needed. Stage 1's replay then
+  passed: 30 of 30 kept renders (60 with priming) equal C3r's stored ones. `replay` now also records, on a mismatch,
+  each direction's judge values against the stored ones (the pass rule is unchanged).
 

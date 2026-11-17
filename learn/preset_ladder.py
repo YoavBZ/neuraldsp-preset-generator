@@ -1316,6 +1316,7 @@ def cmd_replay(_args):
     from learn import audibility_measure as AM
     from learn import cc_build as CB
     from learn import full_controls_c3r as R
+    from learn import knob_ceiling as K
     from learn import local_objective as LO
     from learn import pipeline_fix as P
     from learn import pretrain_set as PS
@@ -1340,8 +1341,16 @@ def cmd_replay(_args):
         di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
         s_ = LO.tdict(x["settings"])
         y = np.asarray(AM.fresh_render(CB.new_renderer, di32, x["select"], s_, s_), np.float64)[trim[0]:trim[1]]
-        want = json.loads(R.judge_path("all", ru).read_text())["render_sha256"][h]
-        out.append({"set": s, "unit": u, "amp": a, "search": h, "equal": AM.audio_sha(y) == want})
+        rec_ = json.loads(R.judge_path("all", ru).read_text())
+        want = rec_["render_sha256"][h]
+        row = {"set": s, "unit": u, "amp": a, "search": h, "equal": AM.audio_sha(y) == want}
+        if not row["equal"]:                       # how far apart, in the judge's terms (the rule itself is unchanged)
+            di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
+            got = K.judge(P.real_amp_track(prt["sd"], prt["track"], prt["start_s"]), y, di, ru["lag"])
+            row["judge_now"], row["judge_stored"] = got, rec_["judge"][h]
+            row["ln_ratio"] = {q: math.log(got[q] / rec_["judge"][h][q]) for q in ("A", "B")
+                               if got.get(q) and rec_["judge"][h].get(q)}
+        out.append(row)
         print(f"replay {len(out)}/{REPLAY_N}: {'equal' if out[-1]['equal'] else 'DIFFERS'}", flush=True)
     ok = all(r["equal"] for r in out)
     save_control("replay", st, ok, {"renders": 2 * len(out), "equal": sum(r["equal"] for r in out), "rows": out})
