@@ -18,7 +18,8 @@ declared before the run.
 - **What the readout found:** R-all's out-of-fold answers do not already lean towards the new targets. Over all written
   knob heads, r(answer, target) − r(answer, label) is −0.0013 [−0.0105, +0.0075].
 - **Undecided, not failed, and underpowered for the expected dose.**
-  - The readout's standard error is 0.0057. Its power is about 22% at the expected +0.005 and 54% at +0.010.
+  - **Power** (post hoc): the readout's standard error is 0.0057, so its power is about 22% at the expected +0.005 and
+    54% at +0.010.
   - **It does rule out a target move that only removes noise** (post hoc). Such a move would have raised r by about
     +0.022, and the readout had 98% power to see that.
 - **What it does not show:**
@@ -55,7 +56,7 @@ over (set, cluster): 2,000 resamples, seed 20261171.
 | tone | 1,928 | 234 | +0.205 | +0.198 | −0.007 [−0.026, +0.010] |
 | cab | 3,560 | 234 | +0.224 | +0.229 | +0.006 [−0.015, +0.027] |
 | EQ | 10,538 | 234 | +0.130 | +0.124 | −0.006 [−0.021, +0.009] |
-| pedals | 880 | 92 | −0.015 | −0.013 | +0.002 [−0.023, +0.028] |
+| pedals | 880 | 92 | −0.015 | −0.013 | +0.002 [−0.022, +0.028] |
 | **all** | **19,470** | **234** | **+0.157** | **+0.156** | **−0.0013 [−0.0105, +0.0075]** |
 
 - **Cells without the fold** (post hoc): with (amp, class, head) cells, the read is +0.0024 [−0.0076, +0.0120]. That is
@@ -73,7 +74,8 @@ over (set, cluster): 2,000 resamples, seed 20261171.
 ### The overfit check and the held-half cost
 
 The all-labels targets' stored held-half cost against the labels, on the deciding pool, is +0.0144 [−0.0009, +0.0297].
-It is not overfit: the lower end is not beyond +0.05. Within the deciding sets the cost is clear of zero:
+It is not overfit: the lower end is not beyond +0.05. The pool's interval holds zero. In BKS, GOAT and cap1 (cap1 is
+outside the pool) the cost is clear of zero:
 
 | Set | Cost |
 |---|---|
@@ -82,8 +84,8 @@ It is not overfit: the lower end is not beyond +0.05. Within the deciding sets t
 | cap1 | +0.022 [+0.011, +0.033] |
 | The panel (5 clusters) | +0.003 [−0.041, +0.047] |
 
-So by the score the targets are judged about 0.02 worse on the held half, about a third of the heard-size floor. The
-panel's five clusters are what widen the pool. The other eight runs read alike, from +0.005 to +0.023 on the pool.
+So by the score the targets are judged about 0.02 worse on the held half in BKS, GOAT and cap1 (post hoc), about a
+third of the heard-size floor. The panel's five clusters are what widen the pool. The other eight runs read alike, from +0.005 to +0.023 on the pool.
 
 ### The dose (the all-labels set, 665 records)
 
@@ -144,7 +146,7 @@ The distance is the root of the summed squares over the written heads that sound
   - The line moves each label a fraction f of the way to Cen. Within a cell, the part of f common to all records is a
     pure shrink, which a correlation cannot see.
   - For a model trained on squared error, a common shrink is roughly the same as pulling its answers towards Cen after
-    training. The ladder already read that as level with Cen: `rc-xl@-3 − cen` +0.0084 [−0.042, +0.059].
+    training. The ladder already read that as level with Cen: `rc-xl@-3 − cen` +0.008 [−0.042, +0.058].
   - So any gain has to come from records moving by different amounts.
 - **The stored trials as a proxy** (all-labels Cen; the trials are not on the line):
   - Within the 0.05 margin, a record's best trial closes a median of 12% of its distance to Cen (90th percentile 27%).
@@ -193,8 +195,7 @@ The distance is the root of the summed squares over the written heads that sound
   - For the centre versions it does not.
   - This weighs for Step 6 and for the user's separator call. There is no product change: the product uses a centre
     version.
-- **A caveat:** on 5 of 7 songs the product's own window is not one of the six versions (it was separated over 10 s,
-  the versions over 30 s).
+- **A caveat:** on 5 of 7 songs the product's own window is not one of the six versions.
 
 ## Pending (not started)
 
