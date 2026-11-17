@@ -1838,7 +1838,9 @@ def rcs_directions(parts, answers, row_base):
     constant for that direction: q's same-input pool (`sic_pool`, restricted to parts with an answer) without p. The
     pool relation is symmetric, so p sits in q's pool in every direction; with p left out, p's own answer never enters
     its deviation control. parts: [{key, set, fold, amp, cls, cluster, ids}]; answers: the base row's {set: {key:
-    {half: answer}}}. -> (drawn {key: {half: q}}, pools {key: {half: [keys]}}, missing [key])."""
+    {half: answer}}}. -> (drawn {key: {half: q}}, pools {key: {half: [keys]}}, missing [key], swap_drawn: every
+    draw of `swap_assemble`, before the parts with no constant are left out, which `rcs_draws_check` compares with
+    the swap row's file)."""
     _, drawn, missing = swap_assemble(parts, answers, f"swap-{row_base}")
     by_key = {pp["key"]: pp for pp in parts}
     have = {pp["key"] for pp in parts if answers.get(pp["set"], {}).get(pp["key"]) is not None}
@@ -1851,7 +1853,7 @@ def rcs_directions(parts, answers, row_base):
             missing.append(p_key)
             continue
         pools[p_key], out_drawn[p_key] = got, hs
-    return out_drawn, pools, missing
+    return out_drawn, pools, missing, drawn
 
 
 def rcs_draws_check(row, swap_doc, drawn, base_sha, base_models):
@@ -1953,8 +1955,8 @@ def cmd_rc(args):
         ba, sa, ca = js[base]["answers"], js[f"sic-{base}"]["answers"], js["cen"]["answers"]
         ans, missing, extra = {}, [], {}
         if how == "swap":
-            drawn, pools, missing = rcs_directions(parts, ba, base)
-            rcs_draws_check(r, js[f"swap-{base}"], drawn, shas[base], js[base].get("models"))
+            drawn, pools, missing, swap_drawn = rcs_directions(parts, ba, base)
+            rcs_draws_check(r, js[f"swap-{base}"], swap_drawn, shas[base], js[base].get("models"))
             checked = set()
             for ru in units:
                 key = f"{ru['unit']}|{ru['amp']}"
@@ -2366,6 +2368,19 @@ def q2_step3(reading):
     return Q2_STEP3[reading]
 
 
+def report_refusal(out):
+    """(Pure.) Why a saved report is incomplete, or None: stage 2's Q2 row with no reading (`q2q3_outcome` leaves
+    `q2_step3` None then). `cmd_report` marks the report `refused`, saves its rows and refuses after, so the rows stay
+    readable and the file can't pass for a complete one."""
+    q = out.get("q2q3")
+    if q is not None and q.get("q2_step3") is None:
+        try:
+            q2_step3(q["q2"].get("xl@-3 - cen"))
+        except SystemExit as e:
+            return str(e)
+    return None
+
+
 Q2_STEP3 = {   # what Q2 (`xl@-3 - cen` on the deciding pool) sends to Step 3, in one place
     "better": "the model path keeps its claim on the product's stem; Step 1 confirms on songs",
     "undecided": "Cen (stage 1's constant choice) goes to Step 3 as the candidate start; the model path is not the "
@@ -2428,7 +2443,7 @@ def q2q3_outcome(rows, stage1, q1=None):
             "ceiling": ceiling_together(separator_ceiling((rows.get("clean@-3 - xl@-3") or {}).get("deciding_pool")),
                                         separator_ceiling((rows.get("mixp@-3 - xl@-3") or {}).get("deciding_pool")),
                                         d("mixp@-3 - xl@-3", rows)),
-            "q2_step3": q2_step3(d("xl@-3 - cen", rows)),
+            "q2_step3": Q2_STEP3.get(d("xl@-3 - cen", rows)),   # None: `report_refusal` refuses after the save
             "swap": {i: {"i - swap-i": d(a, rows if a in rows else stage1), "i - sic-i": d(b, rows if b in rows else stage1),
                          "size_from_swap": {k: ((rows.get(a) or {}).get("deciding_pool") or {}).get(k)
                                             for k in ("mean", "lo90", "hi90")},
@@ -2544,12 +2559,17 @@ def cmd_report(args):
         out["q2q3"] = q2q3_outcome(out["rows"], s1["rows"], s1.get("q1"))
     out["knob_read"] = knob_read(st, units, stage_answers(args.stage))
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    why = report_refusal(out)
+    if why:
+        out["refused"] = why                       # a refused report can't pass for a complete one
     P.save(ladder_dir() / f"report-stage{args.stage}.json", out)
     for name, row in out["rows"].items():
         dp = row.get("deciding_pool") or {}
         print(f"{name}: pool {dp.get('mean')} [{dp.get('lo90')}, {dp.get('hi90')}]; "
               + "; ".join(f"{s} {(row[s] or {}).get('mean')}" for s in SETS))
     print("OUTCOME", json.dumps(out.get("q1") or out.get("q2q3")))
+    if why:
+        raise SystemExit(why)
 
 
 # --- stage 0 (zero renders) ------------------------------------------------------------------------------------------------

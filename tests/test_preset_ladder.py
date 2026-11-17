@@ -1,4 +1,5 @@
 """Step 2, the preset ladder (docs/preset-ladder-plan.md): learn/preset_ladder.py's pure parts."""
+import inspect
 import math
 import re
 
@@ -457,6 +458,25 @@ def test_the_two_ceilings_open_or_park_separator_work_only_as_declared():
         L.q2_step3(None)                                          # a missing Q2 row refuses, no silent fallback
 
 
+def test_a_missing_q2_reading_refuses_only_after_the_report_is_built():
+    s1 = _rows()
+    rows = {k: v for k, v in _rows().items() if k != "xl@-3 - cen"}
+    q = L.q2q3_outcome(rows, s1)                                  # no raise: the rows can still be saved
+    assert q["q2"]["xl@-3 - cen"] is None and q["q2_step3"] is None
+    why = L.report_refusal({"q2q3": q})
+    assert why and "xl@-3 - cen" in why
+    assert L.report_refusal({"q2q3": L.q2q3_outcome(_rows(), s1)}) is None
+    assert L.report_refusal({"q1": {"outcome": "no gain shown"}}) is None   # stage 1's report has no Q2
+    src = inspect.getsource(L.cmd_report)                         # marked refused, saved, then refused
+    assert src.index('out["refused"] = why') < src.index("P.save(") < src.index("raise SystemExit(why)")
+
+
+def test_the_deviation_control_is_checked_against_the_unfiltered_draws_in_cmd_rc():
+    src = inspect.getsource(L.cmd_rc)                             # cmd_rc needs data: pin its call site
+    assert "drawn, pools, missing, swap_drawn = rcs_directions(" in src
+    assert 'rcs_draws_check(r, js[f"swap-{base}"], swap_drawn,' in src
+
+
 def test_the_swap_assembly_uses_a_pool_parts_own_half_and_never_the_parts_own_answer():
     P_ = lambda k, f, cl, di, s="goat": {"key": k, "set": s, "fold": f, "amp": "sw50r", "cls": "clean",  # noqa: E731
                                          "cluster": f"{s}|{cl}", "ids": {("di", di)}}
@@ -649,9 +669,9 @@ def _parts():
 def test_the_deviation_control_takes_the_swap_rows_draws_and_leaves_p_out_of_qs_constant():
     parts = _parts()
     base = {"goat": {k: {h: {"select": 2, "settings": {"x/y": f"{k}{h}"}} for h in ("A", "B")} for k in "abcd"}}
-    drawn, pools, missing = L.rcs_directions(parts, base, "mix@-3")
+    drawn, pools, missing, unfiltered = L.rcs_directions(parts, base, "mix@-3")
     _, swap_drawn, _ = L.swap_assemble(parts, base, "swap-mix@-3")
-    assert drawn == swap_drawn and not missing                    # the same q as swap-mix@-3, direction by direction
+    assert drawn == swap_drawn == unfiltered and not missing                    # the same q as swap-mix@-3, direction by direction
     by = {p["key"]: p for p in parts}
     for k, hs in drawn.items():
         for h, q in hs.items():
@@ -659,8 +679,22 @@ def test_the_deviation_control_takes_the_swap_rows_draws_and_leaves_p_out_of_qs_
             assert q != k and k in full                           # p sits in q's own pool (the relation is symmetric)
             assert pools[k][h] == [x for x in full if x != k]     # q's constant without p, in sic_pool's order
     two = parts[:2]                                               # q's only pool member is p: no constant, missing
-    drawn2, pools2, missing2 = L.rcs_directions(two, {"goat": {k: base["goat"][k] for k in "ab"}}, "mix@-3")
+    two_base = {"goat": {k: base["goat"][k] for k in "ab"}}
+    drawn2, pools2, missing2, unfiltered2 = L.rcs_directions(two, two_base, "mix@-3")
     assert not drawn2 and sorted(missing2) == ["a", "b"]
+    _, swap2, _ = L.swap_assemble(two, two_base, "swap-mix@-3")
+    assert unfiltered2 == swap2 and set(swap2) == {"a", "b"}      # the swap file keeps every draw
+
+
+def test_the_deviation_control_checks_the_swap_files_unfiltered_draws():
+    parts = _parts()[:2]                                          # every q's pool without p is empty: none survive
+    base = {"goat": {k: {h: {"select": 2, "settings": {"x/y": f"{k}{h}"}} for h in ("A", "B")} for k in "ab"}}
+    _, swap_drawn, _ = L.swap_assemble(parts, base, "swap-mix@-3")
+    doc = {"base_answers_sha256": "h", "base_models": ["m"], "drawn_from": swap_drawn}   # as `cmd_swap` writes it
+    drawn, _, _, unfiltered = L.rcs_directions(parts, base, "mix@-3")
+    L.rcs_draws_check("rcs-mix@-3", doc, unfiltered, "h", ["m"])  # the unfiltered draws equal the file's: passes
+    with pytest.raises(SystemExit):
+        L.rcs_draws_check("rcs-mix@-3", doc, drawn, "h", ["m"])   # the filtered ones would refuse a sound file
 
 
 def test_the_deviation_control_refuses_a_missing_stale_or_different_swap_file():
