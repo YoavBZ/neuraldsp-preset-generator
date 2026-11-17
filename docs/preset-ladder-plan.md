@@ -546,3 +546,29 @@ The planner's draft is `~/ndsp-presets/handover/2026-11-16/plan-step2.md`; its n
   renders on every device and the MPS on the MPS, as section 8 now says; a failed control refuses to start before any
   work (`control_may_run`); the status line, DOCS-INDEX and ROADMAP count the review rounds.
 
+## 15. Dated notes before stage 1's read (2026-11-17, after stage 0's audit)
+
+Stage 0 ran on 2026-11-17 (zero renders) and its independent audit stands with corrections; none changes a rule.
+
+- **Power against a constant.** Section 7's "about ±0.02 on GOAT" holds for rows of one model against another. A row
+  against a constant resolves about ±0.03 on GOAT and ±0.055 on the deciding pool (the audit, from stage 0's rows), and
+  every Q1 rule row is against a constant.
+- **"Losing to the cell mean".** The review's "about 60% of knob cells", quoted in "Why", doesn't hold on stage 0's
+  measure: answers are farther from their label than the cell's mean label of other clusters on about 50% of knob
+  values (pedals 66%), 34–47% per cell (pedals 63%), and the constants themselves score 45–53%.
+- **The t table.** `pipeline_fix.t95` uses 1.6449 beyond 30 df, so GOAT's 130-cluster intervals are about 0.7% narrower
+  than the exact t. No reading changes.
+- **The planner's preview** reproduces for the set rows and GOAT's ratio bins; BKS's bins don't: the planner's
+  +0.156 / −0.018 / −0.023 weighted units with no DI clustering. Under this plan's rule stage 0's are +0.137 [+0.042,
+  +0.232], −0.028 [−0.074, +0.019], −0.035 [−0.240, +0.169].
+- **The stored input's exposure quartiles** in `report-stage0.json` are list positions (median −6.51 dB); the
+  interpolated median is −6.57 dB (section 14's −6.6).
+- **Stage 0's ratio slopes** drop a whole DI cluster when any of its units lacks a ratio (BKS's `24_ElecGtr3aDI`, 2 of
+  4 units); dropping only those units gives RcBG −0.0065 per dB (reported −0.0113), Rcs2 −0.0181 (−0.0197), S +0.0001
+  (+0.0012). Descriptive; the stored report stands.
+- **Section 6's stage 2 row** gives 4,320 answers (8,640 renders); under Q1's outcome 4 the total is 5,760 (11,520).
+  Stage 2's ledger phase states its size (which rows run) when it is declared, since `mix@drawn` is a stage 2 row.
+- **Renders wait** for `song_bank.measure`'s average spectrum (`learn/direc/cache/average-fold2.npy`, sha256 9aa3c3bf…),
+  lost in the 2026-11-14 cleanup; stage 1's replay control crashed before its first render. Nothing is substituted: a
+  rebuilt file must match that sha256, or the change is an amendment.
+
