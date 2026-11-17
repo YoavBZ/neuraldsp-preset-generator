@@ -393,3 +393,43 @@ def test_the_lock_refuses_a_changed_research_file(tmp_path, monkeypatch):
     res.write_text('{"units": {}}')
     with pytest.raises(SystemExit):
         X.check_lock()
+
+
+def test_dotdot_follows_cd_and_root_ignores_division():
+    h = X.HOME
+    run, plug = f"{h}/gtr-q/runs/abcde", f"{h}/gtr-q/plugin"
+    allowed = (run, plug, f"{h}/gtr-q/venv")
+    assert X.dotdot(f"cd {plug}/scripts && cat ../packs/morgan/recipes.json", allowed, run, shell=True) == []
+    assert X.dotdot("cat ../packs/morgan/recipes.json", allowed, run, shell=True) == ["../packs/morgan/recipes.json"]
+    assert X.dotdot("cd out && cat ../spec.json", allowed, run, shell=True) == []
+    assert X.dotdot("cd .. && ls", allowed, run, shell=True) == [".."]
+    assert X.dotdot("out/../spec.json", allowed, run) == []
+    assert not X.targets_root("Bash", {"command": "python3 -c 'print(1 / 2)'"})
+    assert not X.targets_root("Bash", {"command": "echo 'rock / stoner'"})
+    assert X.targets_root("Bash", {"command": "cd / && ls"}) and X.targets_root("Bash", {"command": "find / -name x"})
+    assert X.targets_root("Glob", {"pattern": "*", "path": "/"}) and not X.targets_root("WebSearch", {"query": "a / b"})
+
+
+def test_venv_base_and_the_settings_folder(tmp_path):
+    (tmp_path / "pyvenv.cfg").write_text("home = /Users/x/.pyenv/versions/3.14.6/bin\nversion = 3.14.6\n")
+    assert X.venv_base(tmp_path) == ("/Users/x/.pyenv/versions/3.14.6",)
+    assert X.venv_base(tmp_path / "none") == ()
+    s = X.run_settings("aaaaa", [], {"permissions": {"deny": []}}, [], [], {})
+    assert f"Read(/{X.SETTINGS_DIR}/**)" in s["permissions"]["deny"]
+
+
+def test_runner_check_verdict():
+    pairs = [("Bash", "echo $TMPDIR; ls ~/shortlist-sandboxes",
+              f"{X.RUNS}/abcde/tmp\nls: /Users/x/shortlist-sandboxes: Operation not permitted"),
+             ("Read", "/x/skills/generate/SKILL.md", "# Generate a preset")]
+    v = X.check_verdict(pairs, ["drag_me_down", "bloomlight"], X.RUNS / "abcde" / "tmp",
+                        ["shortlist-sandboxes", "a call names a path outside the run: /Users/x/shortlist-sandboxes"])
+    assert v["probe_ran"] and v["probe_refused"] and v["tmpdir_own"] and v["other_audit_reasons"] == []
+    leaked = pairs[:1] + [("Bash", "ls ~/shortlist-sandboxes", "bloomlight\ndrag_me_down")]
+    v = X.check_verdict(leaked, ["drag_me_down", "bloomlight"], "/elsewhere", ["../ x"])
+    assert not v["probe_refused"] and v["probe_entries_seen"] == ["bloomlight", "drag_me_down"]
+    assert not v["tmpdir_own"] and v["other_audit_reasons"] == ["../ x"]
+    ev = [{"type": "assistant", "message": {"content": [{"type": "tool_use", "id": "t", "name": "Bash",
+                                                          "input": {"command": "ls"}}]}},
+          {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": "t", "content": "a"}]}}]
+    assert X.tool_pairs([json.dumps(e) for e in ev] + ["junk"]) == [("Bash", "ls", "a")]

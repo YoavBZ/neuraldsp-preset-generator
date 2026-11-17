@@ -99,7 +99,7 @@ SCRATCH_ROOTS = ("/tmp/", "/private/tmp/", "/var/folders/", "/private/var/folder
 PATH_RE = re.compile(r"""(?:^|(?<=[\s"'=(<>|;&,]))(~(?=/|\s|$|["'])[^\s"'\\;|&<>()]*|/(?:Users|private|tmp|var|Volumes|"""
                      r"""opt|home|Library|Applications|System)\b[^\s"'\\;|&<>()]*)""")
 ROOT_RE = re.compile(r"""(?:^|[\s;&|(])(?:cd|ls|find|du|tree|grep|egrep|rg|cat|stat|mdfind|locate|fd|tar|cp|rsync|"""
-                     r"""open|python3?)\b[^;&|\n]*?\s/(?=$|[\s;&|)])""")   # a shell command on a bare "/" (cd /, find /)
+                     r"""open)\b[^;&|\n'"]*?\s/(?=$|[\s;&|)])""")   # a shell command on a bare "/" (cd /, find /), outside quotes
 PATH_KEYS = ("file_path", "path", "notebook_path")   # the file tools' path inputs
 TOKEN_RE = re.compile(r"""[^\s"';&|()<>]+""")
 TITLE_NAMES = (r"wickerman", r"eat the feeder", r"femme", r"wall of death", r"colour me red", r"diesel ?13",
@@ -409,19 +409,26 @@ def own_tmp(folder):
     return tuple(f"{r}/{name}" for r in CLAUDE_TMP)
 
 
-def dotdot(text, allowed, cwd=None):
+def dotdot(text, allowed, cwd=None, shell=False):
     """`..` components that may leave the run: each token with a `..` component, resolved (an absolute or ~ path as
-    it is, a relative one against the run's folder `cwd`), outside `allowed`. -> [token]."""
+    it is, a relative one against the working folder: the run's folder `cwd`, or in a shell command the folder its last
+    `cd` before the token named), outside `allowed`. -> [token]."""
     out = []
-    for tok in TOKEN_RE.findall(text):
-        if not re.search(r"(?:^|/)\.\.(?:/|$)", tok):
-            continue
+    here = str(cwd or "/nonexistent-cwd")
+    toks = TOKEN_RE.findall(text)
+
+    def resolve(tok, base):
         if tok.startswith(("/", "~")):
-            p = os.path.normpath(HOME + tok[1:] if tok.startswith("~") else tok)
-        else:
-            p = os.path.normpath(os.path.join(str(cwd or "/nonexistent-cwd"), tok))
-        if not under(p, allowed):
-            out.append(tok)
+            return os.path.normpath(HOME + tok[1:] if tok.startswith("~") else tok)
+        return os.path.normpath(os.path.join(base, tok))
+    for i, tok in enumerate(toks):
+        if re.search(r"(?:^|/)\.\.(?:/|$)", tok):
+            p = resolve(tok, here)
+            if not under(p, allowed):
+                out.append(tok)
+        if shell and tok == "cd":
+            nxt = toks[i + 1] if i + 1 < len(toks) else "~"
+            here = resolve(nxt, here) if nxt not in ("&&", ";") else HOME
     return out
 
 
@@ -472,7 +479,7 @@ def audit_transcript(lines, allowed=(), runs_root=None, own=(), plugin_text=froz
     `tmp_results`) and other result paths (`result_paths`). lines: the stream-json text. -> {calls, leaks, seen,
     outside_calls, result_leaks, tmp_calls, tmp_results, plugin_text_results, result_paths, tools, init}."""
     calls, web_calls, results, file_results, tools, init = [], [], [], [], {}, (None, None, None)
-    file_calls, root_calls = [], 0
+    file_calls, root_calls = [], 0               # (text, is a shell command)
     names = {}
     for line in lines:
         try:
@@ -488,7 +495,7 @@ def audit_transcript(lines, allowed=(), runs_root=None, own=(), plugin_text=froz
             if c.get("type") == "tool_use":
                 text = text_of(c.get("input"))
                 calls.append(text)
-                file_calls.append(call_paths_text(c.get("name"), c.get("input")))
+                file_calls.append((call_paths_text(c.get("name"), c.get("input")), c.get("name") == "Bash"))
                 root_calls += targets_root(c.get("name"), c.get("input"))
                 names[c.get("id")] = c.get("name")
                 tools[c.get("name")] = tools.get(c.get("name"), 0) + 1
@@ -507,7 +514,7 @@ def audit_transcript(lines, allowed=(), runs_root=None, own=(), plugin_text=froz
     if root_calls:
         leaks.add("a call targets /")
     cwd = allowed[0] if allowed else None
-    dd = sorted({tok for call in file_calls for tok in dotdot(call, allowed, cwd)})
+    dd = sorted({tok for call, sh in file_calls for tok in dotdot(call, allowed, cwd, shell=sh)})
     if dd:
         leaks.add(f".. that may leave the run: {dd[:3]}")
     verdict = {"oc": set(), "tc": set(), "rl": set(), "tr": set(), "pt": set(), "rp": set()}
@@ -576,6 +583,7 @@ def run_settings(tag, others, base, home_entries, claude_entries, tmp_entries, f
     for o in sorted(others):
         if o != tag:
             add(f"Read(/{RUNS / o}/**)")
+    add(f"Read(/{SETTINGS_DIR}/**)")                    # the settings name home entries and other folders
     for d in (PLUGIN, VENV):
         add(f"Edit(/{d}/**)")
     s["permissions"]["deny"] = deny
@@ -1354,6 +1362,24 @@ def build_root():
             "venv_tree_sha256": tree_sha(VENV, contents=False)}
 
 
+def venv_base(venv=None):
+    """The venv's base interpreter's prefix (its pyvenv.cfg `home`, one level up): runs read its stdlib, so a traceback
+    naming it is not a leak. -> (path,) or ()."""
+    cfg = pathlib.Path(venv or VENV) / "pyvenv.cfg"
+    if not cfg.exists():
+        return ()
+    for line in cfg.read_text().splitlines():
+        k, _, v = line.partition("=")
+        if k.strip() == "home" and v.strip():
+            return (str(pathlib.Path(v.strip()).parent),)
+    return ()
+
+
+def run_allowed(folder):
+    """The roots a run may name: its own folder, the plugin, the venv and its base interpreter, the factory presets."""
+    return (folder, PLUGIN, VENV, *venv_base(), *ALLOWED_ROOTS)
+
+
 def shared_unchanged(m):
     """The plugin (its bytes) and the venv (its files' sizes and times) as built: runs must not change them."""
     got = {"plugin_tree_sha256": tree_sha(PLUGIN), "venv_tree_sha256": tree_sha(VENV, contents=False)}
@@ -1438,6 +1464,148 @@ def claude_run(folder, prompt, log, settings, resume=None):
     return subprocess.run(argv, cwd=folder, stdout=log, stderr=subprocess.STDOUT, timeout=3600)
 
 
+CHECK_SONG = {"song": "Magilla", "artist": "Turbosauro", "kind": "preview_mastered",
+              "slug": "cambridge-magilla-elecgtr1"}   # a development multitrack of the routing study: not V-real, not
+#                                                     NS, not the reserve, not one of the user's R1 songs
+CHECK_PROBE = "~/shortlist-sandboxes"               # a denied home entry, probed in the check run only
+CHECK_PREAMBLE = ("This is a check of the setup before the real runs. First, in one shell command, run `echo $TMPDIR` "
+                  f"and `ls {CHECK_PROBE}`, and say what each printed (an error is fine). Then do the task below as you "
+                  "would.\n\n")
+
+
+def check_record():
+    return ex_dir() / "runner-check.json"
+
+
+def tool_pairs(lines):
+    """[(tool name, input text, result text)] of a stream-json transcript, in order."""
+    uses, out = {}, []
+    for line in lines:
+        try:
+            ev = json.loads(line)
+        except ValueError:
+            continue
+        for c in ((ev.get("message") or {}).get("content")) or []:
+            if not isinstance(c, dict):
+                continue
+            if c.get("type") == "tool_use":
+                uses[c.get("id")] = (c.get("name"), text_of(c.get("input")))
+            elif c.get("type") == "tool_result" and c.get("tool_use_id") in uses:
+                out.append((*uses[c["tool_use_id"]], text_of(c.get("content"))))
+    return out
+
+
+def check_verdict(pairs, probe_entries, tmpdir, why):
+    """The runner check's reading (pure): the probe's listing refused (none of the denied entry's names in any result),
+    the TMPDIR the run saw, the audit's reasons other than the probe's own. -> dict."""
+    seen = sorted({e for _, _, r in pairs for e in probe_entries if e and e in r})
+    probe = next(((n, i, r) for n, i, r in pairs if n == "Bash" and "shortlist-sandboxes" in i), None)
+    shown = None
+    if probe:
+        lines = [ln.strip() for ln in probe[2].splitlines() if ln.strip().startswith("/")]
+        shown = lines[0] if lines else None
+    other = [w for w in why if "shortlist-sandboxes" not in w]
+    return {"probe_ran": probe is not None, "probe_refused": probe is not None and not seen, "probe_entries_seen": seen,
+            "probe_result": probe[2][:400] if probe else None, "tmpdir_seen": shown,
+            "tmpdir_own": shown is not None and os.path.normpath(shown) == os.path.normpath(str(tmpdir)),
+            "other_audit_reasons": other}
+
+
+def cmd_runner_check(_args):
+    """CP2's runner check (plan, "The runner check"), before any V-real research run: one headless run through the same
+    root, settings, prompt and audit on a development song (Magilla by Turbosauro, its released preview), with one probe
+    of a denied home entry and an echo of $TMPDIR. It must end with a preset, and the probe must be refused; the TMPDIR
+    it saw is recorded. Never a research result, never used for R. -> exam/runner-check.json; a failure stops."""
+    import numpy as np
+    import soundfile as sf
+
+    from learn import mix_previews as MPV
+
+    GR = _gr()
+    entry()
+    if check_record().exists():
+        raise SystemExit(f"{check_record()} exists: the check runs once")
+    m = research_map()
+    if "plugin" not in m:
+        m["plugin"] = build_root()
+    rng = random.Random(f"{SEED}|check")
+    taken = {p.name for p in RUNS.glob("*")} if RUNS.exists() else set()
+    tag = next(x for x in ("".join(rng.choice("abcdefghijklmnopqrstuvwxyz") for _ in range(5)) for _ in range(100))
+               if x not in taken and x not in m["runs"])
+    folder = RUNS / tag
+    for sub in ("out", "data", "tmp"):
+        (folder / sub).mkdir(parents=True, exist_ok=sub != "out")
+    al = json.loads((MPV.IN / "alignment.json").read_text())["Magilla"][CHECK_SONG["kind"]]
+    src = MPV.IN / al["file"]
+    if sha_file(src) != al["sha256"]:
+        raise SystemExit(f"{src.name}: not alignment.json's file")
+    x, sr = sf.read(str(src), dtype="float32", always_2d=True)
+    sf.write(str(folder / "song-00.flac"), np.clip(x, -1.0, 1.0 - 2.0 ** -23), sr, subtype="PCM_24")
+    c = al["crops"][CHECK_SONG["slug"]]
+    a = c["crop_s"][0] - c["crop_offset_samples"] / 48000
+    span = [max(EDGE_S, a - 10.0), min(len(x) / sr - EDGE_S, a + 20.0)]
+    prompt = CHECK_PREAMBLE + PROMPT.format(song=CHECK_SONG["song"], artist=CHECK_SONG["artist"], audio="song-00.flac",
+                                            start=GR._clock(span[0]), end=GR._clock(span[1]),
+                                            python=VENV / "bin" / "python", data=folder / "data")
+    (folder / "prompt.txt").write_text(prompt)
+    m["check"] = {"tag": tag, "song": CHECK_SONG, "span_file_s": span, "made": time.strftime("%Y-%m-%d %H:%M:%S"),
+                  "note": "the runner check: never a research result, never used for R"}
+    P.save(research_dir() / "map.json", m)
+    SETTINGS_DIR.mkdir(parents=True, exist_ok=True)
+    st = SETTINGS_DIR / f"{tag}.json"
+    P.save(st, run_settings(tag, list(m["runs"]), GR.SETTINGS, [p.name for p in pathlib.Path.home().iterdir()],
+                            [p.name for p in (pathlib.Path.home() / ".claude").iterdir()],
+                            {r: [p.name for p in pathlib.Path(r).iterdir()] for r in CLAUDE_TMP
+                             if r.startswith("/private/") and pathlib.Path(r).is_dir()}, folder))
+    shared_unchanged(m)
+    t0 = time.time()
+    with open(folder / "transcript.jsonl", "w") as log:
+        claude_run(folder, prompt, log, st)
+    asked = False
+    if not (folder / "result.json").exists():
+        session, _, _ = GR._session_id(folder / "transcript.jsonl")
+        if session:
+            asked = True
+            with open(folder / "transcript.jsonl", "a") as log:
+                claude_run(folder, GR.NON_ANSWER, log, st, resume=session)
+    seconds = round(time.time() - t0, 1)
+    unchanged = True
+    try:
+        shared_unchanged(m)
+    except SystemExit:
+        unchanged = False
+    lines = (folder / "transcript.jsonl").read_text().splitlines()
+    au = audit_transcript(lines, allowed=run_allowed(folder), runs_root=RUNS, own=own_tmp(folder),
+                          plugin_text=plugin_paths(PLUGIN))
+    _, plugins, model = au.pop("init")
+    probe_dir = pathlib.Path(CHECK_PROBE.replace("~", HOME, 1))
+    entries = [p.name for p in probe_dir.iterdir()] if probe_dir.is_dir() else []
+    v = check_verdict(tool_pairs(lines), entries, folder / "tmp", audit_why(au))
+    res = None
+    try:
+        res = json.loads((folder / "result.json").read_text())
+    except (OSError, ValueError):
+        pass
+    wet = None
+    if res:
+        w = res.get("preset") or out_of(res.get("apply_command") or "", "--out") or ""
+        wp = (folder / w) if w and not pathlib.Path(w).is_absolute() else pathlib.Path(w) if w else None
+        wet = str(wp) if wp and wp.exists() and folder.resolve() in wp.resolve().parents else None
+    turns = next((json.loads(ln).get("num_turns") for ln in reversed(lines) if '"type": "result"' in ln
+                  or '"type":"result"' in ln), None)
+    out = {"tag": tag, "seconds": seconds, "turns": turns, "asked": asked, "model": model,
+           "plugin_version": next((p.get("version") for p in plugins or [] if p.get("name") == "neuraldsp-preset-generator"),
+                                  None),
+           "result": res is not None, "preset": wet, "class": (res or {}).get("gain_class"), "shared_unchanged": unchanged,
+           **v, "audit": au,
+           "passes": bool(res is not None and wet and v["probe_ran"] and v["probe_refused"] and unchanged)}
+    P.save(check_record(), out)
+    print(json.dumps({k: out[k] for k in out if k != "audit"}, indent=1, default=str))
+    if not out["passes"]:
+        raise SystemExit("the runner check failed (the runner or the fence): stop and hand back")
+    print(f"EXAM RUNNER-CHECK DONE in {seconds / 60:.1f} min; TMPDIR {'own' if v['tmpdir_own'] else v['tmpdir_seen']}")
+
+
 def cmd_research_route(args):
     """Each prepared folder, one at a time (the sandbox's temp is shared), through a fresh sandboxed `claude -p` with the
     scrubbed plugin (`run_settings`: every home entry but this root and the venv's interpreter, every other run and the
@@ -1448,6 +1616,8 @@ def cmd_research_route(args):
     entry()
     if args.workers != 1:
         raise SystemExit("research runs one at a time (--workers 1): runs would share the sandbox's temp")
+    if not check_record().exists() or json.loads(check_record().read_text()).get("passes") is not True:
+        raise SystemExit("the runner check has not passed (runner-check): no V-real research run before it")
     m = research_map()
     todo = sorted(t for t in m["runs"] if not (RUNS / t / "transcript.jsonl").exists())
     SETTINGS_DIR.mkdir(parents=True, exist_ok=True)
@@ -1456,7 +1626,8 @@ def cmd_research_route(args):
         folder, st = RUNS / tag, SETTINGS_DIR / f"{tag}.json"
         shared_unchanged(m)
         (folder / "tmp").mkdir(exist_ok=True)
-        P.save(st, run_settings(tag, list(m["runs"]), GR.SETTINGS, [p.name for p in pathlib.Path.home().iterdir()],
+        others = list(m["runs"]) + ([m["check"]["tag"]] if m.get("check") else [])
+        P.save(st, run_settings(tag, others, GR.SETTINGS, [p.name for p in pathlib.Path.home().iterdir()],
                                 [p.name for p in (pathlib.Path.home() / ".claude").iterdir()],
                                 {r: [p.name for p in pathlib.Path(r).iterdir()] for r in CLAUDE_TMP
                                  if r.startswith("/private/") and pathlib.Path(r).is_dir()}, folder))
@@ -1512,7 +1683,7 @@ def cmd_research_collect(_args):
         if not (folder / "transcript.jsonl").exists():
             raise SystemExit(f"{tag}: not run")
         au = audit_transcript((folder / "transcript.jsonl").read_text().splitlines(),
-                              allowed=(folder, PLUGIN, VENV, *ALLOWED_ROOTS), runs_root=RUNS, own=own_tmp(folder),
+                              allowed=run_allowed(folder), runs_root=RUNS, own=own_tmp(folder),
                               plugin_text=ptext)
         session, plugins, model = au.pop("init")
         version = next((p.get("version") for p in plugins or [] if p.get("name") == "neuraldsp-preset-generator"), None)
@@ -2470,6 +2641,7 @@ def main(argv=None):
     sub.add_parser("inputs").set_defaults(fn=cmd_inputs)
     sub.add_parser("guards").set_defaults(fn=cmd_guards)
     sub.add_parser("r1-repro").set_defaults(fn=cmd_r1_repro)
+    sub.add_parser("runner-check").set_defaults(fn=cmd_runner_check)
     rp = sub.add_parser("research-prepare")
     rp.add_argument("--again", nargs="*", help="units whose run failed a guard: a fresh folder each")
     rp.set_defaults(fn=cmd_research_prepare)

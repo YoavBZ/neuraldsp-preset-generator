@@ -130,8 +130,9 @@ at this branch's commit, checked to name no V-real title or band).
   venv's base interpreter (`~/.pyenv`) (so `~/shortlist-sandboxes`, which holds earlier song-only research on two of
   these songs, `~/.codex`, `~/.claude.json` and the shell and Python histories are denied), for every `~/.claude`
   entry but Claude Code's own shell files (`shell-snapshots`, `session-env`), for every entry of the sandbox's shared
-  temp (`/tmp/claude-501`) but the run's own folder there, and for every other run's folder; edits are denied in the
-  plugin and the venv; `TMPDIR` is set to the run's own `tmp` folder. The lists are made at each run's start.
+  temp (`/tmp/claude-501`) but the run's own folder there, for every other run's folder (the runner check's included)
+  and for `~/gtr-q/settings` (it names home entries and other sessions' folders); edits are denied in the plugin and
+  the venv; `TMPDIR` is set to the run's own `tmp` folder. The lists are made at each run's start.
 - **The prompt asks the run to keep every file, temporary ones too, in its own folder** (`./tmp` for scratch).
 - **The shared folders are hashed** (the plugin's bytes, the venv's file sizes and times, Python's bytecode caches left
   out) before and after each run and at collection; a change stops the research for the user.
@@ -141,23 +142,41 @@ at this branch's commit, checked to name no V-real title or band).
 - **The audit (guard 5)** excludes a run on any of:
   - a tool call naming the project's data, repository, documents, tests or earlier research (the routing runs,
     `~/shortlist-sandboxes`);
-  - a call naming a path outside the run's own folder, the plugin, the venv and the factory presets (`/Library/Audio/`),
-    other than ordinary scratch space (`/tmp`, `/var/folders`, recorded); the sandbox's shared Claude temps
+  - a call naming a path outside the run's own folder, the plugin, the venv, the venv's base interpreter (under
+    `~/.pyenv`, whose stdlib a traceback names) and the factory presets (`/Library/Audio/`), other than ordinary scratch
+    space (`/tmp`, `/var/folders`, recorded); the sandbox's shared Claude temps
     (`/tmp/claude-501`, `/tmp/claude`) are a stop but for the run's own folder in them;
-  - a shell command run on a bare `/` (`cd /`, `find /`), or a file tool given `/`;
-  - a `..` in a shell command or a file tool's path that resolves (a relative path against the run's folder) outside
-    those roots;
+  - a shell command run on a bare `/` outside quotes (`cd /`, `find /`), or a file tool given `/`;
+  - a `..` in a shell command or a file tool's path that resolves outside those roots (a relative path against the
+    run's folder, or in a shell command against the folder its last `cd` named);
   - the user's account name (any case) in a web search or fetch; a web result naming the project;
   - a file tool's result naming a home path outside the allowed roots (but a path the plugin's own text names, such as
     its default data root), a file in a shared Claude temp other than the run's own, or another run's folder.
   - Recorded, not a stop, for the independent audit: scratch paths named in calls and results, the shared temp's own
     name echoed in a result, the plugin's own paths quoted in results, and any other path a result names.
   - A wrong plugin version or model, or no readable result, excludes it too.
+  - A tool output too large for the transcript, which Claude Code saves under its own project folder
+    (`~/.claude/projects/…`), would be a result stop as written; the reviewer found none in the 132 stored routing
+    transcripts.
 - **The expected exclusion rate,** from this audit replayed on the routing re-check's 83 stored transcripts (same
-  model, prompt style and sandbox; paths remapped to this root; zero renders): 24 of 83 (29%) excluded, 23 of them for
-  writing a spec to a shared Claude temp (`$TMPDIR` in the sandbox) and 1 for a `..` out of the run. Those runs had
-  neither the keep-in-your-folder line nor their own `TMPDIR`, so the rate here should be lower; at 29% a unit ends with
-  no R after its one rerun about 8% of the time (about one unit in ten).
+  model, prompt style and sandbox; paths remapped to this root; zero renders; the script is kept beside the exam's data,
+  `exam/tools/audit_replay.py`): 23 of 83 (28%) excluded, every one for a spec aimed at a shared Claude temp
+  (`/tmp/claude-501` or `/tmp/claude`, the sandbox's `$TMPDIR`). Those were attempts the sandbox refused (its
+  here-documents and spec writes failed with "operation not permitted", "spec file not found"), not writes; the runs
+  then wrote elsewhere. The earlier replay's one `..` case had not left the run (a `cd` into the plugin) and passes now.
+  The stored runs had neither the keep-in-your-folder line nor their own `TMPDIR`, so the rate here should be lower.
+  The re-check ran each of 34 parts twice: 4 parts lost both runs, against 2.6 expected if the two were independent, so
+  losses cluster a little by part; at that rate a unit ends with no R after its one rerun about 12% of the time (about
+  one unit in ten; 8% at independence).
+
+**The runner check** (CP2, before any V-real research run; declared now): one headless run through the same root,
+settings, prompt and audit on a development song, Magilla by Turbosauro (its released preview; a multitrack the routing
+study used; not V-real, not NS, not the reserve, not one of the user's R1 songs), with two lines added to its prompt
+only: echo `$TMPDIR`, and list `~/shortlist-sandboxes` (a denied home entry; never in a V-real run's prompt). It passes
+when the run ends with a preset, the listing is refused (none of that folder's names in any result) and the plugin and
+the venv are unchanged; the `TMPDIR` the run saw (its own `tmp` folder, or the sandbox's) and the audit's reasons other
+than the probe's are recorded, with its wall time. A failure stops before any research run, for the user. Its transcript
+is not a research result and is never used for R; `research-route` refuses until it passed.
 
 **When research fails** (declared now, the orchestrator's default):
 - A unit takes its first run that passed. `research-prepare --again` makes a fresh folder only for a unit whose runs were
@@ -298,7 +317,7 @@ compared with these stored renders, hash-checked, and its read declared as such.
 
 - **CP2 (inputs and guards):** `$MAIN -m learn.real_song_exam inputs`; the printed `phase_exam_inputs` record committed
   to the ledger; `$MAIN -m learn.real_song_exam guards`; `$MAIN -m learn.real_song_exam r1-repro` (12 renders);
-  `research-prepare`, `research-route` (background), `research-collect`; if a unit's runs were all excluded,
+  the audit replay re-run; `runner-check`; then `research-prepare`, `research-route` (background), `research-collect`; if a unit's runs were all excluded,
   `research-prepare --again KEY`, `research-route`, `research-collect` once.
 - **CP3 (the chain):** `chain` launched detached (`zsh -c 'setopt no_bg_nice; nohup caffeinate -i $MAIN -u -m
   learn.real_song_exam chain > LOG 2>&1 &'`, its PID recorded; the done line `EXAM CHAIN DONE`); then `c-pick` (needs
@@ -324,6 +343,7 @@ compared with these stored renders, hash-checked, and its read declared as such.
   venv's interpreter, the shared temps but each run's own folder, and edits to the plugin and the venv; the plugin and
   the venv are hashed around each run; the audit's rate on the stored re-check transcripts is stated above.
 - **A product failure** (a chain arm without a preset) stops before the answers, for the user.
+- **A runner check** on a development song precedes the V-real research runs (above).
 - **S of M's class** (EX-Sm) is rendered where the classes differ, for the loudness row.
 - **The report** drops a held half where S is not finite, as the plan says, and stops only on a missing answer; it
   runs once.
