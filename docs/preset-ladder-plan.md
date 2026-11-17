@@ -1,9 +1,10 @@
 # The preset ladder: where is the preset lost?
 
 **Status:** declared 2026-11-17 before anything ran, after three rounds of independent review (eight, then five, then
-one required fix; section 14). Stages 0 and 1 ran on 2026-11-17 and are audited (section 15,
-[results](preset-ladder-results.md)); stage 2 was declared on 2026-11-17 after review (`phase_l2`) and runs; the
-re-centred answer was declared on 2026-11-17 at 10:00 after two review rounds (section 15, `phase_lrc`). Step 2 of the
+one required fix; section 14). Stages 0, 1 and 2 ran on 2026-11-17 and are audited (section 15,
+[results](preset-ladder-results.md)); stage 2 (`phase_l2`, `phase_l2_outcome`) read Q2 worse by the rule (fragile; a
+heard-size gain over Cen ruled out) and opened separator work, a ceiling that reaches only about Cen; stage 3 is held
+until the re-centred read, under the stop rule in section 15 ("After stage 2"); the re-centred answer was declared on 2026-11-17 at 10:00 after two review rounds (section 15, `phase_lrc`). Step 2 of the
 plan the user approved after the independent review of 2026-11-16 ("follow the review's plan"). Ledger `preset-ladder`
 (`phase_l0`, `phase_l1`, `phase_l2`; stage 3 and the re-centred answer are declared before they run). Code
 `learn/preset_ladder.py`, tests `tests/test_preset_ladder.py`. Data `PF/ladder/` (`PF` is
@@ -783,3 +784,53 @@ Stage 0 ran on 2026-11-17 (zero renders) and its independent audit stands with c
   `check0`, `check1` and `replay` passed on today's C3r state; the render path unchanged since stages 1 and 2 rendered
   (the launcher refuses unless `learn/` other than this module equals a59e94e9's and the worktree has no tracked
   changes); the machine rules (at most 3 render processes, the 31 GB disk guard; no MPS).
+
+### After stage 2: stage 3 held, and the ladder's stop rule (2026-11-17 13:30; revised 13:45 after PR #506's review; both before the re-centred report is run)
+
+Written after stage 2's report and its independent audit (stands with corrections). The first version (commit
+da05c8ad, 13:30:22) and this revision (after PR #506's review) both came after the re-centred renders began
+(13:10:18) and before `report-rc` was run or any re-centred judge was read. The note changes no row, rule or table of
+`phase_lrc`; it adds an action to one of its descriptive rows (`rc-mix@-3 − cen`, branch 2 below).
+- **Stage 3 is held until the re-centred read.** Its triggers fired: the exposure rows and pooling, both from stage
+  1's rows. But both measure the un-re-centred model path, and on this stage's evidence that path's best case is about
+  Cen. With the other guitars removed perfectly and no separator, `mixp@-3 - cen` is −0.025 [−0.072, +0.023] (GOAT
+  −0.037, decided); with perfect separation, `clean@-3 - cen` is +0.001 [−0.051, +0.052]. Stage 3 stays declared on its
+  own and runs only as the stop rule below says.
+- **Two zero-render rows, read beside the declared rc pairs** from the rc judges (the audit reads them):
+  `rc-mix@-3 − cen`, the ideal input re-centred (already a declared, descriptive rc pair; stage 2 found the level step
+  nil, so it also stands in for a re-centred `mixp@-3`), and `rc-mix@-3 − rc-xl@-3`, the separator's ceiling after
+  re-centring (new). Both are descriptive except as branch 2 says.
+- **The ladder's stop rule** (90% interval on the deciding pool, by the score, as every rule row):
+  1. **`rc-xl@-3 − cen` reads better:** this acts through `RC_JOINT`'s "propose" cell. The re-centred model path
+     becomes the candidate, proposed with its own declaration and review, and Step 1 confirms on songs. `RC_JOINT`'s
+     "raw-wins" cell (`rc-xl@-3 − xl@-3` worse) can't co-occur: the means add, so `rc-xl@-3 − xl@-3` = `rc-xl@-3 −
+     cen` − 0.061, below −0.061 here. Pooling on the re-centred path needs stage 3's own (re)declaration first; any
+     separator work aims at `rc-mix@-3 − rc-xl@-3`, under its own plan.
+  2. **Only `rc-mix@-3 − cen` reads better:** the stem is the bottleneck. Separator work is planned, under its own plan
+     and review, judged by the preset score, never by SI-SDR (stage 2's audit: X-LANCE's SI-SDR doesn't track the
+     score's cost). This gives `phase_lrc`'s descriptive row an action outside `RC_JOINT`. Under no effect it fires
+     with at most one one-sided 5% tail, and it also needs stage 2's opening (met). A decided gain with its mean
+     inside −0.05 (better, but not of heard size) is not planned by default: it goes to the user as the floor's call,
+     with both readings, as in section 1.
+  3. **Neither reads better:** the ladder (Step 2) stops and Cen goes to Step 3 (`Q2_STEP3`).
+     - `RC_JOINT`'s "flagged" cell still applies: if `rc-xl@-3 − xl@-3` reads better, the flagged model path is
+       re-centred (its own reviewed change). It is the likely cell here: since `rc-xl@-3 − xl@-3` = `rc-xl@-3 − cen` −
+       0.061, a re-centred stem about level with Cen is a gain over the raw answer.
+     - Separator work and stage 3's rows (exposure, pooling) are **not planned by the ladder; they are put to the
+       user with both readings**. The user-approved gate for separator work, "a preset-level gain from oracle
+       separation in step 2", is met at heard size (`mixp@-3 − xl@-3` −0.085 [−0.120, −0.051]), while on this evidence
+       the model sets the limit, not the separator (a perfect input reaches only about Cen). As with section 1's
+       floor, whether that holds the work back is the user's call. For the exposure rows the basis is Step 4's own
+       stop rule ("if the preset doesn't improve even with the guitar alone, the reader is the limit; go to step 5"),
+       with `clean@-3 − cen` +0.001.
+     - The next levers are the approved plan's Step 5 (targets the model can learn) and Step 6 (fine-tune on what the
+       product feeds; Q3's declared rule gave it a measured target: the separator alone +0.053 [+0.009, +0.096],
+       fragile). They are declared steps, not new approaches, and each has its own plan and review. Anything outside
+       the approved steps is explained against what failed first and needs the user's go.
+     - If the lower end of `rc-xl@-3 − cen` or `rc-mix@-3 − cen` still holds a heard-size gain (lo90 below −0.05),
+       the write-up calls the read undecided and underpowered, not failed, and any further rows are put to the user
+       rather than added by default.
+- **What this changes.** It narrows how stage 2's "opens separator work" (`ceiling_together`, by `mixp@-3 − xl@-3`
+  −0.085 [−0.120, −0.051]) is acted on: the ceiling is measured against today's stem path and reaches only about Cen,
+  so the ladder plans separator work only under branches 1 and 2, and under branch 3 puts it to the user. It was
+  decided before the rc data. `RC_JOINT` and every row and rule of `phase_lrc` are unchanged.
