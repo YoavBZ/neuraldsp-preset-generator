@@ -24,11 +24,17 @@ stage declared in the ledger before it runs:
     .venv/bin/python -m learn.preset_ladder render --rows cen,aconst,sic-mix-drawn,sic-clean-kind,sic-mix@-3,\
         clean-kind,mix@-3 --shard 0/3
     .venv/bin/python -m learn.preset_ladder report --stage 1
-    # stage 2 (separations, then renders), declared before it runs
-    ~/ndsp-presets/tools/msst-venv/bin/python -m learn.preset_ladder sep --rows xl@-3,xlnoG@-3 --device mps
+    # stage 2 (separations, then renders), in force only once the ledger holds phase_l2
+    ~/ndsp-presets/tools/msst-venv/bin/python -m learn.preset_ladder sep --rows xlnoG@-3,xl@-3 --device mps
+    $TORCH_PY -m learn.preset_ladder predict --rows mixp@-3,xlnoG@-3,xl@-3,clean@-3
+    .venv/bin/python -m learn.preset_ladder sic --rows sic-xl@-3
+    .venv/bin/python -m learn.preset_ladder swap --rows swap-mix@-3,swap-xl@-3
+    .venv/bin/python -m learn.preset_ladder render --rows mixp@-3,xlnoG@-3,xl@-3,clean@-3,sic-xl@-3,swap-mix@-3,\
+        swap-xl@-3 --shard 0/3
+    .venv/bin/python -m learn.preset_ladder report --stage 2
 
-The pure parts (the lender pool and draw, the layout, the gains, the stereo assembly, the centres, the subset, the rows)
-are unit-tested in tests/test_preset_ladder.py.
+The pure parts (the lender pool and draw, the layout, the gains, the stereo assembly, the centres, the subset, the rows,
+the swap draw and assembly, the outcome rules) are unit-tested in tests/test_preset_ladder.py.
 """
 
 from __future__ import annotations
@@ -58,6 +64,7 @@ SETS = ("bks", "goat", "cap1", "n12", "panel")
 SUBSET_GOAT_PER_FOLD = 6              # stage 3's subset: GOAT and cap1 units per fold and class
 SUBSET_CAP1_PER_CREATOR = 3
 SIC_BASES = ("clean-kind", "mix@-3", "mix-drawn", "xl@-3", "mix@drawn")   # inputs whose same-input constants are declared
+SWAP_BASES = ("mix@-3", "xl@-3")      # inputs whose swap rows are declared (stage 2)
 SMALL = 0.05                          # a gain under this isn't known to be heard (F65): "small" in the outcome tables
 KNOB_GROUPS = {                       # reads_v3's three groups (`knob_group` adds the EQ and the pedals)
     "drive": ("inputGain", "pr12Volume", "sw50rVolume", "sw50rLevel", "ac20Volume", "ac20Power"),
@@ -169,6 +176,11 @@ def row_info(name):
         return {"stage": 0, "kind": "stored", "style": "train"}
     if name in ("cen", "aconst"):
         return {"stage": 1, "kind": "constant", "style": None}
+    if name.startswith("swap-"):          # another pool part's real answer, per half (`cmd_swap`), rendered in stage 2
+        base = name[5:]
+        if base not in SWAP_BASES:
+            raise SystemExit(f"unknown row {name!r}: a swap row of {SWAP_BASES}")
+        return {"stage": 2, "kind": "swap", "style": None, "base": base}
     if name.startswith("sic-"):
         base = name[4:]
         if base not in SIC_BASES:
@@ -1266,6 +1278,9 @@ def cmd_render(args):
     st = R.state()
     controls_ok(max(row_info(r)["stage"] for r in rows), st)
     for r in rows:
+        if is_swap(r):
+            swap_base_check(r)
+    for r in rows:
         if ans[r]["c3r_sha256"] != st["sha256"]:
             raise SystemExit(f"{r}: its answers were made on another state")
     k, n = args.shard
@@ -1316,6 +1331,7 @@ def cmd_replay(_args):
     from learn import audibility_measure as AM
     from learn import cc_build as CB
     from learn import full_controls_c3r as R
+    from learn import knob_ceiling as K
     from learn import local_objective as LO
     from learn import pipeline_fix as P
     from learn import pretrain_set as PS
@@ -1340,8 +1356,19 @@ def cmd_replay(_args):
         di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
         s_ = LO.tdict(x["settings"])
         y = np.asarray(AM.fresh_render(CB.new_renderer, di32, x["select"], s_, s_), np.float64)[trim[0]:trim[1]]
-        want = json.loads(R.judge_path("all", ru).read_text())["render_sha256"][h]
-        out.append({"set": s, "unit": u, "amp": a, "search": h, "equal": AM.audio_sha(y) == want})
+        rec_ = json.loads(R.judge_path("all", ru).read_text())
+        want = rec_["render_sha256"][h]
+        row = {"set": s, "unit": u, "amp": a, "search": h, "equal": AM.audio_sha(y) == want}
+        if not row["equal"]:                       # how far apart, in the judge's terms (the rule itself is unchanged)
+            try:                                   # a diagnostic only: it never stops the failed record being saved
+                di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
+                got = K.judge(P.real_amp_track(prt["sd"], prt["track"], prt["start_s"]), y, di, ru["lag"])
+                row["judge_now"], row["judge_stored"] = got, rec_["judge"][h]
+                row["ln_ratio"] = {q: math.log(got[q] / rec_["judge"][h][q]) for q in ("A", "B")
+                                   if got.get(q) and rec_["judge"][h].get(q)}
+            except Exception as err:               # noqa: BLE001
+                row["diagnostic_error"] = repr(err)
+        out.append(row)
         print(f"replay {len(out)}/{REPLAY_N}: {'equal' if out[-1]['equal'] else 'DIFFERS'}", flush=True)
     ok = all(r["equal"] for r in out)
     save_control("replay", st, ok, {"renders": 2 * len(out), "equal": sum(r["equal"] for r in out), "rows": out})
@@ -1588,6 +1615,90 @@ def sic_pool(parts, p):
     parts, p: {key, fold, amp, cls, cluster, ids}."""
     return [q for q in parts if q["key"] != p["key"] and q["fold"] == p["fold"] and q["amp"] == p["amp"]
             and q["cls"] == p["cls"] and q["cluster"] != p["cluster"] and not (q["ids"] & p["ids"])]
+
+
+def swap_draw(pool_keys, p_key, row, half, seed=SEED):
+    """(Pure.) The swap row's answer source for part p's half: one other part drawn uniformly from p's same-input pool
+    (`sic_pool`, the keys with an answer), seeded by the row, the part and the half (one draw a direction)."""
+    keys = sorted(k for k in pool_keys if k != p_key)
+    if not keys:
+        return None
+    return random.Random(f"{seed}|ladder-swap|{row}|{p_key}|{half}").choice(keys)
+
+
+def swap_assemble(parts, answers, row):
+    """(Pure.) The swap row's answers: for each part p with its own answer and a non-empty same-input pool (`sic_pool`,
+    restricted to parts with an answer), per half h, the half-h answer of the part `swap_draw` picks; p's own answer
+    is never used. parts: [{key, set, fold, amp, cls, cluster, ids}]; answers: the base row's {set: {key: {half:
+    answer}}}. -> (answers {set: {key: {half: answer}}}, drawn {key: {half: q}}, missing [key])."""
+    by_key = {pp["key"]: pp for pp in parts}
+    have = {pp["key"] for pp in parts if answers.get(pp["set"], {}).get(pp["key"]) is not None}
+    out, drawn, missing = {}, {}, []
+    for pp in parts:
+        pool = [q["key"] for q in sic_pool(parts, pp) if q["key"] in have]
+        if not pool or pp["key"] not in have:
+            missing.append(pp["key"])
+            continue
+        for h in ("A", "B"):
+            q = swap_draw(pool, pp["key"], row, h)
+            out.setdefault(pp["set"], {}).setdefault(pp["key"], {})[h] = answers[by_key[q]["set"]][q][h]
+            drawn.setdefault(pp["key"], {})[h] = q
+    return out, drawn, missing
+
+
+def file_sha(path):
+    import hashlib
+
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def swap_base_check(row):
+    """Refuse when a swap row's answers are no longer copies of its base row's current answers (the base's file and
+    model hashes recorded at `swap` time)."""
+    from learn import full_controls_c3r as R
+
+    d = json.loads(answers_path(row).read_text())
+    base = row_info(row)["base"]
+    bp = R.answers_path("all") if base == "mix-drawn" else answers_path(base)
+    if d.get("base_answers_sha256") != file_sha(bp) or d.get("base_models") != json.loads(bp.read_text()).get("models"):
+        raise SystemExit(f"{row}: made from other {base} answers than today's: run `swap` again")
+
+
+def cmd_swap(args):
+    """The swap rows (zero renders; stage 0's phase, as answers): for each named row `swap-<input>` and each part p and
+    half h, the input's own answer for half h of one other part q drawn from p's same-input pool (`sic_pool`: p's own
+    fold, amp and class, another cluster, no shared DI file or creator; `swap_draw`). q's answer was made by p's own fold
+    model, which never saw p, from q's input: label-free and out of sample like the same-input constant, but a real
+    answer, not an averaged preset. One exception, as for `sic-xl@-3`: on `xl@-3` a q whose lender is p's DI session can
+    carry p's DI recording as another guitar in its full mix (3 of 960 n12 directions, read beside only; the bias is
+    towards zero). Rendered through p's DI and judged on p's held half,
+    `input - swap-input` reads per-unit reading without the averaging, beside `input - sic-input`.
+    -> ladder/answers/swap-<input>.json."""
+    from learn import full_controls_c3r as R
+
+    rows = parse_rows(args.rows)
+    require(0)
+    for r in rows:
+        if row_info(r)["kind"] != "swap":
+            raise SystemExit(f"{r}: not a swap row (swap-<input>)")
+    st = R.state()
+    controls_ok(0, st)
+    units = R.read_units(st)
+    ent = {e["unit"]: e for e in st["entries"]}
+    parts = [{"key": f"{ru['unit']}|{ru['amp']}", "fold": ru["fold"], "amp": ru["amp"], "cls": ru["prt"]["cls"],
+              "cluster": f"{ru['set']}|{ru['cluster']}", "ids": ent[ru["unit"]]["ids"], "set": ru["set"]}
+             for ru in units]
+    for r in rows:
+        base = row_info(r)["base"]
+        bp = R.answers_path("all") if base == "mix-drawn" else answers_path(base)
+        ba = json.loads(bp.read_text())
+        if ba.get("c3r_sha256") != st["sha256"]:
+            raise SystemExit(f"{base}: its answers were made on another state")
+        out, drawn, missing = swap_assemble(parts, ba["answers"], r)
+        save_answers(r, out, {"c3r_sha256": st["sha256"], "base": base, "base_answers_sha256": file_sha(bp),
+                              "base_models": ba.get("models"), "drawn_from": drawn, "missing": missing,
+                              "rule": cmd_swap.__doc__})
+        print(f"SWAP DONE {r}: {sum(len(v) for v in out.values())} parts, {len(missing)} missing")
 
 
 def base_answers(base):
@@ -1856,13 +1967,61 @@ POOL_TRIGGERS = {1: ("mix@-3 - sic-mix@-3", "clean-kind - sic-clean-kind", "mix-
                  2: ("xl@-3 - sic-xl@-3",)}
 
 
+SWAP_EXPECTED_HALF_WIDTH = {"pool": 0.054, "goat": 0.029}   # stage 1's audit, from a simulation on its own clusters
+
+
+def q2_step3(reading):
+    """What Q2 sends to Step 3 (`Q2_STEP3`); refuses a missing reading (no silent fallback)."""
+    if reading not in Q2_STEP3:
+        raise SystemExit(f"Q2's row xl@-3 - cen has no reading ({reading!r}): the report is incomplete")
+    return Q2_STEP3[reading]
+
+
+Q2_STEP3 = {   # what Q2 (`xl@-3 - cen` on the deciding pool) sends to Step 3, in one place
+    "better": "the model path keeps its claim on the product's stem; Step 1 confirms on songs",
+    "undecided": "Cen (stage 1's constant choice) goes to Step 3 as the candidate start; the model path is not the "
+                 "default on this evidence (not shown better, not shown worse)",
+    "worse": "the model path leaves the road to default; Cen goes to Step 3 as the candidate start"}
+
+
+def ceiling_together(clean, mixp, mixp_decided=None):
+    """(Pure.) The two ceiling pairs read together (`separator_ceiling` readings; `mixp_decided`, `decided()` of the
+    `mixp@-3 - xl@-3` row). `clean@-3 - xl@-3`, a separator that leaves the target alone, is confounded (the model reads
+    the isolated guitar worse than the backed mix), so it can open separator work but never park it; `mixp@-3 - xl@-3`,
+    a separator that removes only the other guitars, can do both. In order:
+    - opens: either pair reads "heard-size gain";
+    - a "gain shown" reading on either pair: the approved gate is met and only this plan's floor parks it, so it goes
+      to the user as the floor's call (never a plain park);
+    - not settled: `mixp@-3 - xl@-3` read worse (the stem beats the unseparated backed mix at product level, so that
+      pair bounds nothing and only the confounded pair is left);
+    - parks: `mixp@-3 - xl@-3` reads "small" (a heard-size gain ruled out);
+    - else not settled: neither opens nor parks separator work."""
+    both = (("clean@-3 - xl@-3", clean), ("mixp@-3 - xl@-3", mixp))
+    base = {"clean": clean, "mixp": mixp, "mixp_decided": mixp_decided}
+    if "heard-size gain" in (clean, mixp):
+        return dict(base, reading="opens separator work", because=[n for n, r in both if r == "heard-size gain"])
+    shown = [n for n, r in both if r and r.startswith("a gain shown")]
+    if shown:
+        return dict(base, reading="not settled: a gain shown, parked only by the floor, the user's call",
+                    because=shown, for_the_user=shown)
+    if mixp_decided == "worse":
+        return dict(base, reading="not settled: mixp@-3 - xl@-3 read worse, so it bounds nothing", because=[],
+                    for_the_user=[])
+    if mixp == "small":
+        return dict(base, reading="parks separator work", because=["mixp@-3 - xl@-3"], for_the_user=[])
+    return dict(base, reading="not settled: neither opens nor parks separator work", because=[], for_the_user=[])
+
+
 def q2q3_outcome(rows, stage1, q1=None):
     """(Pure.) Stage 2's readings and stage 3's triggers. Q2: `xl@-3 - cen` and `xl@-3 - sic-xl@-3`. Q3: the separator
     alone (`xlnoG@-3 - mixp@-3`), the level step (`mixp@-3 - mix@-3`), the other guitars (`xl@-3 - xlnoG@-3`). The
     perfect separator's ceiling (`separator_ceiling`). Stage 3, one rule, a row runs only when its trigger fires:
     `xlmdxc` and `xl-real` when the other guitars read worse; the exposure rows when Q1 read outcome 1 or 2, when any
     `EXPOSURE_TRIGGERS` row reads better, or when `mix@-3 - mix-drawn` reads either way; pooling when any
-    `POOL_TRIGGERS` row reads better. stage1: stage 1's report rows; q1: its `q1_outcome`."""
+    `POOL_TRIGGERS` row reads better. Beside: the two ceiling pairs read together (`ceiling_together`), what Q2 sends to
+    Step 3 (`Q2_STEP3`), and the swap rows (`SWAP_PAIRS`: the per-unit reading's size read from `i - swap-i`, beside
+    `i - sic-i`; an undecided swap is not a failure and changes no label, trigger or size). stage1: stage 1's report
+    rows; q1: its `q1_outcome`."""
     def d(name, src):
         return decided((src.get(name) or {}).get("deciding_pool"))
     exp = [n for n in EXPOSURE_TRIGGERS[1] if d(n, stage1) == "better"] + \
@@ -1877,7 +2036,16 @@ def q2q3_outcome(rows, stage1, q1=None):
     return {"q2": {"xl@-3 - cen": d("xl@-3 - cen", rows), "xl@-3 - sic-xl@-3": d("xl@-3 - sic-xl@-3", rows)},
             "q3": {"separator alone": d("xlnoG@-3 - mixp@-3", rows), "level step": d("mixp@-3 - mix@-3", rows),
                    "other guitars": d("xl@-3 - xlnoG@-3", rows)},
-            "perfect_separator": separator_ceiling((rows.get("clean@-3 - xl@-3") or {}).get("deciding_pool")),
+            "ceiling": ceiling_together(separator_ceiling((rows.get("clean@-3 - xl@-3") or {}).get("deciding_pool")),
+                                        separator_ceiling((rows.get("mixp@-3 - xl@-3") or {}).get("deciding_pool")),
+                                        d("mixp@-3 - xl@-3", rows)),
+            "q2_step3": q2_step3(d("xl@-3 - cen", rows)),
+            "swap": {i: {"i - swap-i": d(a, rows if a in rows else stage1), "i - sic-i": d(b, rows if b in rows else stage1),
+                         "size_from_swap": {k: ((rows.get(a) or {}).get("deciding_pool") or {}).get(k)
+                                            for k in ("mean", "lo90", "hi90")},
+                         "goat": {k: ((rows.get(a) or {}).get("goat") or {}).get(k) for k in ("mean", "lo90", "hi90")},
+                         "expected_half_width": SWAP_EXPECTED_HALF_WIDTH}
+                     for i, (a, b) in SWAP_PAIRS.items()},
             "stage3": {"xlmdxc_and_xl_real": d("xl@-3 - xlnoG@-3", rows) == "worse",
                        "exposure_rows": bool(exp), "exposure_because": exp, "pool": bool(pool), "pool_because": pool}}
 
@@ -1891,16 +2059,21 @@ STAGE_PAIRS = {   # (row, against): the declared rows of each stage's report; th
         ("sic-mix@-3", "cen"), ("sic-clean-kind", "cen"), ("sic-mix-drawn", "cen"),
         ("clean-kind", "mix-drawn"), ("clean-kind", "mix@-3"), ("label", "cen")],
     2: [("xl@-3", "cen"), ("xl@-3", "sic-xl@-3"), ("xlnoG@-3", "mixp@-3"), ("mixp@-3", "mix@-3"),
-        ("xl@-3", "xlnoG@-3"), ("clean@-3", "xl@-3"), ("xlnoG@-3", "cen"), ("mixp@-3", "cen"), ("clean@-3", "cen"),
-        ("xl@-3", "aconst"), ("xl@-3", "S"), ("sic-xl@-3", "cen"), ("xl@-3", "mix@-3"), ("xlnoG@-3", "mix@-3")],
+        ("xl@-3", "xlnoG@-3"), ("clean@-3", "xl@-3"), ("mixp@-3", "xl@-3"), ("xlnoG@-3", "cen"), ("mixp@-3", "cen"),
+        ("clean@-3", "cen"),
+        ("xl@-3", "aconst"), ("xl@-3", "S"), ("sic-xl@-3", "cen"), ("xl@-3", "mix@-3"), ("xlnoG@-3", "mix@-3"),
+        ("mix@-3", "swap-mix@-3"), ("xl@-3", "swap-xl@-3"), ("swap-mix@-3", "sic-mix@-3"), ("swap-xl@-3", "sic-xl@-3")],
 }
 PRIMARY = {1: STAGE_PAIRS[1][:11],          # Q1's rule rows (q1_outcome reads each)
            2: STAGE_PAIRS[2][:5]}           # Q2's and Q3's
 NEGATIVES = {1: PRIMARY[1],                 # the rows whose undecided reading drives an action: read adversarially
-             2: STAGE_PAIRS[2][:9]}         # Q2, Q3, the separator's ceiling and stage 3's triggers
+             2: STAGE_PAIRS[2][:10]}        # Q2, Q3, both ceiling pairs and stage 3's triggers
+SWAP_PAIRS = {"mix@-3": ("mix@-3 - swap-mix@-3", "mix@-3 - sic-mix@-3"),   # the per-unit size, beside the constant's
+              "xl@-3": ("xl@-3 - swap-xl@-3", "xl@-3 - sic-xl@-3")}
 OUTCOME4_PAIRS = [("mix@drawn", "sic-mix@drawn"), ("mix@drawn", "mix-drawn"), ("mix@-3", "mix@drawn"),
                   ("mix@drawn", "cen")]     # stage 2's added rows under Q1's outcome 4 (descriptive)
-LENDER_ROWS = ("mix@", "full@", "mixp@", "clean@", "xl@", "xlnoG@", "xlmdxc@", "sic-mix@", "sic-xl@")
+LENDER_ROWS = ("mix@", "full@", "mixp@", "clean@", "xl@", "xlnoG@", "xlmdxc@", "sic-mix@", "sic-xl@", "swap-mix@",
+               "swap-xl@")
 
 
 def is_lender_row(name):
@@ -1945,6 +2118,8 @@ def cmd_report(args):
     controls_ok(args.stage, st)
     units = R.read_units(st)
     pairs = list(STAGE_PAIRS[args.stage])
+    for nm in sorted({n for a, b in pairs for n in (a, b) if is_swap(n)}):
+        swap_base_check(nm)
     s1 = json.loads((ladder_dir() / "report-stage1.json").read_text()) if args.stage == 2 else None
     if s1 is not None and (s1.get("q1") or {}).get("outcome") == "reads per unit on the training input only":
         pairs += OUTCOME4_PAIRS                    # outcome 4's rows: the build at the drawn exposure
@@ -2052,6 +2227,10 @@ def is_constant(row):
     return row in ("cen", "aconst") or row.startswith("sic-")
 
 
+def is_swap(row):
+    return row.startswith("swap-")
+
+
 def mean_shift(per_row, per_const):
     """(Pure.) How far a row's mean answer sits from a constant's, per knob group: per (fold, amp, class, head) cell the
     mean over its parts and halves of (answer less the part's constant), then over cells the RMS and the mean absolute
@@ -2122,7 +2301,7 @@ def knob_read(st, units, answers_by_row):
                       "answer_spread_over_label_spread": (sd(da) / sd(dl)) if ks and sd(dl) else None,
                       "answer_within_cell_rms": sd(da), "loses_to_cell_mean": lose / n_ if n_ else None}
         out["rows"][row] = res
-    names = [r for r in answers_by_row if not is_constant(r)]
+    names = [r for r in answers_by_row if not is_constant(r) and not is_swap(r)]   # a swap is another part's answer
     for i, a in enumerate(names):
         for b in names[i + 1:]:
             va = {(p[1], p[3]): (p[0], p[4]) for p in vals[a]}
@@ -2229,6 +2408,9 @@ def main(argv=None):
     c = sub.add_parser("sic")
     c.add_argument("--rows", required=True)
     c.set_defaults(fn=cmd_sic)
+    w = sub.add_parser("swap")
+    w.add_argument("--rows", required=True)
+    w.set_defaults(fn=cmd_swap)
     sub.add_parser("stage0").set_defaults(fn=cmd_stage0)
     sub.add_parser("check1").set_defaults(fn=cmd_check1)
     sub.add_parser("replay").set_defaults(fn=cmd_replay)
