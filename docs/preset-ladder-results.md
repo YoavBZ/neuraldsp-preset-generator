@@ -120,7 +120,7 @@ each.
 | mix-drawn − sic-mix-drawn | −0.052 [−0.090, −0.014] | −0.065 | −0.008 | −0.081 [−0.129, −0.033] | +0.012 | +0.125 |
 | mix@-3 − cen | −0.025 [−0.075, +0.025] | −0.026 | −0.038 [−0.066, −0.009] | −0.012 | −0.038 | −0.125 |
 | mix@-3 − aconst | −0.047 [−0.078, −0.016] | −0.036 | −0.051 | −0.053 | −0.020 | +0.045 |
-| clean-kind − cen | +0.011 [−0.047, +0.070] | −0.001 | −0.018 | +0.053 | −0.023 | −0.135 |
+| clean-kind − cen | +0.011 [−0.047, +0.070] | −0.001 | −0.018 | +0.053 | −0.022 | −0.135 |
 | clean-kind − aconst | −0.010 [−0.055, +0.034] | −0.011 | −0.032 | +0.011 | −0.005 | +0.035 |
 | mix-drawn − cen | −0.012 [−0.055, +0.030] | +0.036 | +0.003 | −0.076 | −0.005 | −0.062 |
 | mix-drawn − aconst | −0.034 [−0.060, −0.009] | +0.026 | −0.011 | −0.118 | +0.013 | +0.108 |
@@ -128,7 +128,7 @@ each.
 | mix@-3 − mix-drawn | −0.013 [−0.039, +0.014] | −0.062 [−0.107, −0.017] | −0.041 [−0.062, −0.020] | +0.065 [−0.008, +0.137] | −0.033 | −0.063 |
 
 Beside: Cen − S −0.121 [−0.177, −0.065], Aconst − S −0.099, `mix@-3` − S −0.146 [−0.213, −0.079], `mix-drawn` − S
-−0.133 (stage 0's and C3r's own, to 0.0); the same-input constants against Cen +0.049 [+0.010, +0.089] (`mix@-3`),
+−0.133 (equal to stage 0's and C3r's own on every field); the same-input constants against Cen +0.049 [+0.010, +0.088] (`mix@-3`),
 +0.046 [+0.006, +0.086] (`clean-kind`), +0.039 [−0.010, +0.089] (`mix-drawn`); `clean-kind − mix@-3` +0.036 [+0.007,
 +0.066]; label − Cen −0.404 [−0.458, −0.350]. `mix@-3` closes 7% of the Cen-to-label gap on GOAT, 15% on BKS (n12's
 share uses its 12 label directions).
@@ -143,20 +143,28 @@ share uses its 12 label directions).
 - Robust to any one cluster left out (pool −0.093 to −0.060), the exact t, the lenders (crunch/Forkupines −0.084, the
   two big clean lenders −0.053 and −0.056) and DI clustering.
 
-**The size.** Two-thirds of the −0.075 is the same-input constant scoring worse than Cen (+0.049 [+0.010, +0.089]).
+**The size.** Two-thirds of the −0.075 is the same-input constant scoring worse than Cen (+0.049 [+0.010, +0.088]).
 What the audit's zero-render checks show: the constant is not off-manifold (its discrete choices are some pool answer's
 own in 460 of 480 pools, and its knobs sit closer to the nearest pool answer than answers sit to each other); where an
 answer's discrete choices equal the constant's, the gain is still −0.042 [−0.059, −0.025]; the gain tracks the
 answer's approach to its label in knob space (−0.119 where it approaches, +0.045 where it doesn't); and on GOAT the
 constants of the two inputs score alike while `mix@-3` gains −0.058 and `mix-drawn` −0.008, which a fixed averaging
 handicap would not produce. What they don't settle: the size, between the knob-explained part (about a third of
-−0.075) and the whole; and, on BKS, set-level against per-unit reading. Stage 2's swap rows read the size.
+−0.075) and the whole; and, on BKS, set-level against per-unit reading. Stage 2's swap rows size the per-unit reading
+free of the averaging question; they draw from the same cross-set pools, so they still count set-level differences as
+reading and leave the BKS question open.
 
-**The negatives are underpowered, not absent.**
-- `clean-kind − sic-clean-kind` is decided on BKS, GOAT and cap1; one panel DI file holds the pool undecided.
-- `mix@-3 − cen` neither shows nor rules out a heard-size gain; it rules out a loss beyond +0.025.
-- `mix@-3 − mix-drawn` (decided better on BKS, GOAT and cap1) and `mix-drawn − sic-mix-drawn` (resting on the panel
-  and BKS; GOAT −0.008, n12 +0.125) depend on the panel in opposite directions.
+**The negatives are underpowered, not absent** (what each pool interval rules out, at 90%):
+- `clean-kind − sic-clean-kind` −0.035 [−0.090, +0.020] rules out a loss beyond +0.020 and leaves a gain up to 0.09
+  open; it is decided on BKS, GOAT and cap1, and one panel DI file holds the pool undecided.
+- `mix@-3 − cen` −0.025 [−0.075, +0.025] rules out a loss beyond +0.025; a heard-size gain is neither shown nor ruled
+  out.
+- `clean-kind − cen` +0.011 [−0.047, +0.070] rules out a heard-size gain (its lower end is above −0.05).
+- `mix-drawn − cen` −0.012 [−0.055, +0.030] rules out a loss beyond +0.030.
+- `aconst − cen` +0.022 [−0.011, +0.054] rules out Aconst gaining more than 0.011 on Cen.
+- `mix@-3 − mix-drawn` −0.013 [−0.039, +0.014] rules out a build loss beyond +0.014; it is decided better on BKS, GOAT
+  and cap1, and `mix-drawn − sic-mix-drawn` (resting on the panel and BKS; GOAT −0.008, n12 +0.125) depends on the
+  panel in the opposite direction.
 - Any cut other than the declared pool (without the panel, by DI file, the five-set pool) is post hoc and beside.
 
 **The build, as measured.** Unmastered units sit at exactly −3.00 dB target-to-rest; mastering moves the ratio by more

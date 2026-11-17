@@ -1,7 +1,8 @@
 # The preset ladder: where is the preset lost?
 
-**Status:** declared 2026-11-17, before anything runs; revised the same day after three rounds of independent review
-(eight, then five, then one required fix; section 14). Step 2 of the plan the user approved after the independent review
+**Status:** declared 2026-11-17 before anything ran, after three rounds of independent review (eight, then five, then
+one required fix; section 14). Stages 0 and 1 ran on 2026-11-17 and are audited (section 15,
+[results](preset-ladder-results.md)); stage 2 is drafted in section 15, not yet in force. Step 2 of the plan the user approved after the independent review
 of 2026-11-16 ("follow the review's plan"). Ledger `preset-ladder` (`phase_l0`, `phase_l1`; stages 2 and 3 are declared
 before they run). Code `learn/preset_ladder.py`, tests `tests/test_preset_ladder.py`. Data `PF/ladder/` (`PF` is
 `~/ndsp-presets/learn/trusted-data/pipeline-fix`). No sealed set is used: no V-real, the reserve, NS or R1 audio.
@@ -388,13 +389,15 @@ the negatives, the summaries by lender band, the knob groups and the mean shift,
         --rows cen,aconst,sic-mix-drawn,sic-clean-kind,sic-mix@-3,clean-kind,mix@-3 --shard k/3   # k = 0, 1, 2
     .venv/bin/python -m learn.preset_ladder report --stage 1
 
-**Stage 2** (declared before it runs):
+**Stage 2** (declared before it runs; section 15 has its declaration, with the swap rows added 2026-11-17):
 
     ~/ndsp-presets/tools/msst-venv/bin/python -m learn.preset_ladder sep --rows xlnoG@-3,xl@-3 --device mps
     $TORCH_PY -m learn.preset_ladder predict --rows mixp@-3,xlnoG@-3,xl@-3,clean@-3
     .venv/bin/python -m learn.preset_ladder sic --rows sic-xl@-3
-    .venv/bin/python -u -m learn.preset_ladder render --rows mixp@-3,xlnoG@-3,xl@-3,clean@-3,sic-xl@-3 --shard k/3
-    .venv/bin/python -m learn.preset_ladder report --stage 2
+    .venv/bin/python -m learn.preset_ladder swap --rows swap-mix@-3,swap-xl@-3
+    .venv/bin/python -u -m learn.preset_ladder render \
+        --rows mixp@-3,xlnoG@-3,xl@-3,clean@-3,sic-xl@-3,swap-mix@-3,swap-xl@-3 --shard k/3
+    .venv/bin/python -m learn.preset_ladder report --stage 2                # by hand, after the done line
 
 Long jobs run detached (`zsh -c 'setopt no_bg_nice; nohup caffeinate -i …'`), their PIDs recorded at launch, each
 launcher ending its log with one done line; launchers and logs live under `PF/ladder/logs/`, never in git.
@@ -599,8 +602,10 @@ Stage 0 ran on 2026-11-17 (zero renders) and its independent audit stands with c
 - **The swap rows** (`cmd_swap`): for part p and half h, the input's own answer for half h of one other part q, drawn
   uniformly and seeded by the row, p and h from p's same-input pool (`sic_pool`: p's own fold, amp and class, another
   cluster, no shared DI file or creator), rendered through p's own DI and judged on p's held half. q's answer was made
-  by p's own fold model, which never saw p, from q's input, which shares no performance with p: label-free and out of
-  sample like the same-input constant, but a real answer rather than an averaged preset.
+  by p's own fold model, which never saw p, from q's input: label-free and out of sample like the same-input constant,
+  but a real answer rather than an averaged preset. One exception, which `sic-xl@-3` shares: on `xl@-3` a q whose
+  lender is p's DI session can carry p's DI recording as another guitar in its full mix (3 of 960 directions, all n12
+  parts, read beside only; the passages differ and the bias is towards zero).
 - **Size:** 800 X-LANCE separations on the MPS (A2s measured 4.6 s a unit with one separation, so about 1 h plus the
   mixes' rebuild; not yet measured on this build); 6,240 answers (960 for each of `mixp@-3`, `xlnoG@-3`, `xl@-3`,
   `clean@-3`, `swap-mix@-3`, `swap-xl@-3`; 480 for `sic-xl@-3`) and 12,480 renders with priming (stage 1 rendered
@@ -621,15 +626,31 @@ Stage 0 ran on 2026-11-17 (zero renders) and its independent audit stands with c
     sic-xl@-3`; `swap-mix@-3 - sic-mix@-3` and `swap-xl@-3 - sic-xl@-3` read the averaging penalty directly.
   - Beside: `xl@-3 - aconst`, `xl@-3 - S`, `sic-xl@-3 - cen`, `xl@-3 - mix@-3` (the whole stem path), `xlnoG@-3 -
     mix@-3` (separator and level step together).
-- **How the swap rows are read:** the per-unit reading's size is read from `i - swap-i` on the deciding pool, beside
-  `i - sic-i`. An undecided swap row is not a failure: it changes no outcome label, no trigger and no stage size. The
-  "nearest pool answer" row is not added.
+- **How the swap rows are read:** the per-unit reading's size is read from `i - swap-i` on the deciding pool, with its
+  interval and GOAT's row, beside `i - sic-i`; the audit's simulation expects about ±0.054 on the pool and ±0.029 on
+  GOAT. An undecided swap row is not a failure: it changes no outcome label, no trigger and no stage size. `i - swap-i`
+  read worse is reported beside and changes nothing, as `i - sic-i` read worse is. The swap pairs are descriptive and
+  sit outside the false-alarm budget. The "nearest pool answer" row is not added.
+- **What the swap rows can't size:** the draws come from the same cross-set pools as the same-input constant (BKS 89%
+  of draws from other sets, the panel 96%, GOAT 54%, cap1 78%). So `i - swap-i` takes the averaging question away but
+  still counts set-level differences in the answers as reading, and it cannot settle the BKS question stage 1's audit
+  left open (set-level against per-unit reading on BKS, the set the headline needs). A same-set swap can't fix it:
+  only 63 of BKS's 120 parts and 3 of the panel's 12 have any same-set pool member.
 - **How the two ceilings are read together** (`ceiling_together`): `clean@-3 - xl@-3` is confounded, since the model
   reads the isolated guitar worse than the backed mix (`clean-kind - mix@-3` +0.036 [+0.007, +0.066] in stage 1), so
-  it can open separator work but never park it; no "small" or "undecided" reading of it alone parks anything. Separator
-  work **opens** when either pair reads "heard-size gain"; it is **parked** when `mixp@-3 - xl@-3` reads "small" (a
-  heard-size gain ruled out) and neither reads a heard-size gain; otherwise it is **not settled**, neither opened nor
-  parked, and a "gain shown" reading goes to the user as the floor's call.
+  it can open separator work but never park it; no "small" or "undecided" reading of it alone parks anything. In order:
+  - separator work **opens** when either pair reads "heard-size gain";
+  - a **"gain shown"** reading on either pair ("a gain shown, not of heard size" or "a gain shown, heard size
+    undecided") meets the approved review's gate and is parked only by this plan's floor, so it goes to the user as the
+    floor's call, never a plain park;
+  - **not settled** when `mixp@-3 - xl@-3` reads worse (the stem beats the unseparated backed mix at product level, so
+    that pair bounds nothing and only the confounded pair is left);
+  - **parked** when `mixp@-3 - xl@-3` reads "small" (a heard-size gain ruled out);
+  - otherwise **not settled**, neither opened nor parked.
+- **The added pair's false alarms:** two pairs can now open separator work, so under no effect an open is at most about
+  9.8% (two one-sided 5% tails, the independence bound; lower in fact, since both pairs share `xl@-3` and the units, and
+  a heard-size gain also needs a mean beyond −0.05). A false open sends the next step towards separator work: a
+  planning round and, if planned, MPS training, caught only by that work's own held-out read.
 - **What Q2 sends to Step 3, in one place** (`Q2_STEP3`): read better, the model path keeps its claim on the product's
   stem and Step 1 confirms on songs; undecided, Cen (stage 1's constant choice) goes to Step 3 as the candidate start
   and the model path is not the default on this evidence; read worse, the model path leaves the road to default and Cen
@@ -640,6 +661,13 @@ Stage 0 ran on 2026-11-17 (zero renders) and its independent audit stands with c
 - **Gates:** `check0`, `check1` and `replay` passed on today's C3r state; `sep` stops on the first unit whose rebuilt
   mids' features differ from stage 1's stored ones and refuses beside a render or another MPS user; renders wait while
   a separation runs; one MPS job, at most 3 render processes, the 31 GB disk guard; features stored, never audio.
+- **One rule for the ceiling (2026-11-17):** for stage 2, `ceiling_together` replaces section 1's ceiling row ("every
+  reading but the first parks separator training") and section 8's list item on the ceiling readings;
+  `clean@-3 - xl@-3` alone never parks; section 8's adversarial list covers both ceiling pairs; section 9's stage 2
+  commands include `swap` and the swap rows.
+- **A candidate, not added:** `fullp@-3`, the full mix with no separator at the product's level (a cheap build from the
+  stored mixes, 960 answers, 1,920 renders, zero separations), would say whether X-LANCE pays for itself when other
+  guitars are present. No declared decision needs it, and it can be added later without a rerun.
 - **Kept for later, not declared:** the re-centred answer (an answer less its same-input constant plus Cen) is a new
   readout and waits for the user's go. Nothing here would have to be redone to add it: it needs only the answers,
   `sic-xl@-3` and Cen, which this stage builds.

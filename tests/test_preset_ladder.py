@@ -436,6 +436,12 @@ def test_the_two_ceilings_open_or_park_separator_work_only_as_declared():
     assert T("undecided, not shown", "heard-size gain")["because"] == ["mixp@-3 - xl@-3"]
     assert T("small", "small")["reading"] == "parks separator work"
     assert T("undecided, not shown", "small")["reading"] == "parks separator work"
+    for shown in ("a gain shown, heard size undecided", "a gain shown, not of heard size"):   # a shown gain: the user's
+        for got in (T(shown, "small"), T("small", shown)):                                     # call, never a park
+            assert not got["reading"].startswith("parks") and got["for_the_user"]
+    worse = T("undecided, not shown", "small", "worse")            # the stem beats the backed mix: mixp bounds nothing
+    assert worse["reading"].startswith("not settled") and "worse" in worse["reading"]
+    assert T("small", "small", "undecided")["reading"] == "parks separator work"
     for clean in ("small", "undecided, not shown", "a gain shown, not of heard size"):   # the confounded pair alone
         assert T(clean, "undecided, not shown")["reading"].startswith("not settled")    # never parks
     got = T("a gain shown, heard size undecided", "a gain shown, not of heard size")
@@ -445,6 +451,28 @@ def test_the_two_ceilings_open_or_park_separator_work_only_as_declared():
     q = L.q2q3_outcome(_rows(), _rows())
     assert q["q2_step3"] == L.Q2_STEP3["undecided"] and q["ceiling"]["reading"].startswith("not settled")
     assert set(q["swap"]) == {"mix@-3", "xl@-3"}
+    assert set(q["swap"]["xl@-3"]["size_from_swap"]) == {"mean", "lo90", "hi90"} and q["swap"]["xl@-3"]["goat"]
+    assert q["swap"]["mix@-3"]["expected_half_width"] == {"pool": 0.054, "goat": 0.029}
+    with pytest.raises(SystemExit):
+        L.q2_step3(None)                                          # a missing Q2 row refuses, no silent fallback
+
+
+def test_the_swap_assembly_uses_a_pool_parts_own_half_and_never_the_parts_own_answer():
+    P_ = lambda k, f, cl, di, s="goat": {"key": k, "set": s, "fold": f, "amp": "sw50r", "cls": "clean",  # noqa: E731
+                                         "cluster": f"{s}|{cl}", "ids": {("di", di)}}
+    parts = [P_("a", 0, "c1", "d1"), P_("b", 0, "c2", "d2"), P_("c", 0, "c3", "d3"), P_("d", 1, "c4", "d4"),
+             P_("e", 0, "c5", "d1"), P_("f", 0, "c6", "d6", s="cap1")]
+    ans = {"goat": {k: {h: {"select": 2, "settings": {"x/y": f"{k}{h}"}} for h in ("A", "B")}
+                    for k in ("a", "b", "c", "d", "e")}}             # f has no answer of its own
+    out, drawn, missing = L.swap_assemble(parts, ans, "swap-mix@-3")
+    assert missing == ["d", "f"]                                   # d: alone in its fold; f: no answer of its own
+    for k, hs in drawn.items():
+        pool = {q["key"] for q in L.sic_pool(parts, next(pp for pp in parts if pp["key"] == k))}
+        for h, q in hs.items():
+            assert q in pool and q != k
+            assert out["goat"][k][h] == ans["goat"][q][h]          # q's own half-h answer
+            assert out["goat"][k][h] != ans["goat"][k][h]          # never p's own
+    assert "e" not in {q for hs in drawn.get("a", {}).values() for q in [hs]}   # e shares a's DI file
 
 
 def test_the_perfect_separators_ceiling_calls_only_a_ruled_out_gain_small():
