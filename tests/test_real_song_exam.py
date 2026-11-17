@@ -472,3 +472,20 @@ def test_api_error_stops_only_on_the_service():
     assert X.api_error([res(is_error=True, terminal_reason="max_turns", result="max turns")]) is None
     assert X.api_error([json.dumps({"type": "assistant", "message": {"content": [{"type": "text",
                                                                                    "text": "usage limit"}]}})]) is None
+
+
+def test_c_pick_over_r_is_the_stored_pairs_exact_mirror():
+    """Step 3's read (the plan's second amendment, 2026-11-17): C-pick over R is the mirror of the stored R over C."""
+    from learn import ear_vreal as E
+
+    assert ("R", "C") in X.EAR_PAIRS and ("C", "R") not in X.EAR_PAIRS
+    items = [{"id": f"i{i}", "band": f"b{i % 4}", "repeat_of": None, "letters": {"A": ("R",), "B": ("C",)},
+              "judge": {"R": 1.0 + i / 10, "C": 1.3}} for i in range(9)]
+    ranks = [(1, 2), (2, 1), (1, 1), (2, 1), (1, 2), (1, 2), (2, 1), (1, 1), (1, 2)]
+    got = {f"i{i}": {"rank": {"A": a, "B": b}} for i, (a, b) in enumerate(ranks)}
+    row = X.ear_read(items, got, n_boot=2000)["rows"]["R over C"]
+    heard = {it["id"]: X.unblind(it, got[it["id"]]) for it in items}
+    pr = [(it["band"], X.pref(heard[it["id"]], "C", "R")) for it in items]
+    lo, hi = E.boot(pr, n=2000, seed=X.BOOT_SEED)
+    assert E.band_mean(pr) == pytest.approx(1 - row["share"])
+    assert lo == pytest.approx(1 - row["hi90"]) and hi == pytest.approx(1 - row["lo90"])
