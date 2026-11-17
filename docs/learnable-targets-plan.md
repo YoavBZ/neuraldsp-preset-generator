@@ -7,6 +7,13 @@ R1 versions check go ahead. Of Step 5, only stage 0 is built and run (zero rende
 the noise repeat and the ladder read are declared here (sections 4.8 to 4.10) but built only after stage 0 reads
 S0-rise, or on the user's word. This is Step 3 and Step 5 of the plan the user approved after the 2026-11-16 review,
 reached by the ladder's stop rule, branch 3 (`docs/preset-ladder-plan.md` section 15, "After stage 2").
+- **Where it stands (2026-11-17, after the audit):** stage 0 and the R1 versions check ran from `dde0a610` and are
+  audited ([results](learnable-targets-results.md); `phase_s5_targets_outcome`, `phase_r1_versions_outcome`). Stage 0
+  reads **S0-flat** by the score: R-all's answers do not already lean towards the targets, −0.0013 [−0.0105, +0.0075].
+  The result is underpowered for the expected dose, but it rules out a target move that only removes noise (both post
+  hoc). Step 5 stops before any render or training. The line to the centre, or running the step as approved, is the
+  user's call. The R1 check reads "less between versions" by the median only, and that is fragile (post hoc); the
+  side-picker versions move the answers more than the songs do (post hoc).
 - **Ledger:** `pipeline-fix` holds `phase_s5` (Step 5's rule and tables), `phase_s5_targets` (stage 0) and
   `phase_r1_versions` (Step 3's versions check). Step 3's ear read is the exam page's second amendment
   (`docs/real-song-exam-plan.md`, the listening page's second dated note; `phase_exam_ear`).
