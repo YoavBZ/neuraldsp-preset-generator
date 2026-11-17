@@ -257,13 +257,13 @@ Each row covers first hearings only:
 - **Timing.** The answers hold a rank and a closeness per card: no confidence, note or per-card time was stored.
 
 **The key's verification:**
-- **Sealed before the sitting.** The key was sealed at 14:44 local (12:44Z) on 2026-11-17, about 9 h before the last
-  answer (21:59Z).
+- **Sealed before the sitting.** The key was sealed at 14:44 local (12:44Z) on 2026-11-17, about 9 h 15 min before
+  the last answer (21:59Z).
 - **The letters.** They were re-derived from the seeded draw on 12 of 12 cards.
 - **The audio.** All 47 live clips on the published page match their key render and no other: page letter C is C-pick
   on every card.
 
-**What the page rules out, and what it can't separate.**
+**What the page rules out, and what it can't separate (post hoc).**
 - **Song context.** The page played guitar only: each preset's judged render beside the part's true amp track,
   levelled to −23 LUFS, in looped windows of about 4.5 s. So the control's miss is not whole-song context,
   separation or loudness. Separation shaped only which preset each arm chose.
