@@ -584,3 +584,82 @@ def test_the_module_imports_without_numpy_at_its_top():
     top = [n for n in ast.parse(src).body if isinstance(n, (ast.Import, ast.ImportFrom))]
     names = {a.name for n in top for a in n.names} | {getattr(n, "module", None) for n in top}
     assert not names & {"numpy", "torch", "scipy", "soundfile"}
+
+
+# --- the re-centred answer ----------------------------------------------------------------------------------------------
+
+def _enc(c, cm, sw, swm, k, km):
+    return (c, cm, sw, swm, k, km)
+
+
+def test_recentring_moves_each_knob_by_the_answers_deviation_from_its_constant_onto_cen():
+    a = _enc([0.6, 0.9, 0.2, 0.5], [1, 1, 1, 0], [1.0, 0.0], [1, 1], [2, 3], [1, 1])
+    s = _enc([0.5, 0.4, 0.3, 0.5], [1, 1, 0, 1], [1.0, 1.0], [1, 1], [2, 1], [1, 1])
+    e = _enc([0.3, 0.8, 0.1, 0.7], [1, 1, 1, 1], [0.0, 1.0], [1, 1], [0, 0], [1, 1])
+    cont, sw, mics = L.recentre(a, s, e, "rule")
+    assert cont[0] == pytest.approx(0.4)                          # 0.6 - 0.5 + 0.3
+    assert cont[1] == 1.0                                         # 0.9 - 0.4 + 0.8, clipped to the control's range
+    assert cont[2] == pytest.approx(0.2)                          # the constant doesn't sound: the answer's own
+    assert cont[3] == pytest.approx(0.7)                          # the answer doesn't sound: Cen's (Cen may switch it on)
+    assert sw == [0.0, 0.0]                                       # equal to the constant: Cen's; deviating: the answer's
+    assert mics == [0, 3]
+    cont2, sw2, mics2 = L.recentre(a, s, e, "answer")
+    assert cont2 == cont and sw2 == [1.0, 0.0] and mics2 == [2, 3]   # "answer": every discrete the answer's own
+
+
+def test_an_answer_equal_to_its_constant_becomes_cen_and_nothing_sounds_from_nowhere():
+    a = _enc([0.42, 0.1], [1, 0], [1.0], [1], [4], [1])
+    e = _enc([0.25, 0.6], [1, 0], [0.0], [1], [1], [1])
+    cont, sw, mics = L.recentre(a, a, e, "rule")
+    assert cont[0] == pytest.approx(0.25) and math.isnan(cont[1])  # a - a + e = e; no head sounds: none (S's)
+    assert sw == [0.0] and mics == [1]                            # no deviation anywhere: Cen exactly
+    none = L.recentre(_enc([0.5], [1], [1.0], [0], [2], [0]), a, e, "rule")
+    assert none[1] == [None] and none[2] == [None]                # a discrete the answer doesn't hold stays S's
+
+
+def test_the_recentred_swap_twin_uses_the_swap_rows_own_draws():
+    P_ = lambda k, cl, di: {"key": k, "set": "goat", "fold": 0, "amp": "sw50r", "cls": "clean",   # noqa: E731
+                            "cluster": f"goat|{cl}", "ids": {("di", di)}}
+    parts = [P_("a", "c1", "d1"), P_("b", "c2", "d2"), P_("c", "c3", "d3")]
+    rc = {"goat": {k: {h: {"select": 2, "settings": {"x/y": f"rc-{k}{h}"}} for h in ("A", "B")} for k in "abc"}}
+    base = {"goat": {k: {h: {"select": 2, "settings": {"x/y": f"{k}{h}"}} for h in ("A", "B")} for k in "abc"}}
+    ans, drawn, missing = L.rcs_from(rc, parts, "mix@-3")
+    _, swap_drawn, _ = L.swap_assemble(parts, base, "swap-mix@-3")
+    assert drawn == swap_drawn and not missing                    # the same q as swap-mix@-3, direction by direction
+    for k, hs in drawn.items():
+        for h, q in hs.items():
+            assert ans["goat"][k][h] == rc["goat"][q][h] and q != k
+
+
+def test_the_recentred_rows_are_gated_by_their_own_phase(monkeypatch):
+    assert set(L.RC_ROWS) == {"rc-mix@-3", "rc-xl@-3", "rca-mix@-3", "rcs-mix@-3"}
+    for r in L.RC_ROWS:
+        info = L.row_info(r)
+        assert info["kind"] == "rc" and info["phase"] == L.RC_PHASE == "phase_lrc" and info["stage"] == 2
+    monkeypatch.setattr(L, "ledger_entry", lambda: {"phase_l0": 1, "phase_l1": 1, "phase_l2": 1, "phase_lrc_draft": 1})
+    with pytest.raises(SystemExit):
+        L.require_row("rc-xl@-3")                                 # the draft key refuses
+    L.require_row("xl@-3")                                        # a stage 2 row is unaffected
+    monkeypatch.setattr(L, "ledger_entry", lambda: {"phase_l0": 1, "phase_l1": 1, "phase_l2": 1, "phase_lrc": 1})
+    L.require_row("rc-xl@-3")
+
+
+def test_the_recentred_reading_acts_only_on_its_two_product_rows():
+    iv = lambda r: ({"mean": -0.1, "lo90": -0.2, "hi90": -0.01} if r == "b" else      # noqa: E731
+                    {"mean": 0.1, "lo90": 0.01, "hi90": 0.2} if r == "w" else {"mean": 0.0, "lo90": -0.1, "hi90": 0.1})
+    rows = {f"{a} - {b}": {"deciding_pool": iv("u")} for a, b in L.RC_PAIRS}
+    got = L.rc_outcome(rows)
+    assert got["goal"]["reading"] == got["own"]["reading"] == "undecided"
+    assert "not adopted" in got["goal"]["next"]
+    rows["rc-xl@-3 - cen"]["deciding_pool"] = iv("b")
+    assert L.rc_outcome(rows)["goal"]["reading"] == "better"
+    rows["rc-mix@-3 - cen"]["deciding_pool"] = iv("w")           # a mechanism row changes no action
+    assert L.rc_outcome(rows)["goal"]["reading"] == "better"
+    assert set(L.RC_ACTION) <= set(L.RC_PAIRS)
+    del rows["rc-xl@-3 - xl@-3"]
+    with pytest.raises(SystemExit):
+        L.rc_outcome(rows)                                        # a missing action row refuses
+    for a, b in L.RC_PAIRS:
+        for nm in (a, b):
+            if nm not in ("S", "cen"):
+                L.row_info(nm)
