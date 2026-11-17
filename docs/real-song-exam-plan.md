@@ -313,13 +313,17 @@ refuses, and the exam stops before any judge render for the user's decision.
     before any answer; only the user can open it, and it names no song, band or arm.** The user alone sits it.
 - **Note, 2026-11-17, the page's second amendment: C-pick over R, Step 3's deciding read (declared after the J0 score
   rows were known and before any ear score; the plan for Steps 3 and 5, section 1.2).** The score rows are known:
-  C-pick − S reads −0.001 [−0.090, +0.089] by the score, and C − S +0.030 [−0.065, +0.125]. Nothing about the page,
-  its arms, its clips or its code changes. One reading is declared on the same answers:
-  - **C-pick over R is read as the mirror of the stored pair** ("R", "C") in `EAR_PAIRS` (C is C-pick, `EX-Cpick`).
-    Its share is one minus the stored "R over C" share (a tie stays a half), and its 90% band interval is the stored
-    one mirrored, [1 − hi, 1 − lo]. The bootstrap resamples the same bands with the same seed, so the mirror is exact (to float rounding).
-    "Above" and "below" swap; the rank gap, closeness gap and J0 on the clips change sign; J0's agreement count is
-    unchanged. The audit checks the mirror against the stored row, and the report prints both directions.
+  C-pick − S (`EX-Cpick` − S) reads −0.001 [−0.090, +0.089] by the score, and C − S (`EX-C`, the labels' centre
+  on three amps, not C-pick) +0.030 [−0.065, +0.125]. Nothing about the page, its arms, its clips or its code changes.
+  One reading is declared on the same answers:
+  - **C-pick over R is read as the mirror of the stored pair** ("R", "C") in `EAR_PAIRS` (the page's letter C is
+    C-pick, `EX-Cpick`). Its share is one minus the stored "R over C" share (a tie stays a half), and its 90% band
+    interval is the stored one mirrored, [1 − hi, 1 − lo]. The bootstrap resamples the same bands with the same seed,
+    so the mirror is exact (to float rounding). "Above" and "below" swap; the rank gap, closeness gap and J0 on the
+    clips change sign. J0's agreement count is unchanged except on a card that is not tied but has equal J0 distances
+    (J0 on the clips exactly 0): each such card moves the count by one, so the mirrored count is recomputed from the
+    cards. `score` prints only "R over C"; the write-up and the audit print both directions, and the audit checks the
+    mirror against the stored row.
   - **M over R stays the page's primary,** and L over R stays the positive control, read first. C-pick over R decides
     Step 3 only, by that plan's table (S3-ship, S3-hold, S3-no, S3-nopower): if L is not heard above R, it reads
     S3-nopower whatever C-pick over R says.
