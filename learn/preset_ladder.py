@@ -2370,7 +2370,8 @@ def q2_step3(reading):
 
 def report_refusal(out):
     """(Pure.) Why a saved report is incomplete, or None: stage 2's Q2 row with no reading (`q2q3_outcome` leaves
-    `q2_step3` None then). `cmd_report` saves its rows first and refuses after, so the rows stay readable."""
+    `q2_step3` None then). `cmd_report` marks the report `refused`, saves its rows and refuses after, so the rows stay
+    readable and the file can't pass for a complete one."""
     q = out.get("q2q3")
     if q is not None and q.get("q2_step3") is None:
         try:
@@ -2558,13 +2559,15 @@ def cmd_report(args):
         out["q2q3"] = q2q3_outcome(out["rows"], s1["rows"], s1.get("q1"))
     out["knob_read"] = knob_read(st, units, stage_answers(args.stage))
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    why = report_refusal(out)
+    if why:
+        out["refused"] = why                       # a refused report can't pass for a complete one
     P.save(ladder_dir() / f"report-stage{args.stage}.json", out)
     for name, row in out["rows"].items():
         dp = row.get("deciding_pool") or {}
         print(f"{name}: pool {dp.get('mean')} [{dp.get('lo90')}, {dp.get('hi90')}]; "
               + "; ".join(f"{s} {(row[s] or {}).get('mean')}" for s in SETS))
     print("OUTCOME", json.dumps(out.get("q1") or out.get("q2q3")))
-    why = report_refusal(out)
     if why:
         raise SystemExit(why)
 

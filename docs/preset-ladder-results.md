@@ -209,7 +209,7 @@ Stage 2's declaration is in the plan's section 15, with the audit's four changes
 
 Audited by separate code: it **stands with corrections** to fragility and meaning, none to a number or the rule (836
 report fields reproduced, the largest difference 5.3e-15; the exact t changes no reading; the code that ran is
-byte-identical to the reviewed 7efe8e9a, and the rule's functions are unchanged on main; every judge file's answer
+byte-identical to the reviewed 7efe8e9a, and the rule's functions are unchanged on main (this PR changes `q2q3_outcome` only for a missing Q2 reading); every judge file's answer
 hash equal to its answer; 64 of 64 sampled answers re-made from the stored stems' features; no rerun, nothing dropped).
 
 **How it ran.** From commit a59e94e9, launched 09:02:57. X-LANCE separated 800 stems (400 units, the full mix and the
@@ -230,7 +230,9 @@ untouched; the rows that cross the two stages add up exactly (largest difference
 | Q3 the other guitars, xl@-3 − xlnoG@-3 | +0.032 [−0.012, +0.077] | undecided | +0.066 [−0.044, +0.176] | +0.071 [+0.042, +0.099] | −0.040 [−0.131, +0.052] | +0.104 | +0.137 |
 
 `Q2_STEP3` (reading "worse"): the model path leaves the road to default; Cen goes to Step 3 as the candidate start.
-"Worse" and "undecided" send the same action; they differ only in wording.
+"Worse" and "undecided" send the same action; they differ only in wording. Q3's declared consequence: the separator
+alone reads worse (fragile, item 2 below), so Step 6 (fine-tune on what the product feeds) gets a measured target.
+The level step reads undecided (nil, item 3), so no level fix is called for.
 
 **The ceilings** (`separator_ceiling`, read together by `ceiling_together`):
 
@@ -246,9 +248,10 @@ lenders), which the opening doesn't need. **What it means:** both ceilings are m
 the worst input in the stage, so they say how much of the stem's loss a separator could recover, not whether the
 model path would then beat a fixed preset. It isn't shown to: `mixp@-3 − cen` (the other guitars removed perfectly, no
 separator) is −0.025 [−0.072, +0.023] and `clean@-3 − cen` (a perfect separator) +0.001 [−0.051, +0.052], which rules
-out a heard-size gain. The ceiling reaches only about Cen. The plan's section 15 note "After stage 2" (written before
-the re-centred report was run) narrows how the opening is acted on: separator work is planned only if a re-centred
-read beats Cen.
+out a heard-size gain at about 0.05. The ceiling reaches only about Cen. The plan's section 15 note "After stage 2"
+(written before the re-centred report was run, revised after this write-up's review) narrows how the opening is acted
+on: the ladder plans separator work only if a re-centred read beats Cen, and otherwise puts it to the user with both
+readings, since the approved gate is met.
 
 **The trigger and exposure rows** (stage 2's):
 
@@ -266,7 +269,7 @@ decided); `sic-xl@-3 − cen` +0.117 [+0.054, +0.180]; `xl@-3 − mix@-3` (the w
 **Stage 3's triggers.** By the rule the exposure rows and pooling fire, both from stage 1's rows (Q1's outcome 1,
 `mix@-3 − sic-mix@-3`, `mix-drawn − sic-mix-drawn`); no stage 2 trigger row reads better. `xlmdxc` and `xl-real` don't
 fire (the other guitars undecided). Stage 3 is held until the re-centred read (plan section 15, "After stage 2"), since
-it measures the un-re-centred path, whose best case here is Cen.
+it measures the un-re-centred path, whose best case here is about Cen.
 
 **Where it is thin** (the audit's corrections; every cut other than the declared pool is post hoc and beside):
 1. **Q2's "worse" is decided by the declared rule but fragile.** One-sided p 0.038; Holm over stage 2's ten
@@ -275,7 +278,7 @@ it measures the un-re-centred path, whose best case here is Cen.
    Drowning +0.058, Silent Waves +0.059, The Laminar Flow +0.070 [−0.008, +0.147]; each leaves the panel 4 DI files,
    which widens its t), on half A alone (+0.035 [−0.023, +0.093]) and without the heavier bands' lenders (+0.043
    [−0.0015, +0.087]). It holds without the whole panel (+0.070 [+0.044, +0.096]), on every set clustered by DI file
-   (+0.077 [+0.050, +0.103]), on the five-set pool (+0.070 [+0.020, +0.120]) and on clean (+0.071 [+0.002, +0.140]).
+   (+0.076 [+0.050, +0.103]), on the five-set pool (+0.070 [+0.020, +0.120]) and on clean (+0.071 [+0.002, +0.140]).
    The robust statement: in every cut the lower end is −0.031 or above, so a heard-size gain over Cen is ruled out throughout
    (the crunch-only pool, on the panel's 2 crunch DI files, is uninformative). The stem path loses to the unseparated
    backed mix at product level by a robust margin (+0.085), and that mix was only about level with Cen.
@@ -339,13 +342,15 @@ it measures the un-re-centred path, whose best case here is Cen.
   enough to net about Cen on the mix (−0.025) and not on the stem (+0.061). That is the case for re-centring (and
   pooling, which reduces scatter), not for a better separator first.
 
-**The stems, as measured** (half A, against the target): X-LANCE on the full mix, SI-SDR median +0.76 dB (quartiles
-−1.46, +4.79), the other guitars' leak median −1.24 dB (−5.77, +0.70); on the mix without other guitars, SI-SDR median
-+17.2 dB (+14.4, +20.1). Stem loudness less the mix's: −2.24 dB median (full), −2.95 dB (without other guitars).
+**The stems, as measured** (half A, against the target; per unit, the 400 separation records, interpolated
+quartiles): X-LANCE on the full mix, SI-SDR median +0.75 dB (quartiles −1.47, +4.79), the other guitars' leak median
+−1.27 dB (−5.79, +0.70); on the mix without other guitars, SI-SDR median +17.2 dB (+14.4, +20.1). Stem loudness less
+the mix's: median −2.25 dB (full), −2.95 dB (without other guitars).
 
 **Renders used in Step 2 so far:** 21,180 (stage 1's 8,640 and the replay's 60; stage 2's 12,480). Separations 800.
 
 **Next** (plan section 15, "After stage 2", decided before the re-centred report): stage 3 is held; the re-centred
-read decides. If `rc-xl@-3 − cen` reads better, the re-centred path becomes the candidate and Step 1 confirms; if only
-`rc-mix@-3 − cen` does, separator work is planned, judged by the preset score; if neither, the ladder stops, Cen goes
-to Step 3, and separator work and stage 3 are parked by the model, not the separator.
+read decides. If `rc-xl@-3 − cen` reads better, the re-centred path becomes the candidate (`RC_JOINT`'s "propose")
+and Step 1 confirms; if only `rc-mix@-3 − cen` does, separator work is planned, judged by the preset score; if
+neither, the ladder stops and Cen goes to Step 3, `RC_JOINT`'s "flagged" cell still applies, separator work and stage
+3's rows are put to the user with both readings, and the next levers are the approved plan's Steps 5 and 6.

@@ -1,4 +1,5 @@
 """Step 2, the preset ladder (docs/preset-ladder-plan.md): learn/preset_ladder.py's pure parts."""
+import inspect
 import math
 import re
 
@@ -466,6 +467,14 @@ def test_a_missing_q2_reading_refuses_only_after_the_report_is_built():
     assert why and "xl@-3 - cen" in why
     assert L.report_refusal({"q2q3": L.q2q3_outcome(_rows(), s1)}) is None
     assert L.report_refusal({"q1": {"outcome": "no gain shown"}}) is None   # stage 1's report has no Q2
+    src = inspect.getsource(L.cmd_report)                         # marked refused, saved, then refused
+    assert src.index('out["refused"] = why') < src.index("P.save(") < src.index("raise SystemExit(why)")
+
+
+def test_the_deviation_control_is_checked_against_the_unfiltered_draws_in_cmd_rc():
+    src = inspect.getsource(L.cmd_rc)                             # cmd_rc needs data: pin its call site
+    assert "drawn, pools, missing, swap_drawn = rcs_directions(" in src
+    assert 'rcs_draws_check(r, js[f"swap-{base}"], swap_drawn,' in src
 
 
 def test_the_swap_assembly_uses_a_pool_parts_own_half_and_never_the_parts_own_answer():
