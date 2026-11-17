@@ -96,9 +96,11 @@ out: n12's 12 parts (beside the deciding pool, mostly on heavier bands' DIs), an
 label with its fresh render hash, or the ladder's `cen`, `xl@-3` and `rc-xl@-3` answers on the label's search half. No
 V-real, reserve, NS or R1 audio is touched.
 
-**The rule, fixed before any score of these parts is read** (`draw`, seeded 20261171). It reads metadata and audio only:
-the label's search half and hash come from the C2 and C2r outputs' own fields, and the answers from the ladder's answer
-files. The audit checks that it opens no judge file. **The draw file's sha256 goes into the ledger (`phase_lear_draw`)
+**The rule, fixed before any score of these parts is read** (`draw`, seeded 20261171). It reads metadata and audio only
+and uses no judge value. `full_controls_c3r.state()` loads the C2 and C2r outputs, which carry judge values; the draw
+takes only the label's search half and render hash from their own fields, and the answers from the ladder's answer
+files, and opens no judge file. The audit checks both. The draw file also stores, per earlier page, how many of its
+unit ids match a ladder part, so the "fresh" filter's matching can be checked. **The draw file's sha256 goes into the ledger (`phase_lear_draw`)
 before any judge file is read**, and `render`, `page` and `read` refuse a draw file with another hash.
 - **Judgeable:** guitar only, with no backing on the page, so the guitar is exposed by construction. Half the cards are
   clean and half crunch. A crunch part enters only from **the milder half of its set** by the stored drive measure:
@@ -132,15 +134,18 @@ before any judge file is read**, and `render`, `page` and `read` refuse a draw f
 - **The second sitting's 22 cards are drawn in the same pass:** GOAT 10 more items, BKS's other 4 DI files, cap1 4 more
   creators, and the panel 4 other windows of its 5 DI files (so the panel's clusters repeat, clustered by DI file when
   pooled). They are rendered with the first and held, and built into a page only if the first reads (c). A cell the
-  pool can't fill in the second sitting runs short and is counted; the first sitting must fill, or the draw refuses.
+  pool can't fill in the second sitting runs short and is counted, and the 6 to 8 cards an amp still hold; the first
+  sitting must fill, or the draw refuses.
 
-**Counted before this declaration** (metadata and amp-track activity only, no judge file, as N12 measured activity
+**Counted before this declaration** (metadata and amp-track activity only, no judge value, as N12 measured activity
 before its draw): 467 parts read, 301 in the pool. Out: 31 under the activity floor, 112 crunch parts over their set's
 median, and 23 heard GOAT or cap1 parts. Every first-sitting cell fills. Only 3 of BKS's 4 crunch DI files keep a mild
 unit, so the second sitting's BKS has one crunch card and that sitting holds 21. To check that the declared code
-completes, the seeded draw was run once in memory: it printed only its attempt counts (85 and 17) and sizes (22 cards
-and 7 spares; 21 and 7), and no card was listed or kept. The draw that counts is the one run from merged code, written
-once to the plan file.
+completes, the seeded draw was run in memory, once before the PR's review and once after its fixes (both songs on BKS,
+the amp limits kept for the second sitting). Each printed only its attempt counts (85 and 17, then 85 and 215) and sizes
+(22 cards and 7 spares; 21 and 7), and no card was listed or kept. The draw that counts is the one run from merged code,
+written once to the plan file. The earlier pages' matches, by unit id among the ladder's parts in these four sets: F57
+10 of 12, `ear-eat` 12 of 12 and 6 of 6, C1a 7 of 14, A3 18 of 18; N12, C4 and H4b none (n12's or batch 3's units).
 
 ## The presets on a card
 
@@ -191,11 +196,14 @@ card: five letters is the limit (the review's ruling), so the page does not cove
   (C4's page: 80 clips in 15.1 MB), six clips an item make two Artifact parts of 12 items, each about 13.7 MB, under the
   16 MB limit.
 - **New on this page:** it stores when each card was first played (`t_play`) and last changed (`t_last`), so the next
-  plan can cite a measured time a card. No such time is stored from earlier sittings.
+  plan can cite a measured time a card. No such time is stored from earlier sittings. The first-play stamp is armed
+  only once the page's db has connected and restored its stored answers (or failed to), since an answer created by a
+  play before the restore would block it and the next save would overwrite the stored answers. A test holds that order.
 - **Five letters on a phone:** the card is checked at a phone's width (ranks, ties, the play row) before the page is
   published. A layout that does not fit stops the publish.
 - **Read once:** `page` refuses when a key exists, and `read` refuses when a read exists and keeps the raw answers
-  beside it.
+  beside it. `page` also refuses, writing nothing, when a card a guard put out has no spare left, so a short page is
+  never locked in; that goes to the orchestrator.
 
 ## Loudness
 
@@ -318,7 +326,7 @@ the plain t; recomputed here from the code, replacing the planner's figures):
   a (c), as declared.** If both sittings always ran, it would be 4 to 12%. Nearly all of it is row 4; row 2's pairs add
   under 0.1%. A1's trigger is not simulated; with J0 near S12's 0.875 on heard pairs it adds nothing visible.
 - **The second sitting** reads all 43 cards (22 and 21) by the same table. Two looks raise a single pair's false "heard above" by
-  the interval alone to 8 to 9%, and firmly to 2 to 6% (both looks forced, the same simulation); the write-up says so.
+  the interval alone to 8 to 10%, and firmly to 2 to 6% (both looks forced, the same simulation); the write-up says so.
 - Cards share players (GOAT), a band (BKS) and a listener, so the real spread is somewhat wider than the simulation's.
 
 ## What this read can't say
@@ -364,7 +372,7 @@ interval) are tested in `tests/test_ladder_ear.py`, numpy behind `pytest.importo
 1. The plan was reviewed independently twice, also against the goal and its stop rule. This declaration, the ledger
    entry and `outcome` are merged before the draw.
 2. The draw runs from merged code. Its file's sha256 goes into the ledger (`phase_lear_draw`, its own small change)
-   before any render or judge read. An auditor reads the draw for leaks: no judge file opened, the "fresh" filter
+   before any render or judge read. An auditor reads the draw for leaks: no judge value used, the "fresh" filter
    reading unit ids only, the spread as declared.
 3. The renders and guards run for both sittings' cards. The first page is built, its five-letter layout is checked at a
    phone's width, and it is published privately to the user, after the exam page's sitting.
@@ -393,7 +401,8 @@ The planner's draft left these open; each is fixed here before the draw:
   never claiming it; the panel's takes the first class with a window left, clean first.
 - **The crunch median** is over the set's crunch units in the pool, before the activity and fresh filters; a crunch unit
   with no measure stays out.
-- **The second sitting** may run short in a cell, counted; the first may not.
+- **The second sitting** may run short in a cell, counted, keeping the amp limits; the first may not.
+- **BKS's both songs** is enforced by the draw on a full set of BKS cards.
 - **Holm** uses the jackknife t's two-sided p.
 - **The draw's hash** goes into the ledger by its own small change between the draw and the renders, so the renders run
   from merged code that holds it.

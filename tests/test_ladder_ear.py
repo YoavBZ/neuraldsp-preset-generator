@@ -31,8 +31,8 @@ def _pool(seed=7):
         cls = "clean" if d < 4 else "crunch"
         for u in range(3 + d % 3):
             for a in AMPS:
-                part("bks", f"set5/BKS_{'TooMuch' if d < 3 else 'Bulldozer'}/di{d}@{u}", a, cls, f"bks/di{d}.wav",
-                     heard=u == 0)
+                song = f"set5/BKS_{'TooMuch' if d < 3 else 'Bulldozer'}_Full"
+                part("bks", f"{song}/di{d}@{u}", a, cls, f"{song}/di{d}.wav", heard=u == 0)
     panel = [("Aimee", "aimee.wav", "clean", 3), ("Jen", "drowning.wav", "clean", 3), ("Jen", "waves.wav", "clean", 2),
              ("Big", "big.wav", "crunch", 1), ("Laminar", "laminar.wav", "crunch", 3)]
     for band, di, cls, n in panel:
@@ -101,7 +101,7 @@ def test_no_unit_cluster_or_item_is_used_twice_across_the_sittings(drawn):
 
 
 def test_a_bks_spare_falls_back_to_another_di_file_and_never_claims_it():
-    pool = [p for p in _pool() if not (p["set"] == "bks" and p["cls"] == "crunch" and p["cluster"] != "bks/di7.wav"
+    pool = [p for p in _pool() if not (p["set"] == "bks" and p["cls"] == "crunch" and not p["cluster"].endswith("di7.wav")
                                        and not p["unit"].endswith("@0"))]
     d = E.draw_sittings(pool)                                                    # crunch DI files 4 to 6 hold one unit each
     s1 = [p for p in _cards(d, "1") if p["set"] == "bks" and p["cls"] == "crunch"]
@@ -111,17 +111,26 @@ def test_a_bks_spare_falls_back_to_another_di_file_and_never_claims_it():
     assert len(s2) == 2 and not {p["cluster"] for p in s1} & {p["cluster"] for p in s2}   # the spare claimed no DI file
 
 
-def test_bks_and_the_panel_take_fresh_units_first():
-    d = E.draw_sittings(_pool())
-    bks = [p for p in _cards(d, "1") if p["set"] == "bks"]
-    assert not any(p["heard"] for p in bks)                                      # every BKS DI file has fresh units here
+def test_bks_and_the_panel_take_fresh_units_first_and_bks_holds_both_songs(drawn):
+    for s in ("1", "2"):
+        bks = [p for p in _cards(drawn, s) if p["set"] == "bks"]
+        assert not any(p["heard"] for p in bks)                                  # every BKS DI file has fresh units here
+        assert len({E.song_of(p["cluster"]) for p in bks}) == 2
+    one_song = [p for p in _pool() if not (p["set"] == "bks" and "TooMuch" in p["cluster"])]
+    with pytest.raises(SystemExit):
+        E.draw_sittings(one_song, tries=200)
 
 
-def test_the_second_sitting_may_run_short_but_the_first_may_not():
-    short = [p for p in _cards(E.draw_sittings(_pool()), "1")]
-    less = [p for p in short if p is not next(q for q in short if q["set"] == "cap1" and q["cls"] == "crunch")]
+def test_the_second_sitting_may_run_short_but_keeps_the_amp_limits():
+    full = _cards(E.draw_sittings(_pool()), "1")
+    amps = E._amps(full)
+    drop = next(q for q in full if q["set"] == "cap1" and q["cls"] == "crunch" and amps[q["amp"]] > 6)
+    less = [p for p in full if p is not drop]
     assert E.sitting_refusal(less) is not None and E.sitting_refusal(less, strict=False) is None
-    assert E.sitting_refusal(short + [short[0]], strict=False) is not None       # never over a quota
+    assert E.sitting_refusal(full + [full[0]], strict=False) is not None         # never over a quota
+    low = min(amps, key=amps.get)
+    thin = [p for p in full if p["amp"] != low] + [p for p in full if p["amp"] == low][:5]
+    assert E.sitting_refusal(thin, strict=False) == f"5 cards on {low}"         # a short sitting keeps 6 to 8 an amp
 
 
 def test_the_pool_filters_activity_mild_crunch_and_heard_units():
@@ -154,6 +163,18 @@ def test_the_guards():
     assert E.guard("S", 1.0, "h", None, 1.004) == "j0" and E.guard("S", 1.0, "h", None, 1.01) == "failed"
     assert E.guard("L", 1.0, "h", "h", 2.0) == "hash" and E.guard("L", 1.0, "h", "x", 1.002) == "j0"
     assert E.guard("L", 1.0, "h", "x", 1.2) == "failed" and E.guard("S", None, "h", None, 1.0) == "failed"
+
+
+def test_no_page_is_built_when_a_card_is_put_out_with_no_spare():
+    drawn_ = [{"key": "k1"}, {"key": "k2"}]
+    assert E.floor_refusal([{"key": "k1"}], drawn_, [("k2", None)]) is not None
+    assert E.floor_refusal([{"key": "k1"}, {"key": "s1"}], drawn_, [("k2", "s1")]) is None
+
+
+def test_the_earlier_pages_matches_are_counted_per_page():
+    pages = {"F57": ["a", "b"], "C4": ["c"]}
+    assert E.heard_units(pages) == {"a": ["F57"], "b": ["F57"], "c": ["C4"]}
+    assert E.page_matches(pages, {"a", "z"}) == {"F57": {"units": 2, "matched": 1}, "C4": {"units": 1, "matched": 0}}
 
 
 def test_identical_presets_share_a_letter_and_spares_replace_put_out_cards():
@@ -314,6 +335,11 @@ def test_the_artifact_page_wraps_and_names_nothing():
     page, css, js = E.page_html(items, clips, "b0", 24)
     art = E.artifact_page(page, css, js, 1)
     assert "<title>Five Presets Check 1</title>" in art and 'window.claude.use("db")' in art
+    # the first-play stamp is armed only after the db restore (or its failure), so a play can't block the restore
+    assert "let stampReady = !window.claude;" in art and "if (stampReady) { const a0" in art
+    restore, armed = art.index("if (snap.exists && !Object.keys(ans).length)"), art.index("finally { stampReady = true; }")
+    assert restore < armed and art.count("stampReady = true") == 1
+    assert "const a0 = ans[it.dataset.id]" not in art.replace("if (stampReady) { const a0 = ans[it.dataset.id]", "")
     assert E.page_leaks(page.split('<script id="clips"')[0], _page_cards()) == []
     assert E.page_leaks("xx u3|k zz", [{"unit": "u3|k", "key": "k3", "cluster": "c3", "slug": "s3"}]) == ["u3|k"]
 

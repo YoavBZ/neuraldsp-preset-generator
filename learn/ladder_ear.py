@@ -120,7 +120,7 @@ def require_draw():
     return json.loads(plan_path().read_text())
 
 
-# --- the pool and the draw (zero renders, no judge file) ---------------------------------------------------------------
+# --- the pool and the draw (zero renders, no judge value) --------------------------------------------------------------
 
 def mild_units(drive, cls_of):
     """{set: the crunch units at or under the set's crunch median of the stored drive measure}. drive: {set: {unit:
@@ -184,6 +184,11 @@ def _amps(cards):
     return c
 
 
+def song_of(cluster):
+    """A BKS DI file's song: its session folder ("set5/BKS_Bulldozer_Full")."""
+    return "/".join(str(cluster).split("/")[:2])
+
+
 def set_cards(rng, s, pool, sitting, used):
     """One set's cards for one sitting, or None when this attempt breaks a set limit. used: {clusters, units, items,
     windows} taken so far (not changed here)."""
@@ -213,6 +218,8 @@ def set_cards(rng, s, pool, sitting, used):
                                  set(), units)
         if any(v > BKS_AMP_MAX for v in _amps(cards).values()):
             return None
+        if len(cards) == CARDS[s] and len({song_of(p["cluster"]) for p in cards}) < 2:
+            return None                                   # both songs
         return cards
     if s == "panel":
         mine = [p for p in pool if p["set"] == s and p["unit"] not in used["units"]]   # the panel's clusters repeat in sitting 2
@@ -262,17 +269,13 @@ def set_spares(rng, s, pool, cards, used):
 
 def sitting_refusal(cards, strict=True):
     """Why a sitting's cards break the declared spread, or None (pure). Not strict (the second sitting): a cell its pool
-    can't fill may run short, counted in the plan file, and the amp limits then don't apply."""
-    short = False
+    can't fill may run short, counted in the plan file; the amp limits hold either way."""
     for s, n in CARDS.items():
         got = [p for p in cards if p["set"] == s]
         for c in CLASSES:
             k = sum(p["cls"] == c for p in got)
             if k > n // 2 or (k < n // 2 and strict):
                 return f"{s}: {k} {c} cards, not {n // 2}"
-            short = short or k < n // 2
-    if short:
-        return None
     lo, hi = AMP_RANGE
     for a, v in _amps(cards).items():
         if not lo <= v <= hi:
@@ -329,8 +332,8 @@ def slug_of(set_, key):
     return hashlib.sha256(f"{set_}:{key}".encode()).hexdigest()[:16]
 
 
-def heard_units():
-    """{unit: [pages]}: every unit a card on an earlier ranking page, from those pages' keys (unit ids only)."""
+def heard_pages():
+    """{page: unit ids}: every unit a card on an earlier ranking page, from those pages' keys (unit ids only)."""
     from learn import pipeline_fix as P
 
     out = {}
@@ -338,9 +341,22 @@ def heard_units():
         p = P.out_dir() / rel
         if not p.exists():
             raise SystemExit(f"{p}: an earlier page's key is missing")
-        for it in json.loads(p.read_text())["items"]:
-            out.setdefault(it["unit"], []).append(page)
+        out[page] = sorted({it["unit"] for it in json.loads(p.read_text())["items"]})
     return out
+
+
+def heard_units(pages):
+    """{page: units} -> {unit: [pages]}."""
+    out = {}
+    for page, units in pages.items():
+        for u in units:
+            out.setdefault(u, []).append(page)
+    return out
+
+
+def page_matches(pages, ladder_units):
+    """{page: {units on the page, of them among the ladder's parts}}: the "fresh" filter's matches, per page (pure)."""
+    return {page: {"units": len(us), "matched": len(set(us) & set(ladder_units))} for page, us in pages.items()}
 
 
 def labels(st):
@@ -358,8 +374,12 @@ def labels(st):
 
 def cmd_draw(_args):
     """Both sittings' cards and spares from the ladder's 480 parts, on metadata and audio alone -> ladder/ear/plan.json,
-    written once. No judge file is opened: the label's search half and hash come from the C2 and C2r outputs' own
-    fields, the answers from the ladder's answer files."""
+    written once. No judge value is used: `R.state()` loads the C2 and C2r outputs, which carry judge values, but the
+    draw reads only the label's search half and hash from their own fields, and the answers from the ladder's answer
+    files; no judge file is opened."""
+    require(PHASE)
+    if plan_path().exists():
+        raise SystemExit(f"{plan_path()} exists: the cards are drawn once")
     import numpy as np
 
     from learn import ear_vreal as E
@@ -367,13 +387,11 @@ def cmd_draw(_args):
     from learn import pipeline_fix as P
     from learn import preset_ladder as L
 
-    require(PHASE)
-    if plan_path().exists():
-        raise SystemExit(f"{plan_path()} exists: the cards are drawn once")
     st = R.state()
     lab = labels(st)
     ans = {c: json.loads(L.answers_path(r).read_text())["answers"] for c, r in ROW_OF.items()}
-    heard = heard_units()
+    pages = heard_pages()
+    heard = heard_units(pages)
     nl = json.loads((P.out_dir() / "scope" / "list.json").read_text())["nl"]
     parts, left = [], {"n12 (beside the deciding pool)": 0, "no lag": 0, "no label": 0, "no ladder answer": 0}
     for ru in R.read_units(st):
@@ -417,6 +435,7 @@ def cmd_draw(_args):
     doc = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}", "seed": DRAW_SEED, "parts_read": len(parts),
            "left_out": left, "left_out_of_pool": out, "pool": len(pool), "crunch_medians": medians,
            "held_activity": active, "heard_pages": {u: v for u, v in heard.items() if u in cls_of},
+           "earlier_page_matches": page_matches(pages, cls_of),
            "heard_used": {k: sum(p["heard"] for p in v) for k, v in rows.items()},
            "short": {k: {f"{s} {c}": CARDS[s] // 2 - sum(p["set"] == s and p["cls"] == c and p["role"] == "cards"
                                                           for p in v)
@@ -460,6 +479,7 @@ def cmd_render(args):
     """Every card and spare of both sittings (one shard): the five presets each fresh in its own primed process through the
     part's measure DI, trimmed as the judge renders are, judged on both halves at the part's lag, each guarded; the held
     window's clips -> ladder/ear/clips/<slug>.npz, .json (the resume marker, after its clips)."""
+    plan = require_draw()
     import numpy as np
 
     from learn import audibility_measure as AM
@@ -474,7 +494,6 @@ def cmd_render(args):
     from learn import song_bank as B
     from learn import trusted_data as T
 
-    plan = require_draw()
     st = R.state()
     lab = labels(st)
     ans = {c: json.loads(L.answers_path(r).read_text())["answers"] for c, r in ROW_OF.items()}
@@ -574,6 +593,15 @@ def substitute(cards, spares, bad):
     return out, subs
 
 
+def floor_refusal(cards, drawn, subs):
+    """Why no page may be built, or None (pure): a card a guard put out with no spare left would leave the sitting
+    short of the cards it drew, and a page once built is never rebuilt."""
+    if len(cards) < len(drawn):
+        return (f"{len(drawn) - len(cards)} of the sitting's {len(drawn)} cards were put out with no spare left "
+                f"({[k for k, sp in subs if sp is None]}): nothing is written; this goes to the orchestrator")
+    return None
+
+
 def page_order(cards, sitting, seed=PAGE_SEED, gap=GAP):
     """Every card once and two repeats, one clean and one crunch, each at least `gap` items after its first hearing,
     the order and each card's letters seeded; in a repeat every preset group sits on another letter (pure).
@@ -625,7 +653,9 @@ JS_EDITS = (
     ('a: "A", b: "B", c: "C", d: "D", "1": "ref", "2": "A", "3": "B", "4": "C", "5": "D"',
      'a: "A", b: "B", c: "C", d: "D", e: "E", "1": "ref", "2": "A", "3": "B", "4": "C", "5": "D", "6": "E"'),
     ("  const my = token;\n",
-     "  const my = token;\n  { const a0 = ans[it.dataset.id] = ans[it.dataset.id] || {}; if (!a0.t_play) { a0.t_play = Date.now(); save(); } }\n"),
+     "  const my = token;\n  if (stampReady) { const a0 = ans[it.dataset.id] = ans[it.dataset.id] || {};\n"
+     "    if (!a0.t_play) { a0.t_play = Date.now(); save(); } }\n"),
+    ("let ans = {};\n", "let ans = {};\nlet stampReady = !window.claude;   // the first-play stamp waits for the db's restore\n"),
     ('it.querySelectorAll(".conf button").forEach(b => b.setAttribute("aria-pressed", String(a.conf === b.dataset.c)));',
      'it.querySelectorAll(".conf button[data-c]").forEach(b => b.setAttribute("aria-pressed", String(a.conf === b.dataset.c)));\n'
      '    it.querySelector(".scope").setAttribute("aria-pressed", String(!!a.scope));'),
@@ -713,16 +743,20 @@ def page_html(chunk, clips, build, total):
     return page, css, js
 
 
-SYNC_RESTORE = ('if (snap.exists && !Object.keys(ans).length) { ans = snap.data().answers || {}; saveHere(); paint(); }',
-                'if (snap.exists && !Object.keys(ans).length) { ans = snap.data().answers || {}; saveHere(); paint(); }')
+SYNC_END = ("    if (Object.keys(ans).length) push();\n  } catch (e) {}\n})();",
+            "    if (Object.keys(ans).length) push();\n  } catch (e) {} finally { stampReady = true; }\n})();")
 
 
 def artifact_page(page, css, js, part):
-    """C1a's Artifact wrapping (answers kept in the page's store, `answers/<build>`), under this page's title."""
+    """C1a's Artifact wrapping (answers kept in the page's store, `answers/<build>`), under this page's title. The
+    first-play stamp is armed only once the db has connected and restored (or failed), so a play before the restore
+    never creates an answer that would block it."""
     from learn import c1a_ear as C
 
-    return C.artifact_page(page, css, js).replace("<title>Record A/B Check</title>",
-                                                  f"<title>Five Presets Check {part}</title>")
+    art = C.artifact_page(page, css, js).replace("<title>Record A/B Check</title>", f"<title>Five Presets Check {part}</title>")
+    if art.count(SYNC_END[0]) != 1:
+        raise SystemExit("C1a's db sync changed: its end")
+    return art.replace(*SYNC_END)
 
 
 def page_leaks(text, cards):
@@ -743,15 +777,8 @@ def level_refusal(levels_lufs, tol=LEVEL_TOL_LU):
 def cmd_page(args):
     """One sitting's page (zero renders): the cards after their guards (a card a guard put out gives way to a spare),
     identical presets on one letter, two repeats, every clip at -23 LUFS by `ear_vreal.level_group`, in two Artifact
-    parts of 12 -> ladder/ear/key-<s>.json, ladder/ear/page/sitting-<s>-part-<p>.html and the local pages."""
-    import numpy as np
-
-    from learn import build_data_review as BDR
-    from learn import ear_vreal as E
-    from learn import pipeline_fix as P
-    from learn import pretrain_set as PS
-    from analysis import io
-
+    parts of 12 -> ladder/ear/key-<s>.json, ladder/ear/page/sitting-<s>-part-<p>.html and the local pages. Refuses,
+    writing nothing, when the cards left after the spares are fewer than the sitting drew."""
     plan = require_draw()
     s = args.sitting
     kp = ear_dir() / f"key-{s}.json"
@@ -761,6 +788,14 @@ def cmd_page(args):
         r1 = ear_dir() / "read-1.json"
         if not r1.exists() or json.loads(r1.read_text())["outcome"]["letter"] != "c":
             raise SystemExit("the second sitting is built only after the first reads (c)")
+    import numpy as np
+
+    from learn import build_data_review as BDR
+    from learn import ear_vreal as E
+    from learn import pipeline_fix as P
+    from learn import pretrain_set as PS
+    from analysis import io
+
     rows = plan["sittings"][str(s)]
     recs = {}
     for p in rows:
@@ -788,7 +823,11 @@ def cmd_page(args):
             why[p["key"]] = {"level_off": off}
             continue
         levelled[p["key"]] = (lev, info, lufs)
-    cards, subs = substitute([p for p in rows if p["role"] == "cards"], [p for p in rows if p["role"] == "spares"], bad)
+    drawn = [p for p in rows if p["role"] == "cards"]
+    cards, subs = substitute(drawn, [p for p in rows if p["role"] == "spares"], bad)
+    why_short = floor_refusal(cards, drawn, subs)
+    if why_short:
+        raise SystemExit(why_short)
     for c in cards:
         c["groups"] = groups_of({x: recs[c["key"]]["cands"][x]["preset_sha256"] for x in CANDS})
     items = page_order(cards, s)
