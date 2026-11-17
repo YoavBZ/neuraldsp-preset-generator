@@ -3,8 +3,8 @@
 **Status:** declared 2026-11-17 before anything ran, after three rounds of independent review (eight, then five, then
 one required fix; section 14). Stages 0 and 1 ran on 2026-11-17 and are audited (section 15,
 [results](preset-ladder-results.md)); stage 2 was declared on 2026-11-17 after review (`phase_l2`) and runs; the
-re-centred answer is drafted in section 15 (`phase_lrc_draft`, in force once renamed `phase_lrc`). Step 2 of the plan
-the user approved after the independent review of 2026-11-16 ("follow the review's plan"). Ledger `preset-ladder`
+re-centred answer was declared on 2026-11-17 at 10:00 after two review rounds (section 15, `phase_lrc`). Step 2 of the
+plan the user approved after the independent review of 2026-11-16 ("follow the review's plan"). Ledger `preset-ladder`
 (`phase_l0`, `phase_l1`, `phase_l2`; stage 3 and the re-centred answer are declared before they run). Code
 `learn/preset_ladder.py`, tests `tests/test_preset_ladder.py`. Data `PF/ladder/` (`PF` is
 `~/ndsp-presets/learn/trusted-data/pipeline-fix`). No sealed set is used: no V-real, the reserve, NS or R1 audio.
@@ -674,7 +674,7 @@ Stage 0 ran on 2026-11-17 (zero renders) and its independent audit stands with c
   readout and waits for the user's go. Nothing here would have to be redone to add it: it needs only the answers,
   `sic-xl@-3` and Cen, which this stage builds.
 
-### The re-centred answer (drafted 2026-11-17 on the user's go, revised after its review the same day; in force only once `phase_lrc` is, rendered only after stage 2's renders)
+### The re-centred answer (declared 2026-11-17 at 10:00 on the user's go, after two review rounds the same day; in force as `phase_lrc`, rendered only after stage 2's renders)
 
 - **The readout.** For part p, half h and input i, every continuous control is the model's answer less p's own
   out-of-sample same-input constant (`sic-i`) plus Cen (the labels' centre for p's fold, amp and class), clipped to the
@@ -776,10 +776,10 @@ Stage 0 ran on 2026-11-17 (zero renders) and its independent audit stands with c
 - **Stop rule:** one pass, one read, report (`report-rc`). No tuning of the table, the clip or the rule on the
   ladder's held units; any later variant (shrinkage, another discrete rule, a product table) is its own declaration on
   other units or Step 1's songs.
-- **Gates and order:** its own phase, `phase_lrc`, held as `phase_lrc_draft` (so `rc`, `render` of these rows and
-  `report-rc` refuse) until its review passes and the key is renamed in a commit that writes its own time into the
-  key; that commit is pushed before `report --stage 2` is run or any stage 2 output is read, so the audit can check
-  the time precedes `report-stage2.json`'s. Then: stage 2's renders done (the launcher refuses before its done line);
+- **Gates and order:** its own phase, `phase_lrc`, in force since the rename commit of 2026-11-17 10:00:22, whose time
+  is in the key (until then held as `phase_lrc_draft`, so `rc`, `render` of these rows and `report-rc` refused); that
+  commit was pushed before `report --stage 2` was run or any stage 2 output read, so the audit can check the time
+  precedes `report-stage2.json`'s. Then: stage 2's renders done (the launcher refuses before its done line);
   `check0`, `check1` and `replay` passed on today's C3r state; the render path unchanged since stages 1 and 2 rendered
   (the launcher refuses unless `learn/` other than this module equals a59e94e9's and the worktree has no tracked
   changes); the machine rules (at most 3 render processes, the 31 GB disk guard; no MPS).
