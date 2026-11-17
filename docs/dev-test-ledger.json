@@ -3441,7 +3441,131 @@
    "phase_r1_a5": "Amendment 5, 2026-11-14, on the user's choice ('I pick by ear'): the pitch tracker misreads two centre stems on the user's windows (frail-grasp voiced 0.22 at MIDI 41, long-road 0.11 at 45). A page per song: its guitar (the version's stem) and full mix beside six candidate DIs on distinct performances: the 3 nearest by the calibrated distance and 3 single-note lines (voiced >= 0.85) near MIDI 55/64/72, nearest in pace. The user marks up to two that play like the part, or none; a pick counts as kept (replaces the DI check). R1's page: one card per DI picked, a song with none leaves the page; read with >= 85% of first hearings (12 of 14 as before); the rule's bar scales (ahead on all but two songs, behind on at most one). After its review: the rule's need is n - 2 at 7 songs, n - 1 at 5-6, and under 5 kept songs a descriptive read only (no ahead or behind verdict); the page plays the 4.5-s half A spans the arms will play; a fit also means fine by the user's DI rule.",
    "phase_exam": "Declared 2026-11-17, before any run, on the user's go of 2026-11-16 to follow the independent review's plan (Step 1, the real-song exam; docs/real-song-exam-plan.md; code learn/real_song_exam.py); amended the same day after its three independent reviews, still before any run. The orchestrator's defaults while the user slept, for the user to confirm: a declared baseline, nothing adopted, the product default the user's call; C from Step 2's all-labels constants (ladder/centres.json, the ladder's shape centres.cen / centres.aconst, its model_sha256 the adopted pair's and its hold C3-cabS: C the labels' centre, C-own the model's own constant); about 10 blinded research runs; the page built, not published; no every-control search on V-real. V-real-11 read once: 10 units in 7 bands, each part's released mix (MP3 previews; Signs the Mix Rescue remix), decoded whole, its sha256 alignment.json's, its crop placed by the stored offset (re-checked on the decoded file; T3's crop checked here, a failure drops it from the released-mix arms); the part's span (1-s blocks from the crop while every member's DI stays within 25 dB of its crop level, at most 10 s a side, inside the matched span, 2 s clear of the file's ends). Arms: S (stored, and on M's amp re-rendered, identical; S of M's class beside where the classes differ); R from one blinded headless generate run per unit, one at a time (a fresh root holding only the venv, the plugin, the settings and these runs; each run's settings deny every home entry but this root and the venv's interpreter, every ~/.claude entry but Claude Code's shell files, the shared Claude temp but the run's own folder, every other run, and edits to the plugin and the venv, with TMPDIR the run's own; the prompt asks it to keep every file in its folder; the plugin and the venv hashed around each run; the transcript audit first: any call or file-tool result naming a home path or a shared-temp file outside the run's own roots, a command on /, a .. leaving the run, the account name in a web call, or a web result naming the project excludes it; replayed on the routing re-check's 83 transcripts it excludes 23, every one for a spec aimed at a shared Claude temp, which the sandbox refused; before any V-real research run, a runner check: one run on a development song (Magilla by Turbosauro) through the same root, settings, prompt and audit, with an echo of TMPDIR and a probe of a denied home entry in its prompt only, passing when it ends with a preset, the probe is refused (the sandbox's denial in the probe's own result, none of the folder's names there; else listed or not proven, a stop) and the plugin and venv are unchanged; never used for R; a failure stops for the user), its preset with its amp's dry recipe, R-wet and R-route (the template with its own amp's dry recipe) beside; research failure: a unit takes its first passing run, a rerun only for a unit whose runs were all excluded and only once, a unit with no passing run has no R (M on the label's class; out of the R rows, in every other row, counted), no passing run at all stops for the user; M = scripts/model_preset.py on the released mix with R's class (heavier as crunch, flagged), default version; M3, M-x (xlst_mdxc at M's window), M-lab (the label's class where R's differs, M's window), M-crop (--start at the crop), M-unity (the unity sum at M's window); C and C-own on three amps (and on M's class and amp where R's class differs); C-pick (the model path's stock-DI pick on C); L (stored ZT settings.best, V-real-10, held half). Guards, each a stop: this entry; the leakage guard on C3r-all's every training input and the four stock DIs, the adopted base C3r-all; the adopted pair's hashes; the wrapper reproduces r1/cut-it-out's answers, stem features, renders, distances, pick and preset from its stored window (not the selector, X-LANCE or xlst_mdxc); the research audit; chain, c-pick, answers, render and report refuse unless guards.json and r1-repro.json passed; research.json and inputs.json locked at the chain's start, and every run's class checked at answers; every answers file and both guard records hashed under phase_exam_answers before any judge render, each judge record timed; S's positive control and EX-S identical; L fresh beside stored. Judge: knob_ceiling.judge through each part's measure DI, fresh and primed, ln distance on the held half, Wickerman 2 and 3 one unit, band-weighted 90% band-clustered t (6 df); a held half with S not finite drops from every row, a missing answer stops. Primary: M - R; beside (leads, not verdicts): M - S, R - S, the R arms, M3 - S per amp, M - C and M - C-own on M's amp, M - C-pick, C - S, C-own - S, C-pick - S, M-x - M (centred, off-centre), M-lab - M, M-crop - M, M-unity - M, M - M3's mean and best (an oracle), L - S and (M - S)/(L - S), M - FT/D_fix/RcG on M's amp (stored); the loudness row against S of M's class; with part-weighted, leave one band out, clean, crunch, dense, sparse, centred, off-centre, V-real-10; zero-render tables (classes, windows, picks, knob distances, movement between inputs against between units). Decidable before the read: about +-0.10 to +-0.15 for M - R. Map: M - R below 0 with the page not putting M below R -> proposed to the user as the default; above 0 -> the model path stays behind its flag; holding 0 -> undecided, no change, the baseline for later candidates. The independent audit (the planner's section 12): every row recomputed with its own code, every preset re-derived, the hashes' order against the judge records' times, 6 seeded groups re-rendered, the page read re-derived from the raw export. At most about 1,240 renders (cap 1,400), at most 3 render processes, the chain one run at a time with the MPS checked free. A product failure (a chain arm without a preset) stops before the answers for the user. One build, one read; nothing changes after the first judge render; a rerun only for a failed guard; the report once (its sha256 into phase_exam_outcome), the page's score once.",
    "phase_exam_inputs": {
-    "declared": "2026-11-17, before any run: filled with inputs.json's sha256 and each unit's mix and unity sha256 and span (learn.real_song_exam inputs prints the record) before any separation or research run."
+    "declared": "2026-11-17, before any run: filled with inputs.json's sha256 and each unit's mix and unity sha256 and span (learn.real_song_exam inputs prints the record) before any separation or research run.",
+    "recorded": "2026-11-17, after `inputs` and before any separation or research run",
+    "inputs_json": "2e795c25432651168d4081bf1dfbd90fffd99ed3f6d1ed35afd6cc32171ef623",
+    "units": {
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+      "mix_sha256": "8d400cffc48a7983a77d0cbf4430799345eeaa03a94825846ba518fdb79cafa2",
+      "unity_sha256": "34d8311fe7ff04e409a0e9f16c8e269bdc891633bc99334ca408d9fe9977abc7",
+      "span_file_s": [
+       73.65,
+       93.65
+      ],
+      "span_session_s": [
+       90.0,
+       110.0
+      ]
+     },
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+      "mix_sha256": "8d400cffc48a7983a77d0cbf4430799345eeaa03a94825846ba518fdb79cafa2",
+      "unity_sha256": "34d8311fe7ff04e409a0e9f16c8e269bdc891633bc99334ca408d9fe9977abc7",
+      "span_file_s": [
+       2.15,
+       23.15
+      ],
+      "span_session_s": [
+       18.5,
+       39.5
+      ]
+     },
+     "cambridge-Signs-ElecGtr3": {
+      "mix_sha256": "bcc13f33eb59f5a27f562fed663586d6329d62eea69c910748bb71af3ec03685",
+      "unity_sha256": "334725bdfda098c568d5dac9644c06bfbed65cb262b6b50111050aa061c949cf",
+      "span_file_s": [
+       61.075,
+       87.075
+      ],
+      "span_session_s": [
+       64.5,
+       90.5
+      ]
+     },
+     "cambridge-colour-me-red-elecgtr02": {
+      "mix_sha256": "347ef54f3002aadca52cc9340059decbc1576e1dee793b6f7e15a51b442b7bbf",
+      "unity_sha256": "611aa1ae6857ebc1222497967a9a43a11335a520808465117f89979c8ae14c90",
+      "span_file_s": [
+       71.502,
+       95.502
+      ],
+      "span_session_s": [
+       71.5,
+       95.5
+      ]
+     },
+     "cambridge-colour-me-red-elecgtr03": {
+      "mix_sha256": "347ef54f3002aadca52cc9340059decbc1576e1dee793b6f7e15a51b442b7bbf",
+      "unity_sha256": "611aa1ae6857ebc1222497967a9a43a11335a520808465117f89979c8ae14c90",
+      "span_file_s": [
+       63.002,
+       78.002
+      ],
+      "span_session_s": [
+       63.0,
+       78.0
+      ]
+     },
+     "cambridge-femme-elecgtr5": {
+      "mix_sha256": "2b404cb8508e28b06869718208da02a5bcb6da8a772c6bdbd07bb267f12b4a2b",
+      "unity_sha256": "d801eb38e809792119c9b4abdfe0af2e4d6642a228bdb3be4986143a25e14abb",
+      "span_file_s": [
+       153.513,
+       166.513
+      ],
+      "span_session_s": [
+       153.5,
+       166.5
+      ]
+     },
+     "cambridge-get-out-of-bed-elecgtr2": {
+      "mix_sha256": "061045c10ddcf5daa3964a019f83de395e6dbd4b8c42fc951762f9e105cfa6ac",
+      "unity_sha256": "9d01a3d85a0813edfa57d11f21e373c5cc45ec77c0d1136758dad1d39e1e90a7",
+      "span_file_s": [
+       121.997,
+       151.997
+      ],
+      "span_session_s": [
+       125.0,
+       155.0
+      ]
+     },
+     "cambridge-let-s-dance-elecgtr3": {
+      "mix_sha256": "3dd1929e14d9aaf5c946f9500dc2532cedded2ae5aacfcbd68cdff30e91306f7",
+      "unity_sha256": "7de254e1560f580f67704cb0dcc75ed59945a602bbf46f09c89ad3b18f06374e",
+      "span_file_s": [
+       29.057,
+       59.057
+      ],
+      "span_session_s": [
+       39.5,
+       69.5
+      ]
+     },
+     "cambridge-wickerman-elecgtr1": {
+      "mix_sha256": "3841fbb1e274c51ec5c203e566427831c8c99a38ff1ea5d3ae9adc7c56080671",
+      "unity_sha256": "4b6e590c343ce0d14fb93d221e8211b325258d2dfda32b4cefc6bcec523d4d13",
+      "span_file_s": [
+       165.211,
+       186.211
+      ],
+      "span_session_s": [
+       169.0,
+       190.0
+      ]
+     },
+     "cambridge-wickerman-elecgtr2+3": {
+      "mix_sha256": "3841fbb1e274c51ec5c203e566427831c8c99a38ff1ea5d3ae9adc7c56080671",
+      "unity_sha256": "4b6e590c343ce0d14fb93d221e8211b325258d2dfda32b4cefc6bcec523d4d13",
+      "span_file_s": [
+       156.711,
+       185.711
+      ],
+      "span_session_s": [
+       160.5,
+       189.5
+      ]
+     }
+    }
    },
    "phase_exam_answers": {
     "declared": "2026-11-17, before any run: filled with every EX-* answers file's, tables.json's, guards.json's and r1-repro.json's sha256 (learn.real_song_exam answers prints them) before the first judge render; renders and the report refuse otherwise.",
