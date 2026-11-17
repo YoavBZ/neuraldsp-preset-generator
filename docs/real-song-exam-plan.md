@@ -24,8 +24,14 @@ earlier reads (`vreal/answers/EX-*.json`, `vreal/judge/EX-*/`).
   41 runs and none failed; 524 judge renders (the exam's plugin renders in all 1,052, 526 kept); the report ran once
   (sha256 in `phase_exam_outcome`). By the score M − R is −0.019 [−0.126, +0.088], undecided: no product change, the
   baseline for later candidates. The audit (stands with corrections) recomputed every row. The page is built and
-  published privately to the user (a deviation, the dated note under "The listening page"); its ear read follows the
-  sitting.
+  published privately to the user (a deviation, the dated note under "The listening page").
+- **The ear read (2026-11-18, scored once and audited, PASS with no correction;
+  [results](real-song-exam-results.md#the-ear-read-sat-2026-11-17-scored-once-2026-11-18-audited)):**
+  - **The control was not heard.** L over R, the positive control, was 0.607 [0.321, 0.857], not heard above R.
+  - **So M over R reads "not known by ear: the page had no power here"**, never "no difference": 0.679
+    [0.464, 0.893].
+  - **Step 3 reads S3-nopower.** C-pick over R, the declared mirror, was 0.714 [0.464, 0.964]: nothing is concluded,
+    and nothing ships.
 - **Earlier (2026-11-17):** CP2 is done. The inputs are built and hashed into the ledger; guards 2, 3 and 7's
   stored half and guard 4 (the R1 reproduction, 12 renders) pass; the runner check passed on its second try (the first
   failed the CLI's sign-in before any model call); all 10 research runs passed the audit (0 excluded, 0 aborted, no
