@@ -841,7 +841,7 @@ da05c8ad, 13:30:22) and this revision (after PR #506's review) both came after t
 ### Notes after the re-centred answer's audit (2026-11-17)
 
 - **Read** ([results](preset-ladder-results.md), ledger `phase_lrc_outcome`; audited, passes with corrections to
-  wording only). By the score, `rc-xl@-3 − cen` +0.008 [−0.042, +0.059] undecided (BKS and GOAT each decided worse; a
+  wording only). By the score, `rc-xl@-3 − cen` +0.008 [−0.042, +0.058] undecided (BKS and GOAT each decided worse; a
   gain beyond 0.042 ruled out), `rc-xl@-3 − xl@-3` −0.052 [−0.078, −0.027] better: `RC_JOINT` gives "flagged".
   `rc-mix@-3 − cen` −0.027 [−0.061, +0.007] undecided, so the stop rule above gives **branch 3**: Step 2 stops and Cen
   goes to Step 3; the flagged cell applies (re-centring the flagged model path is its own reviewed change, and the
