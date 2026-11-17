@@ -7182,7 +7182,12 @@ def cmd_train_ft(args):
     with per-record masks (`full_controls_c3.mask_rows`); refuses until all of C2's records are written, records C2's
     sha256, and every FT_k or all-labels run refuses inner runs made on another C2 state. Per-head losses are logged
     every epoch. `--c3i` (C3i, opt-in, with --masked; `phase_c3i`): FTm's recipe and FTm's mask (`K.space` only) on C3's
-    labels, under C3i's own names (`full_controls_c3.C3I_BASE`), with C3's C2-state checks."""
+    labels, under C3i's own names (`full_controls_c3.C3I_BASE`), with C3's C2-state checks. `--c3r-rep rep|replay`
+    (Step 6's stage N, with --c3r all; `phase_s6_noise`; `stem_finetune.rep_refusal`): R-all's recipe again under its own
+    base (`stem_finetune.REP_BASES`), each new seed starting from its W state (`stem_finetune.REP_SEEDS`; the seed sets
+    torch's seed and the epoch order, nothing else), FT_k taking its own base's inner run's E; a refused name or an
+    existing file of the run stops it before any work (`stem_finetune.rep_write_refusal`), so no R-all file can be
+    written."""
     import numpy as np
     import torch
 
@@ -7252,6 +7257,16 @@ def cmd_train_ft(args):
             raise SystemExit("R-ctl has no all-labels pair: its rows are C3's, so it is no candidate")
         r3st = R3.state()                              # refuses until C2 and C2r are complete and C3's decision exists
         base = R3.base_of(c3r, r3st)
+    rep = getattr(args, "c3r_rep", None)
+    w_seed, inner_keys = seed, [(q, sd) for q in range(REAL_FOLDS) for sd in SEEDS]
+    if rep is not None:                                # Step 6's stage N: R-all's recipe again, under its own base
+        from learn import stem_finetune as S6
+
+        why = S6.rep_refusal(rep, c3r, k, inner, seed, base)
+        if why:
+            raise SystemExit(why)
+        require(S6.PHASE_NOISE)
+        base, w_seed, inner_keys = S6.REP_BASES[rep], S6.rep_w_seed(rep, seed), S6.rep_inner_keys(rep)
     if masked:
         require("phase_night2")
         if k is None:
@@ -7262,7 +7277,7 @@ def cmd_train_ft(args):
             raise SystemExit("N3 runs masked FT_k only")
     if k is None:
         require("phase_ft_carry")
-    if seed not in SEEDS:
+    if rep is None and seed not in SEEDS:
         raise SystemExit(f"--seed in {SEEDS}")
     lr, cap = ft_rate(args)
     h4 = getattr(args, "h4", None)
@@ -7281,6 +7296,10 @@ def cmd_train_ft(args):
     if rp.exists():
         print(f"{rp.name} exists: nothing to do")
         return
+    if rep is not None:                                # no R-all name, and no file of this run's already on disk
+        why = S6.rep_write_refusal(rep, name, seed, inner, lambda nm: (od / nm).exists())
+        if why:
+            raise SystemExit(why)
     if h4 is not None:                                 # each run chains within its arm (W, inner, FT_k, all-labels)
         def run_of(nm, sd):
             q = od / f"{nm}-{sd}.json"
@@ -7295,10 +7314,10 @@ def cmd_train_ft(args):
         ebase = C3.C3_BASE if (c3b or c3c) else base   # C3b, C3c: C3's own inner runs set each FT_k's E (C3's recipe)
 
         def inner_set(lr_, cap_):
-            ps = [od / f"{ft_name(q, True, lr_, cap_, ebase)}-{sd}.json" for q in range(REAL_FOLDS) for sd in SEEDS]
+            ps = [od / f"{ft_name(q, True, lr_, cap_, ebase)}-{sd}.json" for q, sd in inner_keys]
             return [json.loads(q.read_text()) for q in ps] if all(q.exists() for q in ps) else None
 
-        why = ("the 8 inner runs are not all done" if inner_set(lr, cap) is None else None) if masked \
+        why = (f"the {len(inner_keys)} inner runs are not all done" if inner_set(lr, cap) is None else None) if masked \
             else ft_fallback_refusal(inner_set, lr, cap)
         if why:
             raise SystemExit(f"{name}: {why}")
@@ -7316,12 +7335,15 @@ def cmd_train_ft(args):
             raise SystemExit(f"{name}: no other recipe's E comes from C3s's inner runs")
         if c3r is not None and any((r_.get("c3r") or {}).get("c3r_sha256") != r3st["sha256"] for r_ in allin):
             raise SystemExit(f"{name}: an inner run was made on another C2, C2r or C3 state")
+        if any((r_.get("rep") or {}).get("kind") != rep for r_ in allin):
+            raise SystemExit(f"{name}: an inner run of another kind (each kind's E comes from its own base)")
         inners = [r_ for r_ in allin if k is None or (r_["real_fold"], r_["seed"]) == (k, seed)]
         epochs = ft_epoch_of(inners)
     e = require("phase_3")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
-    init, wrec = ft_start_state(seed, pre)
-    if not inner and ft_inner_init_refusal(inners, lambda sd: json.loads((od / f"{pre}-{sd}.json")
+    init, wrec = ft_start_state(w_seed, pre)
+    w_of = (lambda sd: sd) if rep is None else (lambda sd: S6.rep_w_seed(rep, sd))
+    if not inner and ft_inner_init_refusal(inners, lambda sd: json.loads((od / f"{pre}-{w_of(sd)}.json")
                                                                          .read_text())["model_sha256"]["best"]):
         raise SystemExit("an inner run started from another W state than its seed's")
     pa = argparse.Namespace(rung="b", fold=None, frac=1.0, sections=1.0, pc=False, pcsz=False, aug=False)
@@ -7409,7 +7431,8 @@ def cmd_train_ft(args):
         dry = {"name": name, "seed": seed, "epochs": epochs, "inner": inner, "real_fold": k, "rows": len(rows),
                "plugin_train": len(plugin_tr), "train_real": len(rrows), "held_real": len(real_held),
                "train_units": sorted({r["real"] for r in rrows}), "held_units": sorted(held_units), "info": info,
-               "inputs_sha256": data.inputs_sha256, "phase": "phase_c3r" if c3r is not None else None}
+               "inputs_sha256": data.inputs_sha256, "phase": "phase_c3r" if c3r is not None else None,
+               "w_seed": w_seed, "rep": rep, "init_run": f"{pre}-{w_seed}"}
         print("TRAIN-FT DRY RUN", json.dumps({q: dry[q] for q in ("name", "epochs", "rows", "train_real", "held_real")}))
         return dry
     sub = np.sort(np.random.default_rng(SUBSET_SEED).choice(ti, min(SUBSET_N, len(ti)), replace=False))
@@ -7434,10 +7457,10 @@ def cmd_train_ft(args):
         net, final, best_state, best_ep, best = fit(data, ti, watch, None, seed, dev, log, epochs,
                                                     every=1 if (c3 or c3r is not None) else FT_EVERY, init=init, lr=lr,
                                                     per_head=c3 or c3r is not None)
-    phase_of = ("phase_c3r" if c3r is not None else "phase_c3" if c3 else H4 if h4 else "phase_night2" if masked
+    phase_of = (S6.PHASE_NOISE if rep is not None else "phase_c3r" if c3r is not None else "phase_c3" if c3 else H4 if h4 else "phase_night2" if masked
                 else "phase_ft")
     out = {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} {phase_of}", "rung": "b",
-           "seed": seed, "real_fold": k, "masked": masked, "real_frac": frac, "shuffle_real": shuf, "inner": inner, "lr": lr, "cap": cap, "init": {"run": f"{pre}-{seed}", "which": "best",
+           "seed": seed, "real_fold": k, "masked": masked, "real_frac": frac, "shuffle_real": shuf, "inner": inner, "lr": lr, "cap": cap, "init": {"run": f"{pre}-{w_seed}", "which": "best",
                                                           "sha256": wrec["model_sha256"]["best"]},
            "train_ids": plugin_tr + [r["i"] for r in rrows], "ft_train_ids": [r["i"] for r in rrows],
            "held": held_name, "held_ids": held, "real_held_ids": [r["i"] for r in real_held],
@@ -7452,6 +7475,8 @@ def cmd_train_ft(args):
         out["c3"] = c3info
     if c3r is not None:
         out["c3r"] = dict(info, base=base, inputs_sha256=data.inputs_sha256)
+    if rep is not None:
+        out["rep"] = {"kind": rep, "base": base, "w_seed": w_seed, "phase": S6.PHASE_NOISE}
     od.mkdir(parents=True, exist_ok=True)
     if inner:
         out["dfix"]["val_fold"] = (k + 1) % REAL_FOLDS
@@ -8282,6 +8307,8 @@ def main(argv=None):
                     help="train-ft: build the run's rows, data and masks and check them, then stop before its first step")
     ap.add_argument("--c3r", choices=("all", "ctl"), default=None,
                     help="train-ft: C3r's arm, C3's recipe on every trusted real row by rotation (with --masked)")
+    ap.add_argument("--c3r-rep", choices=("rep", "replay"), default=None,
+                    help="train-ft: Step 6's stage N, R-all's recipe again under its own base (with --c3r all)")
     ap.add_argument("--real-frac", type=float, default=1.0, help="train-ft: N3, this share of the training real rows")
     ap.add_argument("--shuffle-real", action="store_true", help="train-ft: N3, labels shuffled within amp and class")
     ap.add_argument("--ft-lr", type=float, default=None)       # train-ft: a declared fallback only
