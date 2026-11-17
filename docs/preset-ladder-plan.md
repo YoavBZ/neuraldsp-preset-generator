@@ -1,7 +1,7 @@
 # The preset ladder: where is the preset lost?
 
-**Status:** declared 2026-11-17, before anything runs; revised the same day after its independent review (eight
-required fixes, section 14). Step 2 of the plan the user approved after the independent review
+**Status:** declared 2026-11-17, before anything runs; revised the same day after three rounds of independent review
+(eight, then five, then one required fix; section 14). Step 2 of the plan the user approved after the independent review
 of 2026-11-16 ("follow the review's plan"). Ledger `preset-ladder` (`phase_l0`, `phase_l1`; stages 2 and 3 are declared
 before they run). Code `learn/preset_ladder.py`, tests `tests/test_preset_ladder.py`. Data `PF/ladder/` (`PF` is
 `~/ndsp-presets/learn/trusted-data/pipeline-fix`). No sealed set is used: no V-real, the reserve, NS or R1 audio.
@@ -71,7 +71,7 @@ together, and the other guitars are then removed at the same gains, so the targe
 | 1 | reads in the exposed backed mix | `mix@-3 - sic-mix@-3` reads better | Full stage 2; stage 3 by its triggers, which this outcome fires (exposure and pooling). |
 | 2 | reads only the isolated guitar | `clean-kind - sic-clean-kind` reads better | Full stage 2, `clean@-3` beside; stage 3 by its triggers, which this outcome fires (the exposure rows are Step 4's case; pooling); Step 6 has its case. |
 | 3 | the ladder's build loses a reading | `mix-drawn - sic-mix-drawn` reads better and `mix@-3 - mix-drawn` reads worse (a loss in the build is decided) | Stage 2 waits. A dated amendment locates which part of the build (the lender's stems, the stereo mid, mastering, the level) loses what the training input keeps, reviewed first. |
-| 4 | reads per unit on the training input only | `mix-drawn - sic-mix-drawn` reads better, no loss decided | Full stage 2; the write-up says the ladder's inputs are undecided, not that the build loses the reading. |
+| 4 | reads per unit on the training input only | `mix-drawn - sic-mix-drawn` reads better, no loss decided | Full stage 2, with `mix@drawn` and `sic-mix@drawn` added on every part (zero separations, 1,440 answers): the ladder's build at the lender's drawn exposure, so `mix@drawn - mix-drawn` reads the build at about the stored input's exposure and `mix@-3 - mix@drawn` the exposure within the build. The write-up says the ladder's inputs are undecided, not that the build loses the reading. |
 | 5 | reads on one deciding set only | `mix@-3 - sic-mix@-3` or `clean-kind - sic-clean-kind` reads better on BKS, GOAT or the panel alone while its pool row is undecided | Full stage 2 (a reading on one set is not "no gain"); the write-up gives the set, the pool interval and this outcome's false-alarm bound. A pool row read worse doesn't take this outcome. |
 | 6 | a better constant, no per-unit reading | `mix@-3`, `clean-kind` or `mix-drawn` beats Cen or Aconst on the pool, with no per-unit reading; read with the knob reads' mean shift (section 4) | The model's mean answer beats the label constant without reading per unit, so the evidence favours the model's own placement over Cen. Stage 2 shrinks to the harm check (`xl@-3` on the subset: 148 separations, 456 answers), whose `xl@-3 - cen` decides whether the chosen constant replaces the model path at Step 3: it does unless the model path reads better than Cen there. Separator work stays parked. Then Step 5. |
 | 7 | no gain shown | none of the above | The chosen constant goes to Step 3 as the candidate start (Step 1 confirms on songs). Separator work stays parked. Stage 2 shrinks to the harm check. Then Step 5. The action rests on what each rule row's interval rules out, not on an absence: the report gives each row's lower end (no true gain beyond it, at 90%), its reading per set, per class, on half A, with each cluster and each deciding set left out (`negatives`), and the audit reads it adversarially first (section 8). |
@@ -86,9 +86,11 @@ together, and the other guitars are then removed at the same gains, so the targe
   share units and a model, so the true rates are lower): outcome 1 or 2, two rows, at most 9.8%; outcomes 1 to 4 (a
   per-unit reading on the pool), three rows, at most 14.3%, of which outcome 3 needs two rows and so at most 5%;
   outcome 5 alone, six per-set rows, at most 26.5%; outcome 6 alone, six rows, at most 26.5%; anything but outcome 7,
-  fifteen rows, at most 54%. The asymmetry is deliberate: a false reading in outcomes 1, 2, 4 or 5 costs only a full
-  stage 2 (800 separations and about 2 h of renders); a false outcome 3 costs an amendment before stage 2; outcomes 6
-  and 7 park work and so are read adversarially.
+  fifteen rows, at most 54%. The asymmetry is deliberate. A false outcome 1 or 2 costs a full stage 2 (800 separations
+  and about 2 h of renders) and fires stage 3's exposure and pooling rows on the subset (about 600 separations and
+  1.5 h of renders more); a false outcome 4 costs a full stage 2 with `mix@drawn` added (1,440 answers more) and fires
+  stage 3's pooling; a false outcome 5 costs a full stage 2; a false outcome 3 costs an amendment before stage 2.
+  Outcomes 6 and 7 park work and so are read adversarially.
 
 **Stage 2's rule rows** (`q2q3_outcome`, computed in `report --stage 2`):
 
@@ -99,11 +101,12 @@ together, and the other guitars are then removed at the same gains, so the targe
 | Q3: the other guitars read worse (a cost) | Its size is the target any separator work must recover by the preset; stage 3 runs `xlmdxc` and `xl-real`. |
 | Q3: the separator alone reads worse | Step 6 (fine-tune on the product's input) gets a measured target. |
 | Q3: the level step reads worse | The product's level step costs by itself: a level fix comes before any separator work. |
-| `clean@-3 - xl@-3`, the most a perfect separator could buy (`separator_ceiling`) | **"heard-size gain"**: reads better with a mean beyond −0.05; separator work has a measured ceiling. **"a gain shown, not of heard size"**: reads better, mean within −0.05; reported, separator training stays parked. **"small"**: not better and the interval rules out a heard-size gain (lo90 above −0.05); parked. **"undecided, not shown"**: a heard-size gain neither shown nor ruled out; parked because the review's gate asks for a shown gain, said so in the write-up, and read adversarially by the audit. |
+| `clean@-3 - xl@-3`, the most a perfect separator could buy (`separator_ceiling`) | **"heard-size gain"**: reads better with a mean beyond −0.05; separator work has a measured ceiling. **"a gain shown, not of heard size"**: reads better and the interval rules a heard-size gain out (lo90 above −0.05). **"a gain shown, heard size undecided"**: reads better, mean within −0.05, the interval still holding heard-size gains. **"small"**: not better and the interval rules out a heard-size gain. **"undecided, not shown"**: a heard-size gain neither shown nor ruled out. Every reading but the first parks separator training and is read adversarially by the audit (section 8). The two "gain shown" readings meet the approved review's gate (a decided preset-level gain from oracle separation, with no size), and the write-up says so: they are parked only by this plan's floor. |
 
 The −0.05 floor is a deviation from the review's gate, which asks for "a preset-level gain from oracle separation" with
 no size: under about 0.05 a score difference isn't known to be heard (F65), so a decided gain under that size is
-reported apart and doesn't open separator training.
+reported apart and doesn't open separator training. The floor parks work that the user-approved gate would open, so
+whether it stands is the user's call (the orchestrator puts it to them); the write-up gives both readings.
 
 **Stage 3, one rule: a row runs only when its trigger fires** (computed in `report --stage 2`):
 - `xlmdxc` and `xl-real`: when the other guitars' row (`xl@-3 - xlnoG@-3`) reads worse;
@@ -229,7 +232,7 @@ sharing a DI file or creator with a fold-k unit enters (`centres` refuses otherw
 - **The all-labels versions of Cen and Aconst** (every training record, the all-labels R-all pair, which `centres`
   checks equals `adopted-model.json`'s), never read on these units, go to `PF/ladder/centres.json` for Steps 1 and 3,
   in this shape (`centres_doc` refuses any other): `{"plan", "ledger", "about", "centres": {"cen" | "aconst": {amp:
-  {class: {"select": the class's S selection, the pipeline's int (as C3r's answers store it), "settings":
+  {class: {"select": the amp's selection index, an int (as C3r's answers store it), "settings":
   {"module/key": value} (the full preset settings)}}}},
   "hold": "C3-cabS", "model_sha256": [the adopted pair's two sha256], "c3r_sha256", "records_used", "time"}`, for amps
   `pr12`, `sw50r`, `ac20` and classes `clean`, `crunch`. The output gain is S's (the product's loudness step sets it).
@@ -256,7 +259,7 @@ of the lender draw took 31 s, a unit's two mixes 0.4–0.7 s, and one same-input
 |---|---|---|---|---|
 | 0 | the controls; the lenders; Cen and Aconst; the answers of `clean-kind` and `xl-v0`; `sic-mix-drawn`, `sic-clean-kind`; the preview; the knob reads | 0 | 0 | minutes of CPU |
 | 1 | the controls (60 renders); `cen`, `aconst`, `sic-mix-drawn`, `sic-clean-kind`, `sic-mix@-3` (480 each), `clean-kind`, `mix@-3` (960 each) | 0 | 4,320 (8,640) | about 2 h 4 min of renders |
-| 2 | `xlnoG@-3`, `xl@-3` separated for every unit; `mixp@-3`, `xlnoG@-3`, `xl@-3`, `clean@-3` (960 each), `sic-xl@-3` (480) | 800 | 4,320 (8,640) | about 63 min MPS, then about 2 h 4 min of renders |
+| 2 | `xlnoG@-3`, `xl@-3` separated for every unit; `mixp@-3`, `xlnoG@-3`, `xl@-3`, `clean@-3` (960 each), `sic-xl@-3` (480); under Q1's outcome 4 also `mix@drawn` (960) and `sic-mix@drawn` (480) | 800 | 4,320 (8,640) | about 63 min MPS, then about 2 h 4 min of renders |
 | 3 | the subset: `xlmdxc@-3`; `mix`, `xlnoG`, `xl` at drawn and 0 dB; the conditional rows | 600 + 148 stereo | about 3,200 (+ up to 1,400) | about 47 + 35 min separating, about 90 (+40) min of renders |
 
 - **Stage 0, zero renders.** `check0` first: every later command refuses until it passed. Then the lenders, the
@@ -307,7 +310,9 @@ refuses unless the controls guarding its stage passed on today's state** (`contr
 (`lends`, `centres`, `build`, `predict`, `sic`, `subset`, `stage0`); `check1` and `replay` guard stage 1 (`build`'s
 mixes need `check1`; `render` of a stage-1 or later row, `sep` and `report` need all three). A failure stops the stage
 and is handed back; any way on is a dated amendment, reviewed first, and a failed control's record is never
-overwritten (`save_control` refuses; the amendment moves it aside, never deletes it).
+overwritten: a control whose last record failed refuses to start (`control_may_run`, before any work, so a failed
+`replay` doesn't render again) and `save_control` refuses to overwrite it; the amendment moves the record aside,
+never deletes it.
 
 **Stage 0 (`check0`):**
 - The ladder's answer code reproduces `c3r/answers/all.json` from the stored variant-0 inputs (equal sha256).
@@ -334,8 +339,8 @@ overwritten (`save_control` refuses; the amendment moves it aside, never deletes
   amendment's to declare.
 - A unit with a silent stem half stays in, as the product would read it, and is counted.
 
-**Stage 2:** `sep` starts only with no render job or render server running and no other MPS user
-(`sep_blockers`). It rebuilds each unit's mixes and requires their mids' half features to equal the stage 1 build's
+**Stage 2:** `sep` starts only with no render job or render server running (on any device) and, on the MPS, no other
+MPS user (`sep_blockers`). It rebuilds each unit's mixes and requires their mids' half features to equal the stage 1 build's
 stored `mix@E` and `full@E` exactly (uint8 mels equal, LUFS within 1e-4 dB, `amp_di_compare_s.rebuild_v0`'s rule):
 `build` runs in `.venv` and `sep` in the msst-venv, whose numpy and scipy differ. A difference stops the stage.
 
@@ -345,8 +350,9 @@ three same-input constants from the answers, re-derives the fold bans from the r
 input features against the row's recipe on a seeded sample. It tries to break each decided row: one cluster left out,
 clean and crunch apart, cap1 by whether its DI's player trains in the fold. **It reads the negatives that drive an
 action adversarially** (the user's rule: undecided is not failed): when Q1 reads outcome 6 or 7 (which parks separator
-work and shrinks stage 2), when Q2 reads "not shown better", when the perfect separator's ceiling reads "small" or
-"undecided, not shown" (which parks separator training), and for every stage 3 trigger row that doesn't fire (the
+work and shrinks stage 2), when Q2 reads "not shown better", when the perfect separator's ceiling reads anything
+but "heard-size gain" (each of "a gain shown, not of heard size", "a gain shown, heard size undecided", "small" and
+"undecided, not shown" parks separator training), and for every stage 3 trigger row that doesn't fire (the
 other guitars' row, which skips `xlmdxc` and `xl-real`; the exposure and pooling rows), it asks why each might be a
 false negative: per set, per class, on half A, with each cluster and each deciding set left out (the report's
 `negatives`, which covers every Q1 rule row, Q2, Q3, `clean@-3 - xl@-3` and the trigger rows), and it states the gain
@@ -447,6 +453,8 @@ in `docs/ROADMAP.md`'s step 0.
 7. After the second review (2026-11-17): the same-input constants come from the part's own fold; "the build loses a
    reading" needs a decided loss; one stage 3 rule; the −0.05 heard-size floor stated as a deviation from the review's
    gate.
+8. After the third review (2026-11-17): a decided gain is "not of heard size" only when its interval rules heard size
+   out; whether the −0.05 floor stands, since it parks work the approved gate would open, goes to the user.
 
 ## 14. Changes from the planner's draft, and after the review
 
@@ -526,4 +534,15 @@ The planner's draft is `~/ndsp-presets/handover/2026-11-16/plan-step2.md`; its n
   re-rendered; `sic` makes answers under stage 0's phase (rendering needs the row's own); C3r's band-weighted panel row
   and its row without H4's real_out units are restored (and the stored-row check compares them: 97 fields); `sep`
   refuses while a render or another MPS user runs; the ledger carries the 54% bound.
+
+**After the third review (2026-11-17, one required fix and the optional items):**
+- **A decided gain is "not of heard size" only when its interval rules a heard-size gain out** (lo90 above −0.05);
+  otherwise it reads "a gain shown, heard size undecided" (`separator_ceiling`, tested). Both "gain shown" readings are
+  in the table, meet the approved review's gate, are parked only by this plan's floor (the user's call), and are in the
+  audit's adversarial list.
+- **Also:** the cost of a false reading restated (outcomes 1 and 2 fire stage 3's exposure and pooling rows, outcome 4
+  fires pooling); outcome 4 adds `mix@drawn` and `sic-mix@drawn` to stage 2 (the build at the drawn exposure, the
+  natural next check; `OUTCOME4_PAIRS`); `centres.json`'s `about` names `select` as the amp's int index; `sep` checks the
+  renders on every device and the MPS on the MPS, as section 8 now says; a failed control refuses to start before any
+  work (`control_may_run`); the status line, DOCS-INDEX and ROADMAP count the review rounds.
 

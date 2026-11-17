@@ -57,7 +57,7 @@ RATIO_EDGES = (-12.0, -6.0)           # stage 0's bins of the guitar-to-backing 
 SETS = ("bks", "goat", "cap1", "n12", "panel")
 SUBSET_GOAT_PER_FOLD = 6              # stage 3's subset: GOAT and cap1 units per fold and class
 SUBSET_CAP1_PER_CREATOR = 3
-SIC_BASES = ("clean-kind", "mix@-3", "mix-drawn", "xl@-3")   # the inputs whose same-input constants are declared
+SIC_BASES = ("clean-kind", "mix@-3", "mix-drawn", "xl@-3", "mix@drawn")   # inputs whose same-input constants are declared
 SMALL = 0.05                          # a gain under this isn't known to be heard (F65): "small" in the outcome tables
 KNOB_GROUPS = {                       # reads_v3's three groups (`knob_group` adds the EQ and the pedals)
     "drive": ("inputGain", "pr12Volume", "sw50rVolume", "sw50rLevel", "ac20Volume", "ac20Power"),
@@ -131,6 +131,14 @@ def overwrite_refusal(existing):
     return None
 
 
+def control_may_run(name):
+    """Refuse (SystemExit) before a control does any work when its last record failed (`overwrite_refusal`)."""
+    p = control_path(name)
+    why = overwrite_refusal(json.loads(p.read_text()) if p.exists() else None)
+    if why:
+        raise SystemExit(f"{p}: {why}")
+
+
 def save_control(name, st, ok, rec):
     from learn import pipeline_fix as P
 
@@ -175,8 +183,9 @@ def row_info(name):
         exposure_value(tag)
         main = tag == MAIN_EXPOSURE
         build = f"mix@{tag}"
-        if what == "mix":
-            return {"stage": 1 if main else 3, "kind": "input", "style": "train", "exposure": tag, "built_by": build}
+        if what == "mix":                  # mix@drawn: stage 2 under Q1's outcome 4, else stage 3's subset
+            return {"stage": 1 if main else 2 if tag == "drawn" else 3, "kind": "input", "style": "train",
+                    "exposure": tag, "built_by": build}
         if what == "full":                 # built beside mix@E, rendered only when a stage names it
             return {"stage": 3, "kind": "input", "style": "train", "exposure": tag, "built_by": build}
         if what == "mixp":                 # noG's mid itself at the product's level: no separator, the level step
@@ -631,6 +640,7 @@ def cmd_check0(_args):
     from learn import pipeline_fix as P
 
     require(0)
+    control_may_run("check0")                       # a failed control is not re-run (any way on: an amendment)
     st = R.state()
     stored = json.loads(R.answers_path("all").read_text())
     if stored["c3r_sha256"] != st["sha256"]:
@@ -966,8 +976,9 @@ CENTRE_TAGS = ("cen", "aconst")
 CENTRE_ABOUT = ("The all-labels constants, never read on the ladder's units, built with the adopted all-labels R-all pair "
                 "(model_sha256, adopted-model.json's). centres.cen: the C3r training labels' centre under C3's training "
                 "mask (every training record, each as often as an epoch shows it); centres.aconst: that pair's mean "
-                "answer on those records' stored variant-0 inputs. Each [amp][class] = {select, settings}: the class's S "
-                "preset name and the full preset settings ({'module/key': value}), held as C3r's answers (hold: "
+                "answer on those records' stored variant-0 inputs. Each [amp][class] = {select, settings}: the amp's "
+                "selection index (an int, as C3r's answers store it) and the full preset settings ({'module/key': "
+                "value}), held as C3r's answers (hold: "
                 "C3-cabS); the output gain is S's (the product's loudness step sets it).")
 
 
@@ -1311,6 +1322,7 @@ def cmd_replay(_args):
     from learn import song_bank as B
 
     require(1)
+    control_may_run("replay")                       # a failed control is not re-run (any way on: an amendment)
     st = R.state()
     controls_ok(1, st, ["check0", "check1"])
     stored = json.loads(R.answers_path("all").read_text())
@@ -1362,6 +1374,7 @@ def cmd_check1(_args):
     from learn import trusted_data as T
 
     require(1)
+    control_may_run("check1")                       # a failed control is not re-run (any way on: an amendment)
     st = R.state()
     controls_ok(0, st)
     ns = AP.Namespace(out=None, smoke=False)
@@ -1421,15 +1434,16 @@ def cmd_check1(_args):
 # --- the separations (msst-venv) -------------------------------------------------------------------------------------------
 
 def sep_blockers(ps, own, rendering, mps_users):
-    """(Pure on its inputs.) Why a separation may not start now, or []: the plan's machine rules, no render job or render
-    server running (separations before renders) and no other MPS user (one MPS job at a time). ps: [(pid, command)];
-    rendering(ps, own) and mps_users(ps, own) -> [pid] (`local_objective.others_rendering`, `real_mix_test.mps_users`)."""
+    """(Pure on its inputs.) Why a separation may not start now, or []: the plan's machine rules, on any device no render
+    job or render server running (separations before renders), and on the MPS (`mps_users` given) no other MPS user (one
+    MPS job at a time). ps: [(pid, command)]; rendering(ps, own) and mps_users(ps, own) -> [pid]
+    (`local_objective.others_rendering`, `real_mix_test.mps_users`)."""
     out = []
     srv = [p for p, c in ps if p not in own and "au_render_server" in c]
     jobs = rendering(ps, own)
     if jobs or srv:
         out.append(f"renders are running (jobs {jobs}, render servers {srv})")
-    mps = mps_users(ps, own)
+    mps = mps_users(ps, own) if mps_users is not None else []
     if mps:
         out.append(f"another process may hold the MPS: {mps}")
     return out
@@ -1464,16 +1478,16 @@ def cmd_sep(args):
         require(row_info(r)["stage"])
     st = R.state()
     controls_ok(1, st)
-    if args.device == "mps":
-        import os
+    import os
 
-        from learn import ks_extend as X
-        from learn import local_objective as LO
-        from learn import real_mix_test as RMT
+    from learn import ks_extend as X
+    from learn import local_objective as LO
+    from learn import real_mix_test as RMT
 
-        why = sep_blockers(X._ps(), {os.getpid(), os.getppid()}, LO.others_rendering, RMT.mps_users)
-        if why:
-            raise SystemExit("not now: " + "; ".join(why))
+    why = sep_blockers(X._ps(), {os.getpid(), os.getppid()}, LO.others_rendering,
+                       RMT.mps_users if args.device == "mps" else None)
+    if why:
+        raise SystemExit("not now: " + "; ".join(why))
     units = units_once(R.read_units(st))
     if args.subset:
         keep = set(json.loads((ladder_dir() / "subset.json").read_text())["units"])
@@ -1762,8 +1776,10 @@ Q1_OUTCOMES = {   # the outcome -> what happens next (the plan's section 1); the
     "the ladder's build loses a reading": "stage 2 waits: a dated amendment locates which part of the build (the "
                                           "lender's stems, the stereo mid, mastering, the level) loses what the "
                                           "training input keeps, reviewed first",
-    "reads per unit on the training input only": "full stage 2 (no loss in the build is decided); the write-up says "
-                                                 "the ladder's inputs are undecided",
+    "reads per unit on the training input only": "full stage 2 (no loss in the build is decided), with mix@drawn and "
+                                                 "sic-mix@drawn added on every part (zero separations: the build at "
+                                                 "the lender's drawn exposure, telling the build's cost from the "
+                                                 "exposure's); the write-up says the ladder's inputs are undecided",
     "reads on one deciding set only": "full stage 2; the write-up gives the set, the undecided pool and this "
                                       "outcome's false-alarm bound",
     "a better constant, no per-unit reading": "the model's mean answer beats the label constant but doesn't read per "
@@ -1817,15 +1833,19 @@ def q1_outcome(rows, deciding):
 
 
 def separator_ceiling(row):
-    """(Pure.) `clean@-3 - xl@-3` on the deciding pool, the most a perfect separator could buy: "heard-size gain" (reads
-    better, mean beyond -SMALL); "a gain shown, not of heard size" (reads better, mean within -SMALL); "small" (not
-    better, and the interval rules out a heard-size gain: lo90 > -SMALL); else "undecided, not shown" (a heard-size
-    gain neither shown nor ruled out)."""
+    """(Pure.) `clean@-3 - xl@-3` on the deciding pool, the most a perfect separator could buy. A decided gain (reads
+    better): "heard-size gain" (mean beyond -SMALL); "a gain shown, not of heard size" (the interval rules a heard-size
+    gain out: lo90 > -SMALL); else "a gain shown, heard size undecided". No decided gain: "small" (lo90 > -SMALL);
+    else "undecided, not shown" (a heard-size gain neither shown nor ruled out). Every reading but the first parks
+    separator training; the two "gain shown" ones meet the review's gate (a decided gain) and are parked only by this
+    plan's heard-size floor, the user's call."""
     r = row or {}
     if r.get("lo90") is None or r.get("hi90") is None:
         return None
     if decided(r) == "better":
-        return "heard-size gain" if r["mean"] <= -SMALL else "a gain shown, not of heard size"
+        if r["mean"] <= -SMALL:
+            return "heard-size gain"
+        return "a gain shown, not of heard size" if r["lo90"] > -SMALL else "a gain shown, heard size undecided"
     return "small" if r["lo90"] > -SMALL else "undecided, not shown"
 
 
@@ -1878,6 +1898,8 @@ PRIMARY = {1: STAGE_PAIRS[1][:11],          # Q1's rule rows (q1_outcome reads e
            2: STAGE_PAIRS[2][:5]}           # Q2's and Q3's
 NEGATIVES = {1: PRIMARY[1],                 # the rows whose undecided reading drives an action: read adversarially
              2: STAGE_PAIRS[2][:9]}         # Q2, Q3, the separator's ceiling and stage 3's triggers
+OUTCOME4_PAIRS = [("mix@drawn", "sic-mix@drawn"), ("mix@drawn", "mix-drawn"), ("mix@-3", "mix@drawn"),
+                  ("mix@drawn", "cen")]     # stage 2's added rows under Q1's outcome 4 (descriptive)
 LENDER_ROWS = ("mix@", "full@", "mixp@", "clean@", "xl@", "xlnoG@", "xlmdxc@", "sic-mix@", "sic-xl@")
 
 
@@ -1922,7 +1944,10 @@ def cmd_report(args):
     st = R.state()
     controls_ok(args.stage, st)
     units = R.read_units(st)
-    pairs = STAGE_PAIRS[args.stage]
+    pairs = list(STAGE_PAIRS[args.stage])
+    s1 = json.loads((ladder_dir() / "report-stage1.json").read_text()) if args.stage == 2 else None
+    if s1 is not None and (s1.get("q1") or {}).get("outcome") == "reads per unit on the training input only":
+        pairs += OUTCOME4_PAIRS                    # outcome 4's rows: the build at the drawn exposure
     band = None
     if any(is_lender_row(n) for a, b in pairs for n in (a, b)):
         band = {u: v["band"] for u, v in lends()["units"].items()}      # refuses when `lends` hasn't run
@@ -1952,7 +1977,6 @@ def cmd_report(args):
     if args.stage == 1:
         out["q1"] = q1_outcome(out["rows"], deciding)
     if args.stage == 2:
-        s1 = json.loads((ladder_dir() / "report-stage1.json").read_text())
         out["q2q3"] = q2q3_outcome(out["rows"], s1["rows"], s1.get("q1"))
     out["knob_read"] = knob_read(st, units, stage_answers(args.stage))
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")

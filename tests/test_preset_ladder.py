@@ -14,7 +14,8 @@ def test_rows_carry_their_stage_kind_and_input_style():
     assert L.row_info("cen")["kind"] == L.row_info("aconst")["kind"] == "constant"
     assert L.row_info("clean-kind") == {"stage": 1, "kind": "input", "style": "train", "built_by": "clean-kind"}
     assert L.row_info("mix@-3")["stage"] == 1 and L.row_info("mix@-3")["style"] == "train"
-    assert L.row_info("mix@0")["stage"] == L.row_info("mix@drawn")["stage"] == 3
+    assert L.row_info("mix@0")["stage"] == 3
+    assert L.row_info("mix@drawn")["stage"] == 2                  # stage 2 under Q1's outcome 4, else stage 3's subset
     assert L.row_info("xl@-3") == {"stage": 2, "kind": "input", "style": "product", "exposure": "-3", "sep": True}
     assert L.row_info("xlnoG@-3")["stage"] == 2 and L.row_info("clean@-3")["stage"] == 2
     assert "sep" not in L.row_info("clean@-3")                     # a perfect separator needs no separation
@@ -33,7 +34,9 @@ def test_rows_carry_their_stage_kind_and_input_style():
 def test_same_input_constants_are_rendered_in_their_inputs_stage():
     assert L.row_info("sic-mix-drawn") == {"stage": 1, "kind": "constant", "style": None, "base": "mix-drawn"}
     assert L.row_info("sic-clean-kind")["stage"] == L.row_info("sic-mix@-3")["stage"] == 1
-    assert L.row_info("sic-xl@-3")["stage"] == 2
+    assert L.row_info("sic-xl@-3")["stage"] == L.row_info("sic-mix@drawn")["stage"] == 2
+    for a, b in L.OUTCOME4_PAIRS:
+        assert L.row_info(a)["stage"] <= 2 and (b in ("cen", "mix-drawn") or L.row_info(b)["stage"] <= 2)
 
 
 def test_the_same_input_pool_is_the_parts_own_fold_with_no_shared_cluster_di_or_creator():
@@ -330,6 +333,8 @@ def test_a_separation_waits_for_renders_and_any_mps_user():
     why = L.sep_blockers(ps, {1}, rend, mps)
     assert len(why) == 2 and "[3]" in why[0] and "[2]" in why[0] and "[4]" in why[1]
     assert L.sep_blockers(ps[:1], {1}, rend, mps) == []
+    cpu = L.sep_blockers(ps, {1}, rend, None)                     # on the CPU the renders still block, the MPS doesn't
+    assert len(cpu) == 1 and "renders" in cpu[0]
 
 
 # --- the outcome rules --------------------------------------------------------------------------------------------------
@@ -408,7 +413,9 @@ def test_stage_2s_readings_and_stage_3s_triggers_are_one_stated_rule():
 
 def test_the_perfect_separators_ceiling_calls_only_a_ruled_out_gain_small():
     assert L.separator_ceiling({"mean": -0.1, "lo90": -0.18, "hi90": -0.02}) == "heard-size gain"
-    assert L.separator_ceiling({"mean": -0.03, "lo90": -0.05, "hi90": -0.01}) == "a gain shown, not of heard size"
+    assert L.separator_ceiling({"mean": -0.03, "lo90": -0.045, "hi90": -0.01}) == "a gain shown, not of heard size"
+    assert L.separator_ceiling({"mean": -0.03, "lo90": -0.07, "hi90": -0.01}) == \
+        "a gain shown, heard size undecided"                        # the interval still holds heard-size gains
     assert L.separator_ceiling({"mean": 0.0, "lo90": -0.04, "hi90": 0.04}) == "small"
     assert L.separator_ceiling({"mean": -0.02, "lo90": -0.09, "hi90": 0.05}) == "undecided, not shown"
     assert L.separator_ceiling(None) is None
