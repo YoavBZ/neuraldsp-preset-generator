@@ -286,6 +286,22 @@ refuses, and the exam stops before any judge render for the user's decision.
   closeness gaps, J0 on the same clips beside, and the repeats. A share clear of one half reads "heard above (or below),
   one listener"; otherwise "not known by ear". By L0's simulation a model truly ahead on 75% of items clears about half
   the time.
+- **Note, 2026-11-17, after the score rows and their audit, before the page is built or shown (declared now, the
+  orchestrator's and the audit's proposal).** The score rows are known: M − R holds 0 by the score, and on 8 of 10 units
+  R's render is byte-identical to S on R's amp. Nothing about the page's arms or clips changes: R, M, C-pick and L,
+  the judged renders, guitar only, ties allowed, instant switch, blind seeded order, −23 LUFS. No arm is added or
+  dropped after seeing the scores (not M3's best amp, not M-lab). Two reads are added on the same answers:
+  - **L over R first, as the page's positive control.** L − S is the score's largest effect (7 of 7 bands), and R is S
+    on its amp on most units, so L over R is the ear's version of it (9 units: It Was My Fault ElecGtr1 has no L). It is
+    read like every pair, on first hearings: its share and 90% band bootstrap. If L is not heard above R, then M over R
+    reading "not known by ear" means "the page had no power here", not "no difference". It reads "no difference" in no
+    case.
+  - **Said before the sitting:** with M ≈ R by the score and the page's power (above), M over R is expected to read
+    "not known by ear". The sitting's value is the positive control and the per-unit notes, chiefly the units on ac20,
+    Colour Me Red ElecGtr02 (research's class missed) and Femme ElecGtr5 (heavier, the one centred unit).
+  - The code's pair list puts L over R first (it read R over L before; the same answers, the share mirrored), and the
+    read records whether the control was heard. The page is published privately to the user's own claude.ai, so it can
+    be sat on a phone; the user alone sits it.
 
 ## The independent audit (declared; the planner's section 12)
 
