@@ -1,13 +1,14 @@
 # The real-song exam: results
 
-**Status:** the score rows are run and audited. The listening page is built and published privately to the user (a
-deviation from the plan's "not published", see below), and the ear read will be added after the sitting. Plan:
+**Status:** the score rows and the ear read are run and audited. The listening page was published privately to the
+user (a deviation from the plan's "not published", see below). Its positive control was not heard, so the ear read
+concludes nothing ([the ear read](#the-ear-read-sat-2026-11-17-scored-once-2026-11-18-audited)). Plan:
 [real-song-exam-plan.md](real-song-exam-plan.md). Ledger `pipeline-fix`: `phase_exam`, `phase_exam_inputs`,
 `phase_exam_answers`, `phase_exam_ear`, `phase_exam_outcome`. Code `learn/real_song_exam.py`. Data:
 `~/ndsp-presets/learn/trusted-data/pipeline-fix/exam/` (`report-exam.json`, `tables.json`, `chain/`, `research/`,
 `page/`) and `vreal/answers/EX-*.json`, `vreal/judge/EX-*/`. Every number here is by the score (J0, ln distance on the
-held half; below 0 means the first arm is closer). Each interval is the 90% band-clustered t over 7 bands. Nothing here
-has been heard yet.
+held half; below 0 means the first arm is closer). Each interval is the 90% band-clustered t over 7 bands. The ear
+read is its own section.
 
 ## Headline, by the score (the independent audit's wording, signed)
 
@@ -190,7 +191,7 @@ My Fault ElecGtr1 is +0.0004 for two different presets (28 settings differ), not
   less between a unit's input variants (median 0.008 for M-crop, 0.013 for M-x and M-unity) than between units of one
   class (median 0.021, 72 pairs).
 
-## The listening page (built 2026-11-17; the ear read follows the sitting)
+## The listening page (built 2026-11-17)
 
 Built by `page` as `phase_exam_ear` declares (build `bea9b4292fd6`, zero renders). Publishing it is a deviation from the
 plan's "not published" (Status, this section's heading and `phase_exam_ear`): published privately to the user's own
@@ -207,7 +208,83 @@ and it plays at −23 LUFS:
 - **M over R is expected to read "not known by ear".** If L is not heard above R, that reading means the page had no
   power, not that there is no difference.
 
-The ear read will be added here after the sitting, with the score on the same clips beside it.
+The ear read follows, with the score on the same clips beside it.
+
+## The ear read (sat 2026-11-17, scored once 2026-11-18, audited)
+
+**The read, in the declared order:** the positive control was not heard, so the page had no power here. Nothing is
+concluded by ear, and nothing ships.
+1. **L over R, the control: not heard.** 0.607 [0.321, 0.857], 5 above, 2 tied, 2 below, 9 units. It reads "not known
+   by ear".
+2. **M over R, the primary: "not known by ear", the page had no power here.** 0.679 [0.464, 0.893], 6 / 1 / 3, 10
+   units. With the control not heard, this is not a reading of "no difference".
+3. **C-pick over R, Step 3's read: not known, so Step 3 reads S3-nopower.** 0.714 [0.464, 0.964], 6 / 2 / 2.
+
+One listener answered all 12 cards on a phone (10 first hearings, 2 repeats). Answers and the score's agreement are
+below.
+
+**Scoring:**
+- `score` ran once, from merged code (fea013f6), on the page's stored answers (db version 105), with zero renders.
+- `exam/page/score.json` sha256 afb49de0d61f741c8facb290db69d426c12d423073ab48f163d251a0e39f9e90.
+- The independent audit passed with no correction to the numbers or the read. It recomputed every row with its own code
+  from the raw answers and the key. The read follows the plan's listening-page section and its two dated notes.
+
+Each row covers first hearings only:
+- **Share:** the band-weighted share of units where the first arm is ranked above the second (a tie counts a half),
+  with the seeded 90% band bootstrap.
+- **J0 on the clips:** the band mean of ln(d_a / d_b) on the page's own clips. Below 0 means the first arm is closer
+  by the score.
+
+| Pair | Units | Share [90%] | Above / tie / below | Reading | Rank gap | Closeness gap | J0 on the clips | J0 agrees (untied) |
+|---|---|---|---|---|---|---|---|---|
+| **L over R** (control) | 9 | 0.607 [0.321, 0.857] | 5 / 2 / 2 | not known by ear | +0.786 | +0.571 | −0.305 | 5 of 7 |
+| **M over R** (primary) | 10 | 0.679 [0.464, 0.893] | 6 / 1 / 3 | not known by ear (no power) | +0.357 | +0.071 | −0.028 | 4 of 9 |
+| **C-pick over R** (Step 3) | 10 | 0.714 [0.464, 0.964] | 6 / 2 / 2 | not known by ear | +0.500 | +0.214 | −0.055 | 6 of 8 |
+| R over C-pick (as stored) | 10 | 0.286 [0.036, 0.536] | 2 / 2 / 6 | not known by ear | −0.500 | −0.214 | +0.055 | 6 of 8 |
+| M over C-pick (beside) | 10 | 0.429 [0.286, 0.500] | 3 / 3 / 4 | not known by ear | −0.143 | −0.143 | +0.027 | 5 of 7 |
+| M over L (beside; not declared on the score side) | 9 | 0.321 [0.036, 0.607] | 2 / 1 / 6 | not known by ear | −0.714 | −0.714 | +0.285 | 6 of 8 |
+| C-pick over L (beside) | 9 | 0.357 [0.071, 0.643] | 3 / 0 / 6 | not known by ear | −0.429 | −0.429 | +0.242 | 6 of 9 |
+
+- **C-pick over R is the declared mirror of the stored ("R", "C") pair.** The page's letter C is C-pick; `score`
+  prints only "R over C".
+  - The share is one minus the stored share, the interval is [1 − hi, 1 − lo], and the gaps change sign.
+  - A direct recomputation matches to float rounding.
+  - No untied card has equal J0 distances, so the J0 agreement count is unchanged.
+- **The exact bootstrap.** An exact enumeration gives the same intervals except L over R's lower bound: 0.357
+  against the seeded 0.321, a percentile-boundary tie. Both read "not known by ear".
+- **Repeats.** Colour Me Red ElecGtr03 matched its first hearing on 4 of 6 pairs, with the primary the same. Get Out
+  Of Bed ElecGtr2 matched on 3 of 6, with the primary flipped (M above R, then R above M). That is 7 of 12 pairs in all.
+- **Timing.** The answers hold a rank and a closeness per card: no confidence, note or per-card time was stored.
+
+**The key's verification:**
+- **Sealed before the sitting.** The key was sealed at 14:44 local (12:44Z) on 2026-11-17, about 9 h 15 min before
+  the last answer (21:59Z).
+- **The letters.** They were re-derived from the seeded draw on 12 of 12 cards.
+- **The audio.** All 47 live clips on the published page match their key render and no other: page letter C is C-pick
+  on every card.
+
+**What the page rules out, and what it can't separate (post hoc).**
+- **Song context.** The page played guitar only: each preset's judged render beside the part's true amp track,
+  levelled to −23 LUFS, in looped windows of about 4.5 s. So the control's miss is not whole-song context,
+  separation or loudness. Separation shaped only which preset each arm chose.
+- **Left open; the page can't tell these apart:**
+  - **Too little power (post hoc).** On this 9-unit, 7-band layout, an L truly preferred on 75% of untied units
+    clears the control only about 38% of the time (80%: about half; 90%: about 75%).
+  - **A noisy listen.** The repeats agree on 7 of 12 pairs, and the primary flipped on one.
+  - **J0's L advantage may be partly inaudible.** J0 puts L closer than R on all 9 cards. The ear agrees on 5 of 7
+    untied cards and ranked R first on two (Signs ElecGtr3, It Was My Fault ElecGtr3). The plan already notes that
+    J0 weighs treble and drive above the ear.
+  - **Short clips on a phone.**
+- **The three leans are one fact, not three (post hoc).** All three shares lean toward the arm against R (0.61 to
+  0.71), but they share R as the comparator. R sits last or tied last on 7 of 10 first cards and first on 2, which is
+  one possible fact: R, mostly the dry factory start, is heard worst. It is unproven.
+- **What it does not show.** It does not show "no difference", a failure of the score, or a reason to drop the ear
+  route.
+- **For the next ear check (the audit's note).** The ladder's held-out check uses the true amp track as the reference,
+  as this page did, so expect the same power wall unless it has:
+  - many more units and bands, or larger true gaps;
+  - repeats to measure the listener;
+  - a positive control sized to clear with high probability.
 
 ## For the goal
 
@@ -223,5 +300,7 @@ The ear read will be added here after the sitting, with the score on the same cl
     0.41 each;
   - (c) V-real cannot resolve effects under about 0.15, so later candidates need a bigger effect or more bands;
   - (d) these songs hold real headroom: L − S is −0.192, every band.
+- **By ear:** nothing. The page had no power here (the control was not heard), so it neither supports nor
+  contradicts any row above, and Step 3 reads S3-nopower.
 - **Stop rule:** one build, one read. The report is written and its hash is in `phase_exam_outcome`. V-real is recorded as
   read once more. A later candidate is compared with these stored renders, hash-checked, and its read declared as such.
