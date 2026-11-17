@@ -1,9 +1,10 @@
 # The preset ladder: where is the preset lost?
 
 **Status:** declared 2026-11-17 before anything ran, after three rounds of independent review (eight, then five, then
-one required fix; section 14). Stages 0 and 1 ran on 2026-11-17 and are audited (section 15,
-[results](preset-ladder-results.md)); stage 2 was declared on 2026-11-17 after review (`phase_l2`) and runs; the
-re-centred answer was declared on 2026-11-17 at 10:00 after two review rounds (section 15, `phase_lrc`). Step 2 of the
+one required fix; section 14). Stages 0, 1 and 2 ran on 2026-11-17 and are audited (section 15,
+[results](preset-ladder-results.md)); stage 2 (`phase_l2`, `phase_l2_outcome`) read Q2 worse by the rule (fragile; a
+heard-size gain over Cen ruled out) and opened separator work, a ceiling that reaches only about Cen; stage 3 is held
+until the re-centred read, under the stop rule in section 15 ("After stage 2"); the re-centred answer was declared on 2026-11-17 at 10:00 after two review rounds (section 15, `phase_lrc`). Step 2 of the
 plan the user approved after the independent review of 2026-11-16 ("follow the review's plan"). Ledger `preset-ladder`
 (`phase_l0`, `phase_l1`, `phase_l2`; stage 3 and the re-centred answer are declared before they run). Code
 `learn/preset_ladder.py`, tests `tests/test_preset_ladder.py`. Data `PF/ladder/` (`PF` is
