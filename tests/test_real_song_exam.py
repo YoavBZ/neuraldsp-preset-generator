@@ -404,6 +404,10 @@ def test_dotdot_follows_cd_and_root_ignores_division():
     assert X.dotdot("cd out && cat ../spec.json", allowed, run, shell=True) == []
     assert X.dotdot("cd .. && ls", allowed, run, shell=True) == [".."]
     assert X.dotdot("out/../spec.json", allowed, run) == []
+    for cmd in ("cd $HOME/a/b/c && cat ../../../../x", 'cd "$OLDPWD" && cat ../y', "cd && cat ../x", "cd - ; cat ../x",
+                "cd `pwd` && cat ../x", "cat $D/../x"):
+        assert X.dotdot(cmd, allowed, run, shell=True), cmd                    # an unknown folder: every .. after it
+    assert X.dotdot(f"cd $X && cd {plug}/scripts && cat ../packs/a.json", allowed, run, shell=True) == []
     assert not X.targets_root("Bash", {"command": "python3 -c 'print(1 / 2)'"})
     assert not X.targets_root("Bash", {"command": "echo 'rock / stoner'"})
     assert X.targets_root("Bash", {"command": "cd / && ls"}) and X.targets_root("Bash", {"command": "find / -name x"})
@@ -419,16 +423,24 @@ def test_venv_base_and_the_settings_folder(tmp_path):
 
 
 def test_runner_check_verdict():
-    pairs = [("Bash", "echo $TMPDIR; ls ~/shortlist-sandboxes",
+    ents = ["drag_me_down", "bloomlight"]
+    pairs = [("WebSearch", "Magilla Turbosauro guitar", "a bloomlight review"),       # an entry name elsewhere: ignored
+             ("Bash", "echo $TMPDIR; ls ~/shortlist-sandboxes",
               f"{X.RUNS}/abcde/tmp\nls: /Users/x/shortlist-sandboxes: Operation not permitted"),
              ("Read", "/x/skills/generate/SKILL.md", "# Generate a preset")]
-    v = X.check_verdict(pairs, ["drag_me_down", "bloomlight"], X.RUNS / "abcde" / "tmp",
+    v = X.check_verdict(pairs, ents, X.RUNS / "abcde" / "tmp",
                         ["shortlist-sandboxes", "a call names a path outside the run: /Users/x/shortlist-sandboxes"])
-    assert v["probe_ran"] and v["probe_refused"] and v["tmpdir_own"] and v["other_audit_reasons"] == []
-    leaked = pairs[:1] + [("Bash", "ls ~/shortlist-sandboxes", "bloomlight\ndrag_me_down")]
-    v = X.check_verdict(leaked, ["drag_me_down", "bloomlight"], "/elsewhere", ["../ x"])
-    assert not v["probe_refused"] and v["probe_entries_seen"] == ["bloomlight", "drag_me_down"]
-    assert not v["tmpdir_own"] and v["other_audit_reasons"] == ["../ x"]
+    assert v["fence"] == "refused" and v["probe_refused"] and v["tmpdir_own"] and v["other_audit_reasons"] == []
+    v = X.check_verdict([("Bash", "ls ~/shortlist-sandboxes", "bloomlight\ndrag_me_down")], ents, "/elsewhere", ["x"])
+    assert v["fence"] == "listed" and not v["probe_refused"] and v["probe_entries_seen"] == ["bloomlight", "drag_me_down"]
+    assert not v["tmpdir_own"] and v["other_audit_reasons"] == ["x"]
+    v = X.check_verdict([("Bash", "ls '~/shortlist-sandboxes'", "ls: ~/shortlist-sandboxes: No such file or directory")],
+                        ents, "/t", [])
+    assert v["fence"] == "not proven" and not v["probe_refused"]               # not the sandbox's denial
+    v = X.check_verdict([("Bash", "ls ~/shortlist-sandboxes", "zsh: permission denied: /Users/x/shortlist-sandboxes")],
+                        ents, "/t", [])
+    assert v["fence"] == "refused"
+    assert X.check_verdict([], ents, "/t", [])["fence"] == "not proven"
     ev = [{"type": "assistant", "message": {"content": [{"type": "tool_use", "id": "t", "name": "Bash",
                                                           "input": {"command": "ls"}}]}},
           {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": "t", "content": "a"}]}}]

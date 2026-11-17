@@ -412,23 +412,28 @@ def own_tmp(folder):
 def dotdot(text, allowed, cwd=None, shell=False):
     """`..` components that may leave the run: each token with a `..` component, resolved (an absolute or ~ path as
     it is, a relative one against the working folder: the run's folder `cwd`, or in a shell command the folder its last
-    `cd` before the token named), outside `allowed`. -> [token]."""
-    out = []
-    here = str(cwd or "/nonexistent-cwd")
-    toks = TOKEN_RE.findall(text)
-
+    `cd` before the token named), outside `allowed`. A token holding `$` or a backtick, and every `..` after a `cd`
+    whose target is not a plain path (none, `-`, an option, `$`, a backtick), count as leaving. -> [token]."""
     def resolve(tok, base):
         if tok.startswith(("/", "~")):
             return os.path.normpath(HOME + tok[1:] if tok.startswith("~") else tok)
-        return os.path.normpath(os.path.join(base, tok))
-    for i, tok in enumerate(toks):
-        if re.search(r"(?:^|/)\.\.(?:/|$)", tok):
-            p = resolve(tok, here)
-            if not under(p, allowed):
-                out.append(tok)
-        if shell and tok == "cd":
-            nxt = toks[i + 1] if i + 1 < len(toks) else "~"
-            here = resolve(nxt, here) if nxt not in ("&&", ";") else HOME
+        return None if base is None else os.path.normpath(os.path.join(base, tok))
+
+    def unknown(tok):
+        return "$" in tok or "`" in tok
+
+    out, here = [], str(cwd or "/nonexistent-cwd")
+    segments = re.split(r"&&|\|\||[;|\n]", text) if shell else [text]
+    for seg in segments:
+        toks = TOKEN_RE.findall(seg)
+        for tok in toks:
+            if re.search(r"(?:^|/)\.\.(?:/|$)", tok):
+                p = None if unknown(tok) else resolve(tok, here)
+                if p is None or not under(p, allowed):
+                    out.append(tok)
+        if shell and toks and toks[0] == "cd":
+            tgt = toks[1] if len(toks) > 1 else None
+            here = None if (tgt is None or tgt == "-" or tgt.startswith("-") or unknown(tgt)) else resolve(tgt, here)
     return out
 
 
@@ -1495,18 +1500,26 @@ def tool_pairs(lines):
     return out
 
 
+DENIAL = ("operation not permitted", "permission denied")   # the sandbox's own refusal, in the probe's result
+
+
 def check_verdict(pairs, probe_entries, tmpdir, why):
-    """The runner check's reading (pure): the probe's listing refused (none of the denied entry's names in any result),
-    the TMPDIR the run saw, the audit's reasons other than the probe's own. -> dict."""
-    seen = sorted({e for _, _, r in pairs for e in probe_entries if e and e in r})
+    """The runner check's reading (pure), from the probe's own result only: "refused" when it holds the sandbox's
+    denial (DENIAL) and none of the denied folder's entry names; "listed" when an entry name shows (the fence failed);
+    else "not proven" (a stop for the orchestrator). Beside: the TMPDIR the run saw, the audit's reasons other than the
+    probe's own. -> dict."""
     probe = next(((n, i, r) for n, i, r in pairs if n == "Bash" and "shortlist-sandboxes" in i), None)
+    res = probe[2] if probe else ""
+    seen = sorted({e for e in probe_entries if e and e in res})
+    denied = any(d in res.lower() for d in DENIAL)
+    fence = "listed" if seen else "refused" if (probe and denied) else "not proven"
     shown = None
     if probe:
-        lines = [ln.strip() for ln in probe[2].splitlines() if ln.strip().startswith("/")]
+        lines = [ln.strip() for ln in res.splitlines() if ln.strip().startswith("/")]
         shown = lines[0] if lines else None
     other = [w for w in why if "shortlist-sandboxes" not in w]
-    return {"probe_ran": probe is not None, "probe_refused": probe is not None and not seen, "probe_entries_seen": seen,
-            "probe_result": probe[2][:400] if probe else None, "tmpdir_seen": shown,
+    return {"probe_ran": probe is not None, "fence": fence, "probe_refused": fence == "refused",
+            "probe_entries_seen": seen, "probe_result": res[:400] if probe else None, "tmpdir_seen": shown,
             "tmpdir_own": shown is not None and os.path.normpath(shown) == os.path.normpath(str(tmpdir)),
             "other_audit_reasons": other}
 
@@ -1602,7 +1615,8 @@ def cmd_runner_check(_args):
     P.save(check_record(), out)
     print(json.dumps({k: out[k] for k in out if k != "audit"}, indent=1, default=str))
     if not out["passes"]:
-        raise SystemExit("the runner check failed (the runner or the fence): stop and hand back")
+        raise SystemExit(f"the runner check did not pass (the fence {v['fence']}; result {res is not None}; preset "
+                         f"{bool(wet)}; shared folders unchanged {unchanged}): stop and hand back")
     print(f"EXAM RUNNER-CHECK DONE in {seconds / 60:.1f} min; TMPDIR {'own' if v['tmpdir_own'] else v['tmpdir_seen']}")
 
 

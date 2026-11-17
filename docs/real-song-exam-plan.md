@@ -148,7 +148,9 @@ at this branch's commit, checked to name no V-real title or band).
     (`/tmp/claude-501`, `/tmp/claude`) are a stop but for the run's own folder in them;
   - a shell command run on a bare `/` outside quotes (`cd /`, `find /`), or a file tool given `/`;
   - a `..` in a shell command or a file tool's path that resolves outside those roots (a relative path against the
-    run's folder, or in a shell command against the folder its last `cd` named);
+    run's folder, or in a shell command against the folder its last `cd` named); a `..` token holding `$` or a
+    backtick, and every `..` after a `cd` whose target is not a plain path (none, `-`, an option, `$`, a backtick),
+    count as leaving;
   - the user's account name (any case) in a web search or fetch; a web result naming the project;
   - a file tool's result naming a home path outside the allowed roots (but a path the plugin's own text names, such as
     its default data root), a file in a shared Claude temp other than the run's own, or another run's folder.
@@ -173,8 +175,10 @@ at this branch's commit, checked to name no V-real title or band).
 settings, prompt and audit on a development song, Magilla by Turbosauro (its released preview; a multitrack the routing
 study used; not V-real, not NS, not the reserve, not one of the user's R1 songs), with two lines added to its prompt
 only: echo `$TMPDIR`, and list `~/shortlist-sandboxes` (a denied home entry; never in a V-real run's prompt). It passes
-when the run ends with a preset, the listing is refused (none of that folder's names in any result) and the plugin and
-the venv are unchanged; the `TMPDIR` the run saw (its own `tmp` folder, or the sandbox's) and the audit's reasons other
+when the run ends with a preset, the listing is refused and the plugin and the venv are unchanged. "Refused" is read
+from the probe's own result alone: it must hold the sandbox's denial ("Operation not permitted" or "Permission
+denied") and none of the folder's entry names; a name there is "listed" (the fence failed), anything else (an error
+such as "No such file" from a quoted `~`) is "not proven", and both stop for the orchestrator; the `TMPDIR` the run saw (its own `tmp` folder, or the sandbox's) and the audit's reasons other
 than the probe's are recorded, with its wall time. A failure stops before any research run, for the user. Its transcript
 is not a research result and is never used for R; `research-route` refuses until it passed.
 
