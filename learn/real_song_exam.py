@@ -1409,12 +1409,12 @@ def cmd_research_prepare(args):
     m = research_map()
     if "plugin" not in m:
         m["plugin"] = build_root()
-    have = {r["unit"] for r in m["runs"].values()}
+    have = {r["unit"] for r in m["runs"].values() if not r.get("aborted")}   # an aborted run is not a run
     if args.again:
         col = research_dir() / "research.json"
         done = json.loads(col.read_text())["runs"] if col.exists() else {}
         for k in args.again:
-            mine = [t for t, r in m["runs"].items() if r["unit"] == k]
+            mine = [t for t, r in m["runs"].items() if r["unit"] == k and not r.get("aborted")]
             if any(t not in done for t in mine):
                 raise SystemExit(f"--again {k}: collect its runs first (research-collect)")
             why = again_refusal([done[t]["excluded"] for t in mine])
@@ -1620,12 +1620,38 @@ def cmd_runner_check(_args):
     print(f"EXAM RUNNER-CHECK DONE in {seconds / 60:.1f} min; TMPDIR {'own' if v['tmpdir_own'] else v['tmpdir_seen']}")
 
 
+API_ERRORS = re.compile(r"authenticat|usage limit|rate limit|rate_limit|overloaded|quota|credit balance|"
+                        r"limit reached|try again later", re.I)
+
+
+def api_error(lines):
+    """Why a run stopped on the service rather than on its own work, or None: a result event marked as an error with an
+    API cause (`terminal_reason` api_error, or an auth, usage-limit, rate-limit or overload message). (Pure.)"""
+    for line in lines:
+        try:
+            ev = json.loads(line)
+        except ValueError:
+            continue
+        if ev.get("type") != "result" or not ev.get("is_error"):
+            continue
+        text = str(ev.get("result") or "")
+        if ev.get("terminal_reason") == "api_error" or API_ERRORS.search(text):
+            return text[:200] or str(ev.get("terminal_reason"))
+    return None
+
+
+class QueueStop(Exception):
+    pass
+
+
 def cmd_research_route(args):
     """Each prepared folder, one at a time (the sandbox's temp is shared), through a fresh sandboxed `claude -p` with the
     scrubbed plugin (`run_settings`: every home entry but this root and the venv's interpreter, every other run and the
     shared Claude temp but the run's own denied; the plugin and the venv not editable); a run with no result.json is
     asked once more with the re-check's non-answer. The plugin and the venv are hashed before and after each run (a
-    change stops the research). Wall time recorded."""
+    change stops the research). Wall time recorded. A run stopped by the service (an auth error, a usage or rate limit,
+    an overload: `api_error`) stops the queue: the run is marked aborted in the map (its transcript kept beside), not
+    counted as a run, and `research-prepare` then gives its unit a fresh folder; finished runs are never redone."""
     GR = _gr()
     entry()
     if args.workers != 1:
@@ -1633,8 +1659,9 @@ def cmd_research_route(args):
     if not check_record().exists() or json.loads(check_record().read_text()).get("passes") is not True:
         raise SystemExit("the runner check has not passed (runner-check): no V-real research run before it")
     m = research_map()
-    todo = sorted(t for t in m["runs"] if not (RUNS / t / "transcript.jsonl").exists())
+    todo = sorted(t for t, r in m["runs"].items() if not r.get("aborted") and not (RUNS / t / "transcript.jsonl").exists())
     SETTINGS_DIR.mkdir(parents=True, exist_ok=True)
+    done = []
 
     def one(tag):
         folder, st = RUNS / tag, SETTINGS_DIR / f"{tag}.json"
@@ -1646,8 +1673,19 @@ def cmd_research_route(args):
                                 {r: [p.name for p in pathlib.Path(r).iterdir()] for r in CLAUDE_TMP
                                  if r.startswith("/private/") and pathlib.Path(r).is_dir()}, folder))
         t0 = time.time()
+
+        def stop_if_service(stage):
+            why = api_error((folder / "transcript.jsonl").read_text().splitlines())
+            if why:
+                stamp = time.strftime("%Y%m%d-%H%M%S")
+                (folder / "transcript.jsonl").rename(folder / f"transcript.aborted-{stamp}.jsonl")
+                m["runs"][tag].update(aborted=f"{stage}: {why}", aborted_at=time.strftime("%Y-%m-%d %H:%M:%S"),
+                                      seconds=round(time.time() - t0, 1))
+                P.save(research_dir() / "map.json", m)
+                raise QueueStop(f"{tag} ({m['runs'][tag]['unit']}) {stage}: {why}")
         with open(folder / "transcript.jsonl", "w") as log:
             claude_run(folder, (folder / "prompt.txt").read_text(), log, st)
+        stop_if_service("first call")
         asked = False
         if not (folder / "result.json").exists():
             session, _, _ = GR._session_id(folder / "transcript.jsonl")
@@ -1655,6 +1693,7 @@ def cmd_research_route(args):
                 asked = True
                 with open(folder / "transcript.jsonl", "a") as log:
                     claude_run(folder, GR.NON_ANSWER, log, st, resume=session)
+                stop_if_service("the non-answer")
         (folder / "asked.txt").write_text("yes\n" if asked else "no\n")
         (folder / "wall.json").write_text(json.dumps({"seconds": round(time.time() - t0, 1),
                                                       "end": time.strftime("%Y-%m-%d %H:%M:%S")}))
@@ -1662,7 +1701,14 @@ def cmd_research_route(args):
         return tag, ("result" if (folder / "result.json").exists() else "NO RESULT") + (", asked" if asked else "")
 
     for tag in todo:
-        print(*one(tag), flush=True)
+        try:
+            print(*one(tag), flush=True)
+        except QueueStop as e:
+            left = [t for t in todo if t not in done and t != tag]
+            print(f"EXAM RESEARCH-ROUTE STOPPED: {e}; finished this time {done}; not started {left}; to resume: "
+                  "research-prepare (a fresh folder for the aborted unit), then research-route", flush=True)
+            raise SystemExit(2) from None
+        done.append(tag)
     print(f"EXAM RESEARCH-ROUTE DONE: {len(todo)} runs")
 
 
@@ -1692,8 +1738,11 @@ def cmd_research_collect(_args):
     ptext = plugin_paths(PLUGIN)
     root, plan, drift, dirs, parts, ms = P.vreal_ctx()
     runs, by_unit = {}, {}
+    aborted = {t: r["aborted"] for t, r in m["runs"].items() if r.get("aborted")}
     for tag, r in sorted(m["runs"].items(), key=lambda kv: kv[1]["made"]):
         folder = RUNS / tag
+        if r.get("aborted"):
+            continue                                    # stopped by the service: not a run (`cmd_research_route`)
         if not (folder / "transcript.jsonl").exists():
             raise SystemExit(f"{tag}: not run")
         au = audit_transcript((folder / "transcript.jsonl").read_text().splitlines(),
@@ -1723,7 +1772,7 @@ def cmd_research_collect(_args):
         row["excluded"] = bool(why)
         runs[tag] = row
         by_unit.setdefault(r["unit"], []).append((r["made"], tag, row["excluded"]))
-    out = {"plan": PLAN, "plugin": m["plugin"], "runs": runs, "units": {}}
+    out = {"plan": PLAN, "plugin": m["plugin"], "runs": runs, "aborted": aborted, "units": {}}
     for u in units():
         tag = pick_run(by_unit.get(u["key"], []))
         if tag is None:

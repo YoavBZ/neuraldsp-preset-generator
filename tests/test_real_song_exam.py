@@ -445,3 +445,16 @@ def test_runner_check_verdict():
                                                           "input": {"command": "ls"}}]}},
           {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": "t", "content": "a"}]}}]
     assert X.tool_pairs([json.dumps(e) for e in ev] + ["junk"]) == [("Bash", "ls", "a")]
+
+
+def test_api_error_stops_only_on_the_service():
+    def res(**kw):
+        return json.dumps({"type": "result", "subtype": "success", **kw})
+    auth = res(is_error=True, terminal_reason="api_error",
+               result="Failed to authenticate: OAuth session expired and could not be refreshed")
+    assert "authenticate" in X.api_error(["junk", auth])
+    assert X.api_error([res(is_error=True, result="Claude AI usage limit reached|1763380800")])
+    assert X.api_error([res(is_error=False, result="done; the rate limit of the amp's slew")]) is None
+    assert X.api_error([res(is_error=True, terminal_reason="max_turns", result="max turns")]) is None
+    assert X.api_error([json.dumps({"type": "assistant", "message": {"content": [{"type": "text",
+                                                                                   "text": "usage limit"}]}})]) is None
