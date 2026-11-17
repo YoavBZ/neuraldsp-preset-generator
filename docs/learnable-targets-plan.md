@@ -183,11 +183,16 @@ The preview ran on all 665 records, with one unweighted centre per amp and class
 2. A trained head the answer does not write (the left cab, the room mics, the right cab's phase) keeps the label's row:
    its value and its mask, whatever the candidate.
 3. Stage 0 counts every head's training rows (showings) under the labels and under the targets, run by run. It
-   **refuses** if any count differs.
+   **refuses** if any count differs. As built, `target_row` copies the label's masks, so this refusal can't fire: it
+   guards the code against a fault, not the data.
 
 - **How part (1) is read.** The mask is the label's, so a trained written head stays trained when the candidate has it
   switched off; it then takes the candidate's stored, silent value. A head the candidate sounds but the label doesn't
-  train stays untrained. Stage 0 counts both cases and reports them.
+  train stays untrained. Stage 0 counts both cases and reports them, and keeps the silent ones out of the readout.
+- **To be ruled on before any fine-tune.** Those silent heads would train on values never heard, unlike C3's own
+  masks, which train only sounding heads. Stage 0 needs no ruling (it only counts them). Before the fine-tune is built,
+  the rule is put to review with stage 0's counts: keep them, or mask them (a head would then lose those rows, so
+  `HEAD_RULE` would change with it).
 - **Why.** For written heads the target stays one rendered, judged setting. The EQ and the mic were tuned together, so
   the label's mic is not grafted onto a trial's EQ.
 - **The price.** On some records the target goes back from stage B's mic to the start's. The preview counted 192;
@@ -236,8 +241,11 @@ and by `HEAD_RULE` every head trains on as many records as today.
      under its own fold's Cen. That Cen holds none of the record's fold.
    - **Which values:** every written knob head (the ladder's knob groups) that sounds in the answer, the label and the
      target, and that the label trains. Both halves of each answer are used.
-   - **How it is computed:** each of answer, label and target is centred within its (amp, class, head) cell, using
-     cells of at least 5 values. r(answer, label) and r(answer, target) are each the sum of products over the root of
+   - **How it is computed:** each of answer, label and target is centred within its (fold, amp, class, head) cell,
+     using cells of at least 5 values. The fold is in the cell because a record's target is pulled towards its fold's
+     Cen and the fold model's answers share that fold's training labels: with cells pooled over folds, a fold-level
+     offset would lift r(answer, target) but not r(answer, label), biasing the readout towards S0-rise (changed after
+     PR #511's review, before any run; section 9). r(answer, label) and r(answer, target) are each the sum of products over the root of
      the sums of squares, as in the preview.
    - **The interval:** the difference's 90% interval comes from a cluster bootstrap. Clusters (set, cluster) are
      resampled with replacement, 2,000 times, seed 20261171, percentile.
@@ -330,7 +338,7 @@ refuses any command if the table is broken.
 | 2 | better | undecided | S5-user | It beats Cen but is not shown better than R-all, so the rule is not met. To the user, with both intervals. |
 | 3 | undecided or worse | better | S5-build | If the noise rule holds: a gain over R-all, not shown over Cen. Not the default; Cen stays Step 3's start. R-near replaces R-all behind the flag (a reviewed change) and is Step 6's base. |
 | 4 | undecided or worse | undecided | S5-level | No change of model. Not failed. Then by R: **better**, Step 6 trains on R-near's targets; **not better**, Step 6 trains on the raw labels, and the stronger doses (4.11) go to the user with this read. |
-| 5 | undecided or worse | worse | S5-worse | The targets hurt on the product's input. Not adopted; the raw labels stay. "Worse" is said only if it holds against the repeat too. |
+| 5 | undecided or worse | worse | S5-worse | The targets hurt on the product's input. Not adopted; the raw labels stay. "Worse" is said only if it holds against the repeat too. The action is the default either way; the noise rule changes only the wording and the user's note. |
 | 6 | better | worse | S5-impossible | Cannot occur while R-near's rows read R-all's directions (G = O + 0.0084 on the pool means). The report refuses and stops. |
 
 **The noise rule** (rows 1, 3 and 5). O compares two trainings, and R-all's recipe has never been repeated. So O's
@@ -430,12 +438,18 @@ second round approved it.
 
 **Choices made while building stage 0** (for this declaration's review to check):
 - **Candidate order:** label, stage B, stage A, then step 1. Duplicates fold into the first copy, so an exact tie keeps
-  the label.
+  the label. The label (stage B's best on every record) then carries its fresh render's judge, where the preview used
+  stage B's stored judge. Stage 0 reports, per run, how many picks would differ with stage B's judge instead
+  (descriptive).
 - **Stage A's and B's other trials stay out.** The replay is not built on the lean path.
 - **`HEAD_RULE` (1) is read as "the label's mask on every head".** A trained written head that is silent in the
   candidate keeps its row, with the candidate's stored value. Both cases are counted.
-- **The readout's cells are the preview's (amp, class, head).** The ladder's knob read uses (set, fold, amp, class,
-  head). Each record's target is under its own fold's Cen.
+- **The readout's cells are (fold, amp, class, head).** The draft of this PR used the preview's (amp, class, head).
+  PR #511's review found that each target and its fold model's answers share the fold's training labels, so a
+  fold-level offset would raise r(answer, target) alone, by roughly +0.001 to +0.004, enough to flip the stop. The fold
+  was added for that mechanism, after the review and before any run. The ladder's knob read uses (set, fold, amp,
+  class, head) for the same reason.
+- **`HEAD_RULE` (3) can't fire as built** (the masks are the label's); it is kept as a guard on the code.
 - **The overfit stop reads the all-labels set.** The other eight sets' costs are reported beside.
 - **Six stored R1 versions,** not seven.
 - **A pre-merge check** ran only the source and Cen controls on the real data: 665 records, all of kind `c2`, no

@@ -34,7 +34,7 @@ OUT = "step5"
 MARGIN = 0.05                         # the heard-size floor (F65, `preset_ladder.SMALL`), borrowed per record
 DOSE_MARGINS = (0.01, 0.02, 0.03, 0.05, 0.10)   # the dose table's margins (descriptive; only MARGIN builds targets)
 BOOT_N, BOOT_SEED = 2000, 20261171    # the readout's cluster bootstrap
-MIN_CELL = 5                          # a readout cell (amp, class, head) needs this many values (the planner's preview)
+MIN_CELL = 5                          # a readout cell (fold, amp, class, head) needs this many values
 RAIL = 1e-6                           # an EQ band within this of 0 or 1 in unit space sits on its limit
 FOLDS = 4
 RUNS = tuple([f"fold{k}" for k in range(FOLDS)] + [f"inner{k}" for k in range(FOLDS)] + ["all"])
@@ -48,7 +48,8 @@ HEAD_RULE = (                         # (part, rule): how a target's training ro
     ("unwritten", "A trained head the answer does not write (the left cab, the room mics, the right cab's phase) keeps "
                   "the label's row, its value and its mask, whatever the candidate."),
     ("count", "Stage 0 counts every head's training rows (showings) under the labels and under the targets, run by "
-              "run, and refuses on any difference."))
+              "run, and refuses on any difference. As built, `target_row` copies the label's masks, so the refusal "
+              "can't fire: it guards the code, not the data."))
 
 S0_TABLE = (                          # (code, when, next): the first that holds (plan 4.6)
     ("S0-fail", "a control fails, or any head's training rows differ between the labels and the targets",
@@ -81,7 +82,8 @@ S5_TABLE = (                          # (G readings, O readings, code, next): ea
      "no change of model; not failed: the write-up gives what each interval rules out; then by R (S5_LEVEL_SUB)"),
     (("undecided", "worse"), ("worse",), "S5-worse",
      "the targets hurt on the product's input: not adopted, the raw labels stay and Step 6 trains on them; 'worse' is "
-     "said only if O2 reads worse too (the noise rule)"))
+     "said only if O2 reads worse too (the noise rule). The action is the same either way (the default stays); the "
+     "noise rule changes only the wording"))
 S5_LEVEL_SUB = {                      # row S5-level's sub-rule on R = rc-n-mix@-3 - rc-mix@-3
     "better": "the reader gained on the ideal input and the stem hides it: Step 6 trains on R-near's targets",
     "not better": "the stored trials' dose did not show: Step 6 trains on the raw labels, and the stronger doses go "
@@ -287,10 +289,12 @@ def cos_r(pairs):
 
 
 def readout(values, n_boot=BOOT_N, seed=BOOT_SEED):
-    """The learnability readout. values: [(cell, cluster, answer, label, target)], cells (amp, class, head). Each of
-    answer, label and target centred within its cell (cells of MIN_CELL values or more); r(answer, label), r(answer,
-    target), their difference, and the difference's 90% cluster-bootstrap interval (clusters resampled with
-    replacement; percentile). -> {values, clusters, r_label, r_target, diff, lo90, hi90, sd_*}."""
+    """The learnability readout. values: [(cell, cluster, answer, label, target)], cells (fold, amp, class, head).
+    The fold is in the cell because a record's target and its answer share its fold's training labels, so a fold-level
+    offset would lift r(answer, target) alone (PR #511's review). Each of answer, label and target is centred within its
+    cell (cells of MIN_CELL values or more); r(answer, label), r(answer, target), their difference, and the
+    difference's 90% cluster-bootstrap interval (clusters resampled with replacement; percentile).
+    -> {values, clusters, r_label, r_target, diff, lo90, hi90, sd_*}."""
     import random
 
     cen = centred([(v[0], v[2], v[3], v[4]) for v in values])
@@ -444,8 +448,12 @@ def build_records(cx):
         ln_h = [math.log(j[he]) if ok_ else math.inf for (*_, j), ok_ in zip(cands, ok)]
         if not ok[0]:
             problems.append(f"{u}|{a}: the label's fresh judge is not finite on both halves")
+        jb = ((o.get("step2") or {}).get("stage_b") or {}).get("judge")       # the preview's reference: B's stored judge
+        same_b = (o.get("step2") or {}).get("stage_b_settings") == o["label"]
+        ln_s_b = ([math.log(jb[se])] + ln_s[1:]) if same_b and usable(jb, se, he) else None
         recs[(u, a)] = {"set": s["set"], "cls": cls, "lab": lrow, "cands": cands, "enc": encs, "ok": ok,
-                        "ln_s": ln_s, "ln_h": ln_h, "cluster": o.get("cluster"), "fold": cx.ent[u]["fold"]}
+                        "ln_s": ln_s, "ln_h": ln_h, "ln_s_b": ln_s_b, "cluster": o.get("cluster"),
+                        "fold": cx.ent[u]["fold"]}
     return recs, kinds, problems
 
 
@@ -502,17 +510,18 @@ def cen_control(cx, cens):
 
 def cmd_stage0(_args):
     """Stage 0 (plan section 4.6): zero renders. Writes step5/targets-{run}.json (nine) and step5/stage0.json."""
+    from learn import pipeline_fix as P
+
+    table_guard()
+    P.require(PHASE_S5)
+    P.require(PHASE_S0)
     import numpy as np
 
     from learn import full_controls_c3r as R
     from learn import full_space as F
     from learn import local_objective as LO
-    from learn import pipeline_fix as P
     from learn import preset_ladder as L
 
-    table_guard()
-    P.require(PHASE_S5)
-    P.require(PHASE_S0)
     t0 = time.time()
     cx = Ctx()
     st, D, eq_idx, written = cx.st, cx.D, cx.eq_idx, cx.written
@@ -618,6 +627,21 @@ def cmd_stage0(_args):
             pk = picks[(name, key)]
             if pk is not None and pk[0] != 0:
                 distinct.add((key, pk[0]))
+    # descriptive: how many picks change if the label carries stage B's stored judge (the preview's) instead of its
+    # fresh render's (stage B's best is the label on every record, so the two are one setting)
+    ref_b = {}
+    for name in RUNS:
+        n_b = diff_b = 0
+        for key in sorted({(rr["unit"], rr["amp"]) for rr in runs[name]["train"]}):
+            r = recs[key]
+            if r["cands"] is None or r["ln_s_b"] is None:
+                continue
+            d = distances(r["enc"], cens[(name, key[1], r["cls"])]["enc"], written(key[1], r["cls"]))
+            n_b += 1
+            diff_b += pick(r["ln_s_b"], r["ok"], list(d)) != picks[(name, key)][0]
+        ref_b[name] = {"records": n_b, "pick_differs": diff_b}
+    controls["label_reference_judge"] = {"used": "the label's fresh render", "against": "stage B's stored judge",
+                                         "per_run": ref_b}
     controls["confirm"] = {"distinct_non_label_training_targets": len(distinct),
                            "records_with_one": len({k for k, _ in distinct}),
                            "renders_if_primed": 2 * len(distinct)}
@@ -707,8 +731,8 @@ def cmd_stage0(_args):
                         continue
                     if pk is not None and pk[0] != 0 and r["enc"][1][pk[0]][j] <= 0:
                         continue                         # the head must sound in the target too
-                    rvals.append(((a, r["cls"], n_), (r["set"], r["cluster"]), g, float(c_[j]), float(r["lab"][0][j]),
-                                  float(trow[0][j])))
+                    rvals.append(((r["fold"], a, r["cls"], n_), (r["set"], r["cluster"]), g, float(c_[j]),
+                                  float(r["lab"][0][j]), float(trow[0][j])))
     learn = {"records": n_rec}
     for g in L.GROUP_NAMES + ("all",):
         xs = [(v[0], v[1], v[3], v[4], v[5]) for v in rvals if g == "all" or v[2] == g]
@@ -792,19 +816,21 @@ def cmd_versions(_args):
     the written knob heads' RMS distance between a song's versions against between songs of a class. A control: the
     same code on the product's stored window (`r1/<song>/model/window.npz`) reproduces `model/answers.json`.
     -> step5/r1-versions.json."""
+    from learn import pipeline_fix as P
+
+    table_guard()
+    P.require(PHASE_VERSIONS)
     import numpy as np
     import soundfile as sf
 
     from learn import direct_existing as DE
     from learn import direct_stems as DS
     from learn import full_space as F
+    from learn import knob_ceiling as K
     from learn import local_objective as LO
-    from learn import pipeline_fix as P
     from learn import preset_ladder as L
     from learn import product_path as PP
 
-    table_guard()
-    P.require(PHASE_VERSIONS)
     t0 = time.time()
     r1 = P.out_dir() / "r1"
     vroot = r1 / "versions"
@@ -848,7 +874,8 @@ def cmd_versions(_args):
             got = answer(seg, mix, g, cls)
             info[slug]["versions"].append(v)
             for a, (stg, S) in got.items():
-                written = set(hold(a, S)[0]) - set(hold(a, S)[1])
+                keys, forced = ([(d.module, d.key) for d in K.space(a, S)], {}) if hold is None else hold(a, S)
+                written = set(keys) - set(forced)
                 c_, cm_, *_ = F.encode(LO.tdict(stg), a)
                 vals[(slug, cls, v, a)] = {n_: float(c_[j]) for j, n_ in enumerate(F.CONT)
                                            if cm_[j] > 0 and (D[n_].module, D[n_].key) in written

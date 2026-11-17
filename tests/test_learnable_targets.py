@@ -157,3 +157,43 @@ def test_readout_sees_a_rise_and_a_flat():
     r = T.readout(same, n_boot=300)
     assert r["diff"] == pytest.approx(0.0) and r["lo90"] <= 0 <= r["hi90"]
     assert T.readout([(("a", "c", "h"), 1, 0.1, 0.2, 0.3)])["values"] == 0     # a cell under MIN_CELL drops
+
+
+def test_the_commands_refuse_without_their_ledger_phases(monkeypatch):
+    from learn import pipeline_fix as P
+
+    monkeypatch.setattr(P, "ledger_entry", lambda: {"phase_s5": "x"})       # phase_s5_targets missing
+    with pytest.raises(SystemExit, match="phase_s5_targets"):
+        T.cmd_stage0(None)
+    monkeypatch.setattr(P, "ledger_entry", lambda: {"phase_s5_targets": "x"})
+    with pytest.raises(SystemExit, match="phase_s5:"):
+        T.cmd_stage0(None)
+    monkeypatch.setattr(P, "ledger_entry", lambda: {})
+    with pytest.raises(SystemExit, match="phase_r1_versions"):
+        T.cmd_versions(None)
+
+
+def test_the_declared_phases_are_in_the_ledger():
+    from learn import pipeline_fix as P
+
+    e = P.ledger_entry()
+    assert all(k in e for k in (T.PHASE_S5, T.PHASE_S0, T.PHASE_VERSIONS))
+    assert "(fold, amp, class, head)" in e[T.PHASE_S0]
+
+
+def test_each_runs_showings_are_the_trainings_own():
+    """Every run's training records and showings are `rows_for`'s (the training's own rows), inner runs included; the
+    validation records are its held rows. Needs the local data; skipped without it."""
+    from learn import full_controls_c3r as R
+
+    try:
+        st = R.state()
+    except Exception:                                             # noqa: BLE001  (CI holds no data)
+        pytest.skip("no local C3r state")
+    for name in T.RUNS:
+        k, inner = T.run_split(name)
+        rows, held, _ = R.rows_for("all", k, inner, st)
+        train, val = T.run_records(st, name)
+        count = lambda xs, u, a: sorted((x[u], x[a]) for x in xs)   # noqa: E731
+        assert count(train, "unit", "amp") == count(rows, "real", "amp")
+        assert count(val, "unit", "amp") == count(held, "real", "amp")
