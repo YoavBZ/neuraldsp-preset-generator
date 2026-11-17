@@ -3569,7 +3569,29 @@
    },
    "phase_exam_answers": {
     "declared": "2026-11-17, before any run: filled with every EX-* answers file's, tables.json's, guards.json's and r1-repro.json's sha256 (learn.real_song_exam answers prints them) before the first judge render; renders and the report refuse otherwise.",
-    "hashes": {}
+    "recorded": "2026-11-17, after CP3 (chain 41 runs, failed none; c-pick; answers at 13:48:59) and before any judge render: the hashes `answers` printed, each re-checked against its file",
+    "hashes": {
+     "EX-R": "4c4546fc95b6e841a19f5c1254c238d6e42d8c94a4d19c9c2ba1f5aebf1fc69d",
+     "EX-Rwet": "e4b98ffad91323750712956c19b7766d84226dab3402d0f64868ae7882cccae7",
+     "EX-Rroute": "80b809d6fac0a320a0df61fdd06b6d1efff4eadfd912584114ecbe76264bf572",
+     "EX-M": "5314c167bbe5a3748a5fbae4d22b0a4836c045a5d7a24c3625e3e5110fc11b64",
+     "EX-Mx": "c418b011362a7204a3fc53cae179bea8e9e81ed43f752a6ed3f8af535dc73061",
+     "EX-Mlab": "13e980543bfa0c370b2feae8267684a0e68132f431c3d119c2aec1f9f43ae73f",
+     "EX-Mcrop": "a7622e04ad9a2578c444c410611d04b29de5a4f14fc779e386e1d0365f095c6c",
+     "EX-Munity": "f56393d602d7943a17d2efd2598e54e96bc1466e468e77ddf972279ce4ff16e0",
+     "EX-Cpick": "52ac4940dd0e90f27aa452a12dc2e08d9e3bd98310b3876d290ceb6a61d631f5",
+     "EX-Cm": "e23eca135e792b2ee717fd774ce6aa019f7ffac965ef21d827cb6070ecde3c8c",
+     "EX-Cownm": "55cfc9e12b07406e978be8fc2b4d4700e4a27c6c4a7dca42b15cab366a5731ec",
+     "EX-S": "21a14a0a438b2331c646cb7b25098548b1a3c567bd2640029b8deb5e4c1ba981",
+     "EX-Sm": "28039c928f98f7e05a5af8610b17878fb909273c2a502f346e6310a5b9c37842",
+     "EX-M3": "5882f72152d89b7f7dac6259fe1e0bbc09bf71397fedf2a585da6d3c9d009d52",
+     "EX-C": "314c5f0b5e7309c232b86927112286da4ef47067b4725343e72180b1e476f35c",
+     "EX-Cown": "36281f6f1dcd89729268ebe508c0591a8981c71b26010a5c8c719603945248d0",
+     "EX-L": "9015d784db4b379b27ae881b4b0e2b8912e372ebc56f15194c07c0c8fec5c66c",
+     "tables_json": "218a4b702894295f15fda50de8a26f849a643ad611e1faed6c4beebb4a7adaf6",
+     "guards_json": "69a7fa74d1a9e4f3b4173675801ddf2c8a150b515745b4825be434c0a0ac7ed9",
+     "r1_repro_json": "e8626a82041e1ec34fcc382da492100998de3d5fb39ea7b20105b8ec3c1892f5"
+    }
    },
    "phase_exam_ear": "Declared 2026-11-17, before any render: the exam's blind page (docs/real-song-exam-plan.md, the listening page), built after the score rows, not published by the implementer. L0's 10 units on L0's stored held half; R, M, C-pick and L, each on its own amp (L on the amp its stored label scores best on the page's search half by its own objective); It Was My Fault ElecGtr1 without L; identical presets share a letter; the judged renders themselves (kept at judge time, hashes checked), guitar only beside the amp track, aligned by the judge lag, looped, -23 LUFS, instant switch, headphones; 10 cards and 2 repeats (seed 20261162, at least 4 apart, every preset on another letter); ranks with ties, closeness optional. Read: M over R first, the share of units with M above (a tie a half) and its 90% band bootstrap (L0's, seed 20261163), rank and closeness gaps, J0 on the same clips, the repeats; the other pairs beside. A share clear of one half: 'heard above (or below), one listener'; otherwise 'not known by ear'."
   },
