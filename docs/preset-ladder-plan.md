@@ -102,7 +102,7 @@ together, and the other guitars are then removed at the same gains, so the targe
 | Q3: the other guitars read worse (a cost) | Its size is the target any separator work must recover by the preset; stage 3 runs `xlmdxc` and `xl-real`. |
 | Q3: the separator alone reads worse | Step 6 (fine-tune on the product's input) gets a measured target. |
 | Q3: the level step reads worse | The product's level step costs by itself: a level fix comes before any separator work. |
-| `clean@-3 - xl@-3`, the most a perfect separator could buy (`separator_ceiling`) | **"heard-size gain"**: reads better with a mean beyond −0.05; separator work has a measured ceiling. **"a gain shown, not of heard size"**: reads better and the interval rules a heard-size gain out (lo90 above −0.05). **"a gain shown, heard size undecided"**: reads better, mean within −0.05, the interval still holding heard-size gains. **"small"**: not better and the interval rules out a heard-size gain. **"undecided, not shown"**: a heard-size gain neither shown nor ruled out. Every reading but the first parks separator training and is read adversarially by the audit (section 8). The two "gain shown" readings meet the approved review's gate (a decided preset-level gain from oracle separation, with no size), and the write-up says so: they are parked only by this plan's floor. |
+| `clean@-3 - xl@-3`, the most a perfect separator could buy (`separator_ceiling`) | **"heard-size gain"**: reads better with a mean beyond −0.05; separator work has a measured ceiling. **"a gain shown, not of heard size"**: reads better and the interval rules a heard-size gain out (lo90 above −0.05). **"a gain shown, heard size undecided"**: reads better, mean within −0.05, the interval still holding heard-size gains. **"small"**: not better and the interval rules out a heard-size gain. **"undecided, not shown"**: a heard-size gain neither shown nor ruled out. Every reading but the first parks separator training and is read adversarially by the audit (section 8); for stage 2, see §15's one rule for the ceiling. The two "gain shown" readings meet the approved review's gate (a decided preset-level gain from oracle separation, with no size), and the write-up says so: they are parked only by this plan's floor. |
 
 The −0.05 floor is a deviation from the review's gate, which asks for "a preset-level gain from oracle separation" with
 no size: under about 0.05 a score difference isn't known to be heard (F65), so a decided gain under that size is
@@ -353,7 +353,7 @@ clean and crunch apart, cap1 by whether its DI's player trains in the fold. **It
 action adversarially** (the user's rule: undecided is not failed): when Q1 reads outcome 6 or 7 (which parks separator
 work and shrinks stage 2), when Q2 reads "not shown better", when the perfect separator's ceiling reads anything
 but "heard-size gain" (each of "a gain shown, not of heard size", "a gain shown, heard size undecided", "small" and
-"undecided, not shown" parks separator training), and for every stage 3 trigger row that doesn't fire (the
+"undecided, not shown" parks separator training; for stage 2, see §15's one rule for the ceiling), and for every stage 3 trigger row that doesn't fire (the
 other guitars' row, which skips `xlmdxc` and `xl-real`; the exposure and pooling rows), it asks why each might be a
 false negative: per set, per class, on half A, with each cluster and each deciding set left out (the report's
 `negatives`, which covers every Q1 rule row, Q2, Q3, `clean@-3 - xl@-3` and the trigger rows), and it states the gain
@@ -591,7 +591,7 @@ Stage 0 ran on 2026-11-17 (zero renders) and its independent audit stands with c
 - **Cuts other than the declared pool** (without the panel, by DI file, the five-set pool) are post hoc and beside,
   never the reading.
 
-### Stage 2's declaration (drafted 2026-11-17, revised after stage 1's audit; in force only after its own review)
+### Stage 2's declaration (declared 2026-11-17 after review; revised after stage 1's audit)
 
 - **Rests on:** stage 1's audited outcome 1, "reads in the exposed backed mix" (`mix@-3 - sic-mix@-3` −0.075 [−0.123,
   −0.026] on the deciding pool, by the score). **Follows** section 1's line for outcome 1: full stage 2; stage 3 by
