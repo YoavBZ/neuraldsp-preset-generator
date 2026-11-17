@@ -783,3 +783,32 @@ Stage 0 ran on 2026-11-17 (zero renders) and its independent audit stands with c
   `check0`, `check1` and `replay` passed on today's C3r state; the render path unchanged since stages 1 and 2 rendered
   (the launcher refuses unless `learn/` other than this module equals a59e94e9's and the worktree has no tracked
   changes); the machine rules (at most 3 render processes, the 31 GB disk guard; no MPS).
+
+### After stage 2: stage 3 held, and the ladder's stop rule (2026-11-17 13:30, before the re-centred report is run)
+
+Written after stage 2's report and its independent audit (stands with corrections). It comes before `report-rc` is
+run and before anyone reads a re-centred answer or judge, and it changes nothing in `phase_lrc`.
+- **Stage 3 is held until the re-centred read.** Its triggers fired: the exposure rows and pooling, both from stage
+  1's rows. But both measure the un-re-centred model path, and on this stage's evidence that path's best case is about
+  Cen. With the other guitars removed perfectly and no separator, `mixp@-3 - cen` is −0.025 [−0.072, +0.023]; with
+  perfect separation, `clean@-3 - cen` is +0.001 [−0.051, +0.052]. Stage 3 stays declared on its own and runs only
+  under the stop rule below.
+- **Two zero-render rows, read beside the declared rc pairs** from the rc judges (the audit reads them):
+  `rc-mix@-3 − cen`, the ideal input re-centred (already a declared, descriptive rc pair; stage 2 found the level step
+  nil, so it also stands in for a re-centred `mixp@-3`), and `rc-mix@-3 − rc-xl@-3`, the separator's ceiling after
+  re-centring (new). Both are descriptive except as below.
+- **The ladder's stop rule** (90% interval on the deciding pool, by the score, as every rule row):
+  - **`rc-xl@-3 − cen` reads better:** the re-centred model path becomes the candidate (proposed under `RC_JOINT`'s
+    line, with its own declaration and review), and Step 1 confirms on songs. Stage 3's pooling runs on the re-centred
+    path, and any separator work aims at `rc-mix@-3 − rc-xl@-3`.
+  - **Only `rc-mix@-3 − cen` reads better:** the stem is the bottleneck. Separator work is planned, judged by the
+    preset score, never by SI-SDR (stage 2's audit: X-LANCE's SI-SDR doesn't track the score's cost).
+  - **Neither reads better:** the ladder (Step 2) stops and Cen goes to Step 3. Separator work and stage 3 are parked
+    "by the model, not the separator". If an interval's lower end still holds a heard-size gain (lo90 below −0.05),
+    the write-up calls it undecided and underpowered, not failed, and any further rows are put to the user rather than
+    added by default. The next lever, the model's training input (stems, other guitars), is a new approach: it is
+    explained against what failed first and needs the user's go.
+- **What this changes.** It narrows how stage 2's "opens separator work" (`ceiling_together`, by `mixp@-3 − xl@-3`
+  −0.085 [−0.120, −0.051]) is acted on: the ceiling is measured against today's stem path and reaches only about Cen,
+  so separator work is planned only under the first two lines above. It was decided before the rc data. `phase_lrc`
+  and its joint action table (`RC_JOINT`) are unchanged.
