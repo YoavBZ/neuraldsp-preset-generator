@@ -1,10 +1,10 @@
 # The preset ladder: results
 
-**Status:** in progress. Stages 0, 1 and 2 ran on 2026-11-17 and are audited; stage 3 is held until the re-centred
-read (plan section 15). Plan: [preset-ladder-plan.md](preset-ladder-plan.md); ledger `preset-ladder` (`phase_l0`,
-`phase_l0_outcome`, `phase_l1`, `phase_l1_outcome`, `phase_l2`, `phase_l2_outcome`, `phase_lrc`).
+**Status:** Step 2 stopped by its stop rule (plan section 15, "After stage 2", branch 3). Stages 0, 1 and 2 and the
+re-centred answer ran on 2026-11-17 and are audited; stage 3 is not run and goes to the user with separator work. Plan: [preset-ladder-plan.md](preset-ladder-plan.md); ledger `preset-ladder` (`phase_l0`,
+`phase_l0_outcome`, `phase_l1`, `phase_l1_outcome`, `phase_l2`, `phase_l2_outcome`, `phase_lrc`, `phase_lrc_outcome`).
 Data: `~/ndsp-presets/learn/trusted-data/pipeline-fix/ladder/` (`report-stage0.json`, `report-stage1.json`,
-`report-stage2.json`, `centres.json`, `answers/`, `controls/`). Every reading here is by the score (J0), not by ear.
+`report-stage2.json`, `report-rc.json`, `centres.json`, `answers/`, `controls/`). Every reading here is by the score (J0), not by ear.
 
 ## Stage 0 (2026-11-17, zero renders, zero separations)
 
@@ -354,3 +354,130 @@ read decides. If `rc-xl@-3 − cen` reads better, the re-centred path becomes th
 and Step 1 confirms; if only `rc-mix@-3 − cen` does, separator work is planned, judged by the preset score; if
 neither, the ladder stops and Cen goes to Step 3, `RC_JOINT`'s "flagged" cell still applies, separator work and stage
 3's rows are put to the user with both readings, and the next levers are the approved plan's Steps 5 and 6.
+
+## The re-centred answer (2026-11-17, 9,600 renders, zero separations)
+
+> **The re-centred answer, by the score.** Moving the model's centre onto the label centre while keeping its
+> per-recording deviation does not make the model path beat the fixed label-centre preset Cen on the product's input.
+> On X-LANCE's stem, `rc-xl@-3 − cen` is +0.008 [−0.042, +0.059] on the deciding pool: undecided, and it rules out a
+> gain beyond 0.042, so this is a real negative, not an underpowered one. On both large deciding sets it reads worse
+> (BKS +0.041, GOAT +0.027; cap1 +0.058 beside). The pool sits on the neutral side only through the panel's 12 parts
+> (5 recordings), which carry 89% of its variance, as declared beforehand.
+>
+> **What it does do.** Re-centring improves the model's own answer on the stem: `rc-xl@-3 − xl@-3` −0.052 [−0.078,
+> −0.027], better. That is the joint table's "flagged" cell: if the model path stays behind its flag, it is re-centred,
+> as its own reviewed change; not the default. The −0.052 comes from the ladder's per-part, input-matched table, so it
+> is optimistic for a product table, which can do worse. On the exposed backed mix the gain isn't shown (`rc-mix@-3 −
+> mix@-3` −0.002 [−0.029, +0.025]), and even there the re-centred answer is only level with Cen (`rc-mix@-3 − cen`
+> −0.027 [−0.061, +0.007], undecided).
+>
+> **The stop rule** (plan section 15, "After stage 2", set before this report was run) gives **branch 3, neither reads
+> better**: the ladder (Step 2) stops and Cen goes to Step 3. Separator work and stage 3's rows (exposure, pooling) are
+> put to the user with both readings, pending the user's call. The heard-size clause fires for `rc-mix@-3 − cen` (its
+> lower end −0.061 holds a heard-size gain: undecided and underpowered, not failed) and not for the goal row.
+>
+> **In plain words:** the model hears something of each recording (its own deviation beats another recording's), but
+> that deviation adds nothing over the fixed preset on the product's input. Today the most accurate preset without
+> human intervention, by the score, is Cen, which beats S by about 0.11 to 0.12. The reader is the limit; the approved
+> plan's Steps 5 and 6 are the next levers.
+
+Audited by separate code: it **passes with corrections** to wording only, none to a number, a reading or an action
+(768 values recomputed blind from the raw judge files, the largest difference 5.3e-15; the exact t moves no interval by
+more than 0.0004 and changes no reading; every `sources_sha256` equals the current file; every judge file's answer
+hash equals its answer in 480 of 480 parts in all five rows; 960 distinct render hashes per row).
+
+**How it ran.** Declared as `phase_lrc` at 10:00:22 (rename commit e891325d, pushed 10:00:37), before `report --stage
+2` was run (`report-stage2.json` was written at 13:11:03). Launched at 13:09:47 from e891325d on 2 shards, beside the
+real-song exam's one render process (the launcher checked that `learn/` outside the ladder module equalled a59e94e9's,
+the code that rendered stages 1 and 2). The five rows' 4,800 answers took about 30 s; 9,600 renders (4,800 kept: 5 rows ×
+480 parts × 2 halves, plus priming) ran 13:10:18 to 16:37:39 (3 h 27 min, about 23 a minute a process). The stop rule
+was written at 13:30:22 and revised at 13:44:31, after the renders began and before `report-rc` ran (16:38:07, 23 s).
+Every row has all 480 parts; every pair reads 960 of 960 directions.
+
+**The joint table** (`RC_JOINT`, deciding pool: BKS, GOAT and the panel weighed equally; 90% cluster t intervals):
+
+| Action row | Deciding pool | Reading | BKS | GOAT | Panel | cap1 | n12 |
+|---|---|---|---|---|---|---|---|
+| rc-xl@-3 − cen (goal) | **+0.008 [−0.042, +0.059]** | undecided | +0.041 [+0.001, +0.081] | +0.027 [+0.004, +0.050] | −0.043 [−0.193, +0.107] | +0.058 [+0.016, +0.101] | +0.110 |
+| rc-xl@-3 − xl@-3 (own) | **−0.052 [−0.078, −0.027]** | better | −0.032 [−0.068, +0.004] | −0.040 [−0.068, −0.013] | −0.085 [−0.157, −0.014] | −0.059 [−0.087, −0.031] | +0.060 |
+
+`rc_outcome`: goal undecided, own better → **"flagged"**: re-centring helps the model's own answer on the stem but
+isn't shown better than Cen; if the model path stays behind its flag, re-centre it (its own reviewed change); not the
+default; Step 3's start stays as stage 2's Q2 sends it (Cen). "Undecided" and "worse" on the goal row share this cell.
+
+**The stop rule's rows** (plan section 15, "After stage 2"):
+
+| Row | Deciding pool | Reading | BKS | GOAT | Panel | cap1 |
+|---|---|---|---|---|---|---|
+| rc-xl@-3 − cen (branch 1) | +0.008 [−0.042, +0.059] | undecided | +0.041 | +0.027 | −0.043 | +0.058 |
+| rc-mix@-3 − cen (branch 2) | −0.027 [−0.061, +0.007] | undecided | −0.008 [−0.059, +0.044] | −0.041 [−0.058, −0.023] | −0.032 [−0.128, +0.064] | −0.047 [−0.079, −0.015] |
+| rc-mix@-3 − rc-xl@-3 (the separator's ceiling after re-centring; beside) | −0.035 [−0.066, −0.004] | better | −0.049 [−0.105, +0.007] | −0.067 [−0.095, −0.040] | +0.011 [−0.072, +0.094] | −0.105 |
+
+Neither branch row reads better, so **branch 3**. Its clauses: the flagged cell applies (above); separator work and
+stage 3's rows go to the user with both readings; the heard-size clause fires for `rc-mix@-3 − cen` (lo90 −0.061,
+below −0.05) and not for `rc-xl@-3 − cen` (lo90 −0.042); the next levers are Steps 5 and 6. The separator's ceiling
+after re-centring is a gain shown with heard size undecided (mean inside −0.05), carried by GOAT; BKS is undecided and
+the panel +0.011. Even the ideal input reaches only about Cen.
+
+**The other declared rows:**
+
+| Row | Deciding pool | Reading | Label (`RC_LABELS`) |
+|---|---|---|---|
+| rc-mix@-3 − mix@-3 | −0.002 [−0.029, +0.025] | undecided | |
+| rc-xl@-3 − S | −0.113 [−0.189, −0.036] | better | |
+| rc-mix@-3 − S | −0.148 [−0.211, −0.085] | better | |
+| rca-mix@-3 − mix@-3 (the knobs' re-centring alone) | −0.004 [−0.028, +0.020] | undecided | not settled |
+| rc-mix@-3 − rca-mix@-3 (the discrete rule) | +0.002 [−0.018, +0.023] | undecided | not settled |
+| rc-mix@-3 − rcs-mix@-3 | −0.096 [−0.134, −0.058] | better | p's own deviation reads p on the exposed backed mix |
+| rcs-mix@-3 − cen | +0.069 [+0.047, +0.092] | worse | another unit's deviation on Cen loses to Cen (mix) |
+| rc-xl@-3 − rcs-xl@-3 | −0.075 [−0.145, −0.005] | better | p's own deviation reads p on the stem (see below) |
+| rcs-xl@-3 − cen | +0.083 [+0.042, +0.125] | worse | another unit's deviation on Cen loses to Cen on the stem |
+
+Gap shares of the `− cen` rows (the share of the Cen-to-label gap closed): `rc-xl@-3` negative in four sets (BKS
+−0.12, GOAT −0.07, cap1 −0.14, n12 −0.21; the panel +0.20 on 12 directions); `rc-mix@-3` +0.07 to +0.12 (n12 +0.24 on
+12 directions); `rcs-mix@-3` and `rcs-xl@-3` negative in every set but n12 on the mix (+0.02).
+
+**Where it is thin, and what each row means** (the audit's corrections; every cut other than the declared pool is post
+hoc and beside):
+1. **The goal row's pool and the panel.** The pool's weights and degrees of freedom (5.08) follow the declared method;
+   the panel decides because it has at least 3 recordings (5 here), and its dominance of the pool's variance was
+   stated in advance. The cuts that read worse are all post hoc: without the panel +0.034 [+0.012, +0.056]; an
+   inverse-variance weighting +0.029; every set by DI file +0.034 [+0.015, +0.054]. The other way, also post hoc:
+   without the heavier lenders −0.013 [−0.036, +0.010], a cut that moves the panel from −0.043 to −0.110 by removing
+   one one-part panel cluster. Undecided and worse share the same action.
+2. **Branch 2's row, without the heavier lenders.** Post hoc and beside: `rc-mix@-3 − cen` without the heavier bands'
+   lenders reads better, −0.039 [−0.063, −0.015]. Branch 2 turns on this row, but the declared pool decides, and it is
+   undecided.
+3. **Re-centring is not shown on the mix, and helps on the stem.** `rc-mix@-3 − mix@-3` −0.002 [−0.029, +0.025] is
+   undecided, not nil. The contrast with the stem is decided (post hoc difference of differences, `(rc-xl@-3 − xl@-3)
+   − (rc-mix@-3 − mix@-3)` −0.051 [−0.066, −0.036], better in every deciding set), consistent with the stem path's mean
+   answer sitting further from Cen (`sic-xl@-3 − cen` +0.117 against the mix's +0.049).
+4. **The own row is exact arithmetic.** The pool means add exactly (same directions and clusters): `rc-xl@-3 − xl@-3`
+   = `rc-xl@-3 − cen` − `xl@-3 − cen` = +0.0084 − 0.0608 = −0.0524. Likewise `rc − rcs` = `(rc − cen) − (rcs − cen)`
+   on both inputs.
+5. **`rc-xl@-3 − rcs-xl@-3` better is +0.008 − 0.083.** p's own deviation beats another unit's on Cen, but it is no
+   better than no deviation (Cen itself) on the stem. The declared label's second clause ("a goal 'better' is the
+   model's reading") is moot: there is no goal "better". On the mix, `rc − rcs` −0.096 is −0.027 (`rc-mix@-3 − cen`)
+   less +0.069.
+6. **The deviation controls lose to Cen.** Another unit's deviation added to Cen loses to Cen on both inputs (+0.069,
+   +0.083): Cen's averaging penalty, which these rows were declared to read, is not shown.
+7. **The knobs moved onto Cen; the discrete rule brings knobs with it.** Re-centring brings the sounding knobs' cell
+   mean to within 0.002–0.005 (RMS, unit space) of Cen's, against the raw answers' 0.04–0.12; that covers only knobs
+   that sound in both the answer and Cen, not the whole preset. The continuous output of `rc-mix@-3` and `rca-mix@-3`
+   is identical, but their rendered presets differ wherever the rule switches a feature on from Cen with Cen's knobs
+   (the compressor in 219 of 960 directions, the first drive in 102, the right mic's cab knobs in 102, the mic types
+   in 219 and 177); so `rc − rca` reads the discrete rule together with the Cen knobs it brings in. The within-cell
+   correlation of answer and label is the raw answer's to within 0.013 in every group (the deviation is kept); for
+   the rcs answers it is about zero, as expected.
+8. **The lender rows hold for the six lender sessions** (plan section 7), as in stages 1 and 2.
+
+**Renders used in Step 2:** 30,780 (stage 1's 8,640 and the replay's 60; stage 2's 12,480; the re-centred answer's
+9,600). Separations 800. Report and data: `PF/ladder/report-rc.json`; the two stop-rule rows beside the report were
+computed with the report's own pairing and statistics (`rc-mix@-3 − cen` equals the report's row).
+
+**Next** (branch 3): Step 2 stops; Cen goes to Step 3 as the candidate start. Pending the user's call, with both
+readings: separator work (its ceiling after re-centring −0.035, heard size undecided; a perfect input reaches only
+about Cen) and stage 3's rows (they measure the un-re-centred path, and `clean@-3 − cen` is +0.001). The flagged
+re-centring is its own reviewed change if the model path stays behind its flag. The next levers are the approved
+plan's Step 5 (targets the model can learn) and Step 6 (fine-tune on what the product feeds; after re-centring the
+remaining stem-against-mix gap is about 0.035, smaller than its stated target of +0.053).

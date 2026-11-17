@@ -3,10 +3,13 @@
 **Status:** declared 2026-11-17 before anything ran, after three rounds of independent review (eight, then five, then
 one required fix; section 14). Stages 0, 1 and 2 ran on 2026-11-17 and are audited (section 15,
 [results](preset-ladder-results.md)); stage 2 (`phase_l2`, `phase_l2_outcome`) read Q2 worse by the rule (fragile; a
-heard-size gain over Cen ruled out) and opened separator work, a ceiling that reaches only about Cen; stage 3 is held
-until the re-centred read, under the stop rule in section 15 ("After stage 2"); the re-centred answer was declared on 2026-11-17 at 10:00 after two review rounds (section 15, `phase_lrc`). Step 2 of the
+heard-size gain over Cen ruled out) and opened separator work, a ceiling that reaches only about Cen; the re-centred
+answer was declared on 2026-11-17 at 10:00 after two review rounds (section 15, `phase_lrc`), ran the same day and is
+audited (`phase_lrc_outcome`): by the score its stem path isn't shown better than Cen (+0.008, a gain beyond 0.042 ruled
+out) though it improves the raw answer (−0.052), so the stop rule in section 15 ("After stage 2") gives branch 3: Step 2
+stops, Cen goes to Step 3, and stage 3 and separator work go to the user with both readings. Step 2 of the
 plan the user approved after the independent review of 2026-11-16 ("follow the review's plan"). Ledger `preset-ladder`
-(`phase_l0`, `phase_l1`, `phase_l2`; stage 3 and the re-centred answer are declared before they run). Code
+(`phase_l0`, `phase_l1`, `phase_l2`, `phase_lrc`, each with its `_outcome`; stage 3 would be declared before it ran). Code
 `learn/preset_ladder.py`, tests `tests/test_preset_ladder.py`. Data `PF/ladder/` (`PF` is
 `~/ndsp-presets/learn/trusted-data/pipeline-fix`). No sealed set is used: no V-real, the reserve, NS or R1 audio.
 
@@ -834,3 +837,20 @@ da05c8ad, 13:30:22) and this revision (after PR #506's review) both came after t
   −0.085 [−0.120, −0.051]) is acted on: the ceiling is measured against today's stem path and reaches only about Cen,
   so the ladder plans separator work only under branches 1 and 2, and under branch 3 puts it to the user. It was
   decided before the rc data. `RC_JOINT` and every row and rule of `phase_lrc` are unchanged.
+
+### Notes after the re-centred answer's audit (2026-11-17)
+
+- **Read** ([results](preset-ladder-results.md), ledger `phase_lrc_outcome`; audited, passes with corrections to
+  wording only). By the score, `rc-xl@-3 − cen` +0.008 [−0.042, +0.059] undecided (BKS and GOAT each decided worse; a
+  gain beyond 0.042 ruled out), `rc-xl@-3 − xl@-3` −0.052 [−0.078, −0.027] better: `RC_JOINT` gives "flagged".
+  `rc-mix@-3 − cen` −0.027 [−0.061, +0.007] undecided, so the stop rule above gives **branch 3**: Step 2 stops and Cen
+  goes to Step 3; the flagged cell applies (re-centring the flagged model path is its own reviewed change, and the
+  ladder's per-part, input-matched table is optimistic for a product table); separator work and stage 3's rows are put
+  to the user with both readings; the heard-size clause fires for `rc-mix@-3 − cen` and not for the goal row. The
+  beside row `rc-mix@-3 − rc-xl@-3` is −0.035 [−0.066, −0.004] (heard size undecided).
+- **Applied as written.** Nothing in `phase_lrc`, `RC_JOINT`, the rows or the stop rule changed after the data. The
+  audit's corrections are to the write-up's wording: the own row equals the goal row less `xl@-3 − cen` exactly; `rc
+  − rca` reads the discrete rule with the Cen knobs it switches in, not the discretes alone; re-centring on the mix is
+  "not shown", not nil; `rc-xl@-3 − rcs-xl@-3` better carries no goal clause, since the goal row isn't better; the
+  post hoc cut without the heavier lenders that reads `rc-mix@-3 − cen` better (−0.039) is named and doesn't decide.
+- **Stage 3 is not run by the ladder.** Its rows stay as section 6 sizes them and go to the user with separator work.
