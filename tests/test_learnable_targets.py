@@ -186,10 +186,14 @@ def test_each_runs_showings_are_the_trainings_own():
     validation records are its held rows. Needs the local data; skipped without it."""
     from learn import full_controls_c3r as R
 
+    from learn import pipeline_fix as P
+
+    if not (P.out_dir() / R.OUT).exists():
+        pytest.skip("no local C3r data (CI)")
     try:
         st = R.state()
-    except Exception:                                             # noqa: BLE001  (CI holds no data)
-        pytest.skip("no local C3r state")
+    except (Exception, SystemExit):                              # noqa: BLE001  (an incomplete local state)
+        pytest.skip("no complete local C3r state")
     for name in T.RUNS:
         k, inner = T.run_split(name)
         rows, held, _ = R.rows_for("all", k, inner, st)
