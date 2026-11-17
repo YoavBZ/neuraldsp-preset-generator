@@ -1,14 +1,15 @@
 # The real-song exam: results
 
-**Status:** the score rows are run and audited. The listening page is built and published privately to the user, and
-the ear read will be added after the sitting. Plan: [real-song-exam-plan.md](real-song-exam-plan.md). Ledger
-`pipeline-fix`: `phase_exam`, `phase_exam_inputs`, `phase_exam_answers`, `phase_exam_ear`, `phase_exam_outcome`. Code
-`learn/real_song_exam.py`. Data: `~/ndsp-presets/learn/trusted-data/pipeline-fix/exam/` (`report-exam.json`,
-`tables.json`, `chain/`, `research/`, `page/`) and `vreal/answers/EX-*.json`, `vreal/judge/EX-*/`. Every number here is
-by the score (J0, ln distance on the held half; below 0 means the first arm is closer). Each interval is the 90%
-band-clustered t over 7 bands. Nothing here has been heard yet.
+**Status:** the score rows are run and audited. The listening page is built and published privately to the user (a
+deviation from the plan's "not published", see below), and the ear read will be added after the sitting. Plan:
+[real-song-exam-plan.md](real-song-exam-plan.md). Ledger `pipeline-fix`: `phase_exam`, `phase_exam_inputs`,
+`phase_exam_answers`, `phase_exam_ear`, `phase_exam_outcome`. Code `learn/real_song_exam.py`. Data:
+`~/ndsp-presets/learn/trusted-data/pipeline-fix/exam/` (`report-exam.json`, `tables.json`, `chain/`, `research/`,
+`page/`) and `vreal/answers/EX-*.json`, `vreal/judge/EX-*/`. Every number here is by the score (J0, ln distance on the
+held half; below 0 means the first arm is closer). Each interval is the 90% band-clustered t over 7 bands. Nothing here
+has been heard yet.
 
-## Headline (the independent audit's wording, signed)
+## Headline, by the score (the independent audit's wording, signed)
 
 > The shipped model path was run once, with no human help, on 10 parts from released mixes (7 bands), and scored
 > against each part's real amp track. Against research it is a tie, −0.019 [−0.126, +0.087]. That is undecided: with 7
@@ -32,7 +33,7 @@ Undecided is not failed.
 | Research | 10 blinded headless generate runs, one per unit, one at a time | 10 of 10 passed the audit; 0 excluded, 0 aborted, no rerun; 1.7 to 2.6 min each (median 2.0) |
 | CP3 chain | 41 runs of `scripts/model_preset.py`: M 10, M-crop 10, M-unity 10, M-lab 1, M-x 10; none failed | 36 min 53 s; 46 to 66 s a run; 41 X-LANCE separations |
 | CP3 `c-pick`, `answers` | C's three presets through the stock-DI pick, then every arm's answers file | 98 s and 4 s |
-| Hashes | the 20 `phase_exam_answers` hashes, in the ledger (PR #507, merged 14:04:10) before the first judge record (14:04:40) | |
+| Hashes | the 20 `phase_exam_answers` hashes, in the ledger (PR #507, merged 14:04:10 local, 12:04:10Z) before the first judge record (14:04:40 local) | |
 | CP4 judge | 232 groups, each answer rendered fresh and primed in its own process | 24 min 0 s, one render shard at a time (the shard count changes only the time) |
 | CP4 `report` | run once | about 1 s; sha256 `60386b47…a0a6` in `phase_exam_outcome` |
 
@@ -103,8 +104,8 @@ are better, and every leave-one-band-out interval is clear of 0. The audit's oth
 
 ## How to read the rows (the audit's corrections)
 
-1. **What M − R measures.** R equals its dry start on all 10 units: every research run left the preset at its starting
-   preset. On 8 of 10 units R's render is byte-identical to S on R's amp. The 2 exceptions are research's class misses:
+1. **What M − R measures.** R equals its dry start on all 10 units. On 8 of 10 units R's render is byte-identical to S
+   on R's amp. The 2 exceptions are research's class misses:
    - Colour Me Red ElecGtr02 (crunch, against the label's clean): R − S on R's amp +0.405.
    - Femme ElecGtr5 (heavier, on Wall Of Doom): +0.136.
 
@@ -121,8 +122,11 @@ are better, and every leave-one-band-out interval is clear of 0. The audit's oth
    recovering more than about 30% of the label's headroom over S, by the score. It does not show that M sits on the far
    side of S.
 3. **M − M3's best amp (+0.068) is above zero by construction.** M3 on M's amp is M, so the best of the three amps can
-   only be as close or closer. The informative row is **M − M3's mean, −0.005 [−0.066, +0.056]**: by the score, the amp
-   pick does no better than a random amp.
+   only be as close or closer. The informative row is **M − M3's mean, −0.005 [−0.066, +0.056]**, which is undecided by
+   the score: the point estimate is at chance (the amp pick no better than a random amp), and the interval allows
+   anything from about the oracle's gain to a small loss. It neither confirms nor overturns F81 and F83 (the stock-DI
+   pick, now generate's amp choice: other sets, and F83 by ear), and by the declared map nothing in the amp pick
+   changes.
    - The oracle amp is worth about 0.07, and a random amp's expected loss to it is 0.073.
    - M picks the oracle's amp on 8 of 22 directions, against about 7.3 by chance.
    - The pick's cosine margins are tiny (Femme 0.0001, It Was My Fault ElecGtr1 0.0007), and M's amp differs from at
@@ -135,7 +139,7 @@ are better, and every leave-one-band-out interval is clear of 0. The audit's oth
 5. **The loudness row is clear of 0, not "decided".** The plan declared no reading rule for it. M renders +0.75 dB
    [+0.21, +1.29] louder than S of M's class on M's amp:
    - 6 of 7 bands louder; every leave-one-band-out mean is 0.55 to 0.89 dB; the median |difference| is 0.43 dB;
-   - the two parts over 1 dB are Femme +1.94 and Get Out Of Bed +1.39, and Get Out Of Bed's output gain hit its 24 dB
+   - the two parts over 1 dB are Femme +1.94 and Get Out Of Bed +1.39, and Get Out Of Bed's output gain hit its
      ceiling.
 
    J0 matches level, and the page plays at −23 LUFS, so the row affects no score row and no ear read. It is a lead on
@@ -180,7 +184,7 @@ My Fault ElecGtr1 is +0.0004 for two different presets (28 settings differ), not
   Dance M-x − M reads +0.633. `xlst_mdxc` removes off-centre guitars by design, and its row is scoped to centred targets,
   of which there is one (Femme, −0.077).
 - **Amp picks:** M picks ac20 on 5 units, pr12 on 3 and sw50r on 2, and equals R's amp on 4 of 11 slugs. The cosine
-  margins run from 0.0001 to 0.044. The output gain is at its 24 dB ceiling with a shortfall on M Get Out Of Bed
+  margins run from 0.0001 to 0.044. The output gain is at its ceiling with a shortfall on M Get Out Of Bed
   (0.41 dB), M-unity Signs (0.70) and C-pick Get Out Of Bed (1.04).
 - **Knob distances:** M's mean continuous-knob distance from C-own is 0.009 to 0.029, and from C 0.014 to 0.049. M moves
   less between a unit's input variants (median 0.008 for M-crop, 0.013 for M-x and M-unity) than between units of one
@@ -188,9 +192,11 @@ My Fault ElecGtr1 is +0.0004 for two different presets (28 settings differ), not
 
 ## The listening page (built 2026-11-17; the ear read follows the sitting)
 
-Built by `page` as `phase_exam_ear` declares (build `bea9b4292fd6`, zero renders), and published privately to the user's
-claude.ai so it can be sat on a phone. The page is guitar only, ties are allowed, it switches instantly, its order is
-blind and seeded, and it plays at −23 LUFS:
+Built by `page` as `phase_exam_ear` declares (build `bea9b4292fd6`, zero renders). Publishing it is a deviation from the
+plan's "not published" (Status, this section's heading and `phase_exam_ear`): published privately to the user's own
+claude.ai at the orchestrator's word, for a phone sitting, before any answer; only the user can open it, and it names no
+song, band or arm. The page is guitar only, ties are allowed, it switches instantly, its order is blind and seeded,
+and it plays at −23 LUFS:
 - 12 cards: the 10 units and 2 repeats (Colour Me Red ElecGtr03, Get Out Of Bed ElecGtr2);
 - R, M, C-pick and L on each card. It Was My Fault ElecGtr1 has three, since it has no stored label;
 - no two presets were identical, so no letter is shared;
@@ -209,8 +215,10 @@ The ear read will be added here after the sitting, with the score on the same cl
 - **Cen as Step 3's start: not contradicted and not supported here** (C − S +0.030, M − C +0.005, C-pick − S −0.001).
   The case for Cen rests on the ladder's 400 units.
 - **What this read adds, as leads:**
-  - (a) the amp pick is at chance by the score, and the oracle amp is worth about 0.07, the size of the whole M − S
-    question: a cheap research target;
+  - (a) the amp pick reads at chance by the score but is undecided (M − M3's mean −0.005 [−0.066, +0.056]: anything
+    from about the oracle's gain to a small loss), while the oracle amp is worth about 0.07, the size of the whole
+    M − S question: a cheap research target. It neither confirms nor overturns F81 and F83, and nothing in the amp
+    pick changes;
   - (b) on these little-documented bands research reads only a class and an amp, and its two class misses cost 0.14 to
     0.41 each;
   - (c) V-real cannot resolve effects under about 0.15, so later candidates need a bigger effect or more bands;

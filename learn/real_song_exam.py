@@ -752,7 +752,7 @@ def ear_read(items, got, n_boot=20000, seed=BOOT_SEED):
     prim = rows.get(PRIMARY)
     power = {"control": CONTROL, "control_heard": heard_ctl,
              "primary_reading": None if prim is None else prim["reading"] if prim["reading"] != "not known by ear"
-             else "not known by ear" + ("" if heard_ctl else ": the page had no power here (the control was not heard)")}
+             else "not known by ear" + ("" if heard_ctl else ": the page had no power here (the control was not heard above R)")}
     return {"answered": sum(v is not None for v in heard.values()), "items": len(items),
             "first_answered": sum(heard[it["id"]] is not None for it in first), "rows": rows, "repeats": reps,
             "power": power}

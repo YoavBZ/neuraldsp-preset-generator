@@ -17,9 +17,15 @@ earlier reads (`vreal/answers/EX-*.json`, `vreal/judge/EX-*/`).
     writes to `ladder/centres.json`. The labels' centre is arm C and the model's own constant is arm C-own. The
     planner's own constant (R-all's out-of-fold answers through `rc_setting`) is not built.
   - **Research runs: yes,** about 10 blinded headless generate runs, as the routing study ran them.
-  - **The listening page is built** as section "The listening page" says, ready for the user; it is not published.
+  - **The listening page is built** as section "The listening page" says, ready for the user; it is not
+    published (deviation, 2026-11-17: published privately to the user; see the dated note under "The listening page").
   - **The stronger ceiling** (a full every-control search on V-real) is not run.
-- **Where it stands (2026-11-17, after CP4):** run and audited ([results](real-song-exam-results.md)). The chain did 41 runs and none failed; 524 judge renders; the report ran once (sha256 in `phase_exam_outcome`). By the score M − R is −0.019 [−0.126, +0.088], undecided: no product change, the baseline for later candidates. The audit (stands with corrections) recomputed every row. The page is built and published privately (the dated note under "The listening page"); its ear read follows the sitting.
+- **Where it stands (2026-11-17, after CP4):** run and audited ([results](real-song-exam-results.md)). The chain did
+  41 runs and none failed; 524 judge renders (the exam's plugin renders in all 1,052, 526 kept); the report ran once
+  (sha256 in `phase_exam_outcome`). By the score M − R is −0.019 [−0.126, +0.088], undecided: no product change, the
+  baseline for later candidates. The audit (stands with corrections) recomputed every row. The page is built and
+  published privately to the user (a deviation, the dated note under "The listening page"); its ear read follows the
+  sitting.
 - **Earlier (2026-11-17):** CP2 is done. The inputs are built and hashed into the ledger; guards 2, 3 and 7's
   stored half and guard 4 (the R1 reproduction, 12 renders) pass; the runner check passed on its second try (the first
   failed the CLI's sign-in before any model call); all 10 research runs passed the audit (0 excluded, 0 aborted, no
@@ -271,7 +277,7 @@ refuses, and the exam stops before any judge render for the user's decision.
   against S on V-real-10, 7 of 7 bands, recomputed here from the stored files); M − C and M-x − M probably not. An
   interval that holds 0 is undecided, not "no effect".
 
-## The listening page (`phase_exam_ear`; built at checkpoint 5, not published)
+## The listening page (`phase_exam_ear`; built at checkpoint 5, not published; deviation 2026-11-17: published privately, see the dated note)
 
 - L0's design (`learn/ear_vreal.py`), which the user has answered twice on these parts: the 10 units, each on L0's
   stored held half; guitar only, each candidate through the part's DI beside the amp track, aligned by the judge lag,
@@ -301,8 +307,10 @@ refuses, and the exam stops before any judge render for the user's decision.
     "not known by ear". The sitting's value is the positive control and the per-unit notes, chiefly the units on ac20,
     Colour Me Red ElecGtr02 (research's class missed) and Femme ElecGtr5 (heavier, the one centred unit).
   - The code's pair list puts L over R first (it read R over L before; the same answers, the share mirrored), and the
-    read records whether the control was heard. The page is published privately to the user's own claude.ai, so it can
-    be sat on a phone; the user alone sits it.
+    read records whether the control was heard above R.
+  - **Publishing the page is a deviation from the plan's "not published" (Status, this section's heading and
+    `phase_exam_ear`): published privately to the user's own claude.ai at the orchestrator's word, for a phone sitting,
+    before any answer; only the user can open it, and it names no song, band or arm.** The user alone sits it.
 
 ## The independent audit (declared; the planner's section 12)
 
