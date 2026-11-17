@@ -2,9 +2,11 @@
 
 **Status:** declared 2026-11-17 before anything ran, after three rounds of independent review (eight, then five, then
 one required fix; section 14). Stages 0 and 1 ran on 2026-11-17 and are audited (section 15,
-[results](preset-ladder-results.md)); stage 2 is drafted in section 15, not yet in force. Step 2 of the plan the user approved after the independent review
-of 2026-11-16 ("follow the review's plan"). Ledger `preset-ladder` (`phase_l0`, `phase_l1`; stages 2 and 3 are declared
-before they run). Code `learn/preset_ladder.py`, tests `tests/test_preset_ladder.py`. Data `PF/ladder/` (`PF` is
+[results](preset-ladder-results.md)); stage 2 was declared on 2026-11-17 after review (`phase_l2`) and runs; the
+re-centred answer is drafted in section 15 (`phase_lrc_draft`, in force once renamed `phase_lrc`). Step 2 of the plan
+the user approved after the independent review of 2026-11-16 ("follow the review's plan"). Ledger `preset-ladder`
+(`phase_l0`, `phase_l1`, `phase_l2`; stage 3 and the re-centred answer are declared before they run). Code
+`learn/preset_ladder.py`, tests `tests/test_preset_ladder.py`. Data `PF/ladder/` (`PF` is
 `~/ndsp-presets/learn/trusted-data/pipeline-fix`). No sealed set is used: no V-real, the reserve, NS or R1 audio.
 
 ## Why
@@ -672,68 +674,112 @@ Stage 0 ran on 2026-11-17 (zero renders) and its independent audit stands with c
   readout and waits for the user's go. Nothing here would have to be redone to add it: it needs only the answers,
   `sic-xl@-3` and Cen, which this stage builds.
 
-### The re-centred answer (drafted 2026-11-17 on the user's go; in force only after its review, rendered only after stage 2's renders)
+### The re-centred answer (drafted 2026-11-17 on the user's go, revised after its review the same day; in force only once `phase_lrc` is, rendered only after stage 2's renders)
 
 - **The readout.** For part p, half h and input i, every continuous control is the model's answer less p's own
   out-of-sample same-input constant (`sic-i`) plus Cen (the labels' centre for p's fold, amp and class), clipped to the
   control's range (`recentre`); then `full_space.answer_settings` and C3r's hold, as every answer. In product terms
-  it is a fixed per-amp-and-class correction table, Cen less the model's own mean answer on the product's kind of
-  input, added to the model's answer, with no labels at inference. (A product table would come from the all-labels
-  pair's mean answer over a reference set of product inputs; that is a later step's declaration.)
+  it is a correction table, Cen less the model's own mean answer on that kind of input, added to the model's answer,
+  with no labels at inference. On the ladder the table is per fold, amp and class and estimated per part with p's
+  cluster left out, on the same input as p's answer. A product table would be one per amp and class, from a reference
+  set of product inputs, not matched to the input, and can do worse than the ladder's; so a ladder "better" is
+  optimistic for the product (a product table is a later step's declaration). Effects stay at S, as in every C3-cabS
+  answer and in Cen: re-centring moves only what the model writes, so no control's coverage changes.
 - **Why it is out of sample for p on the ladder.** The answer is p's fold model's, which never saw p; the constant is
   the mean of that model's answers to other parts of p's fold on the same input, sharing no cluster, DI file or
   creator with p, and label-free; Cen comes from model k's real training labels (`centres`: no record of p's fold or
   sharing an identity with a fold-k unit, each record weighted by its showings) and is held as every answer is. No label
-  of p, its cluster or its fold enters.
+  of p, its cluster or its fold enters. On `xl@-3` stage 2's declared lender exception reaches `rc-xl@-3` through
+  `sic-xl@-3` (3 of 960 n12 directions, with negative weight; beside only).
 - **Discrete controls, settled.** Switches and mic types can't be subtracted. The primary variant (`rc-i`, `how =
   "rule"`) keeps the answer's own discrete where it differs from its constant's (a per-unit deviation, kept as the
   knob deviations are) and takes Cen's where it equals it (no deviation, so the centre is replaced): the discrete
-  analogue of answer − constant + Cen. Reasons: stage 1's audit found the gain holds where an answer's discretes equal
-  its constant's (−0.042 [−0.059, −0.025]) and is larger where they differ (−0.075), so the model's discrete deviations
-  carry reading worth keeping, while the misplaced centre shows in the knobs (the mean shift from Cen 0.04–0.11 RMS by
-  group) and, the rule assumes, in the constant's own discretes. F32 moved the continuous centre and the switches
-  together and could not separate them, so a beside variant (`rca-mix@-3`, `how = "answer"`: the answer's own discretes
-  everywhere, the knobs re-centred) separates them on `mix@-3`: `rca-mix@-3 - mix@-3` is the knobs' re-centring alone
-  and `rc-mix@-3 - rca-mix@-3` the discretes' share. The dry run on stored answers (scratchpad, zero renders) changed no
-  discrete in 310 of 960 `mix@-3` directions and moved the knobs 0.055 a knob on average, leaving them 0.030 from Cen
-  against the answers' 0.062.
-- **A deviation control, declared:** `rcs-mix@-3`, the re-centred twin of the swap row: for p and h, the re-centred
-  answer of the part `swap-mix@-3` draws for that direction (Cen plus another unit's deviation; the same q as the swap
-  row, checked). Cen is itself an averaged preset, so `rc-i - cen` could read better because any realistic deviation
-  helps an averaged preset, not because p's own deviation reads p. `i - swap-i` doesn't settle that: it compares two
-  deviations on the model's own centre, not on Cen. `rc-mix@-3 - rcs-mix@-3` (own deviation against another's, both on
-  Cen) and `rcs-mix@-3 - cen` (another's deviation against none, Cen's averaging penalty) settle it on the input whose
-  per-unit reading stage 1 decided.
-- **Rows and size:** `rc-mix@-3`, `rc-xl@-3`, `rca-mix@-3`, `rcs-mix@-3`, each 960 answers and 1,920 renders with
-  priming: 3,840 answers, 7,680 renders, the cap; zero separations, zero training; one pass after stage 2's renders.
-  At stage 1's measured rate (8,640 renders in 2 h 3 min on 3 shards) about 1 h 50 min. The mechanism controls sit on
-  `mix@-3` only, where there is a decided per-unit reading to explain; adding them on `xl@-3` would pass the cap and can
-  follow later without a rerun.
+  analogue of answer − constant + Cen (for a binary switch exactly clip(a − s + e, 0, 1)). Where the answer doesn't
+  hold a discrete (its feature off), it takes Cen's where Cen holds it, as a continuous head does: a feature the rule
+  switches on from Cen then gets Cen's child switches and mics with Cen's knobs, and an answer equal to its constant
+  becomes Cen exactly. (The draft took S's there, so the compressor the rule switched on from Cen kept S's release
+  switch in 72 of 960 `mix@-3` directions, and rc(sic, sic, Cen) differed from Cen in 39 of 480 parts; fixed, the
+  identity holds in 480 of 480 and the release is Cen's in all 219 directions where the rule switches the compressor
+  on.) Reasons: stage 1's audit found the gain holds where an answer's discretes equal its constant's (−0.042 [−0.059,
+  −0.025]) and is larger where they differ (−0.075), so the model's discrete deviations carry reading worth keeping,
+  while the misplaced centre shows in the knobs (the mean shift from Cen 0.04–0.11 RMS by group) and, the rule assumes,
+  in the constant's own discretes. F32 moved the continuous centre and the switches together and could not separate
+  them, so a beside variant (`rca-mix@-3`, `how = "answer"`: the answer's own discretes everywhere, S's where it holds
+  none, the knobs re-centred) separates them on `mix@-3`: `rca-mix@-3 - mix@-3` is the knobs' re-centring alone and
+  `rc-mix@-3 - rca-mix@-3` the discretes' share. The dry run on stored stage 1 answers (scratchpad, zero renders) moved
+  the knobs 0.055 a knob on average, leaving them 0.030 from Cen against the answers' 0.062.
+- **Deviation controls, declared:** `rcs-mix@-3` and `rcs-xl@-3`. For p and h, the re-centred answer of the part q
+  that the swap row `swap-i` draws for that direction (the same q: `rcs_directions` recomputes the draws and the code
+  refuses unless the swap row's file exists, was made from today's `i` answers and holds exactly these draws), with
+  q's constant rebuilt without p, rendered through p's DI. The pool relation is symmetric, so p is in q's own pool in
+  every direction: with q's stored constant, p's own answer would enter its own control with weight −1/n_q, leaning
+  `rc - rcs` towards "own deviation". Leaving p out (zero renders; the rebuild is checked to reproduce `sic-i` with p
+  in) moves rcs's knobs 0.0014 on average (at most 0.0052) against its 0.029 from Cen, and a discrete in 44 of 960
+  `mix@-3` directions. Cen is itself an averaged preset, so `rc-i - cen` could read better because any realistic
+  deviation helps an averaged preset, not because p's own deviation reads p. `i - swap-i` doesn't answer that: it
+  compares two deviations on the model's own centre, not on Cen. `rc-i - rcs-i` (own deviation against another's, both
+  on Cen) and `rcs-i - cen` (another's deviation against none, Cen's averaging penalty) read it, descriptively (about
+  ±0.055 on the pool, so often undecided): on `mix@-3`, where stage 1 decided per-unit reading, and on `xl@-3`, the
+  action input, so that a goal "better" can be traced in this pass.
+- **Rows and size:** `rc-mix@-3`, `rc-xl@-3`, `rca-mix@-3`, `rcs-mix@-3`, `rcs-xl@-3`, each 960 answers and 1,920
+  renders with priming: 4,800 answers, 9,600 renders; zero separations, zero training; one pass after stage 2's
+  renders. The size cap is the orchestrator's for this pass (7,680 renders, raised to 9,600 to add `rcs-xl@-3`). At
+  stage 1's measured rate (8,640 renders in 2 h 3 min on 3 shards, about 23 renders a minute a process) about 2 h 17
+  min on 3 shards, or about 3 h 25 min on 2 (the launcher's `SHARDS` setting, so another job's render process can run
+  beside and the machine stays at 3; the rate beside an MPS separation is not measured).
 - **Pairs, fixed before the data, and what each answers:**
   - `rc-xl@-3 - cen`, **the goal-level read:** does the re-centred model path on the product's stem beat the good
-    fixed preset? Better: proposed as the model path's readout (its own declaration and review; an added Step 1 arm
-    would be Step 1's own amendment, Step 1 is not touched here). Undecided: Step 3's start stays as stage 2's Q2 sends
-    it, re-centring is not adopted for the product, and the write-up says what the interval rules out. Worse: not
-    adopted.
-  - `rc-xl@-3 - xl@-3`: does re-centring help the model's own answer on the product's stem? Better: if the model path
-    stays behind its flag, re-centre it (its own reviewed change). Undecided: no change. Worse: not adopted.
+    fixed preset, by the score?
+  - `rc-xl@-3 - xl@-3`, **the own read:** does re-centring help the model's own answer on the product's stem?
   - `rc-mix@-3 - cen` and `rc-mix@-3 - mix@-3`: the same on the exposed backed mix (descriptive for the product).
   - `rc-xl@-3 - S`, `rc-mix@-3 - S`: against the starting preset.
-  - The mechanism, on `mix@-3`: `rca-mix@-3 - mix@-3`, `rc-mix@-3 - rca-mix@-3`, `rc-mix@-3 - rcs-mix@-3`,
-    `rcs-mix@-3 - cen`.
-  - Only the two `rc-xl@-3` rows change an action (`RC_ACTION`, read by `rc_outcome`, which refuses a missing row and
-    saves the rows first). Under no effect either reads better with at most about 9.8% (two one-sided 5% tails,
-    the independence bound; lower in fact, since both rows hold `rc-xl@-3`). A false "better" costs a declaration and
-    review of a new readout, caught by its own read and Step 1's exam. Every other row is descriptive; "undecided" is
-    not failed and changes nothing. The action rows' negatives are read adversarially, as stage 2's.
-- **How it differs from F32 (5B.1b):** F32 read P2a, the clean-input model, on BKS's 40 reamped units; it centred on
-  S, subtracted the labels' constant (a training-label mean, not the model's own mean answer), held switches and mics
-  at S's, and leaned −0.03, undecided. This reads R-all (every learned control) on 480 parts in five sets, subtracts
-  the model's own out-of-sample mean answer on the same input, centres on Cen (which beat S by −0.121 in stage 1),
-  re-centres the discretes by a declared rule with the answer's-own variant beside, and carries a deviation control.
-- **Stop rule:** one pass, one read, report (`report-rc`). No tuning of the table, the clip or the rule on the
-  ladder's held units.
-- **Gates:** its own phase, `phase_lrc`, held as `phase_lrc_draft` (so `rc`, `render` of these rows and `report-rc`
-  refuse) until its review passes and the key is renamed; stage 2's renders done; `check0`, `check1` and `replay`
-  passed on today's C3r state; the machine rules (at most 3 render processes, the 31 GB disk guard; no MPS).
+  - The mechanism, each with its one-line label declared now (`RC_LABELS`; undecided: "not settled", not failed):
+    `rca-mix@-3 - mix@-3` (better: the knobs' re-centring alone helps the answer; worse: it hurts),
+    `rc-mix@-3 - rca-mix@-3` (better: the discrete rule adds to the knobs' re-centring; worse: the rule costs, the
+    answer's own discretes read better), `rc-mix@-3 - rcs-mix@-3` (better: p's own deviation reads p on the exposed
+    backed mix; worse: another unit's deviation reads better than p's own), `rcs-mix@-3 - cen` (better: Cen's averaging
+    penalty, another unit's deviation on Cen beats Cen; worse: it loses to Cen), `rc-xl@-3 - rcs-xl@-3` (better: p's
+    own deviation reads p on the stem, so a goal "better" is the model's reading; worse: another unit's deviation reads
+    better than p's own on the stem, so it is not), `rcs-xl@-3 - cen` (Cen's averaging penalty on the stem, as on the
+    mix).
+  - **One joint action table** (`RC_JOINT`, read by `rc_outcome`, which refuses a missing action row and is read only
+    after the rows are saved); the two `rc-xl@-3` rows are the only ones that change an action:
 
+    | `rc-xl@-3 - cen` | `rc-xl@-3 - xl@-3` | Next |
+    |---|---|---|
+    | better | better or undecided | Propose the re-centred readout for the model path (its own declaration and review; a Step 1 arm would be Step 1's own amendment). The proposal says whether `rc-xl@-3` is shown better than the raw answer, and traces the gain to the model's own deviation only when the deviation control on the stem, `rc-xl@-3 - rcs-xl@-3`, reads better; otherwise any realistic deviation on Cen may explain it, and a fixed non-averaged preset is weighed beside. |
+    | better | worse | The raw answer beats its re-centring on the stem: no change of readout; stage 2's Q2 line (`Q2_STEP3`) stands. |
+    | undecided or worse | better | Re-centring helps the model's own answer but isn't shown better than Cen: if the model path stays behind its flag, re-centre it (its own reviewed change); not the default; Step 3's start stays as stage 2's Q2 sends it. |
+    | undecided | undecided or worse | No change: Step 3's start stays as stage 2's Q2 sends it and re-centring is not adopted; not failed: the write-up gives what each interval rules out. |
+    | worse | undecided or worse | The re-centred model path loses to Cen on the stem and doesn't help the raw answer: not adopted; stage 2's Q2 line stands. |
+
+  - Under no effect either action row reads better with at most about 9.8% (two one-sided 5% tails, the independence
+    bound; lower in fact, since both rows hold `rc-xl@-3`). A false "propose" or "flagged" costs a declaration and
+    review of a new readout, caught by its own read and Step 1's exam. Every other row is descriptive. The action
+    rows' negatives are read adversarially, as stage 2's.
+- **The report (`report-rc`, zero renders):** refuses unless every re-centred row was made from today's files
+  (`sources_sha256`, by row; also checked at render time) and every answered part is rendered from today's answers;
+  each pair's directions read against the expected count (flagged when short); for the `- cen` rows the share of the
+  Cen-to-label gap closed (as section 1 reports sizes); the knob reads of the re-centred answers beside their inputs
+  and Cen (`knob_read`: distance to the label, the mean shift from Cen; an rcs answer is another part's, so its moves
+  are left out); then `rc_outcome`.
+- **How it differs from F32 (5B.1b):** F32 was exploratory (designed after seeing F31) and largely in sample (38 of
+  BKS's 40 reamped units seen in training). It read P2a, the clean-input model, and put S plus P2a's deviation from its
+  training labels' constant, so the model's own bias against its labels stayed in; switches and mics were held at S's,
+  so the centre and the discretes were not separated; P2a-Sc − S −0.029 [−0.061, +0.004], undecided. This one is
+  declared before the data, out of sample per fold on 480 parts in five sets, reads R-all with every learned control,
+  subtracts the model's own out-of-sample mean answer on the same input (so the output's mean is Cen's and the model's
+  bias is removed), centres on Cen (which beat S by −0.121 in stage 1), re-centres the discretes by a declared rule
+  with the answer's-own variant beside, and carries deviation controls. Why it may still fail: the stem may wash out
+  the per-unit deviation (then `rc-xl@-3` is Cen plus noise); the deviation may be partly set-level on BKS (stage 1's
+  open question); and the ladder's table is input-matched and per part, which a product table won't be.
+- **Stop rule:** one pass, one read, report (`report-rc`). No tuning of the table, the clip or the rule on the
+  ladder's held units; any later variant (shrinkage, another discrete rule, a product table) is its own declaration on
+  other units or Step 1's songs.
+- **Gates and order:** its own phase, `phase_lrc`, held as `phase_lrc_draft` (so `rc`, `render` of these rows and
+  `report-rc` refuse) until its review passes and the key is renamed in a commit that writes its own time into the
+  key; that commit is pushed before `report --stage 2` is run or any stage 2 output is read, so the audit can check
+  the time precedes `report-stage2.json`'s. Then: stage 2's renders done (the launcher refuses before its done line);
+  `check0`, `check1` and `replay` passed on today's C3r state; the render path unchanged since stages 1 and 2 rendered
+  (the launcher refuses unless `learn/` other than this module equals a59e94e9's and the worktree has no tracked
+  changes); the machine rules (at most 3 render processes, the 31 GB disk guard; no MPS).

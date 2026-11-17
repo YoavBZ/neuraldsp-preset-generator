@@ -33,12 +33,13 @@ stage declared in the ledger before it runs:
         swap-xl@-3 --shard 0/3
     .venv/bin/python -m learn.preset_ladder report --stage 2
     # the re-centred answer (its own phase, phase_lrc; after stage 2's renders)
-    .venv/bin/python -m learn.preset_ladder rc --rows rc-mix@-3,rc-xl@-3,rca-mix@-3,rcs-mix@-3
-    .venv/bin/python -m learn.preset_ladder render --rows rc-mix@-3,rc-xl@-3,rca-mix@-3,rcs-mix@-3 --shard 0/3
+    .venv/bin/python -m learn.preset_ladder rc --rows rc-mix@-3,rc-xl@-3,rca-mix@-3,rcs-mix@-3,rcs-xl@-3
+    .venv/bin/python -m learn.preset_ladder render --rows rc-mix@-3,rc-xl@-3,rca-mix@-3,rcs-mix@-3,rcs-xl@-3 \
+        --shard 0/3
     .venv/bin/python -m learn.preset_ladder report-rc
 
 The pure parts (the lender pool and draw, the layout, the gains, the stereo assembly, the centres, the subset, the rows,
-the swap draw and assembly, the outcome rules) are unit-tested in tests/test_preset_ladder.py.
+the swap draw and assembly, the re-centring, the outcome rules) are unit-tested in tests/test_preset_ladder.py.
 """
 
 from __future__ import annotations
@@ -71,7 +72,7 @@ SIC_BASES = ("clean-kind", "mix@-3", "mix-drawn", "xl@-3", "mix@drawn")   # inpu
 SWAP_BASES = ("mix@-3", "xl@-3")      # inputs whose swap rows are declared (stage 2)
 RC_PHASE = "phase_lrc"                # the re-centred answer's own phase (declared after stage 2's renders)
 RC_ROWS = {"rc-mix@-3": ("mix@-3", "rule"), "rc-xl@-3": ("xl@-3", "rule"),       # row: (input, discretes)
-           "rca-mix@-3": ("mix@-3", "answer"), "rcs-mix@-3": ("mix@-3", "swap")}
+           "rca-mix@-3": ("mix@-3", "answer"), "rcs-mix@-3": ("mix@-3", "swap"), "rcs-xl@-3": ("xl@-3", "swap")}
 SMALL = 0.05                          # a gain under this isn't known to be heard (F65): "small" in the outcome tables
 KNOB_GROUPS = {                       # reads_v3's three groups (`knob_group` adds the EQ and the pedals)
     "drive": ("inputGain", "pr12Volume", "sw50rVolume", "sw50rLevel", "ac20Volume", "ac20Power"),
@@ -1306,6 +1307,8 @@ def cmd_render(args):
     for r in rows:
         if is_swap(r):
             swap_base_check(r)
+        if row_info(r)["kind"] == "rc":
+            rc_sources_check(r)
     for r in rows:
         if ans[r]["c3r_sha256"] != st["sha256"]:
             raise SystemExit(f"{r}: its answers were made on another state")
@@ -1799,9 +1802,12 @@ def recentre(a, s, e, how="rule"):
     values and sounding masks, switches and masks, mic indices and masks): a, the model's answer; s, its same-input
     constant; e, Cen. Continuous heads: where all three sound, a - s + e clipped to [0, 1] (the control's range in unit
     space); else the answer's value where it sounds, else Cen's (a feature Cen switches on), else none (S's). Discrete
-    heads (switches and mics), by `how`: "answer" keeps the answer's own; "rule" keeps the answer's where it differs from
-    its constant's (a per-unit deviation) and takes Cen's where it equals it (no deviation: the centre replaced), the
-    discrete analogue of a - s + e. -> (cont, switch probabilities 0/1 or None, mic indices or None)."""
+    heads (switches and mics), by `how`: "answer" keeps the answer's own (none, so S's, where the answer doesn't hold
+    one); "rule" keeps the answer's where it differs from its constant's (a per-unit deviation) and takes Cen's where it
+    equals it (no deviation: the centre replaced), the discrete analogue of a - s + e, and where the answer doesn't hold
+    the head (its feature off) takes Cen's where Cen holds it, as a continuous head does, so a feature the rule switches
+    on from Cen gets Cen's child switches and mics with Cen's knobs, and an answer equal to its constant becomes Cen
+    exactly. -> (cont, switch probabilities 0/1 or None, mic indices or None)."""
     (ac, acm, asw, aswm, ak, akm), (sc, scm, ssw, sswm, sk, skm), (ec, ecm, esw, eswm, ek, ekm) = a, s, e
     cont = []
     for j in range(len(ac)):
@@ -1816,7 +1822,7 @@ def recentre(a, s, e, how="rule"):
 
     def disc(av, am, sv, smk, ev, em):
         if am <= 0:
-            return None
+            return ev if (how == "rule" and em > 0) else None
         if how == "rule" and smk > 0 and em > 0 and av == sv:
             return ev
         return av
@@ -1826,11 +1832,56 @@ def recentre(a, s, e, how="rule"):
                                                                                     for v in mics]
 
 
-def rcs_from(rc_answers, parts, row_base):
-    """(Pure.) The re-centred twin of the swap row: for part p and half h, the re-centred answer of the part the swap
-    row draws (`swap_draw` with the swap row's own name, so the same q as `swap-<input>`). rc_answers: {set: {key:
-    {half: answer}}} of the "rule" variant. -> (answers, drawn, missing)."""
-    return swap_assemble(parts, rc_answers, f"swap-{row_base}")
+def rcs_directions(parts, answers, row_base):
+    """(Pure.) The deviation control's directions: for part p and half h, the part q that the swap row `swap-<base>`
+    draws (`swap_assemble` on the base row's own answers, so exactly `cmd_swap`'s draws) and the pool of q's own
+    constant for that direction: q's same-input pool (`sic_pool`, restricted to parts with an answer) without p. The
+    pool relation is symmetric, so p sits in q's pool in every direction; with p left out, p's own answer never enters
+    its deviation control. parts: [{key, set, fold, amp, cls, cluster, ids}]; answers: the base row's {set: {key:
+    {half: answer}}}. -> (drawn {key: {half: q}}, pools {key: {half: [keys]}}, missing [key])."""
+    _, drawn, missing = swap_assemble(parts, answers, f"swap-{row_base}")
+    by_key = {pp["key"]: pp for pp in parts}
+    have = {pp["key"] for pp in parts if answers.get(pp["set"], {}).get(pp["key"]) is not None}
+    pools, out_drawn = {}, {}
+    missing = list(missing)
+    for p_key, hs in drawn.items():
+        got = {h: [x["key"] for x in sic_pool(parts, by_key[q]) if x["key"] in have and x["key"] != p_key]
+               for h, q in hs.items()}                # in `sic_pool`'s order, as `cmd_sic` averages
+        if not all(got.values()):
+            missing.append(p_key)
+            continue
+        pools[p_key], out_drawn[p_key] = got, hs
+    return out_drawn, pools, missing
+
+
+def rcs_draws_check(row, swap_doc, drawn, base_sha, base_models):
+    """(Pure.) Refuse unless the swap row whose draws a deviation control takes exists, was made from today's base
+    answers (their file's sha256 and models, as `swap_base_check`) and holds exactly these draws: no silent fall-back.
+    swap_doc: the swap row's answers file (None when missing)."""
+    base = row_info(row)["base"]
+    if swap_doc is None:
+        raise SystemExit(f"{row}: swap-{base}'s answers are missing: its draws are this row's (run `swap` first)")
+    if swap_doc.get("base_answers_sha256") != base_sha or swap_doc.get("base_models") != base_models:
+        raise SystemExit(f"{row}: swap-{base} was made from other {base} answers than today's")
+    if swap_doc.get("drawn_from") != drawn:
+        raise SystemExit(f"{row}: its draws differ from swap-{base}'s")
+
+
+def rc_sources(row):
+    """The answer files a re-centred row is made from: its base input's answers, that input's same-input constant and
+    Cen; for `rcs-<input>` also the swap row whose draws it takes. -> [row names]"""
+    base, how = RC_ROWS[row]
+    return [base, f"sic-{base}", "cen"] + ([f"swap-{base}"] if how == "swap" else [])
+
+
+def rc_sources_check(row):
+    """Refuse when a re-centred row's answers were made from other files than today's (`sources_sha256`, by row)."""
+    d = json.loads(answers_path(row).read_text())
+    got = d.get("sources_sha256") or {}
+    for name in rc_sources(row):
+        p = answers_path(name)
+        if not p.exists() or got.get(name) != file_sha(p):
+            raise SystemExit(f"{row}: made from other {name} answers than today's: run `rc` again")
 
 
 def cmd_rc(args):
@@ -1838,10 +1889,14 @@ def cmd_rc(args):
     answer on the row's input less p's own out-of-sample same-input constant plus Cen, head by head (`recentre`), then
     `full_space.answer_settings` and C3r's hold. `rc-<input>` re-centres the discretes by the rule (the answer's own
     where it deviates from its constant, Cen's where it doesn't); `rca-mix@-3` keeps every answer's own discretes (the
-    continuous re-centring alone); `rcs-mix@-3` is the re-centred answer of the part `swap-mix@-3` draws (another unit's
-    deviation on Cen). Out of sample for p: the answer is p's fold model's (it never saw p), the constant comes from
-    other parts of p's fold with no shared cluster, DI file or creator (label-free), and Cen from model k's training
-    labels (no record of p's fold or sharing an identity with it). -> ladder/answers/<row>.json."""
+    continuous re-centring alone); `rcs-<input>` (the deviation control) is, for p and h, the re-centred answer of the
+    part q the swap row `swap-<input>` draws (the same q, checked against its file), with q's constant rebuilt without
+    p (`rcs_directions`; the rebuild is checked to reproduce `sic-<input>` with p in), rendered through p's DI: another
+    unit's deviation on Cen, free of p's own answer. Out of sample for p: the answer is p's fold model's (it never saw
+    p), the constant comes from other parts of p's fold with no shared cluster, DI file or creator (label-free), and Cen
+    from model k's training labels (no record of p's fold or sharing an identity with it). On `xl@-3` the stage's
+    declared lender exception reaches rc through `sic-xl@-3` (3 of 960 n12 directions, negative weight, beside only).
+    Effects stay at S, as in every answer (C3-cabS's hold). -> ladder/answers/<row>.json."""
     import numpy as np
 
     from learn import full_controls_c3r as R
@@ -1862,79 +1917,146 @@ def cmd_rc(args):
     parts = [{"key": f"{ru['unit']}|{ru['amp']}", "fold": ru["fold"], "amp": ru["amp"], "cls": ru["prt"]["cls"],
               "cluster": f"{ru['set']}|{ru['cluster']}", "ids": ent[ru["unit"]]["ids"], "set": ru["set"]}
              for ru in units]
+    by_key = {pp["key"]: pp for pp in parts}
     cache = {}
 
-    def files(base):
-        if base not in cache:
-            fs = {"base": answers_path(base), "sic": answers_path(f"sic-{base}"), "cen": answers_path("cen")}
-            js = {k: json.loads(v.read_text()) for k, v in fs.items()}
-            for k, v in js.items():
-                if v.get("c3r_sha256") != st["sha256"]:
-                    raise SystemExit(f"{fs[k].name}: made on another C3r state")
-            cache[base] = (js, {k: file_sha(v) for k, v in fs.items()})
-        return cache[base]
+    def files(r):
+        names = rc_sources(r)
+        for nm in names:
+            if not answers_path(nm).exists():
+                raise SystemExit(f"{r}: {nm}'s answers are missing (run its stage's step first)")
+        js = {nm: cache.setdefault(nm, json.loads(answers_path(nm).read_text())) for nm in names}
+        for nm, v in js.items():
+            if v.get("c3r_sha256") != st["sha256"]:
+                raise SystemExit(f"{nm}: made on another C3r state")
+        return js, {nm: file_sha(answers_path(nm)) for nm in names}
 
-    def recentred(base, how):
-        js, _ = files(base)
-        out = {}
-        for ru in units:
-            key = f"{ru['unit']}|{ru['amp']}"
-            a = js["base"]["answers"].get(ru["set"], {}).get(key)
-            s_ = js["sic"]["answers"].get(ru["set"], {}).get(key)
-            c_ = js["cen"]["answers"].get(ru["set"], {}).get(key)
-            if a is None or s_ is None or c_ is None:
-                continue
-            sel, S = ms[ru["amp"]][ru["prt"]["cls"]]
-            enc = lambda x: F.encode(LO.tdict(x["settings"]), ru["amp"])[:6]          # noqa: E731
-            se, ce = enc(s_[P.ANY_HALF]), enc(c_[P.ANY_HALF])
-            for h in ("A", "B"):
-                cont, swp, mics = recentre(enc(a[h]), se, ce, how)
-                stg = F.answer_settings(ru["amp"], S, np.array(cont, np.float64), swp, mics)
-                stg = P.hold_outside_space(stg, S, ru["amp"], hold) if hold is not None else \
-                    P.hold_outside_space(stg, S, ru["amp"])
-                out.setdefault(ru["set"], {}).setdefault(key, {})[h] = {"select": sel, "settings": LO.sdict(stg)}
-        return out
+    def enc(x, amp):
+        return F.encode(LO.tdict(x["settings"]), amp)[:6]
+
+    def held(amp, S, cont, swp, mics):
+        stg = F.answer_settings(amp, S, np.array(cont, np.float64), swp, mics)
+        return P.hold_outside_space(stg, S, amp, hold) if hold is not None else P.hold_outside_space(stg, S, amp)
+
+    def constant(base_answers, keys, amp, cls):
+        """A same-input constant over `keys`' answers, built as `cmd_sic` builds it."""
+        sel, S = ms[amp][cls]
+        s_enc = F.encode(dict(S), amp)
+        s_mics = [int(v) if m else None for v, m in zip(s_enc[4], s_enc[5])]
+        rows_ = [enc(x, amp) for k in keys for x in base_answers[by_key[k]["set"]][k].values()]
+        cont, swp, mics = centre_of(rows_, len(F.CONT), len(F.SW), len(F.CAT), s_mics)
+        return {"select": sel, "settings": LO.sdict(held(amp, S, cont, swp, mics))}
+
     for r in rows:
         base, how = RC_ROWS[r]
-        extra = {}
+        js, shas = files(r)
+        ba, sa, ca = js[base]["answers"], js[f"sic-{base}"]["answers"], js["cen"]["answers"]
+        ans, missing, extra = {}, [], {}
         if how == "swap":
-            ans, drawn, missing = rcs_from(recentred(base, "rule"), parts, base)
-            sp = answers_path(f"swap-{base}")
-            if sp.exists() and json.loads(sp.read_text()).get("drawn_from") != drawn:
-                raise SystemExit(f"{r}: its draws differ from swap-{base}'s")
-            extra = {"drawn_from": drawn}
+            drawn, pools, missing = rcs_directions(parts, ba, base)
+            rcs_draws_check(r, js[f"swap-{base}"], drawn, shas[base], js[base].get("models"))
+            checked = set()
+            for ru in units:
+                key = f"{ru['unit']}|{ru['amp']}"
+                if key not in drawn:
+                    continue
+                sel, S = ms[ru["amp"]][ru["prt"]["cls"]]
+                out_h = {}
+                for h, q in drawn[key].items():
+                    qq = by_key[q]
+                    s_q, c_q = sa.get(qq["set"], {}).get(q), ca.get(qq["set"], {}).get(q)
+                    if s_q is None or c_q is None:
+                        break
+                    if q not in checked:              # the rebuild reproduces q's stored constant with p in
+                        full = [x["key"] for x in sic_pool(parts, qq)
+                                if ba.get(x["set"], {}).get(x["key"]) is not None]
+                        if constant(ba, full, qq["amp"], qq["cls"])["settings"] != s_q[P.ANY_HALF]["settings"]:
+                            raise SystemExit(f"{r}: the rebuilt constant of {q} differs from sic-{base}'s")
+                        checked.add(q)
+                    s_minus = constant(ba, pools[key][h], qq["amp"], qq["cls"])
+                    cont, swp, mics = recentre(enc(ba[qq["set"]][q][h], qq["amp"]), enc(s_minus, qq["amp"]),
+                                               enc(c_q[P.ANY_HALF], qq["amp"]), "rule")
+                    out_h[h] = {"select": sel, "settings": LO.sdict(held(ru["amp"], S, cont, swp, mics))}
+                if len(out_h) == 2:
+                    ans.setdefault(ru["set"], {})[key] = out_h
+                else:
+                    missing.append(key)
+            extra = {"drawn_from": drawn, "q_constant": "q's same-input pool without p (rcs_directions)",
+                     "q_constant_pool_size": {k: {h: len(v) for h, v in hs.items()} for k, hs in pools.items()}}
         else:
-            ans = recentred(base, how)
-            missing = sorted(f"{ru['unit']}|{ru['amp']}" for ru in units
-                             if f"{ru['unit']}|{ru['amp']}" not in ans.get(ru["set"], {}))
-        save_answers(r, ans, dict(extra, c3r_sha256=st["sha256"], base=base, discretes=how,
-                                  sources_sha256=files(base)[1], missing=missing, rule=cmd_rc.__doc__))
-        print(f"RC DONE {r}: {sum(len(v) for v in ans.values())} parts, {len(missing)} missing")
+            for ru in units:
+                key = f"{ru['unit']}|{ru['amp']}"
+                a, s_, c_ = (x.get(ru["set"], {}).get(key) for x in (ba, sa, ca))
+                if a is None or s_ is None or c_ is None:
+                    missing.append(key)
+                    continue
+                sel, S = ms[ru["amp"]][ru["prt"]["cls"]]
+                se, ce = enc(s_[P.ANY_HALF], ru["amp"]), enc(c_[P.ANY_HALF], ru["amp"])
+                for h in ("A", "B"):
+                    cont, swp, mics = recentre(enc(a[h], ru["amp"]), se, ce, how)
+                    ans.setdefault(ru["set"], {}).setdefault(key, {})[h] = {
+                        "select": sel, "settings": LO.sdict(held(ru["amp"], S, cont, swp, mics))}
+        save_answers(r, ans, dict(extra, c3r_sha256=st["sha256"], base=base, discretes=how, sources_sha256=shas,
+                                  missing=sorted(set(missing)), rule=cmd_rc.__doc__))
+        print(f"RC DONE {r}: {sum(len(v) for v in ans.values())} parts, {len(set(missing))} missing")
 
 
 RC_PAIRS = [   # the re-centred answer's declared rows (`phase_lrc`); the action rows are RC_ACTION's
     ("rc-xl@-3", "cen"), ("rc-xl@-3", "xl@-3"), ("rc-mix@-3", "cen"), ("rc-mix@-3", "mix@-3"),
     ("rc-xl@-3", "S"), ("rc-mix@-3", "S"),
-    ("rca-mix@-3", "mix@-3"), ("rc-mix@-3", "rca-mix@-3"), ("rc-mix@-3", "rcs-mix@-3"), ("rcs-mix@-3", "cen")]
+    ("rca-mix@-3", "mix@-3"), ("rc-mix@-3", "rca-mix@-3"), ("rc-mix@-3", "rcs-mix@-3"), ("rcs-mix@-3", "cen"),
+    ("rc-xl@-3", "rcs-xl@-3"), ("rcs-xl@-3", "cen")]
 RC_ACTION = [("rc-xl@-3", "cen"), ("rc-xl@-3", "xl@-3")]
-RC_OUTCOMES = {
-    "goal": {"better": "the re-centred model path on the product's stem beats the good fixed preset: proposed as the "
-                       "model path's readout (its own declaration and review; a Step 1 arm would be Step 1's own "
-                       "amendment)",
-             "undecided": "not shown better than Cen: Step 3's start stays as stage 2's Q2 sends it; re-centring is "
-                          "not adopted for the product; the write-up gives what the interval rules out",
-             "worse": "the re-centred model path loses to Cen on the product's stem: not adopted"},
-    "own": {"better": "re-centring helps the model's own answer on the product's stem: if the model path stays (behind "
-                      "its flag), re-centre it (its own change, reviewed)",
-            "undecided": "no change to the model path's readout",
-            "worse": "re-centring hurts the model's own answer: not adopted"}}
+RC_JOINT = [   # the joint action table: (goal readings, own readings, action, next); each of the nine pairs once
+    (("better",), ("better", "undecided"), "propose",
+     "the re-centred model path beats the good fixed preset on the product's stem by the score, and re-centring isn't "
+     "shown to lose to the raw answer: propose it as the model path's readout (its own declaration and review; a "
+     "Step 1 arm would be Step 1's own amendment). The proposal says whether rc-xl@-3 is shown better than the raw "
+     "answer, and traces the gain to the model's own deviation only when the deviation control on the stem, "
+     "rc-xl@-3 - rcs-xl@-3, reads better; otherwise any realistic deviation on Cen may explain it, and a fixed "
+     "non-averaged preset is weighed beside. A per-part, input-matched table is optimistic for the product's table"),
+    (("better",), ("worse",), "raw-wins",
+     "re-centring beats Cen but the raw answer beats re-centring on the stem: no change of readout; stage 2's Q2 line "
+     "(Q2_STEP3) stands"),
+    (("undecided", "worse"), ("better",), "flagged",
+     "re-centring helps the model's own answer on the stem but isn't shown better than Cen: if the model path stays "
+     "behind its flag, re-centre it (its own reviewed change); not the default; Step 3's start stays as stage 2's Q2 "
+     "sends it"),
+    (("undecided",), ("undecided", "worse"), "none",
+     "no change: Step 3's start stays as stage 2's Q2 sends it and re-centring is not adopted; not failed: the write-up "
+     "gives what each interval rules out"),
+    (("worse",), ("undecided", "worse"), "not-adopted",
+     "the re-centred model path loses to Cen on the stem and doesn't help the raw answer: not adopted; stage 2's Q2 "
+     "line stands")]
+RC_LABELS = {  # the descriptive rows' one-line labels, declared before the data (no action)
+    "rca-mix@-3 - mix@-3": {"better": "the knobs' re-centring alone helps the answer",
+                            "worse": "the knobs' re-centring alone hurts the answer"},
+    "rc-mix@-3 - rca-mix@-3": {"better": "the discrete rule adds to the knobs' re-centring",
+                               "worse": "the discrete rule costs: the answer's own discretes read better"},
+    "rc-mix@-3 - rcs-mix@-3": {"better": "p's own deviation reads p on the exposed backed mix",
+                               "worse": "another unit's deviation reads better than p's own on the exposed backed mix"},
+    "rcs-mix@-3 - cen": {"better": "Cen's averaging penalty: another unit's deviation on Cen beats Cen (mix)",
+                         "worse": "another unit's deviation on Cen loses to Cen (mix)"},
+    "rc-xl@-3 - rcs-xl@-3": {"better": "p's own deviation reads p on the stem: a goal 'better' is the model's reading",
+                             "worse": "another unit's deviation reads better than p's own on the stem: a goal "
+                                      "'better' is not the model's reading"},
+    "rcs-xl@-3 - cen": {"better": "Cen's averaging penalty on the stem: another unit's deviation on Cen beats Cen",
+                        "worse": "another unit's deviation on Cen loses to Cen on the stem"}}
+RC_UNSETTLED = "not settled (undecided is not failed)"
+
+
+def rc_action(goal, own):
+    """(Pure.) The joint table's row for the two action readings. -> (action, next)."""
+    hit = [(k, t) for gs, os_, k, t in RC_JOINT if goal in gs and own in os_]
+    if len(hit) != 1:
+        raise SystemExit(f"the joint table has {len(hit)} rows for goal {goal}, own {own}")
+    return hit[0]
 
 
 def rc_outcome(rows):
-    """(Pure.) The re-centred answer's readings: the goal row `rc-xl@-3 - cen` and the own row `rc-xl@-3 - xl@-3` on
-    the deciding pool (the only rows that change an action; a missing row refuses), and the descriptive mechanism
-    rows on mix@-3 (the continuous re-centring alone, the discretes' share, another unit's deviation on Cen, Cen's own
-    averaging penalty). rows: {"a - b": summarise row}."""
+    """(Pure.) The re-centred answer's reading: the goal row `rc-xl@-3 - cen` and the own row `rc-xl@-3 - xl@-3` on
+    the deciding pool, read together by the joint table (`RC_JOINT`; the only rows that change an action; a missing
+    row refuses), and the descriptive rows' declared labels (`RC_LABELS`). rows: {"a - b": summarise row}."""
     def d(name):
         r = (rows.get(name) or {}).get("deciding_pool")
         got = decided(r)
@@ -1942,16 +2064,39 @@ def rc_outcome(rows):
             raise SystemExit(f"{name}: no reading (the report is incomplete)")
         return got
     goal, own = d("rc-xl@-3 - cen"), d("rc-xl@-3 - xl@-3")
-    mech = {n: decided((rows.get(n) or {}).get("deciding_pool")) for n in (
-        "rc-mix@-3 - cen", "rc-mix@-3 - mix@-3", "rca-mix@-3 - mix@-3", "rc-mix@-3 - rca-mix@-3",
-        "rc-mix@-3 - rcs-mix@-3", "rcs-mix@-3 - cen")}
-    return {"goal": {"reading": goal, "next": RC_OUTCOMES["goal"][goal]},
-            "own": {"reading": own, "next": RC_OUTCOMES["own"][own]}, "mechanism": mech}
+    action, nxt = rc_action(goal, own)
+    mech = {}
+    for n, lab in RC_LABELS.items():
+        got = decided((rows.get(n) or {}).get("deciding_pool"))
+        mech[n] = {"reading": got, "label": lab.get(got, RC_UNSETTLED) if got else "no reading"}
+    return {"goal": goal, "own": own, "action": action, "next": nxt, "mechanism": mech}
+
+
+def rc_complete(units, row):
+    """Refuse unless every answered part of a re-centred row with a lag has its judge file made from today's answers.
+    -> {parts, missing_answers}."""
+    from learn import pipeline_fix as P
+
+    d = json.loads(answers_path(row).read_text())
+    n = done = 0
+    for ru in units:
+        key = f"{ru['unit']}|{ru['amp']}"
+        a = d["answers"].get(ru["set"], {}).get(key)
+        if a is None or ru["lag"] is None:
+            continue
+        n += 1
+        gp = judge_path(row, ru)
+        done += gp.exists() and json.loads(gp.read_text()).get("answers_sha256") == P.answers_sha({key: a})
+    if done < n:
+        raise SystemExit(f"{row}: {done} of {n} answered parts rendered from today's answers: render first")
+    return {"parts": n, "missing_answers": len(d.get("missing", []))}
 
 
 def cmd_report_rc(_args):
-    """The re-centred answer's report (zero renders; `phase_lrc`): every `RC_PAIRS` row per set and pooled
-    (`summarise`), the action rows' negatives, `rc_outcome`. -> ladder/report-rc.json."""
+    """The re-centred answer's report (zero renders; `phase_lrc`): each re-centred row complete and made from today's
+    files; every `RC_PAIRS` row per set and pooled (`summarise`), with its directions read against the expected count
+    and, for the `- cen` rows, the share of the Cen-to-label gap closed; the action rows' negatives; the knob reads of
+    the re-centred answers beside their inputs and Cen (`knob_read`); `rc_outcome`. -> ladder/report-rc.json."""
     from learn import full_controls_c3r as R
     from learn import pipeline_fix as P
 
@@ -1960,9 +2105,21 @@ def cmd_report_rc(_args):
     st = R.state()
     controls_ok(2, st)
     units = R.read_units(st)
+    for r in RC_ROWS:
+        rc_sources_check(r)
+        if row_info(r)["discretes"] == "swap":
+            swap_base_check(f"swap-{row_info(r)['base']}")
+    complete = {r: rc_complete(units, r) for r in RC_ROWS}
     band = {u: v["band"] for u, v in lends()["units"].items()}
     seen = R.player_seen(st, units)
-    fns, out = {}, {"plan": PLAN, "ledger": f"{LEDGER_ID} {RC_PHASE}", "rows": {}, "negatives": {}}
+    answered = {}
+    for nm in {n for a, b in RC_PAIRS for n in (a, b)} - {"S"}:
+        ans = json.loads(answers_path(nm).read_text())["answers"]
+        answered[nm] = {f"{ru['unit']}|{ru['amp']}" for ru in units if ru["lag"] is not None
+                        and ans.get(ru["set"], {}).get(f"{ru['unit']}|{ru['amp']}") is not None}
+    every = {f"{ru['unit']}|{ru['amp']}" for ru in units if ru["lag"] is not None}
+    fns, lab = {}, None
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {RC_PHASE}", "complete": complete, "rows": {}, "negatives": {}}
     for a, b in RC_PAIRS:
         for nm in (a, b):
             if nm not in fns:
@@ -1970,18 +2127,31 @@ def cmd_report_rc(_args):
         got = rows_for_pair(st, units, fns[a], fns[b])
         row = summarise(got, units, band, seen_player=seen)
         row["directions_read"] = sum(len(v) for v in got.values())
+        row["directions_expected"] = 2 * len(answered.get(a, every) & answered.get(b, every))
+        row["complete"] = row["directions_read"] == row["directions_expected"]
+        if b == "cen":
+            if lab is None:
+                lab = {s: {(x[1], x[3]): x[2] for x in v} for s, v in
+                       rows_for_pair(st, units, value_fn(st, "label"), value_fn(st, "cen")).items()}
+            row["gap_share"] = {s: dict(zip(("share", "directions"), gap_share({(x[1], x[3]): x[2] for x in got[s]},
+                                                                                lab[s]))) for s in SETS}
         out["rows"][f"{a} - {b}"] = row
         if (a, b) in RC_ACTION:
             out["negatives"][f"{a} - {b}"] = dict(negatives(row, row["deciding_sets"]),
                                                    leave_one_cluster_out={s: loo_range(got, units, s)
                                                                           for s in row["deciding_sets"]})
+    kr = knob_read(st, units, {nm: json.loads(answers_path(nm).read_text())["answers"]
+                               for nm in sorted(set(RC_ROWS) | {"mix@-3", "xl@-3", "cen"})})
+    kr["moves"] = {k: v for k, v in kr["moves"].items() if "rcs-" not in k}   # an rcs answer is another part's
+    out["knob_read"] = kr
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     P.save(ladder_dir() / "report-rc.json", out)       # the rows are saved before the outcome can refuse
     out["outcome"] = rc_outcome(out["rows"])
     P.save(ladder_dir() / "report-rc.json", out)
     for name, row in out["rows"].items():
         dp = row.get("deciding_pool") or {}
-        print(f"{name}: pool {dp.get('mean')} [{dp.get('lo90')}, {dp.get('hi90')}]")
+        flag = "" if row["complete"] else f" (INCOMPLETE: {row['directions_read']} of {row['directions_expected']})"
+        print(f"{name}: pool {dp.get('mean')} [{dp.get('lo90')}, {dp.get('hi90')}]{flag}")
     print("RC OUTCOME", json.dumps(out["outcome"]))
 
 
