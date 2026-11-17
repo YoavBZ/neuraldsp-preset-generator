@@ -19,7 +19,11 @@ earlier reads (`vreal/answers/EX-*.json`, `vreal/judge/EX-*/`).
   - **Research runs: yes,** about 10 blinded headless generate runs, as the routing study ran them.
   - **The listening page is built** as section "The listening page" says, ready for the user; it is not published.
   - **The stronger ceiling** (a full every-control search on V-real) is not run.
-- Nothing has run. Reviews and audits are run by independent agents at each checkpoint.
+- **Where it stands (2026-11-17):** CP2 is done. The inputs are built and hashed into the ledger; guards 2, 3 and 7's
+  stored half and guard 4 (the R1 reproduction, 12 renders) pass; the runner check passed on its second try (the first
+  failed the CLI's sign-in before any model call); all 10 research runs passed the audit (0 excluded, 0 aborted, no
+  rerun). No chain run, no separation and no judge render yet. Reviews and audits are run by independent agents at
+  each checkpoint.
 
 ## The question
 
@@ -188,6 +192,18 @@ is not a research result and is never used for R; `research-route` refuses until
 - A unit that still has no passing run has no R: M runs on the label's class (so it has no M-lab), the unit leaves the
   primary row (M − R) and the other R rows, and stays in every other row. The count is stated beside the primary.
 - If no unit gets a passing run (the runner does not work here), the exam stops and hands back for the user.
+- **Note, 2026-11-17 (an exemption to this rule, added after the runner check and before `research-prepare`, so the
+  code was on disk for all 10 runs):** a run the service ends is aborted. The trigger is a `result` event with
+  `is_error` and either `terminal_reason` `api_error` or error text matching `API_ERRORS`; in Claude Code 2.1.326 that
+  covers every API error that ends a turn (sign-in, usage and rate limits, overloads, server errors, invalid
+  requests, billing errors, empty responses), not only limits and sign-in. An aborted run is not a run: it is not
+  audited, it does not use the unit's one rerun, there is no limit on aborts, `research-prepare` gives the unit a
+  fresh folder, and each abort is recorded in map.json (`aborted`, `aborted_at`, the transcript kept renamed in its
+  folder) and in research.json `aborted`. It did not fire: 10 runs, 0 aborted, none excluded, none asked again, no
+  `--again`. Known limits, for any reuse (the PR #504 review's S1-S8): aborted transcripts are not audited, aborts have
+  no per-unit cap, an abort records little about itself, collect does not check an aborted entry, the shared-folder
+  hash is skipped on an abort, the stop message misleads for an aborted rerun, the tests cover few error texts, and the
+  text fallback is broad ("limit reached" also matches a context limit).
 
 **When the product fails** (declared now): a chain arm that ends without a `preset.json` (a stage refused or crashed)
 is logged and the chain goes on with the other runs (M-x, M-unity and M-lab skip a unit whose M failed); `answers` then
