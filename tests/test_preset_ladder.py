@@ -411,6 +411,42 @@ def test_stage_2s_readings_and_stage_3s_triggers_are_one_stated_rule():
     assert not any("xl-v0" in a or "xl-v0" in b for a, b in L.STAGE_PAIRS[2])   # xl-v0 is answered, not rendered
 
 
+def test_the_swap_row_is_another_pool_parts_real_answer_drawn_per_direction():
+    assert L.row_info("swap-mix@-3") == {"stage": 2, "kind": "swap", "style": None, "base": "mix@-3"}
+    assert L.row_info("swap-xl@-3")["stage"] == 2
+    for bad in ("swap-clean-kind", "swap-cen", "swap-"):
+        with pytest.raises(SystemExit):
+            L.row_info(bad)
+    pool = ["b", "c", "d", "a"]
+    got = {L.swap_draw(pool, "a", "swap-mix@-3", h) for h in ("A", "B")}
+    assert got <= {"b", "c", "d"}                                  # never the part itself
+    assert L.swap_draw(pool, "a", "swap-mix@-3", "A") == L.swap_draw(list(reversed(pool)), "a", "swap-mix@-3", "A")
+    draws = {L.swap_draw(pool, f"p{j}", "swap-mix@-3", "A") for j in range(40)}
+    assert draws == {"a", "b", "c", "d"}                           # a uniform draw over the pool
+    assert L.swap_draw(["a"], "a", "swap-mix@-3", "A") is None
+    assert not L.is_constant("swap-mix@-3") and L.is_swap("swap-mix@-3")
+    for i, (a, b) in L.SWAP_PAIRS.items():
+        assert tuple(a.split(" - ")) in L.STAGE_PAIRS[2] and (b in {f"{x} - {y}" for x, y in L.STAGE_PAIRS[1]}
+                                                              or tuple(b.split(" - ")) in L.STAGE_PAIRS[2])
+
+
+def test_the_two_ceilings_open_or_park_separator_work_only_as_declared():
+    T = L.ceiling_together
+    assert T("heard-size gain", "small")["reading"] == "opens separator work"
+    assert T("undecided, not shown", "heard-size gain")["because"] == ["mixp@-3 - xl@-3"]
+    assert T("small", "small")["reading"] == "parks separator work"
+    assert T("undecided, not shown", "small")["reading"] == "parks separator work"
+    for clean in ("small", "undecided, not shown", "a gain shown, not of heard size"):   # the confounded pair alone
+        assert T(clean, "undecided, not shown")["reading"].startswith("not settled")    # never parks
+    got = T("a gain shown, heard size undecided", "a gain shown, not of heard size")
+    assert got["reading"].startswith("not settled") and len(got["for_the_user"]) == 2
+    assert ("mixp@-3", "xl@-3") in L.NEGATIVES[2] and ("clean@-3", "xl@-3") in L.NEGATIVES[2]
+    assert set(L.Q2_STEP3) == {"better", "undecided", "worse"} and "Cen" in L.Q2_STEP3["undecided"]
+    q = L.q2q3_outcome(_rows(), _rows())
+    assert q["q2_step3"] == L.Q2_STEP3["undecided"] and q["ceiling"]["reading"].startswith("not settled")
+    assert set(q["swap"]) == {"mix@-3", "xl@-3"}
+
+
 def test_the_perfect_separators_ceiling_calls_only_a_ruled_out_gain_small():
     assert L.separator_ceiling({"mean": -0.1, "lo90": -0.18, "hi90": -0.02}) == "heard-size gain"
     assert L.separator_ceiling({"mean": -0.03, "lo90": -0.045, "hi90": -0.01}) == "a gain shown, not of heard size"

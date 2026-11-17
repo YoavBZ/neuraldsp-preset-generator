@@ -577,33 +577,70 @@ Stage 0 ran on 2026-11-17 (zero renders) and its independent audit stands with c
   passed: 30 of 30 kept renders (60 with priming) equal C3r's stored ones. `replay` now also records, on a mismatch,
   each direction's judge values against the stored ones (the pass rule is unchanged).
 
-### Stage 2's declaration (drafted 2026-11-17; in force only after stage 1's audit and its own review)
+### Notes after stage 1's audit (2026-11-17)
 
-- **Rests on:** stage 1's Q1 outcome 1, "reads in the exposed backed mix" (`mix@-3 - sic-mix@-3` −0.075 [−0.123,
-  −0.026] on the deciding pool, by the score), pending its audit. If the audit changes the outcome, this draft is
-  redone from section 1's table.
-- **Follows:** section 1's line for outcome 1: full stage 2; stage 3 by its triggers.
-- **Rows, all 480 parts:** `mixp@-3` (built in stage 1), `xlnoG@-3`, `xl@-3` (separated now), `clean@-3` (built in
-  stage 1), each answered per half; `sic-xl@-3`, one answer a part from the part's own fold.
-- **Size:** 800 X-LANCE separations on the MPS (A2s measured 4.6 s a unit with one separation, so about 1 h; not yet
-  measured on this build); 4,320 answers and 8,640 renders (stage 1 rendered the same count in 2 h 3 min); zero
-  training. Order: `sep`, then `predict`, `sic`, the three render shards, then `report --stage 2`.
-- **What each pair answers:** `xl@-3 - cen`, Q2, does the model path on the product's stem beat the label constant?
-  `xl@-3 - sic-xl@-3`, does it read per unit on the stem? `xlnoG@-3 - mixp@-3`, the separator alone; `mixp@-3 -
-  mix@-3`, the level step alone; `xl@-3 - xlnoG@-3`, the other guitars; `clean@-3 - xl@-3`, the perfect separator's
-  ceiling (`separator_ceiling`); `xlnoG@-3 - cen`, `mixp@-3 - cen`, `clean@-3 - cen`, the exposure triggers; beside,
-  `xl@-3 - aconst`, `xl@-3 - S`, `sic-xl@-3 - cen`, `xl@-3 - mix@-3` (the whole stem path), `xlnoG@-3 - mix@-3`
-  (separator and level step together).
-- **Stop rule:** one build, one read, then stop and report; stage 3 is declared on its own and runs only the rows its
-  triggers name (`q2q3_outcome`). Stage 1's outcome 1 has already fired the exposure and pooling triggers.
+- **Stage 1 read outcome 1** by the declared rule, by the score; the audit stands with corrections to meaning and
+  wording, none to a number or the rule (the results doc carries the reading).
+- **The build's figures, corrected.** Unmastered units sit at exactly −3.00 dB target-to-rest; mastering moves the
+  built ratio by more than 1 dB on 38 of 400 units (up to +3.8 dB), not "under 1 dB"; the backed mix's target sits
+  −3.2 to +6.2 dB over its bare backing (interquartile −1.8 to +1.7), not the dry run's −1.7 to +2.2.
+- **n12's gap share** uses its 12 label directions.
+- **Cuts other than the declared pool** (without the panel, by DI file, the five-set pool) are post hoc and beside,
+  never the reading.
+
+### Stage 2's declaration (drafted 2026-11-17, revised after stage 1's audit; in force only after its own review)
+
+- **Rests on:** stage 1's audited outcome 1, "reads in the exposed backed mix" (`mix@-3 - sic-mix@-3` −0.075 [−0.123,
+  −0.026] on the deciding pool, by the score). **Follows** section 1's line for outcome 1: full stage 2; stage 3 by
+  its triggers.
+- **Rows, all 480 parts:** `mixp@-3` and `clean@-3` (built in stage 1), `xlnoG@-3` and `xl@-3` (separated now), each
+  answered per half; `sic-xl@-3`, one answer a part from the part's own fold; and the swap rows `swap-mix@-3` and
+  `swap-xl@-3`, per half.
+- **The swap rows** (`cmd_swap`): for part p and half h, the input's own answer for half h of one other part q, drawn
+  uniformly and seeded by the row, p and h from p's same-input pool (`sic_pool`: p's own fold, amp and class, another
+  cluster, no shared DI file or creator), rendered through p's own DI and judged on p's held half. q's answer was made
+  by p's own fold model, which never saw p, from q's input, which shares no performance with p: label-free and out of
+  sample like the same-input constant, but a real answer rather than an averaged preset.
+- **Size:** 800 X-LANCE separations on the MPS (A2s measured 4.6 s a unit with one separation, so about 1 h plus the
+  mixes' rebuild; not yet measured on this build); 6,240 answers (960 for each of `mixp@-3`, `xlnoG@-3`, `xl@-3`,
+  `clean@-3`, `swap-mix@-3`, `swap-xl@-3`; 480 for `sic-xl@-3`) and 12,480 renders with priming (stage 1 rendered
+  8,640 in 2 h 3 min on 3 shards, so about 3 h); zero training.
+- **Order:** the separations first, then the answers, the same-input constant and both swaps, then one render pass of
+  all seven rows on three shards, then `report --stage 2`. `swap-mix@-3` needs no separation, but rendering it first
+  would gain nothing: no render may run beside a separation, so the machine time is the same either way, and one
+  render pass keeps the stage one build and one read.
+- **What each pair answers:**
+  - Q2: `xl@-3 - cen`, does the model path on the product's stem beat the label constant? `xl@-3 - sic-xl@-3`, does it
+    read per unit on the stem?
+  - Q3: `xlnoG@-3 - mixp@-3`, the separator alone; `mixp@-3 - mix@-3`, the level step alone; `xl@-3 - xlnoG@-3`, the
+    other guitars.
+  - The ceilings: `clean@-3 - xl@-3` (a separator that leaves the target alone) and `mixp@-3 - xl@-3` (a separator that
+    removes only the other guitars), each by `separator_ceiling`.
+  - The exposure triggers: `xlnoG@-3 - cen`, `mixp@-3 - cen`, `clean@-3 - cen`.
+  - The per-unit size: `mix@-3 - swap-mix@-3` and `xl@-3 - swap-xl@-3`, beside `mix@-3 - sic-mix@-3` and `xl@-3 -
+    sic-xl@-3`; `swap-mix@-3 - sic-mix@-3` and `swap-xl@-3 - sic-xl@-3` read the averaging penalty directly.
+  - Beside: `xl@-3 - aconst`, `xl@-3 - S`, `sic-xl@-3 - cen`, `xl@-3 - mix@-3` (the whole stem path), `xlnoG@-3 -
+    mix@-3` (separator and level step together).
+- **How the swap rows are read:** the per-unit reading's size is read from `i - swap-i` on the deciding pool, beside
+  `i - sic-i`. An undecided swap row is not a failure: it changes no outcome label, no trigger and no stage size. The
+  "nearest pool answer" row is not added.
+- **How the two ceilings are read together** (`ceiling_together`): `clean@-3 - xl@-3` is confounded, since the model
+  reads the isolated guitar worse than the backed mix (`clean-kind - mix@-3` +0.036 [+0.007, +0.066] in stage 1), so
+  it can open separator work but never park it; no "small" or "undecided" reading of it alone parks anything. Separator
+  work **opens** when either pair reads "heard-size gain"; it is **parked** when `mixp@-3 - xl@-3` reads "small" (a
+  heard-size gain ruled out) and neither reads a heard-size gain; otherwise it is **not settled**, neither opened nor
+  parked, and a "gain shown" reading goes to the user as the floor's call.
+- **What Q2 sends to Step 3, in one place** (`Q2_STEP3`): read better, the model path keeps its claim on the product's
+  stem and Step 1 confirms on songs; undecided, Cen (stage 1's constant choice) goes to Step 3 as the candidate start
+  and the model path is not the default on this evidence; read worse, the model path leaves the road to default and Cen
+  goes to Step 3. Q2's intervals are expected near ±0.05 on the pool and ±0.03 on GOAT.
+- **Stop rule:** one build, one read, then stop and report. Stage 3 is declared on its own and runs only the rows its
+  triggers name (`q2q3_outcome`); stage 1's outcome 1 has already fired the exposure and pooling triggers.
+- **Negatives read adversarially** (`NEGATIVES` 2): Q2, Q3, both ceiling pairs and every trigger row.
 - **Gates:** `check0`, `check1` and `replay` passed on today's C3r state; `sep` stops on the first unit whose rebuilt
-  mids' features differ from stage 1's stored ones, and refuses beside a render or another MPS user; renders wait while
-  a separation runs; one MPS job, at most 3 render processes, the 31 GB disk guard.
-- **Kept open for the audit (nothing added yet): a swap row** for `mix@-3` and for `xl@-3`. For part p and half h, the
-  answer of one other part q drawn (seeded by p, the row and h) from p's same-input pool (`sic_pool`: p's own fold,
-  amp and class, another cluster, no shared DI file or creator), rendered through p's own DI and judged on p's held
-  half. q's answer comes from p's own fold model on q's input, so it is label-free and out of sample, like the
-  same-input constant, but it is a real answer rather than an averaged preset: `i - swap-i` against `i - sic-i` tells
-  a per-unit reading from the averaged preset simply scoring worse. Cost: 960 answers and 1,920 renders a row (about
-  27 min at stage 1's rate), 3,840 renders for both; a new row kind in `learn/preset_ladder.py`, reviewed with the code.
+  mids' features differ from stage 1's stored ones and refuses beside a render or another MPS user; renders wait while
+  a separation runs; one MPS job, at most 3 render processes, the 31 GB disk guard; features stored, never audio.
+- **Kept for later, not declared:** the re-centred answer (an answer less its same-input constant plus Cen) is a new
+  readout and waits for the user's go. Nothing here would have to be redone to add it: it needs only the answers,
+  `sic-xl@-3` and Cen, which this stage builds.
 
