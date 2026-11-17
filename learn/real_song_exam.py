@@ -1625,8 +1625,10 @@ API_ERRORS = re.compile(r"authenticat|usage limit|rate limit|rate_limit|overload
 
 
 def api_error(lines):
-    """Why a run stopped on the service rather than on its own work, or None: a result event marked as an error with an
-    API cause (`terminal_reason` api_error, or an auth, usage-limit, rate-limit or overload message). (Pure.)"""
+    """Why a run ended on an API error, or None: a result event marked `is_error` with `terminal_reason` api_error, or
+    error text matching API_ERRORS. In Claude Code 2.1.326 `api_error` is set for every API error that ends a turn
+    (sign-in, usage and rate limits, overloads, server errors, invalid requests, billing errors, empty responses); the
+    result event does not say which, so every one aborts. (Pure.)"""
     for line in lines:
         try:
             ev = json.loads(line)
@@ -1649,9 +1651,11 @@ def cmd_research_route(args):
     scrubbed plugin (`run_settings`: every home entry but this root and the venv's interpreter, every other run and the
     shared Claude temp but the run's own denied; the plugin and the venv not editable); a run with no result.json is
     asked once more with the re-check's non-answer. The plugin and the venv are hashed before and after each run (a
-    change stops the research). Wall time recorded. A run stopped by the service (an auth error, a usage or rate limit,
-    an overload: `api_error`) stops the queue: the run is marked aborted in the map (its transcript kept beside), not
-    counted as a run, and `research-prepare` then gives its unit a fresh folder; finished runs are never redone."""
+    change stops the research). Wall time recorded. A run that ends on any API error (`api_error`: sign-in, usage and
+    rate limits, overloads, server errors, invalid requests, billing errors, empty responses) stops the queue: the run
+    is marked aborted in the map (its transcript kept beside), not audited and not counted as a run (an exemption to the
+    research-failure rule, the plan's dated note), and `research-prepare` then gives its unit a fresh folder; finished
+    runs are never redone."""
     GR = _gr()
     entry()
     if args.workers != 1:
