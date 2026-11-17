@@ -17,9 +17,16 @@ earlier reads (`vreal/answers/EX-*.json`, `vreal/judge/EX-*/`).
     writes to `ladder/centres.json`. The labels' centre is arm C and the model's own constant is arm C-own. The
     planner's own constant (R-all's out-of-fold answers through `rc_setting`) is not built.
   - **Research runs: yes,** about 10 blinded headless generate runs, as the routing study ran them.
-  - **The listening page is built** as section "The listening page" says, ready for the user; it is not published.
+  - **The listening page is built** as section "The listening page" says, ready for the user; it is not
+    published (deviation, 2026-11-17: published privately to the user; see the dated note under "The listening page").
   - **The stronger ceiling** (a full every-control search on V-real) is not run.
-- **Where it stands (2026-11-17):** CP2 is done. The inputs are built and hashed into the ledger; guards 2, 3 and 7's
+- **Where it stands (2026-11-17, after CP4):** run and audited ([results](real-song-exam-results.md)). The chain did
+  41 runs and none failed; 524 judge renders (the exam's plugin renders in all 1,052, 526 kept); the report ran once
+  (sha256 in `phase_exam_outcome`). By the score M − R is −0.019 [−0.126, +0.088], undecided: no product change, the
+  baseline for later candidates. The audit (stands with corrections) recomputed every row. The page is built and
+  published privately to the user (a deviation, the dated note under "The listening page"); its ear read follows the
+  sitting.
+- **Earlier (2026-11-17):** CP2 is done. The inputs are built and hashed into the ledger; guards 2, 3 and 7's
   stored half and guard 4 (the R1 reproduction, 12 renders) pass; the runner check passed on its second try (the first
   failed the CLI's sign-in before any model call); all 10 research runs passed the audit (0 excluded, 0 aborted, no
   rerun). No chain run, no separation and no judge render yet. Reviews and audits are run by independent agents at
@@ -270,7 +277,7 @@ refuses, and the exam stops before any judge render for the user's decision.
   against S on V-real-10, 7 of 7 bands, recomputed here from the stored files); M − C and M-x − M probably not. An
   interval that holds 0 is undecided, not "no effect".
 
-## The listening page (`phase_exam_ear`; built at checkpoint 5, not published)
+## The listening page (`phase_exam_ear`; built at checkpoint 5, not published; deviation 2026-11-17: published privately, see the dated note)
 
 - L0's design (`learn/ear_vreal.py`), which the user has answered twice on these parts: the 10 units, each on L0's
   stored held half; guitar only, each candidate through the part's DI beside the amp track, aligned by the judge lag,
@@ -286,6 +293,24 @@ refuses, and the exam stops before any judge render for the user's decision.
   closeness gaps, J0 on the same clips beside, and the repeats. A share clear of one half reads "heard above (or below),
   one listener"; otherwise "not known by ear". By L0's simulation a model truly ahead on 75% of items clears about half
   the time.
+- **Note, 2026-11-17, after the score rows and their audit, before the page is built or shown (declared now, the
+  orchestrator's and the audit's proposal).** The score rows are known: M − R holds 0 by the score, and on 8 of 10 units
+  R's render is byte-identical to S on R's amp. Nothing about the page's arms or clips changes: R, M, C-pick and L,
+  the judged renders, guitar only, ties allowed, instant switch, blind seeded order, −23 LUFS. No arm is added or
+  dropped after seeing the scores (not M3's best amp, not M-lab). Two reads are added on the same answers:
+  - **L over R first, as the page's positive control.** L − S is the score's largest effect (7 of 7 bands), and R is S
+    on its amp on most units, so L over R is the ear's version of it (9 units: It Was My Fault ElecGtr1 has no L). It is
+    read like every pair, on first hearings: its share and 90% band bootstrap. If L is not heard above R, then M over R
+    reading "not known by ear" means "the page had no power here", not "no difference". It reads "no difference" in no
+    case.
+  - **Said before the sitting:** with M ≈ R by the score and the page's power (above), M over R is expected to read
+    "not known by ear". The sitting's value is the positive control and the per-unit notes, chiefly the units on ac20,
+    Colour Me Red ElecGtr02 (research's class missed) and Femme ElecGtr5 (heavier, the one centred unit).
+  - The code's pair list puts L over R first (it read R over L before; the same answers, the share mirrored), and the
+    read records whether the control was heard above R.
+  - **Publishing the page is a deviation from the plan's "not published" (Status, this section's heading and
+    `phase_exam_ear`): published privately to the user's own claude.ai at the orchestrator's word, for a phone sitting,
+    before any answer; only the user can open it, and it names no song, band or arm.** The user alone sits it.
 
 ## The independent audit (declared; the planner's section 12)
 

@@ -333,6 +333,20 @@ def test_unblind_ties_and_the_read():
     assert row["closeness_rated"] == 1 and row["closeness_gap"] == pytest.approx(2.0)
     assert rep["rows"]["M over C"] is None and rep["repeats"][0]["primary_same"]
     assert row["reading"] in ("heard above, one listener", "not known by ear")
+    assert X.EAR_PAIRS[0] == ("L", "R") and rep["rows"]["L over R"] is None and "R over L" not in rep["rows"]
+    assert rep["power"]["control_heard"] is False
+    if row["reading"] == "not known by ear":
+        assert "no power" in rep["power"]["primary_reading"]
+
+
+def test_the_positive_control_read():
+    items = [{"id": f"i{i}", "band": f"b{i}", "repeat_of": None, "letters": {"A": ("R",), "B": ("M",), "C": ("L",)},
+              "judge": {"R": 2.0, "M": 2.0, "L": 1.0}} for i in range(1, 8)]
+    got = {f"i{i}": {"rank": {"A": 2, "B": 2, "C": 1}} for i in range(1, 8)}         # L above R everywhere; M ties R
+    rep = X.ear_read(items, got, n_boot=2000)
+    assert rep["rows"]["L over R"]["share"] == 1.0 and rep["rows"]["L over R"]["reading"] == "heard above, one listener"
+    assert rep["power"]["control_heard"] and rep["power"]["primary_reading"] == "not known by ear"
+    assert rep["rows"]["M over R"]["ties"] == 7
 
 
 def test_page_player_and_cards():

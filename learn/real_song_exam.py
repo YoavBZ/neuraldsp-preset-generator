@@ -703,7 +703,10 @@ def pref(heard, a, b):
     return 1.0 if x < y else 0.0 if x > y else 0.5
 
 
-EAR_PAIRS = (("M", "R"), ("M", "C"), ("M", "L"), ("R", "C"), ("R", "L"), ("C", "L"))   # the first is read first
+# L over R first: the page's positive control (the plan's dated note of 2026-11-17, declared before the page was built);
+# then M over R, the primary; the rest beside.
+EAR_PAIRS = (("L", "R"), ("M", "R"), ("M", "C"), ("M", "L"), ("R", "C"), ("C", "L"))
+CONTROL, PRIMARY = "L over R", "M over R"
 
 
 def ear_read(items, got, n_boot=20000, seed=BOOT_SEED):
@@ -744,8 +747,15 @@ def ear_read(items, got, n_boot=20000, seed=BOOT_SEED):
             same = [pref(h0, a, b) == pref(h1, a, b) for a, b in EAR_PAIRS if a in h0 and b in h0]
             reps.append({"id": it["id"], "repeat_of": it["repeat_of"], "pairs_same": sum(same), "pairs": len(same),
                          "primary_same": pref(h0, "M", "R") == pref(h1, "M", "R")})
+    ctl = rows.get(CONTROL)
+    heard_ctl = bool(ctl and ctl["reading"] == "heard above, one listener")
+    prim = rows.get(PRIMARY)
+    power = {"control": CONTROL, "control_heard": heard_ctl,
+             "primary_reading": None if prim is None else prim["reading"] if prim["reading"] != "not known by ear"
+             else "not known by ear" + ("" if heard_ctl else ": the page had no power here (the control was not heard above R)")}
     return {"answered": sum(v is not None for v in heard.values()), "items": len(items),
-            "first_answered": sum(heard[it["id"]] is not None for it in first), "rows": rows, "repeats": reps}
+            "first_answered": sum(heard[it["id"]] is not None for it in first), "rows": rows, "repeats": reps,
+            "power": power}
 
 
 # --- paths and small I/O ----------------------------------------------------------------------------------------------
