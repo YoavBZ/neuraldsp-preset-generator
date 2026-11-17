@@ -19,7 +19,8 @@ earlier reads (`vreal/answers/EX-*.json`, `vreal/judge/EX-*/`).
   - **Research runs: yes,** about 10 blinded headless generate runs, as the routing study ran them.
   - **The listening page is built** as section "The listening page" says, ready for the user; it is not published.
   - **The stronger ceiling** (a full every-control search on V-real) is not run.
-- **Where it stands (2026-11-17):** CP2 is done. The inputs are built and hashed into the ledger; guards 2, 3 and 7's
+- **Where it stands (2026-11-17, after CP4):** run and audited ([results](real-song-exam-results.md)). The chain did 41 runs and none failed; 524 judge renders; the report ran once (sha256 in `phase_exam_outcome`). By the score M − R is −0.019 [−0.126, +0.088], undecided: no product change, the baseline for later candidates. The audit (stands with corrections) recomputed every row. The page is built and published privately (the dated note under "The listening page"); its ear read follows the sitting.
+- **Earlier (2026-11-17):** CP2 is done. The inputs are built and hashed into the ledger; guards 2, 3 and 7's
   stored half and guard 4 (the R1 reproduction, 12 renders) pass; the runner check passed on its second try (the first
   failed the CLI's sign-in before any model call); all 10 research runs passed the audit (0 excluded, 0 aborted, no
   rerun). No chain run, no separation and no judge render yet. Reviews and audits are run by independent agents at
