@@ -216,7 +216,7 @@ optional row. Stages 0 and N spend no separation.
 |---|---|---|
 | 1 | Ledger: `phase_s6` (this plan's rule and tables), `phase_s6_noise`, `phase_l6_noise`, declared before any run; the two new seeds named there | none |
 | 2 | `S0_TABLE`, `N_TABLE`, `P_TABLE` and `S6_TABLE` as coded constants with tests and a `table_guard` (every cell exactly once; a missing cell refuses). `P_TABLE` and `S6_TABLE` are coded now so they can't be shaped by stage N's result; nothing else of the pilot is built. | none |
-| 3 | Stage 0 controls: C3r's state hash equals the ladder's; the ladder's controls passed; the stored rows' and features' hashes equal the ladder reports' `sources_sha256`; free disk against the 31 GB guard | CPU seconds |
+| 3 | Stage 0 controls: C3r's state hash equals the ladder's; the ladder's controls passed; the stored rows' and features' hashes equal the ladder reports' `sources_sha256` (no such field exists: section 5.2 gives the stronger substitute); free disk against the 31 GB guard | CPU seconds |
 | 4 | The seed-to-seed gauge: per-seed answers of R-all's eight fold pairs on stored `xl@-3` and `mix@-3` | zero renders; about a minute |
 | 5 | The reviewed `train-ft` change: two new seeds, each mapped to one W state, under base `C3r-rep`; a same-seed replay under its own base. A test that no existing run file can be written. | none |
 | 6 | Training: R-rep's 8 inner and 8 fold runs, then the replay's 2 runs, one MPS job at a time | 114.4 + 11.9 run-min as R-all logged |
@@ -252,7 +252,12 @@ Not in this scope: the donor draws, the stem build, any separation, the R1 versi
   and `rc-rep-xl@-3` (the ladder's own `cmd_sic` and `cmd_rc`, Cen unchanged: the same training rows). **`ens4-xl@-3`
   is kept** (section 4's optional row; the review: "the one free test of model variance"), so stage N renders 5,760:
   3,840 for the two declared rows and 1,920 for `ens4`, about 82 min at the measured 70 a minute.
+  **`ens4` has no table:** it is read as a beside row only, and any action from it needs its own declaration.
   **`rep-mix@-3` is dropped:** no stage-N row reads it (the review).
+- **Gates and pins (PR review).** Every `--c3r-rep` run refuses unless stage 0 read S0-ok (so stage 0's manifest is
+  taken before training), and unless its rate and cap are R-all's, (1e-4, 300); `stage N's answers` also refuse a run
+  whose rate, cap, mask or real-row share differs from R-all's same fold's record. `report-n` re-checks the
+  comparators (`xl@-3`, `rc-xl@-3`, Cen): their answers as stage 0 hashed them and their judge files made from them.
 - **What a smoke pass showed (before the declaration, no result read).** Stage 0's 17 controls run on the stored data
   in 42 s with the cell and the gauge skipped. Stage N's answer path, with R-all's own runs standing in for R-rep's,
   reproduces `xl@-3`, `sic-xl@-3` and `rc-xl@-3` exactly.

@@ -9,6 +9,7 @@ TORCH_PY=${TORCH_PY:-$HOME/ndsp-presets/tools/demucs-venv/bin/python}
 PF=$HOME/ndsp-presets/learn/trusted-data/pipeline-fix
 LOG=${PF}/step6/logs
 mkdir -p ${LOG}
+${TORCH_PY} -c 'from learn import stem_finetune as S; S.stage0_ok()' || { echo "stage 0 has not read S0-ok"; exit 1 }
 
 guard() {
   local free_kb=$(df -k $HOME | awk 'NR==2 {print $4}')

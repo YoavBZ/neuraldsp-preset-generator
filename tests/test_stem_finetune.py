@@ -179,3 +179,39 @@ def test_the_ladders_new_rows_carry_their_own_phase_and_leave_the_old_ones_alone
         L.row_info("sic-ens5-xl@-3")
     with pytest.raises(SystemExit):
         L.row_info("rep-mix@-3")
+
+
+def test_same_rows_compares_the_recipe_too():
+    ref = {"c3r": {"train_units": 1, "inputs_sha256": "x"}, "ft_train_ids": [1], "lr": 1e-4, "cap": 300, "masked": True}
+    assert S.same_rows(dict(ref), ref) == []
+    assert S.same_rows(dict(ref, cap=100), ref) == ["cap"]
+    assert S.same_rows(dict(ref, lr=3e-5, masked=False), ref) == ["lr", "masked"]
+    assert S.same_rows(dict(ref, c3r={"train_units": 1, "inputs_sha256": "y"}), ref) == ["c3r inputs_sha256"]
+    assert S.REP_RATE == (1e-4, 300)
+
+
+@pytest.mark.parametrize("missing,cmd", [("phase_s6", "cmd_stage0"), ("phase_s6_noise", "cmd_answers"),
+                                         ("phase_l6_noise", "cmd_report_n")])
+def test_every_command_refuses_without_its_ledger_phases(monkeypatch, missing, cmd):
+    import copy
+
+    from learn import pipeline_fix as P
+
+    pf, pl = copy.deepcopy(P.ledger_entry()), copy.deepcopy(L.ledger_entry())
+    assert {"phase_s6", "phase_s6_noise"} <= set(pf) and "phase_l6_noise" in pl   # declared in this PR
+    (pl if missing == "phase_l6_noise" else pf).pop(missing)
+    monkeypatch.setattr(P, "ledger_entry", lambda: pf)                              # the real `require`s read these
+    monkeypatch.setattr(L, "ledger_entry", lambda: pl)
+    with pytest.raises(SystemExit, match=f"no {missing}: declare it before running"):
+        getattr(S, cmd)(None)
+
+
+def test_stage_n_needs_stage_0s_s0_ok(monkeypatch, tmp_path):
+    monkeypatch.setattr(S, "step6_dir", lambda: tmp_path)
+    with pytest.raises(SystemExit, match="has not run"):
+        S.stage0_ok()
+    (tmp_path / "stage0.json").write_text('{"cell": {"code": "S0-fail"}}')
+    with pytest.raises(SystemExit, match="did not read S0-ok"):
+        S.stage0_ok()
+    (tmp_path / "stage0.json").write_text('{"cell": {"code": "S0-ok"}}')
+    assert S.stage0_ok()["cell"]["code"] == "S0-ok"

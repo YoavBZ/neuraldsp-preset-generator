@@ -42,8 +42,10 @@ REP_SEEDS = {20261181: 20261042, 20261182: 20261043}    # R-rep's fine-tune seed
 REP_BASES = {"rep": "C3r-rep", "replay": "C3r-replay"}
 REPLAY = (3, 20261043)                                   # the same-seed replay: fold 3's inner run and FT_3, this seed
 R_ALL_BASE = "C3r-all"
+REP_RATE = (1e-4, 300)                                   # R-all's (lr, cap): `pipeline_fix.FT_LR` and `--ft-cap 300`
 PROTECTED_BASES = ("C3r-all", "C3r-ctl", "C3r-allK", "C3r-ctlK")   # `full_controls_c3r.BASE`: never written here
-KEEP_ENS4 = True                                         # the optional row, kept (plan section 4; the review's note)
+KEEP_ENS4 = True                                         # the optional row, kept (plan section 4; the review's note):
+                                                         # a beside row with no table; any action needs its own declaration
 READINGS = ("better", "undecided", "worse")
 DECIDING = ("bks", "goat", "panel")
 
@@ -393,6 +395,7 @@ def feats_manifest(units, row):
 
 
 STORED_ROWS = ("xl@-3", "mix@-3", "cen", "sic-xl@-3", "rc-xl@-3", "rc-mix@-3")   # the read's stored rows
+COMPARATORS = ("xl@-3", "rc-xl@-3", "cen")              # the rows stage N's rows are read against
 RC_CHECKED = (("rc-xl@-3", "cen"), ("rc-xl@-3", "xl@-3"))                       # report-rc rows re-derived
 
 
@@ -535,9 +538,13 @@ def cmd_stage0(_args):
 
 
 def stage0_ok():
-    d = json.loads((step6_dir() / "stage0.json").read_text())
-    if d["cell"]["code"] != "S0-ok":
-        raise SystemExit("stage 0 did not read S0-ok")
+    """Refuse unless stage 0 ran and read S0-ok (stage N's training and reads all call it). -> stage 0's record."""
+    p = step6_dir() / "stage0.json"
+    if not p.exists():
+        raise SystemExit("stage 0 has not run: stage N needs S0-ok (`stem_finetune stage0` first)")
+    d = json.loads(p.read_text())
+    if (d.get("cell") or {}).get("code") != "S0-ok":
+        raise SystemExit("stage 0 did not read S0-ok: stage N stops")
     return d
 
 
@@ -566,8 +573,8 @@ def rep_models(st, kind="rep"):
 
 
 def same_rows(rep, ref):
-    """(Pure.) Problems where a stage-N fold run's rows differ from R-all's same fold's (C3r's info, the real-row
-    inputs and the trained and held ids). -> [problem]."""
+    """(Pure.) Problems where a stage-N fold run's rows or recipe differ from R-all's same fold's (C3r's info, the
+    real-row inputs, the trained and held ids, the rate, cap, mask and real-row share). -> [problem]."""
     bad = []
     for f in ("train_units", "held_units", "train_records", "showings"):
         if (rep.get("c3r") or {}).get(f) != (ref.get("c3r") or {}).get(f):
@@ -575,7 +582,7 @@ def same_rows(rep, ref):
     for f in ("inputs_sha256",):
         if (rep.get("c3r") or {}).get(f) != (ref.get("c3r") or {}).get(f):
             bad.append(f"c3r {f}")
-    for f in ("ft_train_ids", "real_held_ids", "held_ids"):
+    for f in ("ft_train_ids", "real_held_ids", "held_ids", "lr", "cap", "masked", "real_frac", "shuffle_real"):
         if rep.get(f) != ref.get(f):
             bad.append(f)
     return bad
@@ -625,17 +632,15 @@ def cmd_answers(_args):
     shas = {"rep-xl@-3": {str(k): v[1] for k, v in repm.items()},
             "ens4-xl@-3": {str(k): allm[k][1] + repm[k][1] for k in range(FOLDS)}}
     made = {}
+    there = [L.answers_path(r) for r in list(rows) + ["sic-rep-xl@-3", "rc-rep-xl@-3"] if L.answers_path(r).exists()]
+    if there:                                          # all four checked before any is written
+        raise SystemExit(f"{[str(p) for p in there]} exist: never overwritten (move them aside first)")
     for row, nets in rows.items():
-        if L.answers_path(row).exists():
-            raise SystemExit(f"{L.answers_path(row)} exists: never overwritten (move it aside first)")
         ans, missing = answer_row(st, units, nets, "xl@-3")
         made[row] = ans
         L.save_answers(row, ans, {"c3r_sha256": st["sha256"], "models": shas[row], "missing": missing,
                                   "feats": "xl@-3", "stage0_sha256": L.file_sha(step6_dir() / "stage0.json")})
         print(f"ANSWERS {row}: {sum(len(v) for v in ans.values())} parts, {len(missing)} missing")
-    for row in ("sic-rep-xl@-3", "rc-rep-xl@-3"):
-        if L.answers_path(row).exists():
-            raise SystemExit(f"{L.answers_path(row)} exists: never overwritten (move it aside first)")
     L.cmd_sic(argparse.Namespace(rows="sic-rep-xl@-3"))
     L.cmd_rc(argparse.Namespace(rows="rc-rep-xl@-3"))
     stored = {r: json.loads(L.answers_path(r).read_text())["answers"] for r in ("xl@-3", "mix@-3")}
@@ -725,6 +730,11 @@ def cmd_report_n(_args):
             L.rc_sources_check(r)
         else:
             answers_check(r)
+        complete[r] = L.rc_complete(units, r)
+    s0 = json.loads((step6_dir() / "stage0.json").read_text())
+    for r in COMPARATORS:                              # the comparators: today's answers, as stage 0 hashed them
+        if L.file_sha(L.answers_path(r)) != s0["manifest"]["answers"][r]:
+            raise SystemExit(f"{r}'s stored answers changed since stage 0")
         complete[r] = L.rc_complete(units, r)
     band = {u: v["band"] for u, v in L.lends()["units"].items()}
     seen = R.player_seen(st, units)

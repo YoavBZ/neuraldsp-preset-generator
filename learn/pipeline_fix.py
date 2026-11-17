@@ -7266,6 +7266,7 @@ def cmd_train_ft(args):
         if why:
             raise SystemExit(why)
         require(S6.PHASE_NOISE)
+        S6.stage0_ok()                                 # stage N only on S0-ok (its manifest taken before training)
         base, w_seed, inner_keys = S6.REP_BASES[rep], S6.rep_w_seed(rep, seed), S6.rep_inner_keys(rep)
     if masked:
         require("phase_night2")
@@ -7280,6 +7281,8 @@ def cmd_train_ft(args):
     if rep is None and seed not in SEEDS:
         raise SystemExit(f"--seed in {SEEDS}")
     lr, cap = ft_rate(args)
+    if rep is not None and (lr, cap) != S6.REP_RATE:   # R-all's rate and cap exactly (--ft-cap 300)
+        raise SystemExit(f"--c3r-rep repeats R-all's rate and cap only: (lr, cap) {S6.REP_RATE}, not {(lr, cap)}")
     h4 = getattr(args, "h4", None)
     pre, h4x = FT_PRETRAIN, None
     if h4 is not None:                                 # H4: FTm's recipe on its arm's W and the real rows less real_out

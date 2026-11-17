@@ -29,6 +29,7 @@ def wired(base, monkeypatch):
     st, S_ = _state()
     _wire(base, monkeypatch, st, S_)
     starts = []
+    monkeypatch.setattr(S, "stage0_ok", lambda: {"cell": {"code": "S0-ok"}})
     monkeypatch.setattr(P, "ft_start_state", lambda seed, pre=None: (starts.append(seed) or {}, {
         "train_ids": [0, 1, 2], "model_sha256": {"best": "w"}}))
     return base, starts
@@ -104,3 +105,41 @@ def test_no_r_all_file_can_be_written(wired):
                     assert d["name"].startswith("C3r-rep-") and not d["name"].startswith("C3r-all")
     after = {p.name: p.read_bytes() for p in od.iterdir()}
     assert before == after                                                          # nothing written or changed
+
+
+def test_stage_n_refuses_without_stage_0s_s0_ok(wired, monkeypatch, tmp_path):
+    monkeypatch.undo()                                                              # the real stage0_ok, on stub data
+    st, S_ = _state()
+    _wire(tmp_path, monkeypatch, st, S_)
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    monkeypatch.setattr(P, "require", lambda k: {})
+    with pytest.raises(SystemExit, match="stage 0 has not run"):
+        P.cmd_train_ft(ns(real_fold=0, inner=True, c3r_rep="rep", seed=REP1))
+    (tmp_path / "step6").mkdir()
+    (tmp_path / "step6" / "stage0.json").write_text(json.dumps({"cell": {"code": "S0-fail"}}))
+    with pytest.raises(SystemExit, match="did not read S0-ok"):
+        P.cmd_train_ft(ns(real_fold=0, inner=True, c3r_rep="rep", seed=REP1))
+    (tmp_path / "step6" / "stage0.json").write_text(json.dumps({"cell": {"code": "S0-ok"}}))
+    assert P.cmd_train_ft(ns(real_fold=0, inner=True, c3r_rep="rep", seed=REP1))["name"] == "C3r-rep-k0-inner-cap300"
+
+
+@pytest.mark.parametrize("kw", [{"ft_cap": None}, {"ft_cap": 100}, {"ft_lr": P.FT_FALLBACK_LR}])
+def test_stage_n_pins_r_alls_rate_and_cap(wired, kw):
+    with pytest.raises(SystemExit, match="rate and cap"):
+        P.cmd_train_ft(ns(real_fold=0, inner=True, c3r_rep="rep", seed=REP1, **kw))
+
+
+def test_stage_n_refuses_without_its_ledger_phase(wired, monkeypatch):
+    import copy
+
+    real = P.ledger_entry()
+    assert S.PHASE_NOISE in real                                                    # declared in this PR
+    entry = copy.deepcopy(real)
+    del entry[S.PHASE_NOISE]
+    monkeypatch.setattr(P, "require", REQUIRE)                                      # the real `require`
+    monkeypatch.setattr(P, "ledger_entry", lambda: entry)
+    with pytest.raises(SystemExit, match="no phase_s6_noise: declare it before running"):
+        P.cmd_train_ft(ns(real_fold=0, inner=True, c3r_rep="rep", seed=REP1))
+
+
+REQUIRE = P.require
