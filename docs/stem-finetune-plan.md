@@ -1,6 +1,6 @@
 # Step 6: fine-tune on what the product feeds (plan)
 
-**Status:** declared 2026-11-17 for **stages 0 and N only** (section 5.1; section 5.2 says how they are built). The
+**Status:** stages 0 and N run and audited 2026-11-18 ([results](stem-finetune-results.md)): S0-ok, then **N-quiet** by the score (N +0.003 [−0.004, +0.010]); Step 6 stops and hands back, as declared, and the pilot waits for the user's answer to open question 1; declared 2026-11-17 for **stages 0 and N only** (section 5.1; section 5.2 says how they are built). The
 plan was a planner's draft, revised the same day after its independent review (approve with changes; section 15 lists
 the changes) and approved on the re-check (round 2: APPROVE, no blocking items). **The pilot and the full run wait for
 the user's answer to open question 1** and are not built. **By the user's word (2026-11-17), no decision is taken from
@@ -169,6 +169,10 @@ compares two trainings rests on it. Three gauges, cheapest first:
 | Seed to seed | Each fold pair's two seeds answered apart on the stored `xl@-3` and `mix@-3` features: the distance between seeds, per knob group, beside the distance between inputs (0.041 to 0.044) and between parts (0.039 to 0.044) | zero renders; the ladder made 4,800 answers in about 30 s |
 | Same-seed replay | Fold 3's inner and fold run for seed 20261043 trained again with nothing changed, under its own name; the answers' distance to the stored run's | 11.9 run-minutes as logged (6.8 + 5.1); zero renders |
 | **The repeat, R-rep** | R-all's recipe on the same rows and labels with two new fine-tune seeds, each starting from one of W's two states (the seeds are named in the phase). A run's seed sets the epoch order and torch's seed; the variant draws don't follow it. The 16 fold and inner runs. | 114.4 run-minutes as R-all's own runs logged; a row is 1,920 renders, 27 min |
+
+**Correction (2026-11-18, the stage N audit):** the seed-to-seed row's "between inputs (0.041 to 0.044)" and "between
+parts (0.039 to 0.044)" are the ladder's stage 0 inputs (`mix-drawn`, `clean-kind`, `xl-v0`). For `xl@-3` against
+`mix@-3` they are 0.060 and 0.039 (mix) or 0.048 (xl), from the ladder's stage 2 report.
 
 - **N:** `rep-xl@-3 − xl@-3`, the row `N_TABLE` reads. It is one draw of the noise: a size, not a distribution.
 - **Beside, rendered at stage N:** `rc-rep-xl@-3`, for `rc-rep-xl@-3 − rc-xl@-3` (the noise on O's own row) and
