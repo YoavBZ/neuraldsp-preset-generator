@@ -14,7 +14,8 @@
 - **Cost, measured:**
   - stage 0: one CPU pass;
   - training: 18 runs one at a time on the MPS in 90.5 min of wall time (R-rep's 16 runs logged 72.4 run-minutes,
-    the replay's 2 logged 6.9; the plan's 126.3 was R-all's, run two at a time);
+    the replay's 2 logged 6.9; the plan's 126.3 was R-all's run-minutes, logged with each seed pair running side by side: R-all's run files show
+    each pair finishing within a minute of the other);
   - answers: about 2 min of CPU;
   - renders: 5,760 on 3 shards in about 85 min;
   - zero separations, no sealed set.
@@ -74,8 +75,8 @@ RMS move between two answers in unit terms, over knob heads both answers sound a
   0.067 whatever the fine-tune seed. The fine-tune seed alone moves answers 0.016 to 0.021, and N samples only that
   part.
 - **The replay is bit for bit.** Fold 3's inner run and FT_3 for seed 20261043, trained again with nothing changed,
-  read E 46 for both, as stored. Every epoch's loss and all 84 state tensors are identical. The checkpoint files
-  differ only in the zip archive's root folder name, which `torch.save` takes from the file name. So the
+  read E 46 for both, as stored. Every epoch's loss, all 84 state tensors and all 90 zip entries, byte for byte, are
+  identical. The checkpoint files differ only in the zip archive's root folder name, which `torch.save` takes from the file name. So the
   `"model identical": false` in `gauge-n.json` is a false negative of a whole-file hash. The answers on fold 3's parts
   are identical.
 - **E by fold:** R-rep's against R-all's from the same W state.
