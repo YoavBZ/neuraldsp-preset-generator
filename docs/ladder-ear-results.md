@@ -87,7 +87,7 @@ meaning the first is closer. Closeness is the first preset's rating less the sec
 | GOAT (10) | 7/1/2, 0.75, heard above | 8/0/2, 0.80, heard above | 3/2/5 | 3/4/3 |
 | BKS (4) | 3/0/1 | 3/0/1 | 1/2/1 | 1/2/1 |
 | Panel (3) | 2/0/1 | 3/0/0, heard above | 1/0/2 | 1/1/1 |
-| cap1 (4) | 2/1/1 | 3/1/0 | 2/1/1 | 2/2/0 |
+| cap1 (4) | 2/1/1 | 3/1/0, heard above | 2/1/1 | 2/2/0 |
 | Clean (10) | 3/2/5, 0.40 | 9/0/1, 0.90, heard above | 2/4/4 | 0/8/2 |
 | Crunch (11) | 11/0/0, 1.00, heard above | 8/1/2, 0.77, heard above | 5/1/5 | 7/1/3 |
 | ac20 (5) | 5/0/0, heard above | 2/1/2 | 3/0/2 | 3/1/1 |
@@ -135,8 +135,9 @@ meaning the first is closer. Closeness is the first preset's rating less the sec
 5. **A4: small gaps are not heard.** Under a J0 gap of 0.05 the ear ties 57% of pairs, and on the rest it agrees with
    J0 on 8 of 13, near a coin flip (sign p 0.29). From 0.05 to 0.15, agreement is 0.89. A decision resting on a J0 gap
    under 0.05 can't be called heard, and J0 can't steer it with ear backing.
-6. **Listener consistency.** 17 of 20 repeated pairs were the same. The ones that changed were Cen against S on both
-   repeated cards, so the listener is least stable exactly on the weak key pair.
+6. **Listener consistency.** 17 of 20 repeated pairs were the same. Of the 3 pairs that changed, 2 were Cen against S,
+   one on each repeated card (the third was M against rc), so the listener is least stable exactly on the weak key
+   pair.
 7. **J0 against a fixed order.** J0 adds over a fixed preset-type order (A1 +0.25 [0.13, 0.37]; A2 labels out +0.51),
    evidence for the score beyond the preset type.
 
