@@ -1,14 +1,17 @@
 # The learning-curve diagnostic: would more recordings help? (plan)
 
-**Status:** declared 2026-11-19, before any run, on the user's go of the same day. It is section 14 of the approved
-Step 6 plan (the second review round's pick, [stem-finetune-plan.md](stem-finetune-plan.md) section 13's outlook),
-built with that review's three non-blocking items, the training-noise result of Step 6's stage N
-([results](stem-finetune-results.md)) and the user's rule of 2026-11-19 that no action rests on a gap under 0.05.
-Revised the same day after the PR's independent review (changes needed, two wording items; section 8): the power is
-stated, D-unreadable no longer over-reads a decided cost, and R-half1 is trained and read first, with R-half2 only if an
-acting cell is still possible (the cheaper stop, `A_TABLE`). Nothing here has run. Every number is by the score unless it says "by ear": J0, ln(d_row / d_against) on the held half,
-below zero closer; 90% cluster t intervals; the deciding pool is BKS, GOAT and the panel weighted equally. `PF` is
-`~/ndsp-presets/learn/trusted-data/pipeline-fix`.
+**Status:** run 2026-11-19 and audited ([results](half-data-results.md)): **A-stop** by the score. R-half1 against
+R-all reads +0.025 [−0.003, +0.053] (undecided, "short"), so R-half2 was not trained, as declared. Post hoc: more
+recordings would help a little, but a heard-size gain needs about two doublings or more. Declared 2026-11-19, before
+any run, on the user's go of the same day. It is section 14 of the approved Step 6 plan (the second review round's
+pick, [stem-finetune-plan.md](stem-finetune-plan.md) section 13's outlook), built with that review's three
+non-blocking items, the training-noise result of Step 6's stage N ([results](stem-finetune-results.md)) and the user's
+rule of 2026-11-19 that no action rests on a gap under 0.05. Revised the same day after the PR's independent review
+(changes needed, two wording items; section 8): the power is stated, D-unreadable no longer over-reads a decided cost,
+and R-half1 is trained and read first, with R-half2 only if an acting cell is still possible (the cheaper stop,
+`A_TABLE`). Nothing had run at declaration. Every number is by the score unless it says "by ear": J0, ln(d_row /
+d_against) on the held half, below zero closer; 90% cluster t intervals; the deciding pool is BKS, GOAT and the panel
+weighted equally. `PF` is `~/ndsp-presets/learn/trusted-data/pipeline-fix`.
 
 - **Ledger:** `pipeline-fix` `phase_s6_half` (the halves, the 32 runs, the table); `preset-ladder` `phase_l6_half`
   (the answers, renders and report).
