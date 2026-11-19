@@ -4,10 +4,10 @@ The ladder (docs/preset-ladder-plan.md, `centres.json`'s all-labels cells) read 
 baselines made dry, both by the score (docs/preset-ladder-results.md) and by ear on crunch
 (docs/ladder-ear-results.md). The user approved switching generate's crunch start to Cen on 2026-11-19.
 
-`build` writes one recipe per amp into packs/morgan/recipes.json: every setting where Cen differs from the factory
-baseline made dry with `dry/<amp>` (the effects, transpose and selector are refused: Cen holds them at S's), plus the
+`build` writes one recipe per amp into packs/morgan/recipes.json: every setting Cen holds on that amp but the effects,
+transpose, selector, IR paths and the other amps' modules (Cen must hold the effects at S's dry ones), plus the
 output gain fitted so the preset plays at S's loudness through the class's two stock DIs, as the model path's loudness
-step fits it (`loudness_step.matched_gain`, fitted from 6 CPU renders, stored in `--gains`). `check` applies the factory
+step fits it (`loudness_step.matched_gain`; `fit`, 6 CPU renders). `check` applies the factory
 baseline, `dry/<amp>` and `start/crunch-<amp>` with apply_spec and requires the result to equal Cen's cell on every
 setting but the output gain. Dev machine only: it reads ~/ndsp-presets and the factory presets.
 """
@@ -142,13 +142,23 @@ def cmd_build(args):
             if str(cells[amp]["select"]) != dry[("", "selectedAmp")]:
                 raise SystemExit(f"{amp}: Cen selects {cells[amp]['select']}, the baseline {dry[('', 'selectedAmp')]}")
             params = []
+            other_amps = {f"{a}{s}" for a in BASELINE if a != amp for s in ("Amp", "EQ")}
             for (m, k), v in sorted(cell.items()):
-                if (m, k) == OUTPUT or same(dry.get((m, k)), v):
-                    continue
                 if m in REFUSED_MODULES or (m, k) in REFUSED_KEYS:
-                    raise SystemExit(f"{amp}: Cen moves {m}/{k} ({dry.get((m, k))} -> {v}), which it should hold at S's")
+                    if not same(dry.get((m, k)), v):
+                        raise SystemExit(f"{amp}: Cen moves {m}/{k} ({dry.get((m, k))} -> {v}), held at S's")
+                    continue
+                # Every other setting Cen holds, so the recipe gives Cen on any preset of this amp, not only on
+                # the baseline file; the other amps' modules don't sound, and the IR paths are --strip-irs's.
+                if (m, k) == OUTPUT or m in other_amps or k.endswith("ChosenIRFilePath"):
+                    continue
                 if (m, k) not in dry:
                     raise SystemExit(f"{amp}: {m}/{k} is not in the baseline")
+                spec = pack.require(m, k)
+                if spec.kind == "enum" and spec.members is None:   # a selector with unknown members: never written
+                    if not same(dry[(m, k)], v):
+                        raise SystemExit(f"{amp}: Cen moves {m}/{k}, a selector with no known members")
+                    continue
                 params.append({"module": m, "key": k, "value": human(pack, m, k, v)})
             g = gains[amp]
             params.append({"module": OUTPUT[0], "key": OUTPUT[1], "value": round(float(g["gain"]), 1)})

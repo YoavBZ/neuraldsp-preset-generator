@@ -1674,9 +1674,34 @@
         "note": "Apply on Artists/Keyan Houshmand/Modern Metal (Pick Hard).xml after dry/pr12. The centre of the trusted training labels for PR12 crunch (the ladder's Cen), with the output fitted to the baseline's loudness through two stock DIs (+7.0 -> +10.2 dB). Effects stay the baseline's dry ones, for research to set.",
         "parameters": [
           {
+            "module": "ampParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabActive",
+            "value": true
+          },
+          {
             "module": "cabParameters",
             "key": "leftCabDistance",
             "value": 0.377022
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabMicLevel",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPan",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPhase",
+            "value": false
           },
           {
             "module": "cabParameters",
@@ -1685,8 +1710,28 @@
           },
           {
             "module": "cabParameters",
+            "key": "leftCabStereo",
+            "value": false
+          },
+          {
+            "module": "cabParameters",
             "key": "leftMicType",
             "value": "Ribbon 160"
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftRoomActive",
+            "value": false
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftRoomMicLevel",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabActive",
+            "value": true
           },
           {
             "module": "cabParameters",
@@ -1700,8 +1745,48 @@
           },
           {
             "module": "cabParameters",
+            "key": "rightCabPan",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabPhase",
+            "value": false
+          },
+          {
+            "module": "cabParameters",
             "key": "rightCabPosition",
             "value": 0.535505
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabStereo",
+            "value": false
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightMicType",
+            "value": "Ribbon 121"
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightRoomActive",
+            "value": false
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightRoomMicLevel",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "compressor",
+            "key": "compressorActive",
+            "value": false
           },
           {
             "module": "compressor",
@@ -1719,6 +1804,16 @@
             "value": 50.0
           },
           {
+            "module": "compressor",
+            "key": "compressorRelease",
+            "value": false
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Active",
+            "value": true
+          },
+          {
             "module": "drive1",
             "key": "drive1Drive",
             "value": 7.87671
@@ -1732,6 +1827,11 @@
             "module": "drive1",
             "key": "drive1Tone",
             "value": 61.5314
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Active",
+            "value": true
           },
           {
             "module": "drive2",
@@ -1754,6 +1854,11 @@
             "value": 93.3928
           },
           {
+            "module": "eqParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
             "module": "parameters",
             "key": "gateActive",
             "value": true
@@ -1769,6 +1874,11 @@
             "value": -12.2319
           },
           {
+            "module": "pedalParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
             "module": "pr12Amp",
             "key": "pr12Bass",
             "value": 53.7318
@@ -1782,6 +1892,11 @@
             "module": "pr12Amp",
             "key": "pr12Volume",
             "value": 24.8113
+          },
+          {
+            "module": "pr12EQ",
+            "key": "pr12EQActive",
+            "value": true
           },
           {
             "module": "pr12EQ",
@@ -1863,9 +1978,34 @@
         "note": "Apply on Neural DSP/Hair Metal.xml after dry/sw50r. The centre of the trusted training labels for SW50R crunch (the ladder's Cen), with the output fitted to the baseline's loudness through two stock DIs (+5.5 -> +8.9 dB). Effects stay the baseline's dry ones, for research to set.",
         "parameters": [
           {
+            "module": "ampParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabActive",
+            "value": true
+          },
+          {
             "module": "cabParameters",
             "key": "leftCabDistance",
             "value": 0.616619
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabMicLevel",
+            "value": 2.0811
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPan",
+            "value": -21.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPhase",
+            "value": false
           },
           {
             "module": "cabParameters",
@@ -1874,8 +2014,28 @@
           },
           {
             "module": "cabParameters",
+            "key": "leftCabStereo",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
             "key": "leftMicType",
             "value": "Ribbon 160"
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftRoomActive",
+            "value": false
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftRoomMicLevel",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabActive",
+            "value": true
           },
           {
             "module": "cabParameters",
@@ -1889,8 +2049,48 @@
           },
           {
             "module": "cabParameters",
+            "key": "rightCabPan",
+            "value": 21.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabPhase",
+            "value": false
+          },
+          {
+            "module": "cabParameters",
             "key": "rightCabPosition",
             "value": 0.71507
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabStereo",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightMicType",
+            "value": "Condenser 414"
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightRoomActive",
+            "value": false
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightRoomMicLevel",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "compressor",
+            "key": "compressorActive",
+            "value": false
           },
           {
             "module": "compressor",
@@ -1908,6 +2108,16 @@
             "value": 50.0
           },
           {
+            "module": "compressor",
+            "key": "compressorRelease",
+            "value": false
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Active",
+            "value": false
+          },
+          {
             "module": "drive1",
             "key": "drive1Drive",
             "value": 30.0
@@ -1921,6 +2131,11 @@
             "module": "drive1",
             "key": "drive1Tone",
             "value": 50.0
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Active",
+            "value": true
           },
           {
             "module": "drive2",
@@ -1943,6 +2158,11 @@
             "value": 57.9752
           },
           {
+            "module": "eqParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
             "module": "parameters",
             "key": "gateActive",
             "value": true
@@ -1958,9 +2178,24 @@
             "value": -2.14706
           },
           {
+            "module": "pedalParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
             "module": "sw50rAmp",
             "key": "sw50rBass",
             "value": 32.5611
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rBright",
+            "value": true
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rInputMode",
+            "value": false
           },
           {
             "module": "sw50rAmp",
@@ -1979,8 +2214,18 @@
           },
           {
             "module": "sw50rAmp",
+            "key": "sw50rTrebleBoost",
+            "value": false
+          },
+          {
+            "module": "sw50rAmp",
             "key": "sw50rVolume",
             "value": 31.8268
+          },
+          {
+            "module": "sw50rEQ",
+            "key": "sw50rEQActive",
+            "value": true
           },
           {
             "module": "sw50rEQ",
@@ -2063,6 +2308,16 @@
         "parameters": [
           {
             "module": "ac20Amp",
+            "key": "ac20BassTreble",
+            "value": true
+          },
+          {
+            "module": "ac20Amp",
+            "key": "ac20Bright",
+            "value": true
+          },
+          {
+            "module": "ac20Amp",
             "key": "ac20Cut",
             "value": 81.7637
           },
@@ -2075,6 +2330,11 @@
             "module": "ac20Amp",
             "key": "ac20Volume",
             "value": 65.8821
+          },
+          {
+            "module": "ac20EQ",
+            "key": "ac20EQActive",
+            "value": true
           },
           {
             "module": "ac20EQ",
@@ -2132,14 +2392,64 @@
             "value": 6288.09
           },
           {
+            "module": "ampParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabActive",
+            "value": true
+          },
+          {
             "module": "cabParameters",
             "key": "leftCabDistance",
             "value": 0.460036
           },
           {
             "module": "cabParameters",
+            "key": "leftCabMicLevel",
+            "value": 6.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPan",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPhase",
+            "value": false
+          },
+          {
+            "module": "cabParameters",
             "key": "leftCabPosition",
             "value": 0.4053
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabStereo",
+            "value": false
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftMicType",
+            "value": "Ribbon 121"
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftRoomActive",
+            "value": false
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftRoomMicLevel",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabActive",
+            "value": true
           },
           {
             "module": "cabParameters",
@@ -2153,13 +2463,43 @@
           },
           {
             "module": "cabParameters",
+            "key": "rightCabPan",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabPhase",
+            "value": false
+          },
+          {
+            "module": "cabParameters",
             "key": "rightCabPosition",
             "value": 0.287719
           },
           {
             "module": "cabParameters",
+            "key": "rightCabStereo",
+            "value": false
+          },
+          {
+            "module": "cabParameters",
             "key": "rightMicType",
             "value": "Ribbon 160"
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightRoomActive",
+            "value": false
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightRoomMicLevel",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "sectionActive",
+            "value": true
           },
           {
             "module": "compressor",
@@ -2188,13 +2528,53 @@
           },
           {
             "module": "drive1",
+            "key": "drive1Active",
+            "value": false
+          },
+          {
+            "module": "drive1",
             "key": "drive1Drive",
             "value": 30.0
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Level",
+            "value": 50.0
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Tone",
+            "value": 50.0
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Active",
+            "value": false
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Bass",
+            "value": 50.0
           },
           {
             "module": "drive2",
             "key": "drive2Gain",
             "value": 30.0
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Level",
+            "value": 50.0
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Treble",
+            "value": 50.0
+          },
+          {
+            "module": "eqParameters",
+            "key": "sectionActive",
+            "value": true
           },
           {
             "module": "parameters",
@@ -2203,8 +2583,18 @@
           },
           {
             "module": "parameters",
+            "key": "gateThreshold",
+            "value": -80.0
+          },
+          {
+            "module": "parameters",
             "key": "inputGain",
             "value": -5.2518
+          },
+          {
+            "module": "pedalParameters",
+            "key": "sectionActive",
+            "value": true
           },
           {
             "module": "parameters",

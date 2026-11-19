@@ -51,7 +51,7 @@ def test_a_crunch_start_is_refused_on_another_amp(tmp_path):
                         "--recipe", "start/crunch-sw50r", "--out", str(tmp_path / "x.xml"), "--dry-run"],
                        capture_output=True, text=True)
     assert r.returncode != 0
-    assert "SW50R" in (r.stdout + r.stderr)
+    assert "SW50R" in (r.stdout + r.stderr) and "start/crunch-pr12" in (r.stdout + r.stderr)
 
 
 def test_the_factory_baselines_made_dry_and_centred_equal_the_centre():
@@ -64,3 +64,21 @@ def test_the_factory_baselines_made_dry_and_centred_equal_the_centre():
     if not all((C.FACTORY / rel).exists() for rel in C.BASELINE.values()):
         pytest.skip("the Morgan factory presets are not installed")
     C.cmd_check(None)
+
+
+def test_on_the_shipped_template_the_start_differs_from_the_centre_only_in_switched_off_effects(tmp_path):
+    """The fallback (the template, dry/pr12, start/crunch-pr12) gives Cen on every control the start sets."""
+    from learn import cen_crunch_start as C
+
+    if not C.CENTRES.exists():
+        pytest.skip("the ladder's centres.json is not on this machine")
+    cell = {tuple(k.rsplit("/", 1)): v for k, v in
+            json.loads(C.CENTRES.read_text())["centres"]["cen"]["pr12"]["crunch"]["settings"].items()}
+    got = C.apply(ROOT / "samples/Example_Clean_PR12.xml", ["dry/pr12", "start/crunch-pr12"], tmp_path / "x.xml")
+    for (m, k), v in cell.items():
+        if (m, k) == C.OUTPUT or m in {"sw50rAmp", "sw50rEQ", "ac20Amp", "ac20EQ"} or k.endswith("IRFilePath"):
+            continue
+        if m in C.REFUSED_MODULES or (m, k) in C.REFUSED_KEYS:
+            continue
+        assert C.same(got.get((m, k)), v), (m, k, got.get((m, k)), v)
+    assert got[("delay", "delayActive")] == got[("reverb", "reverbActive")] == got[("tremolo", "tremoloActive")] == "false"

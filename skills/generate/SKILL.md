@@ -251,18 +251,20 @@ Tone King recipes use its verified sync-note selectors. See
 
   | amp | crunch baseline |
   |---|---|
-  | PR12 | `Artists/Keyan Houshmand/Modern Metal (Pick Hard).xml` (the heaviest of the three: a pedal boost into a second drive) |
-  | SW50R | `Neural DSP/Hair Metal.xml` (bright and moderate) |
-  | AC20 | `Neural DSP/AC20 Mid-Gain Drive.xml` (amp-only crunch) |
+  | PR12 | `Artists/Keyan Houshmand/Modern Metal (Pick Hard).xml` |
+  | SW50R | `Neural DSP/Hair Metal.xml` |
+  | AC20 | `Neural DSP/AC20 Mid-Gain Drive.xml` |
 
   - **Then set it to the labels' centre:** `--recipe dry/<amp> --recipe start/crunch-<amp>`
-    (in that order). It moves the amp, pedals, EQ, cab, gate and input gain to the centre of
-    the trusted training labels for that amp's crunch parts, and sets the output to the
-    baseline's loudness (AC20's 1 dB short, at the output's limit); effects stay dry. Keep those
-    unless research documents a different value. **The evidence is thin:** by the score it beat the
-    dry baseline on held-out parts, and by ear one listener preferred it on 11 of 11 crunch cards
-    ([ladder-ear-results.md](../../docs/ladder-ear-results.md)), but the margin is narrow and
-    a real-song check was undecided. Say so when you report.
+    (in that order; if the file is missing, apply `dry/pr12` and `start/crunch-pr12` to the template:
+    it sets every control but the effects, so the start is the same). It sets the amp, pedals, EQ, cab, input gain
+    and gate (on, at −80 dB: practically open) to the centre of the trusted training labels for
+    that amp's crunch parts, and the output to the baseline's loudness (AC20 plays about 1 dB
+    quieter: its output is at the maximum); effects stay dry. Keep them: skip step 3's amp,
+    compressor, drive, eq, cab and output layers, and set only a value research documents, in the
+    spec. **The evidence:** by the score it beat the dry baseline on held-out parts, and by ear
+    one listener preferred it on 11 of 11 crunch cards (`docs/ladder-ear-results.md`); a check
+    on 10 real songs was undecided. Say so when you report.
   - **When research documents an amp-only drive** (a cranked amp, no pedals) and the
     crunch start uses drive pedals (PR12's and SW50R's do; AC20's has none), say that its
     pedals stand in for the cranked amp; the clean start beside it (step 6) is the other
@@ -434,10 +436,8 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \
 ```
 
    Then add it with a plain note, `audition.py --add AUDITION_DIR --preset
-   AUDITION_DIR/crunch-start.xml --note "crunch starting point (weaker evidence)"`.
-   Say how strong each starting point's evidence is, in step 4's words: one listener
-   agreed with the judge by ear on development parts, in-sample, which is not a
-   confirmation on fresh songs.
+   AUDITION_DIR/crunch-start.xml --note "crunch starting point"`. Say how strong each
+   starting point's evidence is, in step 4's words; none is confirmed on fresh real songs.
 
 3. **Refine.** The user picks one, or says what is off ("B, but darker"). Make the
    change on a copy with the edit skill's steps 1–4 (read, interpret, change only

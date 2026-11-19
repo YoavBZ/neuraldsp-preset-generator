@@ -25,7 +25,9 @@ lives in the linked documents. Last updated 2026-11-11.
     ([results](clean-baseline-results.md)).
   - **Morgan crunch:** Modern Metal (Pick Hard), Hair Metal, AC20 Mid-Gain Drive, about
     7% closer than the driven presets, weak evidence
-    ([results](crunch-baseline-results.md)).
+    ([results](crunch-baseline-results.md)); since 0.7.129 (2026-11-19, the user's yes) each is set to the ladder's label
+    centre, Cen (`start/crunch-<amp>`): better than S by the score and on 11 of 11 crunch cards by ear
+    ([results](ladder-ear-results.md)); clean stays on its factory start.
   - **Morgan heavier (out of focus):** Wall Of Doom, Vintage Metal, Dirty Coil Rhythm
     ([results](driven-baseline-results.md)).
   - **Tone King:** Vintage Trem (clean, about 12% closer than the plugin's Default made
