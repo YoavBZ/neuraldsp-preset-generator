@@ -1,7 +1,8 @@
 # The score against the ear, on today's decisions (the ladder's ear check)
 
-**Status: declared 2026-11-17, after two independent review rounds (approve with changes, then approve). Nothing is
-drawn, rendered or heard yet.** Ledger `preset-ladder`: `phase_lear` (this declaration, before the draw),
+**Status: declared 2026-11-17, after two independent review rounds (approve with changes, then approve). Drawn
+2026-11-17 (`phase_lear_draw`), rendered and sat 2026-11-18 to 19, read once and audited 2026-11-19: outcome (a), row 5
+([results](ladder-ear-results.md), `phase_lear_outcome`). Cen over S rests on crunch (post hoc); no second sitting.** Ledger `preset-ladder`: `phase_lear` (this declaration, before the draw),
 `phase_lear_draw` (the draw file's sha256, written before any judge file is read), `phase_lear_outcome` (after the
 read). Code `learn/ladder_ear.py`, tests `tests/test_ladder_ear.py`. Data `PF/ladder/ear/` (`PF` is
 `~/ndsp-presets/learn/trusted-data/pipeline-fix`); the pages under `~/ndsp-presets/listening/ladder-ear/`. Parent:
