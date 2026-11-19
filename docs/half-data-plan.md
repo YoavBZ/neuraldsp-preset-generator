@@ -1,6 +1,6 @@
 # The learning-curve diagnostic: would more recordings help? (plan)
 
-**Status:** declared 2026-11-19, before any run, on the user's go of the same day. It is section 14 of the approved
+**Status:** run 2026-11-19 and audited ([results](half-data-results.md)): **A-stop** by the score. R-half1 against R-all reads +0.025 [−0.003, +0.053] (undecided, "short"), so R-half2 was not trained, as declared. Post hoc: more recordings would help a little, but a heard-size gain needs about two doublings or more. Declared 2026-11-19, before any run, on the user's go of the same day. It is section 14 of the approved
 Step 6 plan (the second review round's pick, [stem-finetune-plan.md](stem-finetune-plan.md) section 13's outlook),
 built with that review's three non-blocking items, the training-noise result of Step 6's stage N
 ([results](stem-finetune-results.md)) and the user's rule of 2026-11-19 that no action rests on a gap under 0.05.
