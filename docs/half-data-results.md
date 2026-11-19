@@ -28,8 +28,12 @@ trained. Items marked **post hoc** come from the audit and were not declared bef
 - **The cheaper stop reads A-stop.** H_a is R-half1 against its matched R-all (the same W state and fine-tune seed in
   every fold run), re-centred, on the product's input. It reads `rc-half-a-xl@-3 − rc-xl@-3` = **+0.025 [−0.003,
   +0.053]** on the deciding pool (478 parts, Silent Waves's 2 left out as declared), undecided.
-- **Under the user's rule it reads "short":** the upper end just passes +0.05 and no gap counts. In practice "short"
+- **Under the user's rule it reads "short":** the upper end just passes +0.05, so the interval reaches past the heard
+  size, but it is not decided, so no gap counts. In practice "short"
   and "not readable by the score" carry the same action: none.
+- **The declared direction note** (`outcome.direction_note`, verbatim): "halving is not shown to cost. If the gain per
+  doubling does not grow, doubling is not shown to buy a heard-size gain either. This read does not show where the
+  limit lies".
 - **What that licenses:** only the stop.
   - D-data, the one acting cell, needs H_a decided worse, so none remains.
   - As declared, R-half2 is not trained (saving about 80 min of training and 57 min of renders), and the full
@@ -117,7 +121,9 @@ Every row other than H_a is beside: it has no table and decides nothing.
   F's own interval, ±0.077, dominates. At F's lower end the goal is already met; at its upper end it takes 2.7
   doublings or more.
 
-## What it says
+## What it says (post hoc)
+
+This rests on the post hoc doublings above, not on a declared cell.
 
 **By the score, more recordings would help a little, but not by enough.** Halving the chains costs the per-unit
 reading about 0.02 to 0.04, under the heard size, and it costs the raw answers mostly through their aim. A gain big
