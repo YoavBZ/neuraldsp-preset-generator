@@ -297,7 +297,7 @@ def _refuse_other_amps(entries, pack, live, refs, spec) -> None:
         made_for = get_recipe(ref, pack.pack_id).for_amp
         if made_for and amp_prefix_for(pack, made_for) != live:
             die(f"recipe {ref} is for {made_for} presets, but this preset's amp is "
-                f"{live_name}: use dry/{live} for it.")
+                f"{live_name}: use {ref.split('/')[0]}/{ref.split('/', 1)[1].replace(made_for.lower(), live)} for it.")
     stray = sorted({(e["module"], e["key"]) for e in entries if isinstance(e, dict)
                     and any(e.get("module") in (f"{o}Amp", f"{o}EQ")
                             for o in names if o != live)})

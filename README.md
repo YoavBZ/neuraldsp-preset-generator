@@ -88,7 +88,10 @@ You don't have to use the slash commands — just describing what you want
     part has: clean, crunch, or driven for a heavier part. It is made dry first (the
     pack's `dry/<amp>` recipe turns off reverb, delay, tremolo, doubler, the noise gate
     and the amp's spring reverb, and resets transpose), then the research adds back
-    only what it documents for that part. These starting presets were chosen and
+    only what it documents for that part. A crunch start is then set to the centre of
+    the trusted training data for that amp's crunch parts, which one listener preferred
+    to the factory crunch preset on all 11 crunch comparisons
+    ([ladder-ear-results.md](docs/ladder-ear-results.md)). These starting presets were chosen and
     checked by measurement: the clean ones held up on reserved recordings, the crunch
     ones only weakly, and the driven ones on two of the three amps (AC20's only on
     development recordings) ([clean](docs/clean-baseline-results.md),
