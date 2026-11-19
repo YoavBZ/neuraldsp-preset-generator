@@ -76,6 +76,9 @@ RC_ROWS = {"rc-mix@-3": ("mix@-3", "rule"), "rc-xl@-3": ("xl@-3", "rule"),      
 L6_PHASE = "phase_l6_noise"           # Step 6's stage N reads (`stem_finetune`): other models' answers on stored inputs
 L6_MODEL_ROWS = {"rep-xl@-3": ("xl@-3", "rep"), "ens4-xl@-3": ("xl@-3", "ens4")}   # row: (stored input, model)
 L6_RC_ROWS = {"rc-rep-xl@-3": ("rep-xl@-3", "rule")}                                # row: (input row, discretes)
+L6H_PHASE = "phase_l6_half"           # the learning-curve diagnostic's reads (`half_data`): the half arms' answers
+L6H_MODEL_ROWS = {"half-a-xl@-3": ("xl@-3", "half-a"), "half-b-xl@-3": ("xl@-3", "half-b")}
+L6H_RC_ROWS = {"rc-half-a-xl@-3": ("half-a-xl@-3", "rule"), "rc-half-b-xl@-3": ("half-b-xl@-3", "rule")}
 SMALL = 0.05                          # a gain under this isn't known to be heard (F65): "small" in the outcome tables
 KNOB_GROUPS = {                       # reads_v3's three groups (`knob_group` adds the EQ and the pedals)
     "drive": ("inputGain", "pr12Volume", "sw50rVolume", "sw50rLevel", "ac20Volume", "ac20Power"),
@@ -203,13 +206,14 @@ def row_info(name):
         return {"stage": 0, "kind": "stored", "style": "train"}
     if name in ("cen", "aconst"):
         return {"stage": 1, "kind": "constant", "style": None}
-    if name in RC_ROWS or name in L6_RC_ROWS:   # the re-centred answer (`cmd_rc`): its own phase, after stage 2
+    if name in RC_ROWS or name in L6_RC_ROWS or name in L6H_RC_ROWS:   # the re-centred answer (`cmd_rc`), its own phase
         base, how = rc_spec(name)
         return {"stage": 2, "kind": "rc", "style": None, "base": base, "discretes": how,
-                "phase": RC_PHASE if name in RC_ROWS else L6_PHASE}
-    if name in L6_MODEL_ROWS:             # another model's answers on a stored input (`stem_finetune.cmd_answers`)
-        feats, model = L6_MODEL_ROWS[name]
-        return {"stage": 2, "kind": "model", "style": "product", "feats": feats, "model": model, "phase": L6_PHASE}
+                "phase": RC_PHASE if name in RC_ROWS else L6_PHASE if name in L6_RC_ROWS else L6H_PHASE}
+    if name in L6_MODEL_ROWS or name in L6H_MODEL_ROWS:   # another model's answers on a stored input (Step 6's code)
+        feats, model = {**L6_MODEL_ROWS, **L6H_MODEL_ROWS}[name]
+        return {"stage": 2, "kind": "model", "style": "product", "feats": feats, "model": model,
+                "phase": L6_PHASE if name in L6_MODEL_ROWS else L6H_PHASE}
     if name.startswith("swap-"):          # another pool part's real answer, per half (`cmd_swap`), rendered in stage 2
         base = name[5:]
         if base not in SWAP_BASES:
@@ -217,8 +221,9 @@ def row_info(name):
         return {"stage": 2, "kind": "swap", "style": None, "base": base}
     if name.startswith("sic-"):
         base = name[4:]
-        if base not in SIC_BASES and base not in L6_MODEL_ROWS:
-            raise SystemExit(f"unknown row {name!r}: a same-input constant of {SIC_BASES + tuple(L6_MODEL_ROWS)}")
+        if base not in SIC_BASES and base not in L6_MODEL_ROWS and base not in L6H_MODEL_ROWS:
+            raise SystemExit(f"unknown row {name!r}: a same-input constant of "
+                             f"{SIC_BASES + tuple(L6_MODEL_ROWS) + tuple(L6H_MODEL_ROWS)}")
         bi = row_info(base)
         return dict({"stage": max(1, bi["stage"]), "kind": "constant", "style": None, "base": base},
                     **({"phase": bi["phase"]} if bi.get("phase") else {}))
@@ -1319,9 +1324,10 @@ def cmd_render(args):
         if row_info(r)["kind"] == "rc":
             rc_sources_check(r)
         if row_info(r)["kind"] == "model":            # Step 6's rows: made from today's run files
+            from learn import half_data as HD
             from learn import stem_finetune as S6
 
-            S6.answers_check(r)
+            (HD.answers_check if r in L6H_MODEL_ROWS else S6.answers_check)(r)
     for r in rows:
         if ans[r]["c3r_sha256"] != st["sha256"]:
             raise SystemExit(f"{r}: its answers were made on another state")
@@ -1886,7 +1892,7 @@ def rcs_draws_check(row, swap_doc, drawn, base_sha, base_models):
 
 def rc_spec(row):
     """A re-centred row's (input row, discretes): the ladder's `RC_ROWS`, or Step 6's `L6_RC_ROWS`."""
-    return RC_ROWS[row] if row in RC_ROWS else L6_RC_ROWS[row]
+    return RC_ROWS[row] if row in RC_ROWS else L6_RC_ROWS[row] if row in L6_RC_ROWS else L6H_RC_ROWS[row]
 
 
 def rc_sources(row):
@@ -1929,7 +1935,7 @@ def cmd_rc(args):
     rows = parse_rows(args.rows)
     for r in rows:
         if row_info(r)["kind"] != "rc":
-            raise SystemExit(f"{r}: not a re-centred row ({sorted(RC_ROWS) + sorted(L6_RC_ROWS)})")
+            raise SystemExit(f"{r}: not a re-centred row ({sorted(RC_ROWS) + sorted(L6_RC_ROWS) + sorted(L6H_RC_ROWS)})")
         require_row(r)
     st = R.state()
     controls_ok(2, st)

@@ -7258,7 +7258,21 @@ def cmd_train_ft(args):
         r3st = R3.state()                              # refuses until C2 and C2r are complete and C3's decision exists
         base = R3.base_of(c3r, r3st)
     rep = getattr(args, "c3r_rep", None)
+    half = getattr(args, "c3r_half", None)
     w_seed, inner_keys = seed, [(q, sd) for q in range(REAL_FOLDS) for sd in SEEDS]
+    half_keep = half_sel = None
+    if half is not None:                               # the learning-curve diagnostic: R-all's recipe on half the chains
+        from learn import half_data as HD
+        from learn import stem_finetune as S6
+
+        why = HD.half_refusal(half, c3r, k, inner, seed, base, rep)
+        if why:
+            raise SystemExit(why)
+        require(HD.PHASE_HALF)
+        S6.stage0_ok()
+        half_sel = HD.load_selection(r3st)             # hash and C3r state checked
+        half_keep = frozenset(half_sel["halves"][HD.ARMS[half]["half"]]["units"])
+        base, w_seed, inner_keys = HD.ARMS[half]["base"], HD.half_w_seed(half, seed), HD.half_inner_keys(half)
     if rep is not None:                                # Step 6's stage N: R-all's recipe again, under its own base
         from learn import stem_finetune as S6
 
@@ -7278,11 +7292,13 @@ def cmd_train_ft(args):
             raise SystemExit("N3 runs masked FT_k only")
     if k is None:
         require("phase_ft_carry")
-    if rep is None and seed not in SEEDS:
+    if rep is None and half is None and seed not in SEEDS:
         raise SystemExit(f"--seed in {SEEDS}")
     lr, cap = ft_rate(args)
     if rep is not None and (lr, cap) != S6.REP_RATE:   # R-all's rate and cap exactly (--ft-cap 300)
         raise SystemExit(f"--c3r-rep repeats R-all's rate and cap only: (lr, cap) {S6.REP_RATE}, not {(lr, cap)}")
+    if half is not None and (lr, cap) != HD.HALF_RATE:
+        raise SystemExit(f"--c3r-half trains at R-all's rate and cap only: (lr, cap) {HD.HALF_RATE}, not {(lr, cap)}")
     h4 = getattr(args, "h4", None)
     pre, h4x = FT_PRETRAIN, None
     if h4 is not None:                                 # H4: FTm's recipe on its arm's W and the real rows less real_out
@@ -7301,6 +7317,10 @@ def cmd_train_ft(args):
         return
     if rep is not None:                                # no R-all name, and no file of this run's already on disk
         why = S6.rep_write_refusal(rep, name, seed, inner, lambda nm: (od / nm).exists())
+        if why:
+            raise SystemExit(why)
+    if half is not None:                               # its arm's name only, and no file of this run's on disk
+        why = HD.half_write_refusal(half, name, seed, inner, lambda nm: (od / nm).exists())
         if why:
             raise SystemExit(why)
     if h4 is not None:                                 # each run chains within its arm (W, inner, FT_k, all-labels)
@@ -7340,12 +7360,18 @@ def cmd_train_ft(args):
             raise SystemExit(f"{name}: an inner run was made on another C2, C2r or C3 state")
         if any((r_.get("rep") or {}).get("kind") != rep for r_ in allin):
             raise SystemExit(f"{name}: an inner run of another kind (each kind's E comes from its own base)")
+        if any((r_.get("half") or {}).get("arm") != half for r_ in allin):
+            raise SystemExit(f"{name}: an inner run of another half arm (each arm's E comes from its own base)")
+        if half is not None and any((r_.get("half") or {}).get("selection_sha256") != half_sel["sha256"]
+                                    for r_ in allin):
+            raise SystemExit(f"{name}: an inner run made on another selection")
         inners = [r_ for r_ in allin if k is None or (r_["real_fold"], r_["seed"]) == (k, seed)]
         epochs = ft_epoch_of(inners)
     e = require("phase_3")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     init, wrec = ft_start_state(w_seed, pre)
-    w_of = (lambda sd: sd) if rep is None else (lambda sd: S6.rep_w_seed(rep, sd))
+    w_of = (lambda sd: S6.rep_w_seed(rep, sd)) if rep is not None else (lambda sd: HD.half_w_seed(half, sd)) \
+        if half is not None else (lambda sd: sd)
     if not inner and ft_inner_init_refusal(inners, lambda sd: json.loads((od / f"{pre}-{w_of(sd)}.json")
                                                                          .read_text())["model_sha256"]["best"]):
         raise SystemExit("an inner run started from another W state than its seed's")
@@ -7359,8 +7385,10 @@ def cmd_train_ft(args):
         raise SystemExit(f"{pre}-{seed}: selected on other NS rows than this arm's")
     doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
     if c3r is not None:                                # C3r's rows: its folds, drops and two-source mix
-        rrows, real_held, info = R3.rows_for(c3r, k, inner, r3st)
+        rrows, real_held, info = R3.rows_for(c3r, k, inner, r3st, keep=half_keep)
         bad = R3.check_rows(c3r, k, inner, rrows, real_held, r3st)
+        if half_keep is not None and {r["real"] for r in rrows} - half_keep:
+            bad.append("a training unit outside its half")
         if bad:
             raise SystemExit(f"{name}: {bad[0]} ({len(bad)} problems)")
     else:
@@ -7435,7 +7463,7 @@ def cmd_train_ft(args):
                "plugin_train": len(plugin_tr), "train_real": len(rrows), "held_real": len(real_held),
                "train_units": sorted({r["real"] for r in rrows}), "held_units": sorted(held_units), "info": info,
                "inputs_sha256": data.inputs_sha256, "phase": "phase_c3r" if c3r is not None else None,
-               "w_seed": w_seed, "rep": rep, "init_run": f"{pre}-{w_seed}"}
+               "w_seed": w_seed, "rep": rep, "half": half, "init_run": f"{pre}-{w_seed}"}
         print("TRAIN-FT DRY RUN", json.dumps({q: dry[q] for q in ("name", "epochs", "rows", "train_real", "held_real")}))
         return dry
     sub = np.sort(np.random.default_rng(SUBSET_SEED).choice(ti, min(SUBSET_N, len(ti)), replace=False))
@@ -7460,7 +7488,7 @@ def cmd_train_ft(args):
         net, final, best_state, best_ep, best = fit(data, ti, watch, None, seed, dev, log, epochs,
                                                     every=1 if (c3 or c3r is not None) else FT_EVERY, init=init, lr=lr,
                                                     per_head=c3 or c3r is not None)
-    phase_of = (S6.PHASE_NOISE if rep is not None else "phase_c3r" if c3r is not None else "phase_c3" if c3 else H4 if h4 else "phase_night2" if masked
+    phase_of = (HD.PHASE_HALF if half is not None else S6.PHASE_NOISE if rep is not None else "phase_c3r" if c3r is not None else "phase_c3" if c3 else H4 if h4 else "phase_night2" if masked
                 else "phase_ft")
     out = {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} {phase_of}", "rung": "b",
            "seed": seed, "real_fold": k, "masked": masked, "real_frac": frac, "shuffle_real": shuf, "inner": inner, "lr": lr, "cap": cap, "init": {"run": f"{pre}-{w_seed}", "which": "best",
@@ -7480,6 +7508,10 @@ def cmd_train_ft(args):
         out["c3r"] = dict(info, base=base, inputs_sha256=data.inputs_sha256)
     if rep is not None:
         out["rep"] = {"kind": rep, "base": base, "w_seed": w_seed, "phase": S6.PHASE_NOISE}
+    if half is not None:
+        out["half"] = {"arm": half, "half": HD.ARMS[half]["half"], "base": base, "w_seed": w_seed,
+                       "selection_sha256": half_sel["sha256"], "train_units": sorted({r["real"] for r in rrows}),
+                       "phase": HD.PHASE_HALF}
     od.mkdir(parents=True, exist_ok=True)
     if inner:
         out["dfix"]["val_fold"] = (k + 1) % REAL_FOLDS
@@ -8310,6 +8342,9 @@ def main(argv=None):
                     help="train-ft: build the run's rows, data and masks and check them, then stop before its first step")
     ap.add_argument("--c3r", choices=("all", "ctl"), default=None,
                     help="train-ft: C3r's arm, C3's recipe on every trusted real row by rotation (with --masked)")
+    ap.add_argument("--c3r-half", choices=("a", "b"), default=None,
+                    help="train-ft: the learning-curve diagnostic, R-all's recipe on one half of the chains "
+                         "(with --c3r all; `half_data`)")
     ap.add_argument("--c3r-rep", choices=("rep", "replay"), default=None,
                     help="train-ft: Step 6's stage N, R-all's recipe again under its own base (with --c3r all)")
     ap.add_argument("--real-frac", type=float, default=1.0, help="train-ft: N3, this share of the training real rows")
