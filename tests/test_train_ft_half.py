@@ -37,6 +37,7 @@ def wired(base, monkeypatch):
     starts = []
     monkeypatch.setattr(S, "stage0_ok", lambda: {"cell": {"code": "S0-ok"}})
     monkeypatch.setattr(H, "load_selection", lambda st=None: SEL)
+    monkeypatch.setattr(H, "stage_a_go", lambda: {"code": "A-go"})
     monkeypatch.setattr(P, "ft_start_state", lambda seed, pre=None: (starts.append(seed) or {}, {
         "train_ids": [0, 1, 2], "model_sha256": {"best": "w"}}))
     return base, starts
@@ -124,6 +125,15 @@ def test_a_half_run_refuses_without_its_ledger_phase(wired, monkeypatch):
     monkeypatch.setattr(P, "ledger_entry", lambda: entry)
     with pytest.raises(SystemExit, match="no phase_s6_half: declare it before running"):
         P.cmd_train_ft(ns(real_fold=0, inner=True, c3r_half="a", seed=A1))
+
+
+def test_arm_b_refuses_before_a_go(wired, monkeypatch):
+    def no():
+        raise SystemExit("report-a read A-stop: arm b is not trained (the cheaper stop)")
+    monkeypatch.setattr(H, "stage_a_go", no)
+    with pytest.raises(SystemExit, match="cheaper stop"):
+        P.cmd_train_ft(ns(real_fold=0, inner=True, c3r_half="b", seed=B1))
+    assert P.cmd_train_ft(ns(real_fold=0, inner=True, c3r_half="a", seed=A1))["name"] == "C3r-half-a-k0-inner-cap300"
 
 
 REQUIRE = P.require

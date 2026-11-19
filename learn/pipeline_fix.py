@@ -7270,6 +7270,8 @@ def cmd_train_ft(args):
             raise SystemExit(why)
         require(HD.PHASE_HALF)
         S6.stage0_ok()
+        if half == "b":                                # the cheaper stop: arm b only on report-a's A-go
+            HD.stage_a_go()
         half_sel = HD.load_selection(r3st)             # hash and C3r state checked
         half_keep = frozenset(half_sel["halves"][HD.ARMS[half]["half"]]["units"])
         base, w_seed, inner_keys = HD.ARMS[half]["base"], HD.half_w_seed(half, seed), HD.half_inner_keys(half)

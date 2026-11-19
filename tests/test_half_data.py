@@ -79,11 +79,15 @@ def test_d_outcome_cells():
     w = _iv(0.09, 0.06, 0.12)
     got = H.d_outcome(_rows(w, w, w, _iv(0.003, -0.05, 0.06)))
     assert got["code"] == "D-data" and got["heard"] == "cost" and got["noise"] == "holds"
-    d = got["doublings_to_goal"]
-    assert d["at_mean"] == pytest.approx((0.003 + 0.06) / 0.09) and d["at_hi90"] == pytest.approx(0.063 / 0.12)
-    assert d["at_lo90"] == pytest.approx(0.063 / 0.06)
+    d = got["doublings_to_goal"]["doublings"]
+    assert d["H mean, F mean"] == pytest.approx((0.003 + 0.06) / 0.09) and d["H hi90, F mean"] == pytest.approx(0.063 / 0.12)
+    assert d["H lo90, F mean"] == pytest.approx(0.063 / 0.06)
+    assert d["H mean, F lo90"] == pytest.approx(0.01 / 0.09) and d["H mean, F hi90"] == pytest.approx(0.12 / 0.09)
+    assert len(d) == 9 and got["doublings_to_goal"]["chains_now"] == H.CHAINS == 293
     assert H.d_outcome(_rows(w, w, _iv(0.02, -0.02, 0.06)))["code"] == "D-noise"
-    assert H.d_outcome(_rows(_iv(0.01, -0.01, 0.03)))["code"] == "D-unreadable"
+    u = H.d_outcome(_rows(_iv(0.01, -0.01, 0.03)))
+    assert u["code"] == "D-unreadable" and u["direction_note"] == H.DIRECTION_NOTE["undecided"]
+    assert "doublings_to_goal" not in u
     assert H.d_outcome(_rows(_iv(0.03, -0.02, 0.08)))["code"] == "D-short"
     g = _iv(-0.12, -0.16, -0.08)
     assert H.d_outcome(_rows(g, g, g))["code"] == "D-odd"
@@ -264,7 +268,7 @@ def test_the_ladders_half_rows_carry_their_own_phase():
 
 
 @pytest.mark.parametrize("missing,cmd", [("phase_s6_half", "cmd_select"), ("phase_s6_half", "cmd_answers"),
-                                         ("phase_l6_half", "cmd_report")])
+                                         ("phase_l6_half", "cmd_report_a"), ("phase_l6_half", "cmd_report")])
 def test_every_command_refuses_without_its_ledger_phases(monkeypatch, missing, cmd):
     import copy
 
@@ -286,3 +290,71 @@ def test_the_read_leaves_out_silent_waves_only():
           ru("panel", "panel/y/RAW_01")]
     assert [u["prt"]["di"] for u in H.read_parts(us)] == ["panel/x/Drowning", "goat/Silent Waves", "panel/y/RAW_01"]
     assert len(H.read_parts(us, H.BAND_BESIDE)) == 2
+
+
+def test_a_decided_cost_inside_the_heard_size_is_not_over_read():
+    got = H.d_outcome(_rows(_iv(0.03, 0.015, 0.045), cen=_iv(0.0, -0.057, 0.057)))
+    assert got["code"] == "D-unreadable" and got["decided"] == "worse"
+    assert got["direction_note"] == H.DIRECTION_NOTE["worse"] and "labels" not in got["next"]
+    assert got["doublings_to_goal"]["doublings"]["H mean, F mean"] == pytest.approx(0.06 / 0.03)
+    s_ = H.d_outcome(_rows(_iv(0.07, 0.03, 0.11)))
+    assert s_["code"] == "D-short" and s_["direction_note"] == H.DIRECTION_NOTE["worse"]
+    assert s_["doublings_to_goal"] is None                                       # no full-vs-Cen row given
+
+
+def test_the_cheaper_stop():
+    H.table_guard()
+    assert {r: H.a_cell(r)[0] for r in H.READINGS} == {"worse": "A-go", "undecided": "A-stop", "better": "A-stop"}
+    rows = {"H_a": {"deciding_pool": _iv(0.06, 0.04, 0.08)}, "full vs cen": {"deciding_pool": _iv(0.0, -0.05, 0.05)}}
+    got = H.a_outcome(rows)
+    assert got["code"] == "A-go" and got["heard"] == "short" and got["doublings_to_goal"]
+    got = H.a_outcome({"H_a": {"deciding_pool": _iv(0.01, -0.01, 0.03)}})
+    assert got["code"] == "A-stop" and got["heard"] == "unreadable" and "doublings_to_goal" not in got
+    assert H.a_outcome({"H_a": {"deciding_pool": _iv(-0.03, -0.05, -0.01)}})["code"] == "A-stop"
+    with pytest.raises(SystemExit):
+        H.a_outcome({})
+
+
+def test_d_data_needs_h_a_decided_worse_so_a_stop_leaves_no_acting_cell():
+    w = _iv(0.09, 0.06, 0.12)
+    for h_a in (_iv(0.0, -0.02, 0.02), _iv(-0.03, -0.05, -0.01)):
+        assert H.a_cell(H.decided(h_a))[0] == "A-stop"
+        assert H.d_outcome(_rows(w, h_a, w))["code"] != "D-data"
+
+
+@pytest.mark.parametrize("cut", ["A_TABLE", "DIRECTION_NOTE"])
+def test_the_guard_refuses_a_broken_stop_table(monkeypatch, cut):
+    monkeypatch.setattr(H, cut, H.A_TABLE[:1] if cut == "A_TABLE" else {"worse": "x"})
+    with pytest.raises(SystemExit):
+        H.table_guard()
+
+
+def test_arm_b_waits_for_a_go(monkeypatch, tmp_path):
+    import json
+
+    from learn import stem_finetune as S
+
+    monkeypatch.setattr(H, "half_dir", lambda: tmp_path)
+    with pytest.raises(SystemExit, match="has not been read"):
+        H.stage_a_go()
+    o = {"code": "A-stop"}
+    (tmp_path / "report-a.json").write_text(json.dumps({"outcome": dict(o, sha256=S.sha_json(o))}))
+    with pytest.raises(SystemExit, match="A-stop"):
+        H.stage_a_go()
+    o = {"code": "A-go"}
+    (tmp_path / "report-a.json").write_text(json.dumps({"outcome": dict(o, sha256="tampered")}))
+    with pytest.raises(SystemExit, match="hash"):
+        H.stage_a_go()
+    (tmp_path / "report-a.json").write_text(json.dumps({"outcome": dict(o, sha256=S.sha_json(o))}))
+    assert H.stage_a_go()["code"] == "A-go"
+
+
+def test_answers_needs_an_arm(monkeypatch):
+    monkeypatch.setattr(H, "require_all", lambda: None)
+    import argparse
+
+    with pytest.raises(SystemExit, match="--arm in"):
+        H.cmd_answers(argparse.Namespace(arm=None))
+    monkeypatch.setattr(H, "half_dir", lambda: __import__("pathlib").Path("/nonexistent-half"))
+    with pytest.raises(SystemExit, match="has not been read"):
+        H.cmd_answers(argparse.Namespace(arm="b"))

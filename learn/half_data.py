@@ -3,10 +3,11 @@
 ladder's stored `xl@-3`, raw and re-centred. It asks whether more distinct recordings would make the model better.
 
     $TORCH_PY -m learn.half_data select          # the two complementary halves (zero renders) -> PF/step6/half/
-    zsh learn/half_data_train.zsh                # 32 runs, one MPS job at a time (`pipeline_fix train-ft --c3r-half`)
-    $TORCH_PY -m learn.half_data answers         # half-a-xl@-3, half-b-xl@-3, their constants and re-centred rows
-    .venv/bin/python -m learn.preset_ladder render --rows half-a-xl@-3,rc-half-a-xl@-3,half-b-xl@-3,rc-half-b-xl@-3 \\
-        --shard 0/3                              # ... three shards
+    zsh learn/half_data_train.zsh a              # arm a's 16 runs, one MPS job at a time (`train-ft --c3r-half a`)
+    $TORCH_PY -m learn.half_data answers --arm a # half-a-xl@-3, its constant and re-centred row
+    .venv/bin/python -m learn.preset_ladder render --rows half-a-xl@-3,rc-half-a-xl@-3 --shard 0/3   # ... 3 shards
+    .venv/bin/python -m learn.half_data report-a # the cheaper stop: A_TABLE on H_a (A-go or A-stop)
+    # only on A-go: arm b the same way (`half_data_train.zsh b`, `answers --arm b`, its two rows), then
     .venv/bin/python -m learn.half_data report   # D_TABLE's cell, read only after the rows are saved
 
 **The design (training noise).** Two half arms on complementary halves of the chains, H_A and its complement H_B, each
@@ -20,7 +21,10 @@ against arm a (the seed and which half). Each half's matched row (H_a, H_b) must
 is decided worse and its lower end is over 0.05 or its mean is 0.10 or more, and "unreadable" when its interval sits
 inside +-0.05 ("not readable by the score").
 
-`D_TABLE` and its guard are declared here, before any run, and tested in `tests/test_half_data.py`.
+**The cheaper stop.** D-data, the only acting cell, needs arm a's own row H_a decided worse; so arm a is trained and
+read first, and arm b only on A-go (`A_TABLE`, `stage_a_go`).
+
+`D_TABLE`, `A_TABLE` and their guard are declared here, before any run, and tested in `tests/test_half_data.py`.
 """
 
 from __future__ import annotations
@@ -46,6 +50,7 @@ ARMS = {"a": {"half": "A", "base": "C3r-half-a", "seeds": {20261042: 20261042, 2
         "b": {"half": "B", "base": "C3r-half-b", "seeds": {20261181: 20261042, 20261182: 20261043},
               "like": "rep-xl@-3"}}             # arm: its half, base, {fine-tune seed: W's seed}, its matched model row
 HALF_RATE = (1e-4, 300)                         # R-all's (lr, cap)
+CHAINS = 293                                    # C3r's training chains (checked by `select`); a doubling adds as many
 PROTECTED_BASES = ("C3r-all", "C3r-ctl", "C3r-allK", "C3r-ctlK", "C3r-rep", "C3r-replay")
 SMALL = 0.05                                    # the user's rule: no action rests on a gap under this
 BIG = 0.10                                      # by ear the score is trusted at gaps of about this and over
@@ -54,7 +59,7 @@ READINGS = ("better", "undecided", "worse")
 HEARD = ("cost", "gain", "unreadable", "short")
 NOISE = ("holds", "fails")
 
-# the rows: models' answers on the stored xl@-3 (`preset_ladder.L6_HALF_MODEL_ROWS`), re-centred by the ladder's rule
+# the rows: models' answers on the stored xl@-3 (`preset_ladder.L6H_MODEL_ROWS`), re-centred by the ladder's rule
 HALF_ROWS = {"half-a-xl@-3": "a", "half-b-xl@-3": "b"}
 RC_HALF_ROWS = {"rc-half-a-xl@-3": "half-a-xl@-3", "rc-half-b-xl@-3": "half-b-xl@-3"}
 FULL_RC, FULL_RAW = ("rc-xl@-3", "rc-rep-xl@-3"), ("xl@-3", "rep-xl@-3")     # the full arm: R-all and R-rep
@@ -79,9 +84,10 @@ D_BESIDE = {
 
 # trusted data: the panel's Silent Waves parts carry vocal bleed (the ladder's ear check, card i14) and await a
 # trusted-data review, so every row above is read without them; the same band's Drowning awaits a bleed check. Beside:
-# H with every part, and H without both recordings. Training keeps R-all's rows (see the plan, section 4).
+# H with every part, and H without both recordings. Training keeps R-all's rows (see the plan, section 3).
 EXCLUDED_READ = ("Silent Waves",)               # panel DI titles left out of the read
 BAND_BESIDE = ("Silent Waves", "Drowning")      # the band's two recordings, left out of one beside row
+LEFT_OUT_PARTS = 2                              # the read's parts EXCLUDED_READ leaves out (478 of 480); else refused
 
 
 def title_of(ru):
@@ -107,12 +113,26 @@ D_TABLE = (                     # (H's heard readings, noise check, code, next):
      "fewer chains reads better by a heard-size amount: an early stop or which half, not a finding. Reported; nothing "
      "follows"),
     (("unreadable",), NOISE, "D-unreadable",
-     "not readable by the score: H's interval sits inside +-0.05. Halving is not shown to cost a heard-size amount, so, "
-     "if returns per doubling do not grow, doubling the chains is not shown to buy one either; the limit is more likely "
-     "the labels or the reading. To the user; no action rests on it"),
+     "not readable by the score: H's interval sits inside +-0.05, so no action rests on it. What H's sign shows is "
+     "the direction note (DIRECTION_NOTE). To the user"),
     (("short",), NOISE, "D-short",
      "not decided at a heard size: the interval reaches past +-0.05 with no counted gap (underpowered, or a decided gap "
-     "under the user's rule). No action; the write-up gives what the interval rules out"))
+     "under the user's rule). No action; the write-up gives what the interval rules out, and the direction note"))
+DIRECTION_NOTE = {              # D-unreadable's and D-short's text by H's plain reading (the review: no over-read)
+    "worse": "halving has a decided cost, under the heard size: more chains is a lever, too small a doubling to give a "
+             "heard-size gain soon; the doublings figure says how many it would take at this rate",
+    "better": "fewer chains reads decided better, inside the heard size: an early stop or the choice of half, not a "
+              "finding",
+    "undecided": "halving is not shown to cost. If the gain per doubling does not grow, doubling is not shown to buy a "
+                 "heard-size gain either. This read does not show where the limit lies"}
+
+A_ROW = "H_a"                   # the cheaper stop: arm a is trained and read first
+A_TABLE = (                     # (H_a's plain readings, code, next): each reading once
+    (("worse",), "A-go",
+     "arm b's 16 runs and its two rows: D-data, the only acting cell, is still possible"),
+    (("undecided", "better"), "A-stop",
+     "stop: D-data needs H_a decided worse, so no acting cell remains. Arm b is not trained. Hand back H_a with its "
+     "heard reading, its direction note and, when decided worse, its doublings; then the audit and the user"))
 
 
 # --- the tables (pure) -----------------------------------------------------------------------------------------------------
@@ -127,6 +147,11 @@ def table_guard():
         raise SystemExit("D_TABLE's codes are not the five declared")
     if not 0 < SMALL < BIG:
         raise SystemExit("the heard-size thresholds are not 0 < SMALL < BIG")
+    for r in READINGS:
+        if sum(r in rs for rs, _, _ in A_TABLE) != 1:
+            raise SystemExit(f"A_TABLE holds {r} not once")
+    if {c for _, c, _ in A_TABLE} != {"A-go", "A-stop"} or set(DIRECTION_NOTE) != set(READINGS):
+        raise SystemExit("A_TABLE's codes or the direction notes are not as declared")
 
 
 def decided(row):
@@ -178,10 +203,24 @@ def doublings(gap_now, cost, goal=GOAL_VS_CEN):
     return max(0.0, (gap_now - goal) / cost)
 
 
+def doublings_grid(cost_row, cen_row, goal=GOAL_VS_CEN):
+    """(Pure.) `doublings` at the cost row's mean and interval ends, against the full arm's row against Cen at its
+    mean and interval ends (F's interval is about as wide as the distance to the goal). None without both rows."""
+    if not cost_row or not cen_row or cen_row.get("mean") is None:
+        return None
+    grid = {f"H {hk}, F {fk}": doublings(cen_row.get(fv), cost_row.get(hv), goal)
+            for hk, hv in (("mean", "mean"), ("lo90", "lo90"), ("hi90", "hi90"))
+            for fk, fv in (("mean", "mean"), ("lo90", "lo90"), ("hi90", "hi90"))}
+    return {"goal_vs_cen": goal, "full_vs_cen": {k: cen_row.get(k) for k in ("mean", "lo90", "hi90")},
+            "cost": {k: cost_row.get(k) for k in ("mean", "lo90", "hi90")}, "doublings": grid,
+            "chains_now": CHAINS, "assumption": "a constant gain per doubling; if returns diminish, more are needed"}
+
+
 def d_outcome(rows):
     """(Pure.) The cell from the report's rows ({name: {"deciding_pool": row}}): H by `heard_reading`, the noise check
-    on H_a and H_b, D_TABLE; for D-data the doublings to the goal (by H's mean and its interval's ends, with the full
-    arm's pooled row against Cen). A missing H refuses."""
+    on H_a and H_b, D_TABLE; D-unreadable and D-short carry H's plain direction (DIRECTION_NOTE); for every H decided
+    worse the doublings to the goal (`doublings_grid`, with the full arm's pooled row against Cen). A missing H
+    refuses."""
     def dp(name):
         return (rows.get(name) or {}).get("deciding_pool")
     h = dp("H")
@@ -192,12 +231,34 @@ def d_outcome(rows):
     code, nxt = d_cell(heard, noise)
     out = {"H": {k: h.get(k) for k in ("mean", "lo90", "hi90")}, "decided": decided(h), "heard": heard,
            "noise": noise, "H_a": decided(dp("H_a")), "H_b": decided(dp("H_b")), "code": code, "next": nxt}
-    if code == "D-data":
-        cen = (dp("full vs cen") or {}).get("mean")
-        out["doublings_to_goal"] = {"goal_vs_cen": GOAL_VS_CEN, "full_vs_cen": cen,
-                                    "at_mean": doublings(cen, h["mean"]), "at_hi90": doublings(cen, h["hi90"]),
-                                    "at_lo90": doublings(cen, h["lo90"]),
-                                    "assumption": "a constant gain per doubling; if returns diminish, more are needed"}
+    if code in ("D-unreadable", "D-short"):
+        out["direction_note"] = DIRECTION_NOTE[out["decided"]]
+    if out["decided"] == "worse":
+        out["doublings_to_goal"] = doublings_grid(h, dp("full vs cen"))
+    return out
+
+
+def a_cell(h_a):
+    """(Pure.) A_TABLE's row for H_a's plain reading. -> (code, next)."""
+    table_guard()
+    hit = [(c, t) for rs, c, t in A_TABLE if h_a in rs]
+    if len(hit) != 1:
+        raise SystemExit(f"A_TABLE has {len(hit)} rows for H_a {h_a}")
+    return hit[0]
+
+
+def a_outcome(rows):
+    """(Pure.) The cheaper stop, read after arm a: H_a (arm a against its matched R-all) by A_TABLE, with its heard
+    reading, its direction note and, when decided worse, its doublings beside. A missing H_a refuses."""
+    h = (rows.get(A_ROW) or {}).get("deciding_pool")
+    d = decided(h)
+    if d is None:
+        raise SystemExit(f"{A_ROW}: no reading (the report is incomplete)")
+    code, nxt = a_cell(d)
+    out = {A_ROW: {k: h.get(k) for k in ("mean", "lo90", "hi90")}, "decided": d, "heard": heard_reading(h),
+           "direction_note": DIRECTION_NOTE[d], "code": code, "next": nxt}
+    if d == "worse":
+        out["doublings_to_goal"] = doublings_grid(h, (rows.get("full vs cen") or {}).get("deciding_pool"))
     return out
 
 
@@ -449,6 +510,8 @@ def cmd_select(_args):
     if p.exists():
         raise SystemExit(f"{p} exists: never overwritten (move it aside first)")
     chains, ents, records, cls_of = real_selection(st)
+    if len(chains) != CHAINS:
+        raise SystemExit(f"{len(chains)} chains, not the declared {CHAINS}")
     j, kept, refused = choose(chains, ents, records, cls_of)
     sel = {"plan": PLAN, "ledger": f"pipeline-fix {PHASE_HALF}", "c3r_sha256": st["sha256"], "seed": HALF_SEED,
            "draw": j, "draws_refused": refused, "balance": BALANCE, "chains": len(chains),
@@ -558,18 +621,24 @@ def read_bans(st, units, models):
     return probs
 
 
-def cmd_answers(_args):
-    """The answers (zero renders, CPU; `phase_l6_half`), after the 32 runs: C3r's state, the selection and every
-    protected run file unchanged since Step 6's stage 0 (R-rep's against its stage-N answers); each half run on its
-    half only, its full reference's recipe (`same_recipe`) and the fold bans; `half-a-xl@-3` and `half-b-xl@-3` on the
-    stored `xl@-3` features; their same-input constants and re-centred rows by the ladder's own code. Every output file
-    absent before any is written. -> ladder/answers/<row>.json, PF/step6/half/runs.json."""
+def cmd_answers(args):
+    """One arm's answers (`--arm a|b`; zero renders, CPU; `phase_l6_half`), after its 16 runs (arm b only on A-go):
+    C3r's state, the selection and every protected run file unchanged since Step 6's stage 0 (R-rep's against its
+    stage-N answers); each of the arm's runs on its half only, its full reference's recipe (`same_recipe`) and the fold
+    bans; `half-<arm>-xl@-3` on the stored `xl@-3` features, its same-input constant and re-centred row by the ladder's
+    own code. Every output file absent before any is written. -> ladder/answers/<row>.json,
+    PF/step6/half/runs-<arm>.json."""
     from learn import full_controls_c3r as R
     from learn import pipeline_fix as P
     from learn import preset_ladder as L
     from learn import stem_finetune as S6
 
     require_all()
+    arm = getattr(args, "arm", None)
+    if arm not in ARMS:
+        raise SystemExit(f"--arm in {tuple(ARMS)}")
+    if arm == "b":
+        stage_a_go()
     s0 = S6.stage0_ok()
     st = R.state()
     if st["sha256"] != s0["c3r_sha256"]:
@@ -585,13 +654,14 @@ def cmd_answers(_args):
             raise SystemExit(f"{r}'s stored answers changed since stage 0")
     S6.answers_check("rep-xl@-3")                      # R-rep's answers made from today's R-rep files
     L.rc_sources_check("rc-rep-xl@-3")
-    there = [L.answers_path(r) for r in list(HALF_ROWS) + [f"sic-{r}" for r in HALF_ROWS] + list(RC_HALF_ROWS)
-             if L.answers_path(r).exists()]
+    row = next(r for r, a in HALF_ROWS.items() if a == arm)
+    rc_row = next(r for r, b in RC_HALF_ROWS.items() if b == row)
+    there = [L.answers_path(r) for r in (row, f"sic-{row}", rc_row) if L.answers_path(r).exists()]
     if there:
         raise SystemExit(f"{[str(p) for p in there]} exist: never overwritten (move them aside first)")
     od = P.out_dir() / "runs"
     probs, runs, models = [], {}, {}
-    for arm, spec in ARMS.items():
+    for arm, spec in ((arm, ARMS[arm]),):
         hm = half_models(st, arm)
         models[arm] = hm
         keep = frozenset(sel["halves"][spec["half"]]["units"])
@@ -613,21 +683,20 @@ def cmd_answers(_args):
         probs += [f"arm {arm}: {b}" for b in read_bans(st, units, hm)]
     if probs:
         raise SystemExit(f"the half runs differ from their declared recipe: {probs[:5]} ({len(probs)} problems)")
-    for row, arm in HALF_ROWS.items():
-        nets = {k: v[0] for k, v in models[arm].items()}
-        ans, missing = S6.answer_row(st, units, nets, "xl@-3")
-        L.save_answers(row, ans, {"c3r_sha256": st["sha256"], "feats": "xl@-3", "missing": missing,
-                                  "models": {str(k): v[1] for k, v in models[arm].items()},
-                                  "selection_sha256": sel["sha256"],
-                                  "stage0_sha256": L.file_sha(S6.step6_dir() / "stage0.json")})
-        print(f"ANSWERS {row}: {sum(len(v) for v in ans.values())} parts, {len(missing)} missing")
-    L.cmd_sic(argparse.Namespace(rows=",".join(f"sic-{r}" for r in HALF_ROWS)))
-    L.cmd_rc(argparse.Namespace(rows=",".join(RC_HALF_ROWS)))
-    out = {"plan": PLAN, "ledger": f"preset-ladder {PHASE_L6_HALF}", "c3r_sha256": st["sha256"],
+    nets = {k: v[0] for k, v in models[arm].items()}
+    ans, missing = S6.answer_row(st, units, nets, "xl@-3")
+    L.save_answers(row, ans, {"c3r_sha256": st["sha256"], "feats": "xl@-3", "missing": missing,
+                              "models": {str(k): v[1] for k, v in models[arm].items()},
+                              "selection_sha256": sel["sha256"],
+                              "stage0_sha256": L.file_sha(S6.step6_dir() / "stage0.json")})
+    print(f"ANSWERS {row}: {sum(len(v) for v in ans.values())} parts, {len(missing)} missing")
+    L.cmd_sic(argparse.Namespace(rows=f"sic-{row}"))
+    L.cmd_rc(argparse.Namespace(rows=rc_row))
+    out = {"plan": PLAN, "ledger": f"preset-ladder {PHASE_L6_HALF}", "c3r_sha256": st["sha256"], "arm": arm,
            "selection_sha256": sel["sha256"], "runs": runs,
            "run_minutes": round(sum(v["minutes"] or 0 for v in runs.values()), 1),
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    P.save(half_dir() / "runs.json", out)
+    P.save(half_dir() / f"runs-{arm}.json", out)
     print(f"RUNS saved: {len(runs)} runs, {out['run_minutes']} run-minutes")
 
 
@@ -653,50 +722,111 @@ def value_of(st, name):
     return L.value_fn(st, parts[0]) if len(parts) == 1 else geo([L.value_fn(st, p) for p in parts])
 
 
-def cmd_report(_args):
-    """The report (zero renders; `phase_l6_half`): every row complete and made from today's answers; H, H_a, H_b and
-    the beside rows per set and pooled (`preset_ladder.summarise`); H's adversarial read; the rows saved before
-    D_TABLE's cell is read. -> PF/step6/half/report.json."""
+A_BESIDE = ("H_a raw", "H_a x", "full spread", "full vs cen")    # read with H_a at the stop (report-a)
+A_EXTRA = {"half-a vs cen": ("rc-half-a-xl@-3", "cen")}
+
+
+def read_rows(names, with_band_rows):
+    """The rows `names` ({name: (a, b)}) per set and pooled on the read's parts (Silent Waves left out; refused unless
+    exactly LEFT_OUT_PARTS go); the decision row's adversarial read; with `with_band_rows` also H with every part and
+    without the band's two recordings. Each row's files checked as made from today's answers and rendered."""
     from learn import full_controls_c3r as R
-    from learn import pipeline_fix as P
     from learn import preset_ladder as L
     from learn import stem_finetune as S6
 
-    require_all()
     S6.stage0_ok()
     st = R.state()
     load_selection(st)
     units = R.read_units(st)
+    main = read_parts(units)
+    if len(units) - len(main) != LEFT_OUT_PARTS:
+        raise SystemExit(f"{len(units) - len(main)} parts left out of the read, not the declared {LEFT_OUT_PARTS}")
+    used = sorted({r for a, b in names.values() for side in (a, b) for r in side.split("+")})
     complete = {}
-    for r in list(HALF_ROWS) + list(RC_HALF_ROWS):
-        if L.row_info(r)["kind"] == "rc":
-            L.rc_sources_check(r)
-        else:
-            answers_check(r)
-        complete[r] = L.rc_complete(units, r)
     S6.answers_check("rep-xl@-3")
     L.rc_sources_check("rc-rep-xl@-3")
-    for r in FULL_RC + FULL_RAW + ("cen",):            # rc_complete refuses a row not rendered from today's answers
-        complete[r] = L.rc_complete(units, r)
+    for r in used:
+        if r in HALF_ROWS:
+            answers_check(r)
+        elif r in RC_HALF_ROWS:
+            L.rc_sources_check(r)
+        complete[r] = L.rc_complete(units, r)        # refuses a row not rendered from today's answers
     band = {u: v["band"] for u, v in L.lends()["units"].items()}
     seen = R.player_seen(st, units)
     out = {"plan": PLAN, "ledger": f"preset-ladder {PHASE_L6_HALF}", "c3r_sha256": st["sha256"],
-           "complete": complete, "rows": {}, "pairs": {}, "negatives": {}}
-    main = read_parts(units)
-    out["parts"] = {"read": len(main), "all": len(units), "left_out": EXCLUDED_READ}
-    reads = [(n, ab, main) for n, ab in list(D_ROWS.items()) + list(D_BESIDE.items())]
-    reads += [("H with every part", D_ROWS["H"], units),
-              ("H without the band's two recordings", D_ROWS["H"], read_parts(units, BAND_BESIDE))]
+           "parts": {"read": len(main), "all": len(units), "left_out": EXCLUDED_READ}, "complete": complete,
+           "rows": {}, "pairs": {}, "negatives": {}}
+    reads = [(n, ab, main) for n, ab in names.items()]
+    if with_band_rows:
+        reads += [("H with every part", D_ROWS["H"], units),
+                  ("H without the band's two recordings", D_ROWS["H"], read_parts(units, BAND_BESIDE))]
+    lead = "H" if "H" in names else A_ROW
     for name, (a, b), us in reads:
         got = L.rows_for_pair(st, us, value_of(st, a), value_of(st, b))
         row = L.summarise(got, us, band, seen_player=seen)
         row["directions_read"] = sum(len(v) for v in got.values())
         out["rows"][name], out["pairs"][name] = row, f"{a} - {b}"
-        if name == "H":
+        if name == lead:
             out["negatives"][name] = dict(L.negatives(row, row["deciding_sets"]),
                                           leave_one_cluster_out={s: L.loo_range(got, us, s)
                                                                  for s in row["deciding_sets"]})
-    out["runs"] = json.loads((half_dir() / "runs.json").read_text())
+    return out
+
+
+def report_a_path():
+    return half_dir() / "report-a.json"
+
+
+def cmd_report_a(_args):
+    """The cheaper stop (zero renders; `phase_l6_half`), after arm a's answers and renders: H_a and its beside rows
+    (`read_rows`), saved before A_TABLE's cell is read. -> PF/step6/half/report-a.json (never overwritten)."""
+    from learn import pipeline_fix as P
+    from learn import stem_finetune as S6
+
+    require_all()
+    p = report_a_path()
+    if p.exists():
+        raise SystemExit(f"{p} exists: never overwritten")
+    names = dict({A_ROW: D_ROWS[A_ROW]}, **{n: D_BESIDE[n] for n in A_BESIDE}, **A_EXTRA)
+    out = read_rows(names, False)
+    out["runs"] = json.loads((half_dir() / "runs-a.json").read_text())
+    out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    P.save(p, out)                                     # the rows are saved before the cell is read
+    out["outcome"] = a_outcome(out["rows"])
+    out["outcome"]["sha256"] = S6.sha_json({k: v for k, v in out["outcome"].items() if k != "sha256"})
+    P.save(p, out)
+    for name, row in out["rows"].items():
+        dp = row.get("deciding_pool") or {}
+        print(f"{name} ({out['pairs'][name]}): pool {dp.get('mean')} [{dp.get('lo90')}, {dp.get('hi90')}]")
+    print("A OUTCOME", json.dumps(out["outcome"]))
+
+
+def stage_a_go():
+    """Refuse unless the cheaper stop read A-go (its outcome's hash checked): arm b's runs and answers call it."""
+    p = report_a_path()
+    if not p.exists():
+        raise SystemExit("arm a has not been read: arm b waits for `half_data report-a` to read A-go")
+    o = json.loads(p.read_text()).get("outcome") or {}
+    from learn import stem_finetune as S6
+
+    if o.get("sha256") != S6.sha_json({k: v for k, v in o.items() if k != "sha256"}):
+        raise SystemExit("report-a's outcome does not match its hash")
+    if o.get("code") != "A-go":
+        raise SystemExit(f"report-a read {o.get('code')}: arm b is not trained (the cheaper stop)")
+    return o
+
+
+def cmd_report(_args):
+    """The report (zero renders; `phase_l6_half`), after both arms (A-go): H, H_a, H_b and the beside rows per set and
+    pooled (`read_rows`); H's adversarial read; the rows saved before D_TABLE's cell is read. ->
+    PF/step6/half/report.json."""
+    from learn import pipeline_fix as P
+    from learn import stem_finetune as S6
+
+    require_all()
+    stage_a_go()
+    out = read_rows(dict(D_ROWS, **D_BESIDE), True)
+    out["runs"] = {a: json.loads((half_dir() / f"runs-{a}.json").read_text()) for a in ARMS}
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     P.save(half_dir() / "report.json", out)            # the rows are saved before the cell is read
     out["outcome"] = d_outcome(out["rows"])
@@ -708,12 +838,13 @@ def cmd_report(_args):
     print("D OUTCOME", json.dumps(out["outcome"]))
 
 
-COMMANDS = {"select": cmd_select, "answers": cmd_answers, "report": cmd_report}
+COMMANDS = {"select": cmd_select, "answers": cmd_answers, "report-a": cmd_report_a, "report": cmd_report}
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=sorted(COMMANDS))
+    ap.add_argument("--arm", choices=sorted(ARMS), default=None, help="answers: the arm (a first; b only on A-go)")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 
