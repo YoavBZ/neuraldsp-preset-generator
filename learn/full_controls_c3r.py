@@ -466,15 +466,20 @@ def records_of(st, units_by_set):
     return out
 
 
-def rows_for(arm, k, inner, st=None):
+def rows_for(arm, k, inner, st=None, keep=None):
     """C3r's real rows for one run, in `pipeline_fix`'s row layout: training rows cycled per source (real amps from
-    REAL_ROW0, captures from GOAT_ROW0), the held units' records once each (ids + DFIX_HELD0). -> (training rows, held
-    rows, info)."""
+    REAL_ROW0, captures from GOAT_ROW0), the held units' records once each (ids + DFIX_HELD0). `keep` (the learning-curve
+    diagnostic, `half_data`): the training units are only those in it; the held and dropped units are unchanged.
+    -> (training rows, held rows, info)."""
     from learn import full_controls_c3 as C3
     from learn import pipeline_fix as P
 
     st = st or state()
     tr, held, dropped = split(st["entries"], k, inner, arm)
+    if keep is not None:
+        from learn import half_data as HD
+
+        tr = HD.keep_filter(tr, keep)
 
     def by_set(es):
         out = {}
