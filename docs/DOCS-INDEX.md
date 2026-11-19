@@ -504,6 +504,8 @@ was declared, what was measured, and the research behind it.
 - [crunch-baseline-plan.md](crunch-baseline-plan.md) → [results](crunch-baseline-results.md):
   crunch starting presets per amp, lighter than the driven ones, are adopted on weak
   evidence (7 parts, 3 bands). The ML chooser over them is not shown (−0.056).
+  Since 0.7.129 `generate` sets each to the labels' centre (`start/crunch-<amp>`, built by
+  `learn/cen_crunch_start.py`) on the ladder's score and ear reads ([ladder-ear-results.md](ladder-ear-results.md)).
 - [heavy-listening-plan.md](heavy-listening-plan.md) → [results](heavy-listening-results.md):
   a reliable listener (3/3 hidden references, 3/3 repeats). Tonal against temporal:
   neither. Clear heavy pairs: 5 of 6 with the judge, inconclusive. 9 trials were

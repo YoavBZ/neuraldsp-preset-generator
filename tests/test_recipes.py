@@ -129,9 +129,13 @@ def test_knob_values_use_percent_scale(recipes, pack):
 
     Small nonzero values are legal but suspicious here because the curated
     recipes use coarse musical starting points rather than near-zero trims.
+    The `start` layer is exempt: its values are translated from stored ones and
+    checked against them end to end (tests/test_cen_crunch_start.py).
     """
     suspicious = []
     for layer, rid, i, entry, module, key in all_expanded(recipes, pack):
+        if layer == "start":
+            continue
         spec = pack.require(module, key)
         value = entry["value"]
         if spec.kind != "rotation" or isinstance(value, (dict, bool)):
