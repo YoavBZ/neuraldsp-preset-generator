@@ -5,7 +5,7 @@ Step 6 plan (the second review round's pick, [stem-finetune-plan.md](stem-finetu
 built with that review's three non-blocking items, the training-noise result of Step 6's stage N
 ([results](stem-finetune-results.md)) and the user's rule of 2026-11-19 that no action rests on a gap under 0.05.
 Revised the same day after the PR's independent review (changes needed, two wording items; section 8): the power is
-stated, D-unreadable no longer over-reads a decided cost, and arm a is trained and read first, with arm b only if an
+stated, D-unreadable no longer over-reads a decided cost, and R-half1 is trained and read first, with R-half2 only if an
 acting cell is still possible (the cheaper stop, `A_TABLE`). Nothing here has run. Every number is by the score unless it says "by ear": J0, ln(d_row / d_against) on the held half,
 below zero closer; 90% cluster t intervals; the deciding pool is BKS, GOAT and the panel weighted equally. `PF` is
 `~/ndsp-presets/learn/trusted-data/pipeline-fix`.
@@ -18,6 +18,18 @@ below zero closer; 90% cluster t intervals; the deciding pool is BKS, GOAT and t
   `tests/test_half_data.py` (pure, light CI) and `tests/test_train_ft_half.py` (torch).
 - **Data:** `PF/step6/half/` (`selection.json`, `runs.json`, `report.json`, `logs/`), the ladder's `answers/` and
   `judge/` for the four new rows. No audio is stored.
+- **Names (2026-11-19).** "Arm A" and "arm B" are older, unrelated terms here (the `arm-a-*` plans, the pretrain set's
+  arm B). So in prose the two half-data models are **R-half1** and **R-half2**, beside R-all, R-ctl and R-rep, trained
+  on **half 1** and **half 2** of the chains. The merged code keeps its short ids, which the run records and judge
+  files carry:
+
+  | Prose | Code arm | Half key | Run base | Rows | Matched to |
+  |---|---|---|---|---|---|
+  | R-half1, half 1 | `a` (`--c3r-half a`, `--arm a`) | `A` | `C3r-half-a` | `half-a-xl@-3`, `rc-half-a-xl@-3`; H_a | R-all |
+  | R-half2, half 2 | `b` | `B` | `C3r-half-b` | `half-b-xl@-3`, `rc-half-b-xl@-3`; H_b | R-rep |
+
+  The stop's codes A-go and A-stop and `report-a` are R-half1's. "Half A" in a row's per-set breakdown is still the
+  ladder's held audio half, as everywhere else.
 
 ## Why
 
@@ -58,7 +70,7 @@ capture, separation or sealed set.
   E is reported beside its reference run's. An epoch-matched read would need more training and is not planned.
 - One halving is one point of a curve. Going from "halving costs x" to "doubling gains x" assumes the gain per doubling
   does not grow with the data (section 5).
-- Which half was drawn is a second source of noise. The two arms train on complementary halves, so their mean covers
+- Which half was drawn is a second source of noise. R-half1 and R-half2 train on complementary halves, so their mean covers
   every chain once, and their spread holds the choice of half as well as the seed.
 - The read set's power is limited: a model-against-model row resolves about ±0.015 to ±0.026.
 
@@ -78,8 +90,8 @@ inner runs' validation on the whole of fold k+1, and fold k for FT_k) and the id
 So there are 293 chains. A chain's records stay or go together, and no chain spans two folds (checked).
 
 **The halves** (`half_data.draw`, `guard`, `choose`; seed `HALF_SEED` 20261191):
-- In each (set, fold, class) stratum the chains are shuffled by a seeded generator. Half A takes the first floor(n/2),
-  and an odd stratum's middle chain goes in on a seeded coin. Half B is the complement. A chain's class is its units'
+- In each (set, fold, class) stratum the chains are shuffled by a seeded generator. Half 1 (code key `A`) takes the first floor(n/2),
+  and an odd stratum's middle chain goes in on a seeded coin. Half 2 (code key `B`) is the complement. A chain's class is its units'
   most common.
 - **The guard (the review's item 1).** In every one of the 8 fold runs (FT_k and inner, k 0 to 3), each half keeps at
   least one training record of:
@@ -115,10 +127,10 @@ Stage N measured the noise:
 
 So the half-data read must separate the data effect from seed noise.
 
-| Arm | Trains on | W states | Fine-tune seeds | Matched to |
+| Model (code arm) | Trains on | W states | Fine-tune seeds | Matched to |
 |---|---|---|---|---|
-| a | half A | W 20261042, W 20261043 | 20261042, 20261043 | R-all (the same W state and seed in every fold run) |
-| b | half B | W 20261042, W 20261043 | 20261181, 20261182 | R-rep (the same) |
+| R-half1 (`a`) | half 1 | W 20261042, W 20261043 | 20261042, 20261043 | R-all (the same W state and seed in every fold run) |
+| R-half2 (`b`) | half 2 | W 20261042, W 20261043 | 20261181, 20261182 | R-rep (the same) |
 
 - **Matched W states.** Every half run starts from its reference run's W state, so W's 0.067 is common to the
   comparison, not noise in it. W trained on plugin rows only (0 of its 1,787 training ids are real rows), so sharing it
@@ -126,13 +138,13 @@ So the half-data read must separate the data effect from seed noise.
 - **Matched fine-tune seeds.** Same seed, same row count: the same batch order and draws. That only correlates the
   noise; the different rows still move training apart.
 - **Two seeds a side, spread reported.** The full side has two draws already (R-all, R-rep), and the half side gets
-  two (arms a and b).
+  two (R-half1 and R-half2).
   - The decision row H is both halves' mean against both full models' mean, per direction.
   - Its noise is measured on both sides:
     - `rc-rep-xl@-3 − rc-xl@-3`, the fine-tune seed alone: −0.010 [−0.023, +0.003] on all parts; −0.013 [−0.028,
       +0.002] on the read's parts (section 3), computed at declaration from the stored rows.
     - `rc-half-b-xl@-3 − rc-half-a-xl@-3`, the seed and the half.
-- **The noise check.** A counted H also needs each arm's matched row (H_a against R-all, H_b against R-rep) decided the
+- **The noise check.** A counted H also needs each half model's matched row (H_a against R-all, H_b against R-rep) decided the
   same way.
 
 **Why this is the cheapest that separates them** (measured run-minutes: R-rep's 16 runs logged 72.4, and stage N's 18
@@ -142,9 +154,9 @@ would be about 229.
 
 | Design | Training | Renders | Separates data from seed noise? |
 |---|---|---|---|
-| One half arm (section 14 as first written) | 16 runs, about 72 run-min, about 80 min wall | 3,840, about 57 min | No: the half side's seed and the choice of half go unsampled; H and H2 differ only by the full side's noise |
-| **Two half arms on complementary halves, matched (this plan)** | 32 runs, about 145 run-min, about 161 min wall; 16 runs if arm a stops | 7,680, about 113 min; 3,840 if arm a stops | **Yes**, on both sides, and the choice of half too |
-| Two arms on the same half | the same | the same | Seed noise only; the result would hold for one draw of the half |
+| One half-data model (section 14 as first written) | 16 runs, about 72 run-min, about 80 min wall | 3,840, about 57 min | No: the half side's seed and the choice of half go unsampled; H and H2 differ only by the full side's noise |
+| **Two half-data models on complementary halves, matched (this plan)** | 32 runs, about 145 run-min, about 161 min wall; 16 runs if R-half1 stops | 7,680, about 113 min; 3,840 if R-half1 stops | **Yes**, on both sides, and the choice of half too |
+| Two half-data models on the same half | the same | the same | Seed noise only; the result would hold for one draw of the half |
 
 Training times are R-rep's by analogy, not measured for half data: E may differ.
 
@@ -160,22 +172,22 @@ rc-xl@-3` reproduced the stored −0.01001 [−0.02335, +0.00333] exactly).
 | Row | Pair | Role |
 |---|---|---|
 | **H** | `rc-half-a-xl@-3+rc-half-b-xl@-3 − rc-xl@-3+rc-rep-xl@-3` | **the decision row**, re-centred, so an aim shift can't pass for data |
-| H_a | `rc-half-a-xl@-3 − rc-xl@-3` | the noise check, arm a against its matched R-all |
-| H_b | `rc-half-b-xl@-3 − rc-rep-xl@-3` | the noise check, arm b against its matched R-rep |
+| H_a | `rc-half-a-xl@-3 − rc-xl@-3` | the noise check, R-half1 against its matched R-all |
+| H_b | `rc-half-b-xl@-3 − rc-rep-xl@-3` | the noise check, R-half2 against its matched R-rep |
 | H raw, H_a raw, H_b raw | the same on the raw answers | beside |
-| H_a x, H_b x | each arm against the other full model | beside |
+| H_a x, H_b x | each half model against the other full model | beside |
 | half spread, full spread | `rc-half-b − rc-half-a`, `rc-rep − rc-xl` (and raw) | beside: the two noise gauges |
 | full vs Cen, half vs Cen | `rc-xl@-3+rc-rep-xl@-3 − cen`, `rc-half-a-xl@-3+rc-half-b-xl@-3 − cen` | beside; full vs Cen feeds the doublings figure |
 | E | each run's E beside its reference run's | beside, zero renders |
 
-- **H's adversarial read:** per set, per class, half A; each deciding set and each cluster left out (`negatives`,
+- **H's adversarial read:** per set, per class, the product's half A (the held audio half, not the chain half); each deciding set and each cluster left out (`negatives`,
   `loo_range`).
 - **Trusted data.** The panel's Silent Waves parts carry vocal bleed (the ladder's ear check, card i14) and await a
   trusted-data review. **Every row above is read without them** (478 of the 480 parts; the panel keeps 4 DI files and
   still decides). Beside, H is also read with every part, and without both of that band's recordings (Drowning awaits
   a bleed check).
 - **Training keeps them, and here is why.** Silent Waves is one of the 5 panel chains R-all and R-rep trained on.
-  Dropping it from the half arms alone would mix the exclusion into the halving. Retraining the full arm without it
+  Dropping it from the half-data models alone would mix the exclusion into the halving. Retraining the full-data models without it
   is a change of R-all's recipe, which belongs to the trusted-data review. It is one chain of 293, in one half only.
 
 ## 4. Leakage
@@ -234,16 +246,16 @@ The noise check holds when H is not counted, or when H_a and H_b are both decide
   row is past 0.05 anyway, so the branch is moot here, but it is kept as the user's rule states it.
 
 **The cheaper stop (`A_TABLE`, the review's non-blocking point, adopted).** D-data, the only acting cell, needs H_a
-(arm a against its matched R-all) decided worse. So arm a is trained, answered, rendered and read first
+(R-half1 against its matched R-all) decided worse. So R-half1 is trained, answered, rendered and read first
 (`half_data report-a`, its rows saved before the cell):
 
 | Code | H_a | Next |
 |---|---|---|
-| A-go | worse | Arm b's 16 runs and two rows, then `report` and `D_TABLE`. |
-| A-stop | undecided or better | **Stop.** No acting cell remains: D-data needs H_a worse, and D-odd acts on nothing. Arm b is not trained, which saves about 80 min of training and 57 min of renders. Hand back H_a with its heard reading, its direction note and, when decided worse, its doublings; then the audit and the user. |
+| A-go | worse | R-half2's 16 runs and two rows, then `report` and `D_TABLE`. |
+| A-stop | undecided or better | **Stop.** No acting cell remains: D-data needs H_a worse, and D-odd acts on nothing. R-half2 is not trained, which saves about 80 min of training and 57 min of renders. Hand back H_a with its heard reading, its direction note and, when decided worse, its doublings; then the audit and the user. |
 
-Arm b's training and answers refuse unless `report-a` read A-go (`stage_a_go`, the outcome's hash checked). The stop is
-one read of one arm. It adds no false alarm, since every D-data needs H_a worse anyway.
+R-half2's training and answers refuse unless `report-a` read A-go (`stage_a_go`, the outcome's hash checked). The stop is
+one read of one model. It adds no false alarm, since every D-data needs H_a worse anyway.
 
 ## 6. Stages, costs and machine plan
 
@@ -251,13 +263,13 @@ one read of one arm. It adds no false alarm, since every D-data needs H_a worse 
 |---|---|---|---|
 | 1 | Ledger, code and tests, and an independent review of this PR | none | — |
 | 2 | `half_data select` (from merged main): the halves, saved once | CPU seconds | refuses if no draw of 1,000 passes |
-| 3 | `half_data_train.zsh a`: arm a's 8 inner runs and 8 FT_k, one MPS job at a time | about 72 run-min, about 80 min wall (R-rep's rate, by analogy) | a failed run stops the chain |
+| 3 | `half_data_train.zsh a`: R-half1's 8 inner runs and 8 FT_k, one MPS job at a time | about 72 run-min, about 80 min wall (R-rep's rate, by analogy) | a failed run stops the chain |
 | 4 | `half_data answers --arm a`: `half-a-xl@-3`, its constant and re-centred row; recipe, half and ban checks | about 1 min CPU | refuses on any difference |
 | 5 | Renders, 3 shards: `half-a-xl@-3`, `rc-half-a-xl@-3` | 3,840 renders, about 57 min | the disk guard |
 | 6 | `half_data report-a`: H_a and its beside rows saved, then `A_TABLE` | seconds | **A-stop ends the read here** |
 | 7 | Only on A-go: `half_data_train.zsh b`, `answers --arm b`, renders of `half-b-xl@-3` and `rc-half-b-xl@-3` | about 72 run-min, about 80 min wall; 3,840 renders, about 57 min | the same |
 | 8 | Only on A-go: `half_data report`: the rows saved, then the cell | seconds | `D_TABLE` |
-| 9 | Hand-back (raw, unaudited; it says training includes the Silent Waves chain, in half B), then the independent audit, then the user | none | — |
+| 9 | Hand-back (raw, unaudited; it says training includes the Silent Waves chain, in half 2), then the independent audit, then the user | none | — |
 
 - **Limits:** one MPS job at a time and at most 3 render processes, launched with `setopt no_bg_nice` and caffeinate.
   Every launcher re-checks the 31 GB disk guard; 51 GB were free at declaration. The losses stay on the CPU, as R-all's
@@ -292,7 +304,7 @@ one read of one arm. It adds no false alarm, since every D-data needs H_a worse 
 |---|---|
 | B1: state the power | The goal check: H's half-width about 0.012 to 0.02; a counted cost needs about 0.065 (even odds) to 0.075–0.09 (80%); an uncountable cost means at least 1.2 doublings, about 380 more chains, beyond supply |
 | B2: D-unreadable over-reads a decided cost | Its text no longer names the labels or the reading; D-unreadable and D-short carry H's direction (`DIRECTION_NOTE`); doublings for every decided-worse H |
-| The cheaper stop | Arm a first; `A_TABLE` (A-go, A-stop), `report-a`, arm b's runs and answers gated on A-go (`stage_a_go`), tested; ledger and section 6 |
+| The cheaper stop | R-half1 first; `A_TABLE` (A-go, A-stop), `report-a`, R-half2's runs and answers gated on A-go (`stage_a_go`), tested; ledger and section 6 |
 | Doublings at F's ends | `doublings_grid`: H's and F's means and ends |
 | H's interval leaves out training noise | Section 5, false alarm |
 | "the same epoch order" overstates | Section 1 and the ledger: correlated, not shared |

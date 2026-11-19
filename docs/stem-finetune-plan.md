@@ -484,7 +484,7 @@ scatter costs +0.104 against Cen) and Step 5's line to the centre.
 ## 14. A candidate diagnostic: is more data the lever? (needs the user's go)
 
 **2026-11-19: the user's go; declared as its own plan, [half-data-plan.md](half-data-plan.md)** (ledger `pipeline-fix`
-`phase_s6_half`, `preset-ladder` `phase_l6_half`). It replaces the single half arm below with two matched arms on
+`phase_s6_half`, `preset-ladder` `phase_l6_half`). It replaces the single half-data model below with two matched ones (R-half1, R-half2) on
 complementary halves (stage N's noise result), reads `D_TABLE` under the user's rule that no action rests on a gap
 under 0.05, and takes the second round's three items. The text below is the candidate as reviewed.
 
