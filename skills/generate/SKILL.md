@@ -255,16 +255,16 @@ Tone King recipes use its verified sync-note selectors. See
   | SW50R | `Neural DSP/Hair Metal.xml` (bright and moderate) |
   | AC20 | `Neural DSP/AC20 Mid-Gain Drive.xml` (amp-only crunch) |
 
-  - **The evidence is weak.** They were chosen by rule on development crunch parts.
-    On 7 reserved crunch parts from 3 bands, they landed about 7% closer than the
-    driven baselines below, and lighter in gain, but only just past the bar
-    ([crunch-baseline-results.md](../../docs/crunch-baseline-results.md)). Say so when
-    you report. By ear, the listener preferred them to the driven presets on 7 of 8
-    development crunch parts (in-sample, one listener; [starting-preset-listening-results.md](../../docs/starting-preset-listening-results.md)).
-  - **Make them dry the same way,** with `--recipe dry/<amp>`, and keep their amp,
-    pedals, EQ and cab unless research documents a different value for this part.
+  - **Then set it to the labels' centre:** `--recipe dry/<amp> --recipe start/crunch-<amp>`
+    (in that order). It moves the amp, pedals, EQ, cab, gate and input gain to the centre of
+    the trusted training labels for that amp's crunch parts, and sets the output to the
+    baseline's loudness (AC20's 1 dB short, at the output's limit); effects stay dry. Keep those
+    unless research documents a different value. **The evidence is thin:** by the score it beat the
+    dry baseline on held-out parts, and by ear one listener preferred it on 11 of 11 crunch cards
+    ([ladder-ear-results.md](../../docs/ladder-ear-results.md)), but the margin is narrow and
+    a real-song check was undecided. Say so when you report.
   - **When research documents an amp-only drive** (a cranked amp, no pedals) and the
-    crunch start uses drive pedals (PR12's does; AC20's is amp-only), say that its
+    crunch start uses drive pedals (PR12's and SW50R's do; AC20's has none), say that its
     pedals stand in for the cranked amp; the clean start beside it (step 6) is the other
     way to get there, pushed by its amp volume.
 - **For a heavier, high-gain part** (out of the project's focus, but it happens), start
@@ -388,8 +388,8 @@ If they say yes:
    differ in amp, gain, drive, EQ or cab, not only in reverb or delay: the measured
    lists were too alike to gain much. On Morgan, the shipped template as it is can be
    one of the four. Make the chosen amp's dry baseline from step 4 one of the four (clean,
-   crunch or driven, by the part), made dry with `--recipe dry/<amp>`
-   (`dry/toneking` on Tone King).
+   crunch or driven, by the part), made dry with `--recipe dry/<amp>` (`dry/toneking` on
+   Tone King), the crunch one then `--recipe start/crunch-<amp>`.
 2. **Render them beside the song.** The page plays every preset through shipped
    guitar riffs, at one loudness, under the song excerpt. **Pick at most two riffs by
    the part** (with `--riff`, repeatable; [riff library](../../docs/riff-library-plan.md)):
@@ -426,11 +426,11 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/audition.py" --song SONG.mp3 \
    one. Write it dry, into the
    audition folder under its own name; writing directly is fine for a listening copy,
    but preview with `--dry-run` (step 4) if the user keeps it. Use the baseline's own
-   amp's recipe (`dry/pr12`, `dry/sw50r`, `dry/ac20` or `dry/toneking`):
+   amp's recipe (`dry/pr12`, `dry/sw50r`, `dry/ac20` or `dry/toneking`), then for a Morgan crunch start its centre:
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \
-  --template BASELINE.xml --recipe dry/pr12 --out AUDITION_DIR/crunch-start.xml
+  --template BASELINE.xml --recipe dry/pr12 --recipe start/crunch-pr12 --out AUDITION_DIR/crunch-start.xml
 ```
 
    Then add it with a plain note, `audition.py --add AUDITION_DIR --preset
@@ -454,7 +454,7 @@ see [installing.md](../../reference/installing.md).
 point beside it,** with or without the listening page, unless the user already chose
 between the two starting points there: the amp's clean starting point (step 4) for
 a crunch part, its crunch starting point for a heavier one or a guessed clean one,
-made dry, named "… (clean start)" or "… (crunch start)". On Tone King, a heavier part
+made dry (on Morgan the crunch one also set to its centre, step 4), named "… (clean start)" or "… (crunch start)". On Tone King, a heavier part
 built on the user's own preset gets the crunch baseline beside it. The evidence comes
 from the three Morgan amps. Tell the user to try both: the gain class is the
 step most often wrong from a song, and a wrong class costs far more than any edit
