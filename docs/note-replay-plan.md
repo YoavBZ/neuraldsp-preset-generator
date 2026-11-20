@@ -29,8 +29,12 @@ at −0.1 or beyond. An interval inside ±0.05 reads "not readable by the score"
   - `ladder_ear`'s draw-once and hash pattern;
   - `half_data`'s table coding and `title_of`.
 - **Data:** `PF/replay/`. It holds `draw.json`, `controls/` (stored, position, control), `blur.json`, `di/`, `stems/`,
-  `dist/`, `bleed.json`, `picks.json` and `report.json`. Render audio is not kept. The stems and blurred DIs (under
-  1 GB) are kept until the audit, then moved aside by the executor.
+  `dist/`, `bleed.json`, `picks.json` and `report.json`. Render audio is not kept.
+  - **The stems are kept after the run and the audit** (the orchestrator, 2026-11-20). They live at
+    `PF/replay/stems/{xlnoG,xl}/` as one `.npy` and `.json` a unit. The rebuild work reuses them, and without them it
+    would need about 244 separations again. They are 1.92 MB a stem (measured on the smoke's two), about 470 MB for
+    244, well inside the 31 GB disk guard (49 GB free at declaration). They are on the cleanup protect list.
+  - The blurred DIs (`di/`, about 0.7 GB for 366 files) are kept until the audit, then moved aside by the executor.
 - **Names.** Grepped before naming: "note-matched replay" and the row keys (`control`, `blurred`, `stem-alone`,
   `stem-full`, `both-alone`, `both-full`, `avg-only`, `mild-only`) have no earlier use in `docs/`. `avg`, `mild` and
   `avg+mild` are `di_robustness`'s own variant names, used for the same code.
@@ -326,7 +330,21 @@ row (`table_guard`):
 **The ladder's rate is a lower bound here.** It was measured with one judge of both halves for each kept render. Here
 each kept render is compared with three references, on one half each. The position check re-times the rate.
 
-**Smoke checks before this declaration** (from this branch's code, outputs in the session's scratchpad, not under `PF`):
+**Smoke checks before this declaration.** They ran from this branch's code in three short processes: `draw`, then
+the one-part render and the two blurs, then one unit's separation (msst-venv, PID 36491). They exited on their own.
+Every output went to the session's scratchpad (`smoke/replay/`, 18 MB); nothing was written under `PF`, and
+`PF/replay/` does not exist.
+- **What they read, said fully:**
+  - The draw's stored control read the true DI's stored held-half scores on the drawn parts (the planner's numbers,
+    recomputed).
+  - The one-part render computed 23 search-half distances against their stored values.
+  - The separation computed SI-SDR only.
+- **No degraded-input row was rendered, picked or scored.** No blurred DI was rendered, no stem was used as a
+  reference, and nothing of any test row exists.
+- **The draw is seeded,** so the merged `draw` will reproduce the smoke's parts. The smoke's files are not used by the
+  run.
+
+The results:
 - **`draw` on the real records** (counts only):
   - BKS 40 parts on 8 DI files, GOAT 72 on 72 items, the panel 10 on 4 DI files (3 of them Drowning);
   - 0 dropped, 1 GOAT part passed over, Silent Waves' 2 excluded;
