@@ -1232,6 +1232,36 @@ def rise_curve(x, rate=SR):
     return np.concatenate([[0.0], np.diff(e)]), hop
 
 
+COARSE_S = 0.150                        # the onset step's first stage: one offset per window, from rises within +-150 ms
+
+
+def coarse_offset(notes, di, rate=SR, window=COARSE_S):
+    """(Pure.) The window's constant offset between the notes and the true DI (stage 1's oracle onset step, first
+    stage): for each onset group the steepest rise of the DI within +-window of its onset (kept when at least
+    REFINE_MIN_RISE_DB), and the median of those shifts. GOAT's fine-aligned MIDI runs about 30 ms late against the DI's
+    attacks on most items (measured at P8's build), beyond what the +-50 ms snap alone can bring back. -> seconds (0.0
+    with no rise)."""
+    import numpy as np
+
+    rise, hop = rise_curve(di, rate)
+    shifts = []
+    for g in onset_groups(notes):
+        t = notes[g[0]]["on"]
+        lo = max(0, int((t - window) * rate) // hop)
+        hi = min(len(rise), int((t + window) * rate) // hop + 1)
+        if hi <= lo:
+            continue
+        j = lo + int(np.argmax(rise[lo:hi]))
+        if rise[j] >= REFINE_MIN_RISE_DB:
+            shifts.append((j * hop + REFINE_FRAME / 2) / rate - t)
+    return float(np.median(shifts)) if shifts else 0.0
+
+
+def shifted_notes(notes, offset):
+    """(Pure.) Every note moved by `offset` seconds."""
+    return [{**n, "on": n["on"] + offset, "off": n["off"] + offset} for n in notes]
+
+
 def refine_onsets(notes, di, rate=SR):
     """The oracle onset step: each onset group's onset moved to the true DI's steepest rise within +-REFINE_S of it,
     when that rise is at least REFINE_MIN_RISE_DB; else kept. Every note in a group moves together; offsets move with
