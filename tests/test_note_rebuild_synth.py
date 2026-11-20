@@ -183,3 +183,12 @@ def test_coarse_offset_then_snap():
     unsnapped, sh = N.refine_onsets(late, di)                                    # the +-50 ms snap alone misses
     assert sh == [0.0] * 5
     assert N.coarse_offset(late, np.zeros(4 * SR)) == 0.0
+
+
+def test_window_edges_fade():
+    notes = [{"on": -0.5, "off": 1.0, "pitch": 60, "string": 2, "fret": 1, "arts": []},      # rings into the window
+             {"on": 1.98, "off": 3.0, "pitch": 64, "string": 1, "fret": 0, "arts": []}]     # cut by its end
+    y, _ = N.synthesise(notes, 2 * SR, _bank())
+    edge = int(N.EDGE_FADE_S * SR)
+    assert y[0] == 0.0 and y[-1] == 0.0
+    assert np.abs(y[:edge // 4]).max() < 0.3 * np.abs(y[edge:2 * edge]).max()

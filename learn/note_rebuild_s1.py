@@ -50,6 +50,10 @@ BESIDE_F0 = "without_alignment_f0"      # every row read beside without the part
 BESIDE_READER = "without_reader_fail"   # ... and without the parts whose item fails its own MIDI reader check
 BESIDE_PRECHECK = "without_precheck_fail"   # ... and without the parts where a deciding arm fails a pre-check
 BESIDE_PEAK = "without_peak_flag"       # ... and without the parts where a deciding arm's peak is flagged
+PEAK_CONFOUND = ("A declared confound: the rebuilt guitars' attacks are sharper than the players' DIs (crest factor "
+                 "6 to 9 dB higher on the flagged windows), and the attack sets how hard the amp is driven. On N1-fail "
+                 "or N1-between the read and its audit compare each arm's full row with its without_peak_flag row; a "
+                 "row that reads differently without the flagged parts is said so before any route decision.")
 CODE_FILES = ("learn/note_rebuild.py", "learn/note_rebuild_s1.py")
 
 
@@ -1019,6 +1023,13 @@ def cmd_score(_args):
     shares = {arm: (rows[arm]["I"].get("mean") / bl if bl and rows[arm]["I"].get("mean") is not None else None)
               for arm in NR.ARMS}
     final = {**out, "readings": readings, "share_of_blurred_I": shares, **n1_outcome(readings)}
+    final["confound_sharper_attack"] = {           # declared 2026-11-20: compared on N1-fail or N1-between
+        "note": PEAK_CONFOUND, "applies": final["code"] in ("N1-fail", "N1-between"),
+        "rows": {arm: {"full": {q: rows[arm][q] for q in ("G", "I")}, BESIDE_PEAK: rows[arm][BESIDE_PEAK],
+                       "reading_full": readings[arm],
+                       "reading_without_peak_flag": safe_reading(rows[arm][BESIDE_PEAK]["G"],
+                                                                 rows[arm][BESIDE_PEAK]["I"])}
+                 for arm in NR.ARMS}}
     NR.write_once(report_path(), final)
     for arm in NR.ARMS:
         g, i = rows[arm]["G"], rows[arm]["I"]

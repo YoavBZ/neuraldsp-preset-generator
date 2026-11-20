@@ -71,6 +71,7 @@ CHORD_S = 0.050                         # onsets this close form one chord: the 
                                         # clean-up's merge share it (GOAT's fine alignment spreads a chord up to ~50 ms)
 END_FADE_S = 0.020                      # a note ends at its MIDI note-off with this fade (the mute)
 REPLUCK_FADE_S = 0.010                  # ... or when its string is plucked again
+EDGE_FADE_S = 0.010                     # the dry guitar fades in and out over its window's first and last 10 ms
 TAIL_FADE_S = 0.150                     # a note held past its sample's end fades over the sample's last 150 ms
 DEAD_S, DEAD_DB = 0.040, -6.0           # a dead note: a 40 ms pluck, 6 dB down
 PALM_S = 0.150                          # a palm-muted note: held at most 150 ms
@@ -1181,6 +1182,10 @@ def synthesise(notes, length, bank, tuning_cents=0.0, group_gain_db=None, rate=S
         end = min(length, start + len(seg))
         if end > start:
             out[start:end] += gain_of[k] * seg[:end - start]
+    edge = min(length // 2, int(EDGE_FADE_S * rate))       # notes cut by the window's edges: no step at either end
+    if edge:
+        out[:edge] *= np.linspace(0.0, 1.0, edge)
+        out[length - edge:] *= np.linspace(1.0, 0.0, edge)
     return out, {"notes": len(notes), "played": len(notes) - len(skipped), "skipped": len(skipped),
                  "groups": len(groups), "from_tab": sum(1 for k in src if notes[k].get("string") and k not in skipped)}
 
