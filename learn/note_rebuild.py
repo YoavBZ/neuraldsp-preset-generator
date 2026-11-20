@@ -67,7 +67,8 @@ ATTACK_FRAC = 0.1                       # an attack: the first sample past a ten
 DENOISE_ABOVE_HZ = 3000.0               # the riff library's lesson: noisereduce, non-stationary, above 3 kHz only
 NOTE_FADE_IN_S = 0.002
 PRE_ATTACK_S = 0.002                    # each sample starts this far before its measured attack
-CHORD_S = 0.030                         # onsets this close form one onset group (a strum or a chord)
+CHORD_S = 0.050                         # onsets this close form one chord: the onset groups, the tab matching and the
+                                        # clean-up's merge share it (GOAT's fine alignment spreads a chord up to ~50 ms)
 END_FADE_S = 0.020                      # a note ends at its MIDI note-off with this fade (the mute)
 REPLUCK_FADE_S = 0.010                  # ... or when its string is plucked again
 TAIL_FADE_S = 0.150                     # a note held past its sample's end fades over the sample's last 150 ms
@@ -126,8 +127,8 @@ NP_TABLE = (    # stage P: (code, when, next)
     ("NP-few", "P1 to P4 pass and fewer than 30 of the replay's GOAT units carry true notes",
      "stage 1's declaration adds revision-pool units (cap1 on GOAT items not among the replay's) by a seeded rule, "
      "fixed before any render; to the orchestrator"),
-    ("NP-gap", "the note set has failed notes (P2)", "the placing rule avoids them; the gaps are listed in stage 1's "
-     "declaration; then NP-ready or NP-few by the count"),
+    ("NP-gap", "the note set has failed notes at the middle pickup (P2)", "the placing rule avoids them; the gaps are "
+     "listed in stage 1's declaration; NP-ready or NP-few follows it by the count (`np_code` returns both)"),
     ("NP-broken", "P1, P3 or P4 fails its own checks", "stop; fix and re-declare"),
 )
 
@@ -146,18 +147,20 @@ N1_TABLE = (    # (code, when, next)
 )
 
 N2_ROWS = ("B-clean", "B-alone", "B-full")      # stage 2's rows, run in order, each only after a pass of the one before
-N2_TABLE = (    # (code, when, next): read on the rows that ran
+N2_TABLE = (    # (code, when, next): read on the rows that ran (each ran only after a pass of the one before)
     ("N2-full", "B-full passes", "stage 3"),
-    ("N2-exposed", "B-alone passes, B-full does not",
-     "stage 3 on exposed windows only; the write-up says no automatic finder of such windows exists (today the user "
-     "picks them by ear, a human step) and how many songs offer them is not known"),
-    ("N2-stem", "B-clean passes, B-alone does not pass",
+    ("N2-exposed", "B-alone passes, B-full fails",
+     "to the user and stop: it would work only on windows where the target is the only or dominant guitar, and no "
+     "automatic finder of such windows exists (picking them by ear is a human step, ruled out); a finder needs its own "
+     "declaration first"),
+    ("N2-stem", "B-clean passes, B-alone fails",
      "the separator's output breaks the notes: stop, to the user; separator and transcription work get a preset-level "
      "yardstick"),
     ("N2-notes", "B-clean fails, after N1-pass",
      "the transcriber's accuracy is the gap: the dose read (stage 1's true notes with notes dropped, added and shifted "
      "at three declared levels), then to the user"),
-    ("N2-between", "B-clean undecided", "to the user with shares and intervals; one revision allowed, on fresh units"),
+    ("N2-between", "any row that ran reads undecided",
+     "undecided, not failed: to the user with shares and intervals; one revision allowed, on fresh units"),
 )
 
 N3_TABLE = (    # (code, when, next): a one-sided sign test at 5% on the untied cards, for each comparison
@@ -203,14 +206,18 @@ def n2_code(done):
     """(Pure.) N2_TABLE's code from the rows read (in order); None while a row is due."""
     if n2_next_row(done) is not None:
         return None
-    c, a, f = (done.get(r) for r in N2_ROWS)
-    if c is None:
+    ran = [done[r] for r in N2_ROWS if r in done]
+    if not ran:
         return None
+    for r in ran:
+        if r not in READINGS:
+            raise ValueError(f"not a reading: {r}")
+    if "undecided" in ran:
+        return "N2-between"
+    c, a, f = (done.get(r) for r in N2_ROWS)
     if c == "fails":
         return "N2-notes"
-    if c == "undecided":
-        return "N2-between"
-    if a != "passes":
+    if a == "fails":
         return "N2-stem"
     return "N2-full" if f == "passes" else "N2-exposed"
 
@@ -269,11 +276,16 @@ def require(phase):
     return e
 
 
-def write_once(path, obj):
-    """Write JSON once; refuse to overwrite."""
+def refuse_existing(path):
     path = pathlib.Path(path)
     if path.exists():
         raise SystemExit(f"{path} exists: never overwritten (move it aside to rebuild)")
+
+
+def write_once(path, obj):
+    """Write JSON once; refuse to overwrite."""
+    path = pathlib.Path(path)
+    refuse_existing(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(obj, indent=1, default=str) + "\n")
@@ -377,14 +389,19 @@ def assert_clear(candidates, excl=None):
     return True
 
 
-def load_exclusion():
-    p = OUT / "exclusion.json"
+def load_doc(name):
+    """A stage-P record, refused unless its body matches its stored hash."""
+    p = OUT / name
     if not p.exists():
-        raise SystemExit(f"{p} missing: run `exclusion` first")
+        raise SystemExit(f"{p} missing: run its command first")
     d = json.loads(p.read_text())
     if content_sha(d["body"]) != d["body_sha256"]:
-        raise SystemExit("exclusion.json's body does not match its hash")
+        raise SystemExit(f"{name}'s body does not match its hash")
     return d["body"]
+
+
+def load_exclusion():
+    return load_doc("exclusion.json")
 
 
 def find_session_dirs(sessions, roots):
@@ -408,20 +425,25 @@ def find_session_dirs(sessions, roots):
 def cmd_exclusion(_args):
     """P1. Every DI file, GOAT item, capture, creator, pack, band and session under the ladder's 480 parts, and the six
     lent sessions with their guitar tracks; sha256 of every DI section, DI source, capture render and guitar track on
-    disk. -> note-rebuild/exclusion.json."""
-    import zipfile
+    disk. Any unit's section missing on disk, or a session not found, is recorded and makes `p1_ok` false (NP-broken).
+    -> note-rebuild/exclusion.json."""
+    require(PHASE_P)
+    refuse_existing(OUT / "exclusion.json")
+    import zipfile                                  # after the refusals
 
     from learn import full_controls_c3r as C
 
-    require(PHASE_P)
     units = C.read_units()
     lends = json.loads(LENDS.read_text())["units"]
     keys = exclusion_keys(units, lends)
-    sha, files = set(), {}
+    sha, files, missing = set(), {}, []
 
     def add(path, why):
         path = str(path)
-        if path in files or not os.path.exists(path):
+        if path in files:
+            return
+        if not os.path.exists(path):
+            missing.append({"path": path, "why": why})
             return
         h = file_sha(path)
         files[path] = {"sha256": h, "why": why}
@@ -432,8 +454,6 @@ def cmd_exclusion(_args):
         add(p["di_path"], f"{r['set']} DI section")
         if p.get("sd") and p.get("track"):
             add(os.path.join(p["sd"], p["track"]), f"{r['set']} amp section")
-        if r["set"] == "bks":
-            add(p["di_path"], "bks DI source")
     zips = {}
     with zipfile.ZipFile(GOAT_ZIP) as z:
         for it in keys["goat_item"]:
@@ -457,13 +477,27 @@ def cmd_exclusion(_args):
     body = {"keys": keys, "sha256": sorted(sha), "files": files, "goat_zip_members": zips,
             "sessions_found": sdirs, "sessions_missing": sorted(set(keys["session"]) - set(sdirs)),
             "session_guitar_tracks": tracks, "transcriber_overlap": transcriber_overlap(units),
-            "units": len(units), "lent_units": len(lends)}
+            "units": len(units), "lent_units": len(lends), "missing": missing}
+    body["p1_ok"] = p1_ok(body)
     doc = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P}", "made": time.strftime("%Y-%m-%d %H:%M:%S"),
            "body": body, "body_sha256": content_sha(body)}
     h = write_once(OUT / "exclusion.json", doc)
     print(f"EXCLUSION DONE: {', '.join(f'{k} {len(v)}' for k, v in keys.items())}; {len(sha)} file hashes; "
           f"{len(zips)} GOAT zip members; sessions found {len(sdirs)} of {len(keys['session'])}; "
-          f"transcriber overlap {len(body['transcriber_overlap'])} parts; doc sha256 {h}")
+          f"transcriber overlap {len(body['transcriber_overlap'])} parts; missing {len(missing)}; "
+          f"p1_ok {body['p1_ok']}; doc sha256 {h}")
+
+
+def p1_ok(body):
+    """(Pure.) P1 passes its own checks: 480 units read, every key kind but pack non-empty, no unit's file missing on
+    disk, every session found and holding at least one guitar track."""
+    k = body["keys"]
+    return (body["units"] == EXPECTED_UNITS and all(k[x] for x in ("di", "goat_item", "capture", "creator", "session"))
+            and not body["missing"] and not body["sessions_missing"]
+            and all(body["session_guitar_tracks"].get(s) for s in k["session"]))
+
+
+EXPECTED_UNITS = 480                    # C3r's read parts (BKS 120, GOAT 215, cap1 121, n12 12, the panel 12)
 
 
 # --- P2: the note set ---------------------------------------------------------------------------------------------------
@@ -565,12 +599,21 @@ def check_note(x, rate, string, fret, rules=NOTE_RULES):
             "peak": round(float(np.abs(x).max()), 5), "ok": not why, "why": why}
 
 
+NOTE_SOURCE = {"dataset": "EGFxSet, the Clean set", "record": "Zenodo 7044411 (doi 10.5281/zenodo.7044411)",
+               "licence": "CC BY 4.0", "trust": "trusted: raw single-note DI recordings of one Stratocaster, five pickup "
+               "positions, never amped; no ladder unit, capture or session uses it (assert_clear on every hash); "
+               "the riff library's chords built from it were checked by ear on 2026-10-17"}
+
+
 def cmd_notes(_args):
     """P2. All 690 clean notes (5 pickups x 6 strings x 23 frets): sha256, pitch against the nominal note, clipping,
-    attack position and hum, under NOTE_RULES. -> note-rebuild/notes.json."""
-    import soundfile as sf
-
+    attack position and hum, under NOTE_RULES; every hash checked clear of the exclusion list; source, licence and
+    trust recorded. -> note-rebuild/notes.json."""
     require(PHASE_P)
+    refuse_existing(OUT / "notes.json")
+    excl = load_exclusion()
+    import soundfile as sf                          # after the refusals
+
     rows, gaps = {}, []
     for pu in PICKUPS:
         for s in OPEN_STRINGS:
@@ -587,8 +630,15 @@ def cmd_notes(_args):
                 rows[key] = r
                 if not r["ok"]:
                     gaps.append(key)
+    assert_clear([{"sha256": r["sha256"]} for r in rows.values() if "sha256" in r], excl)
     used = [k for k in rows if k.startswith(PICKUP + "/")]
-    body = {"rules": NOTE_RULES, "pickup": PICKUP, "notes": rows, "failed": gaps,
+    why = {}
+    for k in gaps:
+        for w in rows[k]["why"]:
+            kind = w.split(" ", 1)[1] if w[:1] in "+-0123456789" else w.split(" ")[0]
+            why[kind] = why.get(kind, 0) + 1
+    body = {"source": NOTE_SOURCE, "rules": NOTE_RULES, "pickup": PICKUP, "notes": rows, "failed": gaps,
+            "failed_by_reason": why, "exclusion_sha256": content_sha(excl),
             "failed_in_pickup": [k for k in gaps if k.startswith(PICKUP + "/")], "count": len(rows),
             "pickup_count": len(used)}
     doc = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P}", "made": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -599,10 +649,7 @@ def cmd_notes(_args):
 
 
 def load_notes_doc():
-    d = json.loads((OUT / "notes.json").read_text())
-    if content_sha(d["body"]) != d["body_sha256"]:
-        raise SystemExit("notes.json's body does not match its hash")
-    return d["body"]
+    return load_doc("notes.json")
 
 
 # --- P3: the true notes --------------------------------------------------------------------------------------------------
@@ -631,11 +678,12 @@ def dadagp_notes(text):
         else:
             out_toks.append(t)
         i += 1
-    notes, beat, beat_fx = [], 0, set()
+    notes, beat, beat_fx, tick = [], 0, set(), 0
     for t in out_toks:
         p = t.split(":")
         if len(p) >= 4 and p[1] == "note":
-            notes.append({"string": int(p[2][1:]), "fret": int(p[3][1:]), "beat": beat, "arts": set(), "tie": False})
+            notes.append({"string": int(p[2][1:]), "fret": int(p[3][1:]), "beat": beat, "tick": tick, "arts": set(),
+                          "tie": False})
             notes[-1]["arts"] |= beat_fx
         elif p[0] == "nfx" and notes and notes[-1]["beat"] == beat:
             if p[1] == "tie":
@@ -649,13 +697,11 @@ def dadagp_notes(text):
                     n["arts"].add("tremolo_bar")
         elif p[0] == "wait":
             beat += 1
+            tick += int(p[1])
             beat_fx = set()
     for n in notes:
         n["arts"] = sorted(n["arts"])
     return notes, down
-
-
-MATCH_GROUP_S = 0.050                   # MIDI notes this close are one chord when matching to the tab
 
 
 def tab_pitch(note, offset):
@@ -664,7 +710,7 @@ def tab_pitch(note, offset):
 
 def match_tab(tab, midi, offset):
     """(Pure.) Each MIDI note's tab note, by aligning the two pitch sequences (sorted by onset or beat, then pitch;
-    `difflib.SequenceMatcher`, autojunk off): a MIDI note gets the tab note it pairs with, else None. Tied tab notes do
+    `difflib.SequenceMatcher`, autojunk off; MIDI notes within CHORD_S are one chord): a MIDI note gets the tab note it pairs with, else None. Tied tab notes do
     not sound and are left out. -> [index into tab or None] per MIDI note."""
     import difflib
 
@@ -674,7 +720,7 @@ def match_tab(tab, midi, offset):
     order = sorted(range(len(midi)), key=lambda k: midi[k][0])
     group, g, first = {}, -1, None
     for k in order:                                    # the fine alignment spreads a chord's notes a little
-        if first is None or midi[k][0] - first >= MATCH_GROUP_S:
+        if first is None or midi[k][0] - first >= CHORD_S:
             g, first = g + 1, midi[k][0]
         group[k] = g
     mid_i = sorted(range(len(midi)), key=lambda k: (group[k], midi[k][2]))
@@ -699,6 +745,46 @@ def best_offset(tab, midi, down):
         if best is None or m > best[1] or (m == best[1] and abs(off - base) < abs(best[0] - base)):
             best = (off, m)
     return best
+
+
+READER_WINDOW = 16                      # the MIDI reader's cross-check: linear fits over 16 matched notes, hop 8
+READER_MAX_RESID_S = 0.005              # an item passes with a median residual within 5 ms ...
+READER_MIN_SHARE = 0.9                  # ... and at least 90% of the MIDI's notes matched to the tab
+READER_MIN_ITEMS = 0.5                  # the reader passes when at least half the items checked pass
+
+
+def _fit_resid(xs, ys):
+    """(Pure.) Median absolute residual of a least-squares line through (xs, ys)."""
+    n = len(xs)
+    mx, my = sum(xs) / n, sum(ys) / n
+    sxx = sum((x - mx) ** 2 for x in xs)
+    if sxx == 0:
+        return None
+    b = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sxx
+    r = sorted(abs(y - (my + b * (x - mx))) for x, y in zip(xs, ys))
+    return r[n // 2] if n % 2 else (r[n // 2 - 1] + r[n // 2]) / 2
+
+
+def reader_check(tab, unaligned, offset):
+    """(Pure.) The MIDI reader's cross-check, needing no download: GOAT's unaligned MIDI is exported from the same tab,
+    so the reader's onsets must follow the tab's own ticks (parsed from the DadaGP text, independently of the MIDI
+    bytes). Notes paired as `match_tab` pairs them; over each run of READER_WINDOW pairs in tab order, a straight line
+    from ticks to seconds; the item's residual is the median of the runs' median residuals (tempo changes and repeats
+    break only the runs that span them). -> {share, resid_s, ok}."""
+    idx = match_tab(tab, unaligned, offset)
+    pairs = sorted((tab[k]["tick"], unaligned[i][0]) for i, k in enumerate(idx) if k is not None)
+    share = len(pairs) / len(unaligned) if unaligned else 0.0
+    res = []
+    for a in range(0, max(0, len(pairs) - READER_WINDOW + 1), READER_WINDOW // 2):
+        w = pairs[a:a + READER_WINDOW]
+        r = _fit_resid([x for x, _ in w], [y for _, y in w])
+        if r is not None:
+            res.append(r)
+    if not res:
+        return {"share": round(share, 4), "resid_s": None, "ok": None}
+    res.sort()
+    med = res[len(res) // 2]
+    return {"share": round(share, 4), "resid_s": med, "ok": share >= READER_MIN_SHARE and med <= READER_MAX_RESID_S}
 
 
 def placed(pitch, taken, notes_ok=None):
@@ -741,6 +827,9 @@ def true_notes_for(item, z, meta):
     rec["tab_notes"], rec["downtune"] = len(tab), down
     offset, matched = best_offset(tab, midi, down) if tab else (0, 0)
     rec["offset"], rec["matched"] = offset, matched
+    una = f"GOAT/data/{item}/{item}.mid"
+    if tab and una in names:
+        rec["reader_check"] = reader_check(tab, BR.midi_notes(z.read(una)), offset)
     idx = match_tab(tab, midi, offset) if tab else [None] * len(midi)
     notes = []
     for (on, off, pitch), k in zip(midi, idx):
@@ -778,15 +867,20 @@ def window_notes(notes, start, length):
 def cmd_true_notes(_args):
     """P3. Every GOAT item's true notes (fine-aligned MIDI with the tab's strings and frets), and per GOAT and cap1
     read unit: the notes in its DI section's window, the share matched to the tab, the alignment F, tuning, brand and
-    articulated share. -> note-rebuild/true-notes.json (+ true-notes/<item>.json)."""
-    import csv
+    articulated share; the MIDI reader's cross-check against the tab (`reader_check`) on every item with both. The
+    per-item note files are written to a temporary folder and moved into place only when every item is built, then
+    the record. -> note-rebuild/true-notes.json (+ true-notes/<item>.json)."""
+    require(PHASE_P)
+    final, tmp = OUT / "true-notes", OUT / "true-notes.partial"
+    for p in (OUT / "true-notes.json", final, tmp):
+        refuse_existing(p)
+    import csv                                      # after the refusals
     import io
     import zipfile
 
     from learn import full_controls_c3r as C
     from learn import pretrain_set as PS
 
-    require(PHASE_P)
     units = [r for r in C.read_units() if r["set"] in ("goat", "cap1")]
     sec_len = PS.SEC_S + PS.TRIM_S
     per_item, per_unit = {}, {}
@@ -796,7 +890,7 @@ def cmd_true_notes(_args):
         for it in items:
             rec = true_notes_for(it, z, meta)
             if "notes" in rec:
-                write_once(OUT / "true-notes" / f"{it}.json", rec)
+                write_once(tmp / f"{it}.json", rec)
                 rec = {k: v for k, v in rec.items() if k != "notes"} | {"notes_sha256": content_sha(rec["notes"]),
                                                                         "_notes": rec["notes"]}
             per_item[it] = rec
@@ -827,16 +921,35 @@ def cmd_true_notes(_args):
     for rec in per_item.values():
         rec.pop("_notes", None)
     goat_carry = sum(v["carries"] for v in per_unit.values() if v["set"] == "goat")
+    checks = [v["reader_check"] for v in per_item.values() if v.get("reader_check", {}).get("ok") is not None]
+    reader = {"items_checked": len(checks), "items_passing": sum(c["ok"] for c in checks),
+              "rule": {"window": READER_WINDOW, "max_resid_s": READER_MAX_RESID_S, "min_share": READER_MIN_SHARE,
+                       "min_items": READER_MIN_ITEMS}}
+    reader["ok"] = bool(checks) and reader["items_passing"] >= READER_MIN_ITEMS * len(checks)
     body = {"items": per_item, "units": per_unit, "carry_rule": {"min_notes": CARRY_MIN_NOTES,
                                                                  "tab_share_split": CARRY_TAB_SHARE},
-            "goat_units_carrying": goat_carry,
+            "goat_units_carrying": goat_carry, "reader": reader, "units_read": len(units),
             "cap1_units_carrying": sum(v["carries"] for v in per_unit.values() if v["set"] == "cap1")}
+    body["p3_ok"] = p3_ok(body)
+    tmp.rename(final)
     doc = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P}", "made": time.strftime("%Y-%m-%d %H:%M:%S"),
            "body": body, "body_sha256": content_sha(body)}
     h = write_once(OUT / "true-notes.json", doc)
     print(f"TRUE-NOTES DONE: {sum('notes_sha256' in v for v in per_item.values())} of {len(per_item)} items with "
           f"notes; GOAT units carrying {goat_carry} of {sum(v['set'] == 'goat' for v in per_unit.values())}; "
-          f"cap1 {body['cap1_units_carrying']}; doc sha256 {h}")
+          f"cap1 {body['cap1_units_carrying']}; reader {reader['items_passing']} of {reader['items_checked']} items "
+          f"(ok {reader['ok']}); p3_ok {body['p3_ok']}; doc sha256 {h}")
+
+
+EXPECTED_NOTE_UNITS = 336               # C3r's GOAT (215) and cap1 (121) read parts
+
+
+def p3_ok(body):
+    """(Pure.) P3 passes its own checks: every GOAT and cap1 read part recorded, every item with fine-aligned MIDI
+    built with notes, the MIDI reader's cross-check passing, and some GOAT part carrying."""
+    built = all("notes_sha256" in v for v in body["items"].values() if v.get("out") != "no fine-aligned MIDI")
+    return (body["units_read"] == EXPECTED_NOTE_UNITS and len(body["units"]) == EXPECTED_NOTE_UNITS and built
+            and body["reader"]["ok"] and body["goat_units_carrying"] > 0)
 
 
 CARRY_MIN_NOTES = 8                     # a unit carries stage 1 with fine-aligned MIDI and at least 8 notes in its window
@@ -874,9 +987,19 @@ def shifted(y, cents):
 
 
 class Bank:
-    """The prepared note set at one pickup: lazily loads, prepares and caches each (string, fret), and each shift."""
+    """The prepared note set at one pickup: lazily loads, prepares and caches each (string, fret), and each shift.
+    From disk it needs P2's record: every note's hash is checked clear of the exclusion list when the bank opens, and
+    each file's hash is checked against the record when it loads. Only a test's `loader` may stand in for the files
+    (then with no record)."""
 
-    def __init__(self, notes_doc=None, pickup=PICKUP, root=EGFX, loader=None):
+    def __init__(self, notes_doc=None, pickup=PICKUP, root=EGFX, loader=None, excl=None):
+        if notes_doc is None and loader is None:
+            raise SystemExit("a bank on disk needs P2's notes.json")
+        if notes_doc is not None:
+            if notes_doc.get("source", {}).get("licence") != "CC BY 4.0":
+                raise SystemExit("notes.json records no CC BY 4.0 source")
+            assert_clear([{"sha256": r["sha256"]} for k, r in notes_doc["notes"].items()
+                          if k.startswith(pickup + "/") and "sha256" in r], excl)
         self.pickup, self.root = pickup, root
         self.doc = notes_doc
         self.loader = loader
@@ -896,9 +1019,15 @@ class Bank:
             if self.loader is not None:
                 x, rate = self.loader(s, f)
             else:
+                import io
+
                 import soundfile as sf
 
-                x, rate = sf.read(str(note_path(s, f, self.pickup, self.root)), dtype="float64", always_2d=True)
+                raw = note_path(s, f, self.pickup, self.root).read_bytes()
+                want = self.doc["notes"][f"{self.pickup}/{s}-{f}"].get("sha256")
+                if bytes_sha(raw) != want:
+                    raise SystemExit(f"{self.pickup}/{s}-{f}: the file's hash does not match notes.json")
+                x, rate = sf.read(io.BytesIO(raw), dtype="float64", always_2d=True)
                 x = x.mean(1)
             self._prep[(s, f)] = prepare_sample(x, rate, self.own_cents(s, f))[0]
         return self._prep[(s, f)]
@@ -923,7 +1052,7 @@ def source_for(n, tuning_cents, bank):
             if f2 in FRETS and bank.ok(s, f2):
                 s, f = s, f2
             else:
-                sp = placed(p, set(), bank.ok)
+                sp = placed(p, n.get("_taken", set()) - {n["string"]}, bank.ok)
                 if sp is None:
                     return None
                 s, f = sp
@@ -1017,9 +1146,10 @@ def synthesise(notes, length, bank, tuning_cents=0.0, group_gain_db=None, rate=S
             continue
         s, f, cents = src[k]
         y = bank.note(s, f, cents)
-        start = int(round(n["on"] * rate))
-        dur = int(round(note_length_s(n, nxt.get(k)) * rate))
+        start = int(round((n["on"] - PRE_ATTACK_S) * rate))       # the sample's attack lands on the onset
+        dur = int(round((note_length_s(n, nxt.get(k)) + PRE_ATTACK_S) * rate))
         if dur <= 0:
+            skipped.append(k)
             continue
         held_past = dur > len(y)
         dur = min(dur, len(y))
@@ -1036,8 +1166,8 @@ def synthesise(notes, length, bank, tuning_cents=0.0, group_gain_db=None, rate=S
         end = min(length, start + len(seg))
         if end > start:
             out[start:end] += gain_of[k] * seg[:end - start]
-    return out, {"notes": len(notes), "played": len(src), "skipped": len(skipped), "groups": len(groups),
-                 "from_tab": sum(1 for k in src if notes[k].get("string"))}
+    return out, {"notes": len(notes), "played": len(notes) - len(skipped), "skipped": len(skipped),
+                 "groups": len(groups), "from_tab": sum(1 for k in src if notes[k].get("string") and k not in skipped)}
 
 
 def span_rms(x, a, b):
@@ -1193,14 +1323,18 @@ def at_lufs(y, lufs, rate=SR):
     return y * 10 ** ((lufs - loudness(y, rate)) / 20)
 
 
-def rebuild_dry(arm, notes, length, bank, reference, di=None, balance=None, rate=SR):
+def rebuild_dry(arm, notes, length, bank, reference, di=None, finish=None, rate=SR):
     """One stage-1 dry guitar. `notes`: the window's notes (true notes, already onset-refined by `refine_onsets` for
     every arm); `reference`: the window's reference audio (its global tuning; `nr-level`'s levels); `di`: the true DI
-    (`nr-oracle` only: its levels and its loudness); `balance`: a function taking the audio to the average guitar's
-    balance (the replay's `others`, bound by stage 1), or None. `nr-plain` and `nr-level` end at ASSUMED_LUFS, as the
-    product's DI; `nr-oracle` at the true DI's loudness. -> (audio, report)."""
+    **as the replay renders it** (`song_bank.measure` of its section: the average guitar's balance at -22.9 LUFS),
+    `nr-oracle` only (its levels); `finish`: the replay's own chain for a dry guitar, bound by stage 1's declaration
+    (the blurred row's: `song_bank.measure`, then the `avg` step with the part's `others`), or None (then the level
+    alone). Every arm ends at ASSUMED_LUFS, so `nr-oracle` differs from `nr-plain` only by its per-group levels.
+    -> (audio, report)."""
     if arm not in ARMS:
         raise ValueError(arm)
+    if arm == "nr-oracle" and di is None:
+        raise ValueError("nr-oracle needs the true DI as rendered")
     notes, cleaned = clean_notes(notes)
     tune = global_tuning_cents(reference, rate)
     plain, rep = synthesise(notes, length, bank, tune, None, rate)
@@ -1209,16 +1343,11 @@ def rebuild_dry(arm, notes, length, bank, reference, di=None, balance=None, rate
     elif arm == "nr-level":
         y, _ = synthesise(notes, length, bank, tune, level_gains(notes, reference, rate), rate)
     else:
-        if di is None:
-            raise ValueError("nr-oracle needs the true DI")
         y, _ = synthesise(notes, length, bank, tune, oracle_gains(notes, plain, di, rate), rate)
-    if balance is not None:
-        y = balance(y)
-    target = float(loudness(di, rate)) if arm == "nr-oracle" else ASSUMED_LUFS
-    if not math.isfinite(target):
-        raise ValueError("the target loudness is not finite")
-    y = at_lufs(y, target, rate)
-    return y, {**rep, **cleaned, "tuning_cents": round(tune, 2), "lufs": round(target, 3)}
+    if finish is not None:
+        y = finish(y)
+    y = at_lufs(y, ASSUMED_LUFS, rate)
+    return y, {**rep, **cleaned, "tuning_cents": round(tune, 2), "lufs": ASSUMED_LUFS}
 
 
 # --- the stage-1 figures (reports only; zero render cost) ---------------------------------------------------------------
@@ -1303,29 +1432,32 @@ def figures(true_di, dry, rate=SR):
 # --- P7: the timing probe ------------------------------------------------------------------------------------------------
 
 def cmd_probe(args):
-    """P7. Seconds per 10-s window on the CPU: the bank's preparation (once per note), the three arms' re-synthesis
-    and the figures, on GOAT development items outside the ladder (none of the 480 parts' items; `assert_clear`).
-    -> note-rebuild/probe.json."""
-    import csv
+    """P7. Seconds per 10-s window on the CPU: the oracle onset step, each arm's re-synthesis (with
+    `song_bank.measure` as the finishing chain, the true DI through `song_bank.measure` as `nr-oracle` reads it) and the
+    figures' computation, on GOAT development items clear of the exclusion list (`assert_clear` before any is read).
+    Timing only: no figure, level or audio is stored (development items, not evidence). -> note-rebuild/probe.json."""
+    require(PHASE_P)
+    refuse_existing(OUT / "probe.json")
+    excl = load_exclusion()
+    notes_doc = load_notes_doc()
+    import csv                                      # after the refusals
     import io
     import zipfile
 
-    import numpy as np
     import soundfile as sf
 
     from learn import clean_di as CD
     from learn import pretrain_set as PS
+    from learn import song_bank as SB
 
-    require(PHASE_P)
-    excl = load_exclusion()
-    bank = Bank(load_notes_doc())
+    bank = Bank(notes_doc, excl=excl)
     sec = int(round((PS.SEC_S + PS.TRIM_S) * SR))
     rows = []
     with zipfile.ZipFile(GOAT_ZIP) as z:
+        names = set(z.namelist())
         meta = {r["item"]: r for r in csv.DictReader(io.StringIO(z.read("GOAT/metadata.csv").decode()))}
         dev = [it for it in sorted(meta, key=lambda s: int(s.split("_")[1]))
-               if not clear_of({"goat_item": it}, excl) and meta[it]["finealigned_midi_path"]
-               and f"GOAT/data/{it}/{it}_fine_aligned.mid" in set(z.namelist())]
+               if not clear_of({"goat_item": it}, excl) and f"GOAT/data/{it}/{it}_fine_aligned.mid" in names]
         assert_clear([{"goat_item": it} for it in dev], excl)
         for it in dev[:args.items]:
             rec = true_notes_for(it, z, meta)
@@ -1334,28 +1466,29 @@ def cmd_probe(args):
             x, sr = sf.read(io.BytesIO(z.read(f"GOAT/data/{it}/{it}.wav")), dtype="float64", always_2d=True)
             x = CD.resample(x.mean(1), sr, SR)
             start = 30.0 if len(x) / SR > 45 else 1.0
-            di = x[int(start * SR):int(start * SR) + sec]
-            if len(di) < sec:
+            raw = x[int(start * SR):int(start * SR) + sec]
+            if len(raw) < sec:
                 continue
+            t0 = time.perf_counter()
+            di = SB.measure(raw)
+            times = {"measure_di": time.perf_counter() - t0}
             notes = window_notes(rec["notes"], start, sec / SR)
             t0 = time.perf_counter()
-            ref_notes, shifts = refine_onsets(notes, di)
-            t1 = time.perf_counter()
-            times = {"refine": t1 - t0}
+            ref_notes, _ = refine_onsets(notes, di)
+            times["refine"] = time.perf_counter() - t0
             for arm in ARMS:
-                a = time.perf_counter()
-                y, rep = rebuild_dry(arm, ref_notes, sec, bank, di, di=di)
-                times[arm] = time.perf_counter() - a
-                a = time.perf_counter()
-                fig = figures(di, y)
-                times[f"figures:{arm}"] = time.perf_counter() - a
+                t0 = time.perf_counter()
+                y, _ = rebuild_dry(arm, ref_notes, sec, bank, di, di=di, finish=SB.measure)
+                times[arm] = time.perf_counter() - t0
+                t0 = time.perf_counter()
+                figures(di, y)
+                times[f"figures:{arm}"] = time.perf_counter() - t0
             rows.append({"item": it, "notes": len(notes), "times_s": {k: round(v, 3) for k, v in times.items()},
-                         "prepared_notes": len(bank._prep), "median_shift_ms": round(1000 * float(np.median(
-                             np.abs(shifts))) if shifts else 0.0, 2), "report": rep,
-                         "figures_nr_oracle": fig})
+                         "prepared_notes": len(bank._prep)})
             print(f"{it}: {len(notes)} notes; " + ", ".join(f"{k} {v:.2f}s" for k, v in times.items()), flush=True)
-    body = {"rows": rows, "machine": os.uname().machine, "cpu_only": True,
-            "note": "the first windows include the bank's one-time note preparation; later windows reuse it"}
+    body = {"rows": rows, "machine": os.uname().machine, "cpu_only": True, "evidence": False,
+            "note": "timing only, on development items; the first windows include the bank's one-time note "
+                    "preparation; later windows reuse it"}
     doc = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P}", "made": time.strftime("%Y-%m-%d %H:%M:%S"),
            "body": body, "body_sha256": content_sha(body)}
     h = write_once(OUT / "probe.json", doc)
@@ -1364,36 +1497,36 @@ def cmd_probe(args):
 
 # --- stage P's code -----------------------------------------------------------------------------------------------------
 
-def np_code(p1_ok, p2_failed, p3_ok, p4_ok, replay_goat_carrying):
-    """(Pure.) NP_TABLE's code. `replay_goat_carrying`: the replay's drawn GOAT units that carry true notes (None
-    before the replay's draw: then the count over all 215 GOAT units decides nothing and the code waits)."""
-    if not (p1_ok and p3_ok and p4_ok):
-        return "NP-broken"
-    if p2_failed:
-        return "NP-gap"
-    if replay_goat_carrying is None:
-        return None
-    return "NP-ready" if replay_goat_carrying >= 30 else "NP-few"
+def np_code(p1, p2_failed, p3, p4, replay_goat_carrying):
+    """(Pure.) NP_TABLE's codes, in order: NP-broken alone; or NP-gap followed by the count's code; or the count's
+    code. `replay_goat_carrying`: the replay's drawn GOAT parts that carry true notes, None before the replay's draw
+    (then the count's code waits). -> list of codes."""
+    if not (p1 and p3 and p4):
+        return ["NP-broken"]
+    out = ["NP-gap"] if p2_failed else []
+    if replay_goat_carrying is not None:
+        out.append("NP-ready" if replay_goat_carrying >= NP_MIN_CARRYING else "NP-few")
+    return out
+
+
+NP_MIN_CARRYING = 30
 
 
 def cmd_ready(args):
-    """Stage P's code from P1-P4's records (P4: the test suite's result, passed in by --p4-ok after it runs)."""
+    """Stage P's codes from P1-P4's records (P4: the test suite's result, passed in by --p4-ok after it runs; the
+    replay's drawn GOAT parts from its draw, when it exists)."""
+    require(PHASE_P)
     table_guard()
-    ex = load_exclusion()
-    nd = load_notes_doc()
-    tn = json.loads((OUT / "true-notes.json").read_text())
-    if content_sha(tn["body"]) != tn["body_sha256"]:
-        raise SystemExit("true-notes.json's body does not match its hash")
+    ex, nd, tn = load_exclusion(), load_notes_doc(), load_doc("true-notes.json")
     drawn = None
     draw = PF / "replay/draw.json"
     if draw.exists():
         d = json.loads(draw.read_text())
         keys = {f"{p['unit']}|{p['amp']}" for p in d.get("parts", []) if p.get("set") == "goat"}
-        drawn = sum(tn["body"]["units"].get(k, {}).get("carries", False) for k in keys)
-    code = np_code(bool(ex["keys"]["di"]), nd["failed_in_pickup"], tn["body"]["goat_units_carrying"] > 0,
-                   args.p4_ok, drawn)
-    print(json.dumps({"code": code, "replay_goat_carrying": drawn, "failed_in_pickup": nd["failed_in_pickup"],
-                      "goat_units_carrying_all": tn["body"]["goat_units_carrying"]}, indent=1))
+        drawn = sum(tn["units"].get(k, {}).get("carries", False) for k in keys)
+    codes = np_code(ex["p1_ok"], nd["failed_in_pickup"], tn["p3_ok"], args.p4_ok, drawn)
+    print(json.dumps({"codes": codes, "replay_goat_carrying": drawn, "failed_in_pickup": nd["failed_in_pickup"],
+                      "goat_units_carrying_all": tn["goat_units_carrying"]}, indent=1))
 
 
 def main(argv=None):

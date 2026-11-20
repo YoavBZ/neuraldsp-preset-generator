@@ -77,9 +77,18 @@ def test_n2_codes():
     assert N.n2_code({"B-clean": "fails"}) == "N2-notes"
     assert N.n2_code({"B-clean": "undecided"}) == "N2-between"
     assert N.n2_code({"B-clean": "passes", "B-alone": "fails"}) == "N2-stem"
-    assert N.n2_code({"B-clean": "passes", "B-alone": "undecided"}) == "N2-stem"
+    assert N.n2_code({"B-clean": "passes", "B-alone": "undecided"}) == "N2-between"     # undecided is not a stop
     assert N.n2_code({"B-clean": "passes", "B-alone": "passes", "B-full": "fails"}) == "N2-exposed"
+    assert N.n2_code({"B-clean": "passes", "B-alone": "passes", "B-full": "undecided"}) == "N2-between"
     assert N.n2_code({"B-clean": "passes", "B-alone": "passes", "B-full": "passes"}) == "N2-full"
+    with pytest.raises(ValueError):
+        N.n2_code({"B-clean": "pass"})
+
+
+def test_n2_exposed_stops_with_no_window_picking():
+    nxt = dict((c, t) for c, _, t in N.N2_TABLE)
+    assert nxt["N2-exposed"].startswith("to the user and stop")
+    assert "stage 3" not in nxt["N2-exposed"]
 
 
 def test_sign_test():
@@ -96,11 +105,97 @@ def test_n3_needs_the_blind_comparison():
 
 
 def test_np_code():
-    assert N.np_code(True, [], True, True, 40) == "NP-ready"
-    assert N.np_code(True, [], True, True, 29) == "NP-few"
-    assert N.np_code(True, ["Middle/1-3"], True, True, 40) == "NP-gap"
-    assert N.np_code(False, [], True, True, 40) == "NP-broken"
-    assert N.np_code(True, [], True, True, None) is None
+    assert N.np_code(True, [], True, True, 40) == ["NP-ready"]
+    assert N.np_code(True, [], True, True, 29) == ["NP-few"]
+    assert N.np_code(True, ["Middle/1-3"], True, True, 40) == ["NP-gap", "NP-ready"]
+    assert N.np_code(True, ["Middle/1-3"], True, True, None) == ["NP-gap"]
+    assert N.np_code(False, [], True, True, 40) == ["NP-broken"]
+    assert N.np_code(True, [], False, True, 40) == ["NP-broken"]
+    assert N.np_code(True, [], True, True, None) == []
+
+
+def _p1_body(**kw):
+    keys = {"di": ["d"], "goat_item": ["item_0"], "capture": ["c"], "creator": ["cr"], "session": ["s/S"],
+            "band": ["b"], "pack": []}
+    b = {"keys": keys, "units": 480, "missing": [], "sessions_missing": [], "session_guitar_tracks": {"s/S": ["g"]}}
+    b.update(kw)
+    return b
+
+
+def test_p1_ok_catches_a_broken_run():
+    assert N.p1_ok(_p1_body())
+    assert not N.p1_ok(_p1_body(units=479))
+    assert not N.p1_ok(_p1_body(missing=[{"path": "x", "why": "goat DI section"}]))
+    assert not N.p1_ok(_p1_body(sessions_missing=["s/T"]))
+    assert not N.p1_ok(_p1_body(session_guitar_tracks={}))
+
+
+def _p3_body(**kw):
+    b = {"units_read": 336, "units": {str(k): {} for k in range(336)}, "goat_units_carrying": 60,
+         "reader": {"ok": True}, "items": {"item_0": {"notes_sha256": "x"}, "item_1": {"out": "no fine-aligned MIDI"}}}
+    b.update(kw)
+    return b
+
+
+def test_p3_ok_catches_a_broken_run():
+    assert N.p3_ok(_p3_body())
+    assert not N.p3_ok(_p3_body(units_read=335))
+    assert not N.p3_ok(_p3_body(reader={"ok": False}))
+    assert not N.p3_ok(_p3_body(goat_units_carrying=0))
+    assert not N.p3_ok(_p3_body(items={"item_0": {"out": "a crash"}}))
+
+
+# --- the refusals ---------------------------------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("cmd", ["cmd_exclusion", "cmd_notes", "cmd_true_notes", "cmd_probe", "cmd_ready"])
+def test_every_command_refuses_without_the_phase(monkeypatch, tmp_path, cmd):
+    monkeypatch.setattr(N, "ledger_entry", lambda: {"test_id": N.LEDGER_ID})
+    monkeypatch.setattr(N, "OUT", tmp_path)
+    with pytest.raises(SystemExit, match="phase_nr_p"):
+        getattr(N, cmd)(type("A", (), {"items": 1, "p4_ok": True})())
+
+
+@pytest.mark.parametrize("cmd,name", [("cmd_exclusion", "exclusion.json"), ("cmd_notes", "notes.json"),
+                                      ("cmd_true_notes", "true-notes.json"), ("cmd_probe", "probe.json")])
+def test_every_command_refuses_to_overwrite(monkeypatch, tmp_path, cmd, name):
+    monkeypatch.setattr(N, "ledger_entry", lambda: {"test_id": N.LEDGER_ID, N.PHASE_P: "declared"})
+    monkeypatch.setattr(N, "OUT", tmp_path)
+    (tmp_path / name).write_text("{}")
+    with pytest.raises(SystemExit, match="never overwritten"):
+        getattr(N, cmd)(type("A", (), {"items": 1, "p4_ok": True})())
+
+
+def test_true_notes_refuses_a_partial_folder(monkeypatch, tmp_path):
+    monkeypatch.setattr(N, "ledger_entry", lambda: {"test_id": N.LEDGER_ID, N.PHASE_P: "declared"})
+    monkeypatch.setattr(N, "OUT", tmp_path)
+    (tmp_path / "true-notes.partial").mkdir()
+    with pytest.raises(SystemExit, match="never overwritten"):
+        N.cmd_true_notes(None)
+
+
+def test_write_once_and_hash_refusals(monkeypatch, tmp_path):
+    monkeypatch.setattr(N, "OUT", tmp_path)
+    body = {"keys": {}, "sha256": []}
+    N.write_once(tmp_path / "exclusion.json", {"body": body, "body_sha256": N.content_sha(body)})
+    assert N.load_exclusion() == body
+    with pytest.raises(SystemExit, match="never overwritten"):
+        N.write_once(tmp_path / "exclusion.json", {})
+    (tmp_path / "notes.json").write_text('{"body": {"a": 1}, "body_sha256": "0"}')
+    with pytest.raises(SystemExit, match="does not match its hash"):
+        N.load_notes_doc()
+    with pytest.raises(SystemExit, match="missing"):
+        N.load_doc("true-notes.json")
+
+
+def test_bank_refusals():
+    with pytest.raises(SystemExit, match="needs P2"):
+        N.Bank(None)
+    with pytest.raises(SystemExit, match="CC BY 4.0"):
+        N.Bank({"notes": {}, "source": {}}, excl={"keys": {}, "sha256": []})
+    doc = {"source": N.NOTE_SOURCE, "notes": {"Middle/1-0": {"ok": True, "sha256": "a" * 64, "cents": 0.0}}}
+    with pytest.raises(SystemExit, match="exclusion"):
+        N.Bank(doc, excl={"keys": {}, "sha256": ["a" * 64]})
+    assert N.Bank(doc, excl={"keys": {}, "sha256": []}).ok(1, 0)
 
 
 # --- P1: the exclusion list ---------------------------------------------------------------------------------------------
@@ -164,6 +259,7 @@ clean0:note:s2:f1 bfx:tremolo_bar wait:480 end"""
 
 def test_dadagp_notes():
     notes, down = N.dadagp_notes(TAB)
+    assert [n["tick"] for n in notes] == [0, 0, 480, 960, 1440, 1920, 2400]
     assert down == -12
     assert [(n["string"], n["fret"]) for n in notes] == [(5, 3), (4, 2), (3, 0), (3, 0), (1, 0), (1, 0), (2, 1)]
     assert notes[2]["arts"] == ["hammer"] and notes[3]["tie"]
@@ -181,6 +277,26 @@ def test_match_tab_chords_spread_and_missing_notes():
     assert off == 0 and m == 5
     idx = N.match_tab(notes, midi, off)
     assert [notes[k]["string"] for k in idx] == [5, 4, 3, 1, 2]
+
+
+def test_match_tab_one_chord_tolerance():
+    notes, _ = N.dadagp_notes("goat_dataset downtune:-12 tempo:100 start new_measure "
+                              "clean0:note:s3:f0 clean0:note:s2:f0 clean0:note:s1:f0 wait:480 end")
+    midi = [(1.0, 1.5, 64), (1.02, 1.5, 59), (1.045, 1.5, 55)]           # spread over 45 ms: one chord
+    assert [notes[k]["string"] for k in N.match_tab(notes, midi, 0)] == [1, 2, 3]
+    assert N.onset_groups([{"on": t} for t, _, _ in midi]) == [[0, 1, 2]]
+
+
+def test_reader_check():
+    text = "goat_dataset downtune:-12 tempo:120 start new_measure " + " ".join(
+        f"clean0:note:s{1 + k % 6}:f{k % 5} wait:240" for k in range(40)) + " end"
+    tab, _ = N.dadagp_notes(text)
+    good = [(0.5 + k * 0.125, 0.6 + k * 0.125, N.tab_pitch(n, 0)) for k, n in enumerate(tab)]
+    r = N.reader_check(tab, good, 0)
+    assert r["ok"] and r["share"] == 1.0 and r["resid_s"] < 1e-9
+    jitter = [(on + (0.02 if k % 2 else -0.02), off, p) for k, (on, off, p) in enumerate(good)]   # a broken reader
+    assert not N.reader_check(tab, jitter, 0)["ok"]
+    assert N.reader_check(tab, good[:5], 0)["ok"] is None                 # too few to fit
 
 
 def test_best_offset_finds_an_octave():

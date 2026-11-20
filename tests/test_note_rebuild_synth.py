@@ -115,8 +115,8 @@ def test_rebuild_dry_arms_and_level():
     y2, _ = N.rebuild_dry("nr-plain", notes, 4 * SR, _bank(), ref)
     assert y.tobytes() == y2.tobytes()
     di = 0.5 * ref
-    yo, ro = N.rebuild_dry("nr-oracle", notes, 4 * SR, _bank(), ref, di=di)
-    assert abs(N.loudness(yo) - N.loudness(di)) < 0.05
+    yo, ro = N.rebuild_dry("nr-oracle", notes, 4 * SR, _bank(), ref, di=di, finish=lambda y: 2.0 * y)
+    assert abs(N.loudness(yo) - N.ASSUMED_LUFS) < 0.05                    # every arm ends at the product's level
     with pytest.raises(ValueError):
         N.rebuild_dry("nr-oracle", notes, 4 * SR, _bank(), ref)
     with pytest.raises(ValueError):
@@ -143,3 +143,26 @@ def test_check_note_flags():
     assert "clipped" in " ".join(N.check_note(clipped, SR, 1, 0)["why"])
     short = N.check_note(x[:SR], SR, 1, 0)
     assert any("length" in w for w in short["why"])
+
+
+def test_bank_refuses_a_changed_file(tmp_path):
+    import soundfile as sf
+
+    (tmp_path / "Middle").mkdir()
+    sf.write(tmp_path / "Middle" / "1-0.wav", _tone(64), SR, subtype="PCM_24")
+    good = N.file_sha(tmp_path / "Middle" / "1-0.wav")
+    doc = {"source": N.NOTE_SOURCE, "notes": {"Middle/1-0": {"ok": True, "sha256": good, "cents": 0.0}}}
+    excl = {"keys": {}, "sha256": []}
+    assert len(N.Bank(doc, root=tmp_path, excl=excl).prepared(1, 0)) > SR
+    doc["notes"]["Middle/1-0"]["sha256"] = "0" * 64
+    with pytest.raises(SystemExit, match="does not match"):
+        N.Bank(doc, root=tmp_path, excl=excl).prepared(1, 0)
+
+
+def test_attack_lands_on_the_onset_and_skips_count():
+    notes = [{"on": 1.0, "off": 1.5, "pitch": 60, "string": 2, "fret": 1, "arts": []},
+             {"on": 1.2, "off": 1.2, "pitch": 30, "string": None, "fret": None, "arts": []}]   # unplayable
+    y, rep = N.synthesise(notes, 3 * SR, _bank())
+    assert rep["played"] == 1 and rep["skipped"] == 1
+    env = np.abs(y)
+    assert abs(int(np.argmax(env > 0.5 * env.max())) / SR - 1.0) < 0.004
