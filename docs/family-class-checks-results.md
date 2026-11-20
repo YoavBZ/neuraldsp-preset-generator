@@ -2,7 +2,8 @@
 
 **Status:**
 - **Run:** 2026-11-20, once each, from main at `e438965a` (the squash of PR #523, which holds the declared phases), in a
-  clean detached worktree. Zero renders, zero separations, no MPS, no sealed set.
+  detached worktree that was removed after the run, so "clean" rests on the hand-back (the audit notes this; the outputs
+  reproduce exactly from `e438965a`'s code). Zero renders, zero separations, no MPS, no sealed set.
 - **Audited:** 2026-11-20 by an independent blind recompute, PASS WITH CORRECTIONS for both checks. Every number
   reproduced, and both cells follow from the declared tables. The corrections are to wording and context and are taken
   here.
@@ -28,14 +29,16 @@ descriptive: no render read confirms it.
   - The families hold little of the settings' variation. **Post hoc:** even with unlimited captures, a family centre
     would gain at most about 2.5% of Cen's distance on drive and tone and about 7.5% on cab, all under the declared
     10%.
-  - A gap that small implies about 0.02 or less by the score, under the user's 0.05 rule.
-  - **Direction 2 is parked.** The 8-minute render read stays available but is not recommended, and it has not run.
+  - **Post hoc:** a gap that small implies about 0.02 or less by the score, under the user's 0.05 rule.
+  - **Parking Direction 2 is recommended; the choice is the user's** (GF-thin's row offers it, with the render read
+    and fetching more captures). The 8-minute render read stays available but is not recommended, and it has not run.
 - **The class check reads CK-stop: class stays with research.**
   - A simple classifier on the guitar-alone stem names the class at 0.64 on held-out recordings, well under 0.80.
   - **Post hoc:** the cap is the 197 mel features, or how the held-out set's classes are labelled, not the
     classifier. Four other models do no better.
   - On real-amp recordings the clean track reads at 0.96. There the stem reads at 0.77, about research's level and
     undecided.
+  - Research's 0.80 is not a comparable bar (10 exam parts, a 90% interval of 0.49 to 0.96, on other material).
   - CK-stop licenses only "this classifier does not overrule research". It does not show that audio cannot read the
     class, and it does not close Direction 3.
 
@@ -97,7 +100,8 @@ D_g = d_g(family centre) − d_g(Cen₋c), RMS gap in unit space, below zero nea
 **What the render read could show (post hoc).**
 - In the ladder, knob moves onto Cen of 0.04 to 0.12 RMS changed J0 by −0.004 [−0.028, +0.020].
 - A cab-only gain of about 5% of Cen's distance therefore predicts a gap of about 0.02 or less by the score.
-- Under the user's rule no action could rest on that. **Direction 2 is parked.** The render read (about 530 renders,
+- Under the user's rule no action could rest on that. **Parking Direction 2 is recommended; the choice is the
+  user's.** The render read (about 530 renders,
   about 8 min) stays available but is not recommended and has not run.
 
 ## B. The class check (CK-stop)
@@ -123,7 +127,7 @@ fold bans removed 285 training unit slots over the four folds, as declared.
 **The leak behaves as expected.**
 - The stem-trained full-stem row is lender-keyed: 0.92 overall, but 0.29 on the 14 units whose lender band is on the
   other class's side.
-- In-alone falls from 0.81 on-side to 0.64 off-side.
+- In-alone falls from 0.80 on-side to 0.64 off-side.
 - T-alone reads 0.71 off-side and 0.66 on-side, so it is not lender-keyed.
 - The lender-band control (The Travelling Band against Hazael, 188 clean units, majority 0.537) reads 0.904 from
   `xl@-3`, 0.638 from `xlnoG@-3` and 0.521 from `clean-kind`. The bleed in the guitar-alone stem is real.

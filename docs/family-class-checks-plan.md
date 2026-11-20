@@ -1,12 +1,12 @@
 # The family check and the class check (plan, declared 2026-11-20)
 
 **Status:** declared 2026-11-20, before any run, on the user's approval of the same day. **Run 2026-11-20 and
-audited:** the family check reads GF-thin (Direction 2 parked) and the class check CK-stop (class stays with research);
-see [the results](family-class-checks-results.md) (ledger `phase_family_check_outcome`, `phase_class_check_outcome`).
-These are parts A and B of the
-orchestrator's three-measurement plan after the strategic review of 2026-11-19 (sections 4 to 6), with that plan's
-independent review taken in (approve with changes; section C below lists each change). Part C of that plan, the
-note-matched replay, has its own declaration.
+audited:** the family check reads GF-thin (parking Direction 2 recommended, the user's call) and the class check
+CK-stop (class stays with research); see [the results](family-class-checks-results.md) (ledger
+`phase_family_check_outcome`, `phase_class_check_outcome`). These are parts A and B of the orchestrator's
+three-measurement plan after the strategic review of 2026-11-19 (sections 4 to 6), with that plan's independent review
+taken in (approve with changes; section C below lists each change). Part C of that plan, the note-matched replay, has
+its own declaration.
 
 Every number is by the score or in knob space as stated. **Knob-space reads are descriptive until a render read
 confirms them.** The user's rule (2026-11-19): no action rests on a J0 gap under 0.05. `PF` is
