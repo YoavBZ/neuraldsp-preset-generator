@@ -122,15 +122,18 @@ every row is fixed by that rule.
 - **D_g = d_g(Fam) − d_g(Cen₋c)** per record. Below zero is nearer.
 - **T_g** is D_g's mean over creators (records averaged inside a creator), with its 90% t interval
   (creators − 1 df).
-- **The family-clustered interval:** the same mean clustered by family (families − 1 df). It is reported beside, and
-  GF-stop uses the wider of the two intervals (the review: the creator interval ignores family-level dependence).
+- **The family-clustered interval:** D_g's mean over families (records averaged inside a family; families − 1 df).
+  Its mean differs from the creator mean. It is reported beside, and GF-stop takes **the lower of the two lower ends**
+  (`wider`; the review: the creator interval ignores family-level dependence).
 - **Cen's distance** for GF-stop is the creator-weighted mean of d_g(Cen₋c) over the same records.
 
 **The shuffle control** (fixed in full before the run):
 - **What is permuted:** the tags of all 41 packs, the 13 "none" packs included, over the 41 packs. It is seeded: 2,000
   permutations, permutation j drawn from `random.Random("20261206:j")` over the sorted pack list.
 - **The record set** is fixed to the real read's usable records. Under a permutation, a record whose new family is
-  "none", or has no other-creator record on its amp, has Fam = Cen₋c, so D_g = 0. It stays in T_g.
+  "none", or has no other-creator record on its amp, has Fam = Cen₋c, so D_g = 0. It stays in T_g. (The real read
+  has no such rows, so the shuffle is not exactly exchangeable with it. This is the specification the review asked
+  for, and the write-up notes it.)
 - **The joint statistic:** for each of drive, tone and cab, z_g = (T_g − the shuffles' mean of T_g) / the shuffles' sd
   of T_g. The statistic is the minimum z over the three. **p** is the share of the 2,000 shuffles whose own statistic
   (standardised by the same means and sds) is at or below the real one. A group with no real T or no spread across
@@ -156,7 +159,8 @@ every row is fixed by that rule.
 
 Three readings:
 - **nearer:** on drive, tone or cab, the creator-clustered interval of T_g is wholly below 0;
-- **ruled out:** on each of drive, tone and cab, the lower end of the wider interval is above −0.1 × Cen's distance;
+- **ruled out:** on each of drive, tone and cab, the lower of the two intervals' lower ends (creator- and
+  family-clustered) is above −0.1 × Cen's distance;
 - **p small:** the joint shuffle p is under 0.05.
 
 | Code | When | Next |
@@ -266,7 +270,8 @@ supply most of G (GOAT and the first-batch captures reamp GOAT's DIs).
 - **GOAT's 35 items that hold both classes** (70 units): the playing is held constant there, so they separate tone
   from playing style;
 - **the lender-band control:** whether the lender band itself (The Travelling Band against Hazael, among clean units)
-  can be named from `xlnoG@-3`, `xl@-3` and `clean-kind` by C3r's folds.
+  can be named from `xlnoG@-3`, `xl@-3` and `clean-kind` by C3r's folds. (R units carry no identities, so a BKS DI
+  file can sit on both sides of a fold in this control; it is beside only.)
 
 ### B.5 "Better than 8 of 10", defined honestly
 
@@ -274,20 +279,28 @@ supply most of G (GOAT and the first-batch captures reamp GOAT's DIs).
   "better than research" cannot be shown here as a paired fact.
 - What can be shown is that the classifier's accuracy is decided above research's **point figure, 0.80**. That
   licenses only the paired read on the exam.
-- **On G:** accuracy is the mean of cluster accuracies (a cluster is a DI file: 157 clusters), with its 90% t
-  interval. Unit accuracy is beside.
+- **On G, on two cluster schemes** (the PR review, blocking):
+  - **C3r's clusters,** 157: GOAT by item, captures by creator;
+  - **DI files,** 145.
+
+  Each scheme misses one dependence: the captures reamp GOAT's DIs, so DI files miss the shared creator and C3r's
+  clusters miss the shared performance. Joining the two gives one component of 255 units, which is not usable. Each
+  scheme gives the mean of cluster accuracies with its 90% t interval. **A reading needs both to agree** (`conservative`):
+  "above" needs both lower ends over the bar, and "below" needs both upper ends under it. Both means and the unit
+  accuracy are beside.
 - **On R:** the clusters named right. A cluster is right when most of its units are, and a tie is wrong.
 
 ### B.6 The outcome table (`CK_TABLE`)
 
 Four readings:
-- **g:** T-alone on G is "above" (the interval's lower end over 0.80), "below" (its upper end under 0.80) or
+- **g:** T-alone on G is "above" (both schemes' lower ends over 0.80), "below" (both upper ends under 0.80) or
   "neither".
 - **r:** T-alone's R clusters right, without Drowning. "Reads" at 9 of 11 or more (10 of 12 beside). "Stop" at 6 or
   fewer, which is R's majority cluster count: 6 of 11, and 6 of 12 beside.
-- **leak:** "ok" when T-alone's accuracy is no more than 0.02 above T-clean's, both on G (cluster-weighted) and on R
-  (units); else "high".
-- **In-alone:** "above" when In-alone on G has its whole interval over 0.80.
+- **leak:** "ok" when T-alone's accuracy is no more than 0.02 above T-clean's on each of G's two cluster means (C3r's
+  clusters, DI files) and R's 47 deciding units (without Drowning); else "high".
+- **In-alone:** "above" when In-alone on G has either scheme's lower end over 0.80 (it guards CK-stop, so either
+  scheme can hold the stop back).
 
 | Code | When | Next |
 |---|---|---|
@@ -295,10 +308,10 @@ Four readings:
 | CK-stop | (g below or r stop) **and** In-alone not above, and not CK-reads | A simple classifier does not name the class better than research. Class stays with research |
 | CK-between | the rest, including a leak-inflated pass and a T-alone stop with In-alone above 0.80 | **Not decided.** The write-up says which side held it back. Only here is the class-blind lender redraw offered (new separations, not declared) |
 
-- **The control first:** T-clean's G interval must lie wholly above G's majority share. Otherwise the features are
+- **The control first:** both of T-clean's G intervals must lie wholly above G's majority share. Otherwise the features are
   broken, and the read stops with no cell.
 - **Power.**
-  - On G (348 units, 157 clusters), the half-width at an accuracy near 0.9 is about ±0.03. A true 0.87 or better
+  - On G (348 units, 157 or 145 clusters), the half-width at an accuracy near 0.9 is about ±0.03. A true 0.87 or better
     clears 0.80 about nine times in ten.
   - On R without Drowning, 9 of 11 is reached 91% of the time at a true 0.9 a cluster, 62% at 0.8 and 12% at 0.6. A
     stop (6 or fewer of 11) happens 47% of the time at 0.6 and 5% at 0.8.
@@ -325,7 +338,7 @@ Four readings:
 | Change | Where |
 |---|---|
 | A: the shuffle specified in full (the "none" packs, records with n = 0, the joint statistic) | A.5, `shuffle_tags`, `joint_p`, `read_family(only=…)` |
-| A: leave-one-family-out beside; GF-stop on the wider of the creator- and family-clustered intervals | A.5, A.6, `wider`, `readings` |
+| A: leave-one-family-out beside; GF-stop on the lower of the creator- and family-clustered lower ends | A.5, A.6, `wider`, `readings` |
 | A: on GF-thin, the render read offered (about 8 min), not run | A.6, `GF_TABLE` (tested) |
 | A: the prototype pack read beside | A.4, A.5 |
 | A: run although GF-thin is likely | A.6 |
@@ -335,6 +348,14 @@ Four readings:
 | B: R is in no training | B.4 |
 | B: GOAT's 35 both-class items beside | B.4 |
 | B: the class-blind lender redraw only on CK-between | B.6, `CK_TABLE` (tested) |
+| PR review (blocking): G read on both C3r's clusters and DI files, a reading needing both | B.5, B.6, `conservative` (tested) |
+| PR review (blocking): no numpy import before the refusals | `class_check.cmd_read` |
+| PR review: the leak guard's R side on the 47 deciding units | B.6, `outcome` (tested) |
+| PR review: `fold_wise`'s refusals before the read and the shuffles | `gear_family.fold_wise_inputs` |
+| PR review: `wider`'s wording (the two means differ) | A.5, A.6 |
+| PR review: every read part's class checked against C3r's | B.7, `ladder_units` |
+| PR review: a test of the shuffle's D = 0 rule | `tests/test_gear_family.py` |
+| PR review: the lender-band control's R units carry no identities, so a BKS DI file can sit on both sides of a fold there (beside only) | B.4 |
 
 ## D. Hand-back
 

@@ -144,3 +144,46 @@ def test_tags_content_refuses_other_counts():
     units = {"cap/x#ac20": {"pack": "fender-a", "creator": "c", "capture": "x"}}
     with pytest.raises(SystemExit):
         G.tags_content([("cap/x#ac20", "ac20")], units)
+
+
+# --- the shuffle's fixed record set (D = 0 without a family centre) ---------------------------------------------------------
+
+class _L:
+    @staticmethod
+    def group_of(h):
+        return "drive"
+
+
+class _Cx:
+    """Four records on one amp: r1 and r2 (creators a, b) in family f, r3 (creator c) in none, r4 (creator d) in g."""
+    L = _L
+
+    def __init__(self):
+        self.creator_of = {"u1": "a", "u2": "b", "u3": "c", "u4": "d"}
+        self.cls_of = {u: "clean" for u in self.creator_of}
+        self.lab = {"u1": 0.2, "u2": 0.8, "u3": 0.4, "u4": 0.6}
+
+    def encoded(self, u, a):
+        return (None, {"x": self.lab[u]}, {}, {})
+
+    def centre(self, a, k, out_creator=None):
+        return (None, {"x": 0.5}, {}, {})
+
+
+def test_read_family_leaves_out_records_without_a_family_centre():
+    cx, recs = _Cx(), [(u, "ac20") for u in ("u1", "u2", "u3", "u4")]
+    tags = dict(zip(recs, ("f", "f", "none", "g")))
+    per, out = G.read_family(cx, recs, tags)
+    assert set(per) == set(recs[:2]) and set(out) == set(recs[2:])
+    # r1's centre moves toward r2's label: 0.5 + (1/3)(0.8 - 0.5) = 0.6, farther from r1's 0.2
+    assert per[recs[0]]["drive"][0] == pytest.approx(abs(0.6 - 0.2) - abs(0.5 - 0.2))
+
+
+def test_shuffle_record_set_is_fixed_and_d_is_zero_without_a_centre():
+    cx, recs = _Cx(), [(u, "ac20") for u in ("u1", "u2", "u3", "u4")]
+    usable = {recs[0], recs[1]}
+    shuffled = dict(zip(recs, ("f", "none", "f", "g")))        # r2 now none; r1's only family mate is r3
+    per, _ = G.read_family(cx, recs, shuffled, only=usable)
+    assert set(per) == usable                                  # r3 and r4 stay out; r2 stays in
+    assert per[recs[1]]["drive"] == (0.0, pytest.approx(0.3))  # no family centre: D = 0, Cen's distance kept
+    assert per[recs[0]]["drive"][0] == pytest.approx(abs(0.5 + (0.4 - 0.5) / 3 - 0.2) - 0.3)

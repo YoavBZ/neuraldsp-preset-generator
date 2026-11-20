@@ -110,7 +110,8 @@ def cluster_t(values_by_cluster):
 
 
 def wider(a, b):
-    """(Pure.) Of two intervals on the same mean, the one with the lower lower end (None ends count as unbounded)."""
+    """(Pure.) Of two intervals (the creator- and family-clustered T, whose means differ), the one with the lower lower
+    end, which is the conservative one for GF-stop (a None end counts as unbounded)."""
     lo = lambda r: -math.inf if r.get("lo90") is None else r["lo90"]   # noqa: E731
     return a if lo(a) <= lo(b) else b
 
@@ -500,10 +501,9 @@ def variance_share(cx, recs, tags_by_rec):
     return out
 
 
-def fold_wise(cx, recs, tags_by_rec):
-    """The like-for-like row with the reader: the stored fold Cen (answers/cen.json) and a family centre that leaves
-    out what the reader's fold models leave out (fold k and every record sharing an identity with a fold-k unit);
-    the reader's clean-kind and rc-xl@-3 answers, both halves averaged. Per record {row: {group: (D_g, cen_d)}}."""
+def fold_wise_inputs(cx, recs):
+    """The fold-wise row's stored inputs, with its refusals (run before any read): the ladder's capture parts must be
+    the 133 records, and the stored fold Cen one setting per (fold, amp, class). -> (ents, parts, answers, fold_cen)."""
     L = cx.L
     ents = {e["unit"]: e for e in cx.st["entries"]}
     ans = {row: json.loads(L.answers_path(row).read_text())["answers"] for row in ("cen", "clean-kind", "rc-xl@-3")}
@@ -512,10 +512,6 @@ def fold_wise(cx, recs, tags_by_rec):
     if set(parts) != set(recs):
         raise SystemExit("the ladder's capture parts are not the 133 records")
 
-    def stored(row, r):
-        ru = parts[r]
-        return ans[row][ru["set"]][f"{r[0]}|{r[1]}"]
-
     fold_cen = {}
     for ru in read_units:
         key = (ru["fold"], ru["amp"], ru["prt"]["cls"])
@@ -523,6 +519,20 @@ def fold_wise(cx, recs, tags_by_rec):
         if key in fold_cen and fold_cen[key] != s:
             raise SystemExit(f"the stored fold Cen differs within {key}")
         fold_cen[key] = s
+    return ents, parts, ans, fold_cen
+
+
+def fold_wise(cx, recs, tags_by_rec, inputs):
+    """The like-for-like row with the reader: the stored fold Cen (answers/cen.json) and a family centre that leaves
+    out what the reader's fold models leave out (fold k and every record sharing an identity with a fold-k unit);
+    the reader's clean-kind and rc-xl@-3 answers, both halves averaged. Per record {row: {group: (D_g, cen_d)}}."""
+    L = cx.L
+    ents, parts, ans, fold_cen = inputs
+
+    def stored(row, r):
+        ru = parts[r]
+        return ans[row][ru["set"]][f"{r[0]}|{r[1]}"]
+
     out = {}
     for r in recs:
         if tags_by_rec[r] == NONE:
@@ -573,6 +583,7 @@ def cmd_read(_args):
     pack_of = {r: tags[f"{r[0]}|{r[1]}"]["pack"] for r in recs}
     cx = Ctx(st)
     stored_cen_check(cx)
+    fw_inputs = fold_wise_inputs(cx, recs)
     cr = cx.creator_of
 
     per, left_out = read_family(cx, recs, tags_by_rec)
@@ -610,7 +621,7 @@ def cmd_read(_args):
         "by_family": lofo,
         "range": {g: [min(v[g]["mean"] for v in lofo.values() if v[g]["mean"] is not None),
                       max(v[g]["mean"] for v in lofo.values() if v[g]["mean"] is not None)] for g in DECIDING}}
-    fw = fold_wise(cx, recs, tags_by_rec)
+    fw = fold_wise(cx, recs, tags_by_rec, fw_inputs)
     fw_rows = {}
     for row in ("fam-fold", "clean-kind", "rc-xl@-3"):
         fw_rows[row] = t_rows({r: v[row] for r, v in fw.items()}, lambda r: cr[r[0]])

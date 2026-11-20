@@ -70,11 +70,25 @@ def test_r_thresholds_as_declared():
     assert C.R_CLUSTERS[C.R_DECIDING] == 11
 
 
+def _lk(c3r, di, r):
+    return {"g_c3r": c3r, "g_di": di, "r": r}
+
+
 def test_leak_reading():
-    assert C.leak_reading({"g_acc": 0.90, "r_acc": 0.80}, {"g_acc": 0.88, "r_acc": 0.80}) == "ok"
-    assert C.leak_reading({"g_acc": 0.91, "r_acc": 0.80}, {"g_acc": 0.88, "r_acc": 0.80}) == "high"
-    assert C.leak_reading({"g_acc": 0.80, "r_acc": 0.90}, {"g_acc": 0.88, "r_acc": 0.86}) == "high"
-    assert C.leak_reading({"g_acc": None, "r_acc": 0.8}, {"g_acc": 0.9, "r_acc": 0.9}) == "high"
+    assert C.leak_reading(_lk(0.90, 0.89, 0.80), _lk(0.88, 0.88, 0.80)) == "ok"
+    assert C.leak_reading(_lk(0.91, 0.88, 0.80), _lk(0.88, 0.88, 0.80)) == "high"     # C3r's clusters
+    assert C.leak_reading(_lk(0.88, 0.91, 0.80), _lk(0.88, 0.88, 0.80)) == "high"     # DI files
+    assert C.leak_reading(_lk(0.80, 0.80, 0.90), _lk(0.88, 0.88, 0.86)) == "high"     # R's deciding units
+    assert C.leak_reading(_lk(None, 0.8, 0.8), _lk(0.9, 0.9, 0.9)) == "high"
+
+
+def test_conservative_needs_both_intervals():
+    a, b = _iv(0.9, 0.82, 0.95), _iv(0.88, 0.79, 0.97)
+    c = C.conservative(a, b)
+    assert (c["lo90"], c["hi90"], c["mean_c3r"], c["mean_di"]) == (0.79, 0.97, 0.9, 0.88)
+    assert C.g_reading(c) == "neither" and C.g_reading(C.conservative(a, a)) == "above"
+    assert C.g_reading(C.conservative(_iv(0.7, 0.6, 0.78), _iv(0.7, 0.6, 0.81))) == "neither"
+    assert C.conservative(a, _iv(0.9, None, None))["lo90"] is None
 
 
 def test_clusters_right_a_tie_is_wrong():
@@ -86,8 +100,10 @@ def test_balanced():
     assert C.balanced([("clean", "clean"), ("clean", "crunch"), ("crunch", "crunch")]) == pytest.approx(0.75)
 
 
-def _row(g, r_right, r_n=11, r_acc=0.8):
-    return {"G": {"acc_clusters": g, "majority_share": 0.51}, "R units": {"acc_units": r_acc},
+def _row(g, r_right, r_n=11, r_acc=0.8, g_di=None):
+    g_di = g if g_di is None else g_di
+    return {"G": {"acc_clusters": C.conservative(g, g_di), "acc_c3r_clusters": g, "acc_di_files": g_di,
+                  "majority_share": 0.51}, f"R units {C.R_DECIDING}": {"acc_units": r_acc},
             f"R clusters {C.R_DECIDING}": {"right": r_right, "clusters": r_n}}
 
 
@@ -101,6 +117,11 @@ def test_outcome():
     assert C.outcome(rows)["code"] == "CK-between"                    # In-alone above 0.80 keeps it open
     rows["In-alone"] = _row(_iv(0.8, 0.7, 0.9), 5)
     assert C.outcome(rows)["code"] == "CK-stop"
+    rows["In-alone"] = _row(_iv(0.8, 0.7, 0.9), 5, g_di=_iv(0.85, 0.81, 0.9))
+    assert C.outcome(rows)["code"] == "CK-between"                    # either scheme's In-alone holds the stop back
+    rows["In-alone"] = _row(_iv(0.8, 0.7, 0.9), 5)
+    rows["T-alone"] = _row(_iv(0.9, 0.82, 0.95), 9, g_di=_iv(0.86, 0.79, 0.93))
+    assert C.outcome(rows)["code"] == "CK-between"                    # a pass needs both schemes' lower ends
     rows["T-clean"] = _row(_iv(0.6, 0.45, 0.7), 5)                    # the control fails: no cell
     out = C.outcome(rows)
     assert out["code"] is None and out["control"] == "failed"

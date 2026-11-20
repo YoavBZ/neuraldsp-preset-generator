@@ -10,6 +10,8 @@ and 5-to-95% range (2); the mean over active frames of the loudest band less the
 level within 40 dB of the loudest frame, on the stored mel's dB scale (`pretrain_set.dequant`).
 **Classifier:** scikit-learn's L2 logistic regression, C = 1, balanced class weights, standardised on the training
 units only. Nothing tuned. Trained on `clean-kind` (the amp track alone: no lender) for the T rows.
+**G's interval:** read on both cluster schemes, C3r's (GOAT by item, captures by creator) and DI files; each misses
+one dependence (captures reamp GOAT's DIs), so a reading needs both intervals to agree (`conservative`).
 **Split:** G (GOAT, cap1, n12: 348 units) by C3r's four folds, training on G's other folds less any unit sharing an
 identity with the tested fold; R (BKS and the panel, Silent Waves out) tested as one block by a classifier trained on
 all of G. R is never in any training.
@@ -105,10 +107,13 @@ def r_reading(right, n):
     return "neither"
 
 
+LEAK_KEYS = ("g_c3r", "g_di", "r")
+
+
 def leak_reading(t_alone, t_clean, margin=LEAK_MARGIN):
-    """(Pure.) "high" when T-alone's accuracy exceeds T-clean's by more than the margin on G (cluster-weighted) or
-    on R (units); else "ok"."""
-    for k in ("g_acc", "r_acc"):
+    """(Pure.) "high" when T-alone's accuracy exceeds T-clean's by more than the margin on any of: G's mean of C3r
+    cluster accuracies, G's mean of DI-file accuracies, R's deciding units (without Drowning); else "ok"."""
+    for k in LEAK_KEYS:
         if t_alone[k] is None or t_clean[k] is None or t_alone[k] > t_clean[k] + margin:
             return "high"
     return "ok"
@@ -121,6 +126,15 @@ def clusters_right(rows):
     for c, ok in rows:
         by.setdefault(c, []).append(bool(ok))
     return sum(sum(v) * 2 > len(v) for v in by.values()), len(by)
+
+
+def conservative(a, b):
+    """(Pure.) Two cluster intervals of one accuracy (C3r's clusters, DI files): both means, the lower of the lower
+    ends and the higher of the higher ends (a reading needs both intervals to agree)."""
+    lo = None if a.get("lo90") is None or b.get("lo90") is None else min(a["lo90"], b["lo90"])
+    hi = None if a.get("hi90") is None or b.get("hi90") is None else max(a["hi90"], b["hi90"])
+    return {"mean_c3r": a.get("mean"), "mean_di": b.get("mean"), "lo90": lo, "hi90": hi,
+            "clusters_c3r": a.get("clusters"), "clusters_di": b.get("clusters")}
 
 
 def cluster_acc(rows):
@@ -213,11 +227,13 @@ def ladder_units(st):
         if title_of(ru) in EXCLUDED:
             continue
         cls = ru["prt"]["cls"]
-        if s in G_SETS and st["units"][s][u]["cls"] != cls:
+        if st["units"][s][u]["cls"] != cls:
             raise SystemExit(f"{u}: the read part's class differs from C3r's")
         band = ld["units"][u]["band"]
         out.append({"set": s, "unit": u, "ru": ru, "fold": ru["fold"], "cls": cls,
                     "cluster": ru["prt"]["band"] if s == "panel" else ru["cluster"],
+                    "di_file": ru["prt"]["di"] if s in G_SETS else (ru["prt"]["band"] if s == "panel" else
+                                                                    ru["cluster"]),
                     "ids": ents[u]["ids"] if s in G_SETS else set(), "title": title_of(ru),
                     "lender": band, "off_side": side[band] != cls})
     return out
@@ -272,14 +288,18 @@ def row_read(units, feats, train_row, test_row, goat_items):
 
     def sub(xs):
         rows = [(x["cluster"], pred[x["unit"]] == x["cls"]) for x in xs]
+        a_c3r = cluster_acc(rows)
+        a_di = cluster_acc([(x["di_file"], pred[x["unit"]] == x["cls"]) for x in xs])
         return {"units": len(xs), "acc_units": sum(r for _, r in rows) / len(rows) if rows else None,
-                "acc_clusters": cluster_acc(rows), "balanced": balanced([(x["cls"], pred[x["unit"]]) for x in xs]),
+                "acc_c3r_clusters": a_c3r, "acc_di_files": a_di, "acc_clusters": conservative(a_c3r, a_di),
+                "balanced": balanced([(x["cls"], pred[x["unit"]]) for x in xs]),
                 "majority_share": max(sum(x["cls"] == c for x in xs) for c in ("clean", "crunch")) / len(xs)
                 if xs else None}
 
     both = [x for x in G if x["set"] == "goat" and len(goat_items[x["cluster"]]) == 2]
     out = {"G": sub(G), "G by set": {s: sub([x for x in G if x["set"] == s]) for s in G_SETS},
            "GOAT both-class items": sub(both), "R units": sub(Rr),
+           f"R units {R_DECIDING}": sub([x for x in Rr if x["title"] != DROWNING]),
            "off-side lender units": sub([x for x in units if x["off_side"]]),
            "on-side lender units": sub([x for x in units if not x["off_side"]])}
     for name, drop in (("with Drowning", False), ("without Drowning", True)):
@@ -314,9 +334,11 @@ def lender_control(units, feats):
 
 
 def outcome(rows):
-    """(Pure.) The cell from the rows: T-clean's control first (its G interval wholly above G's majority share, or the
-    read stops with no cell); then g (T-alone on G), r (T-alone's R clusters, without Drowning), the leak (T-alone
-    against T-clean) and In-alone on G."""
+    """(Pure.) The cell from the rows: T-clean's control first (its conservative G interval wholly above G's majority
+    share, or the read stops with no cell); then g (T-alone on G, the conservative interval of C3r's clusters and DI
+    files), r (T-alone's R clusters, without Drowning), the leak (T-alone against T-clean on both G means and R's
+    deciding units) and In-alone on G ("above" when either scheme's lower end is over the bar: the guard on CK-stop
+    fires on either)."""
     tc, ta, ia = rows["T-clean"], rows["T-alone"], rows["In-alone"]
     lo = tc["G"]["acc_clusters"].get("lo90")
     if lo is None or lo <= tc["G"]["majority_share"]:
@@ -325,16 +347,18 @@ def outcome(rows):
     rc = ta[f"R clusters {R_DECIDING}"]
     g = g_reading(ta["G"]["acc_clusters"])
     r = r_reading(rc["right"], rc["clusters"])
-    lk = leak_reading({"g_acc": ta["G"]["acc_clusters"]["mean"], "r_acc": ta["R units"]["acc_units"]},
-                      {"g_acc": tc["G"]["acc_clusters"]["mean"], "r_acc": tc["R units"]["acc_units"]})
-    i = "above" if g_reading(ia["G"]["acc_clusters"]) == "above" else "not"
+    def leak_keys(row):
+        return {"g_c3r": row["G"]["acc_clusters"]["mean_c3r"], "g_di": row["G"]["acc_clusters"]["mean_di"],
+                "r": row[f"R units {R_DECIDING}"]["acc_units"]}
+
+    lk = leak_reading(leak_keys(ta), leak_keys(tc))
+    ig = ia["G"]
+    i = "above" if any(g_reading(ig[k]) == "above" for k in ("acc_c3r_clusters", "acc_di_files")) else "not"
     code, nxt = ck_cell(g, r, lk, i)
     return {"control": "passed", "g": g, "r": r, "leak": lk, "in_alone": i, "code": code, "next": nxt}
 
 
 def cmd_read(_args):
-    import numpy as np  # noqa: F401  (after the refusals below that need none)
-
     from learn import full_controls_c3r as R
     from learn import pipeline_fix as P
     from learn import preset_ladder as L
