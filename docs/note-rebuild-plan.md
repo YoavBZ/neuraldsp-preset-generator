@@ -401,8 +401,7 @@ single blur, avg first when both pass, mild beside). Tested on both paths, go an
   - *Tuning:* the first draft read every arm 5 to 7 cents sharp. EGFxSet's notes sit about 4.5 cents sharp in their
     first 300 ms (the pick attack's glide; on 10 notes, mean +4.5 early, +0.8 at 0.3–2.3 s), and most notes in a part
     sound only their first few hundred ms. So **each sample is now retuned from its own early pitch** (its first 300
-    ms from the attack, `Bank.own_cents`); P2's cents still gate wrong notes. After the change: within ±2.4 cents on
-    all 54 dry guitars.
+    ms from the attack, `Bank.own_cents`); P2's cents still gate wrong notes. After the change, none of the 54 dry guitars fails the ±5-cent check.
   - *Level spread:* the first draft counted onset groups begun before the window (their span collapses to a sample)
     and the declared articulation gains (dead −6, ghost −10, legato −6 dB): 6 to 10 dB. Plain plucks played alone:
     0.2 to 1.8 dB. The rule now measures exactly that; `nr-level` and `nr-oracle` also give a group begun before the
