@@ -549,9 +549,25 @@ def main_entry(ledger_text):
     return next((t for t in d.get("tests", []) if t.get("test_id") == LEDGER_ID), None)
 
 
+def replay_keys(entry):
+    """(Pure.) The `phase_replay*` keys of a `preset-ladder` entry."""
+    return {k: v for k, v in (entry or {}).items() if k.startswith("phase_replay")}
+
+
+def replay_keys_refusal(local, main):
+    """(Pure.) Why this checkout's `phase_replay*` keys are not main's, or None. Other keys and other entries (other
+    sessions' merges) never block."""
+    a, b = replay_keys(local), replay_keys(main)
+    if a == b:
+        return None
+    diff = sorted(k for k in set(a) | set(b) if a.get(k) != b.get(k))
+    return f"this checkout's {', '.join(diff)} differ from main's: pull main (run from merged code)"
+
+
 def on_main():
-    """The ledger as main holds it (origin/main after a fetch), and whether this checkout's code is main's:
-    -> (preset-ladder entry or None, refusal or None)."""
+    """The `preset-ladder` entry as main holds it (origin/main after a fetch), and whether this checkout runs main's
+    replay: its learn/note_replay.py equal to main's and its `phase_replay*` keys equal to main's.
+    -> (main's entry or None, refusal or None)."""
     import subprocess
 
     from learn import pipeline_fix as P
@@ -562,10 +578,21 @@ def on_main():
     led = git("show", "origin/main:docs/dev-test-ledger.json")
     if led.returncode:
         return None, f"main's ledger is not readable: {led.stderr.strip()}"
-    same = git("diff", "--quiet", "origin/main", "--", "learn/note_replay.py", "docs/dev-test-ledger.json")
-    why = None if same.returncode == 0 else "this checkout's learn/note_replay.py or ledger differs from main's: run " \
-                                             "from merged code"
-    return main_entry(led.stdout), why
+    m = main_entry(led.stdout)
+    if git("diff", "--quiet", "origin/main", "--", "learn/note_replay.py").returncode:
+        return m, "this checkout's learn/note_replay.py differs from main's: run from merged code"
+    return m, replay_keys_refusal(ledger_entry(), m)
+
+
+def require_on_main(*phases):
+    """Refuse unless main's entry holds `phases` and this checkout runs main's replay (`on_main`)."""
+    m, why = on_main()
+    if why:
+        raise SystemExit(why)
+    for k in phases:
+        if not m or k not in m:
+            raise SystemExit(f"main's {LEDGER_ID} entry has no {k}: merge it before running")
+    return m
 
 
 def require_hash(phase, path):
@@ -575,8 +602,7 @@ def require_hash(phase, path):
     why = hash_refusal(e, phase, sha)
     if why:
         raise SystemExit(why)
-    m, why = on_main()
-    why = why or hash_refusal(m, phase, sha)
+    why = hash_refusal(require_on_main(PHASE, phase), phase, sha)
     if why:
         raise SystemExit(f"{why} (the hash must be on main before this step)")
     return json.loads(pathlib.Path(path).read_text())
@@ -716,11 +742,12 @@ def summary(st_units, parts, values, band):
 def cmd_draw(_args):
     """The draw (zero renders, no held-half value read): every candidate part's menu and refusal, `draw_parts`, the
     position check's parts; saved, its sha256 printed for the ledger; then the stored control. -> PF/replay/draw.json,
-    stored-control.json."""
+    controls/stored.json."""
     from learn import half_data as HD
     from learn import pipeline_fix as P
 
     require(PHASE)
+    require_on_main(PHASE)
     table_guard()
     never_overwrite(draw_path())
     sd = Stored()
@@ -792,7 +819,7 @@ def _power(sd_parts, noise, seed=POWER_SEED, repeats=POWER_REPEATS):
 def stored_control(sd, draw):
     """The Control from stored scores alone (what the rendered Control must reproduce): per part the stored pick, G, I,
     the blind pick, the best menu setting and the label-free numbers; the rows with and without BLEED_CHECK's parts; the
-    simulated picks' power. -> PF/replay/stored-control.json."""
+    simulated picks' power. -> PF/replay/controls/stored.json."""
     from learn import pipeline_fix as P
 
     p_ = control_path("stored")
@@ -857,14 +884,14 @@ def cmd_blur(_args):
     """The dry guitars (CPU, zero renders): per drawn part `di_robustness`'s average_balance and degrade("mild"), code
     unchanged, on the true DI section as rendered: avg+mild (the blurred DI), avg and mild alone (the conditional
     rows), the mild draws seeded per part and shared by mild and avg+mild. -> PF/replay/di/<dry>/, blur.json."""
-    import numpy as np
+    draw = require_draw()
+    rec_p = replay_dir() / "blur.json"
+    never_overwrite(rec_p)
+    import numpy as np                             # after the refusals
 
     from learn import di_robustness as DR
     from learn import pipeline_fix as P
 
-    draw = require_draw()
-    rec_p = replay_dir() / "blur.json"
-    never_overwrite(rec_p)
     sd = Stored()
     if sd.st["sha256"] != draw["c3r_sha256"]:
         raise SystemExit("C3r's state changed since the draw")
@@ -934,24 +961,25 @@ def cmd_sep(args):
     import argparse as AP
     import os
 
-    import numpy as np
-
-    from learn import cc_build as CB
-    from learn import direct_stems as DS
     from learn import ks_extend as X
     from learn import local_objective as LO
-    from learn import pipeline_fix as P
     from learn import preset_ladder as L
-    from learn import pretrain_set as PS
     from learn import real_mix_test as RMT
-    from learn import sep_s0 as S0
-    from learn import trusted_data as T
 
     draw = require_draw()
     why = L.sep_blockers(X._ps(), {os.getpid(), os.getppid()}, LO.others_rendering,
                          RMT.mps_users if args.device == "mps" else None)
     if why:
         raise SystemExit("not now: " + "; ".join(why))
+    import numpy as np                             # after the refusals
+
+    from learn import cc_build as CB
+    from learn import direct_stems as DS
+    from learn import pipeline_fix as P
+    from learn import pretrain_set as PS
+    from learn import sep_s0 as S0
+    from learn import trusted_data as T
+
     sd = Stored()
     if sd.st["sha256"] != draw["c3r_sha256"]:
         raise SystemExit("C3r's state changed since the draw")
@@ -1075,15 +1103,15 @@ def cmd_position(_args):
     primed process, each search-half distance against its stored value; every one within REPEAT_TOL -> the main pass
     renders a part and dry guitar in one primed process, else each kept render primed alone. The render rate is timed
     here. -> PF/replay/controls/position.json."""
-    import numpy as np
-
-    from learn import local_objective as LO
-    from learn import pipeline_fix as P
-
     draw = require_draw()
     p_ = control_path("position")
     never_overwrite(p_)
     no_separation_beside()
+    import numpy as np                             # after the refusals
+
+    from learn import local_objective as LO
+    from learn import pipeline_fix as P
+
     sd = Stored()
     LO._wait_cap()
     by = {p["pkey"]: p for p in draw["parts"]}
@@ -1114,14 +1142,6 @@ def cmd_render(args):
     search-half distance against the clean record and both stems (no held-half distance, no audio kept); on the
     position check's parts, the true DI's stem lag re-estimated beside. The single-blur dry guitars only after `score`
     triggered them. -> PF/replay/dist/<dry>/<part>.json."""
-    import numpy as np
-
-    from learn import audibility_measure as AM
-    from learn import local_objective as LO
-    from learn import pipeline_fix as P
-    from learn import pretrain_set as PS
-    from learn import trusted_data as T
-
     draw = require_draw()
     drys = [d.strip() for d in args.dry.split(",")]
     if any(d not in DRY for d in drys):
@@ -1138,6 +1158,14 @@ def cmd_render(args):
     if blur_rec["draw_sha256"] != file_sha(draw_path()):
         raise SystemExit("blur.json was made from another draw")
     no_separation_beside()
+    import numpy as np                             # after the refusals
+
+    from learn import audibility_measure as AM
+    from learn import local_objective as LO
+    from learn import pipeline_fix as P
+    from learn import pretrain_set as PS
+    from learn import trusted_data as T
+
     sd = Stored()
     if sd.st["sha256"] != draw["c3r_sha256"]:
         raise SystemExit("C3r's state changed since the draw")

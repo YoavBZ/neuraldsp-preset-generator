@@ -396,3 +396,12 @@ def test_main_entry_reads_the_ledgers_entry():
     text = json.dumps({"tests": [{"test_id": "other"}, {"test_id": N.LEDGER_ID, N.PHASE_DRAW: {"sha256": "x"}}]})
     assert N.hash_refusal(N.main_entry(text), N.PHASE_DRAW, "x") is None
     assert N.hash_refusal(N.main_entry(json.dumps({"tests": []})), N.PHASE_DRAW, "x")
+
+
+def test_an_unrelated_ledger_key_on_main_does_not_block():
+    local = {"test_id": N.LEDGER_ID, N.PHASE: "declared", N.PHASE_DRAW: {"sha256": "x"}, "phase_l6_half": "a"}
+    main = dict(local, phase_l6_half="b", phase_other_session="new", status="changed")
+    assert N.replay_keys_refusal(local, main) is None
+    assert N.replay_keys_refusal(local, dict(main, **{N.PHASE_DRAW: {"sha256": "y"}}))
+    assert N.replay_keys_refusal(local, {k: v for k, v in main.items() if k != N.PHASE_DRAW})
+    assert N.replay_keys_refusal(dict(local, **{N.PHASE_PICKS: {"sha256": "z"}}), main)
