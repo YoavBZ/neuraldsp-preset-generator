@@ -81,11 +81,28 @@ def test_beside_sets_and_safe_readings():
     assert S.n1_outcome({"nr-plain": "fails", "nr-level": "passes"})["arm"] == "nr-level"
 
 
+GOOD = {"peak": 0.9, "peak_over_true_db": 1.0, "tuning_diff_cents": 0.5, "gap_floor_diff_db": -10.0,
+        "level_spread_db": 1.0}
+BAD = {**GOOD, "tuning_diff_cents": 7.0}
+
+
+def test_blocking_and_flags_from_stored_records():
+    assert S.blocking_why(GOOD) == [] and S.flagged(GOOD) == []
+    peaky = {**GOOD, "peak_over_true_db": 9.0, "ok": False, "why": ["peak +9.0 dB over the true DI's"]}  # the old rule
+    assert S.blocking_why(peaky) == [] and S.flagged(peaky) == ["peak +9.0 dB over the true DI's"]
+    assert S.blocking_why({**GOOD, "peak": None}) == ["non-finite samples"]
+    assert "hiss" in S.blocking_why({**GOOD, "gap_floor_diff_db": 7.0})[0]
+    assert "spread" in S.blocking_why({**GOOD, "level_spread_db": 3.5})[0]
+    b = {"parts": {"p": {"arms": {"nr-plain": {"precheck": peaky}}}}}
+    assert S.precheck_failures(b)["nr-plain"] == [] and S.precheck_failures(b, "any")["nr-plain"] == ["p"]
+    assert S.peak_flags(b)["nr-plain"] == ["p"]
+
+
 def _build(fails, n=60):
     """fails: {arm: number of failing parts}."""
     parts = {}
     for j in range(n):
-        parts[f"p{j:02d}"] = {"arms": {a: {"precheck": {"ok": j >= fails.get(a, 0)}} for a in S.NR.ARMS}}
+        parts[f"p{j:02d}"] = {"arms": {a: {"precheck": GOOD if j >= fails.get(a, 0) else BAD} for a in S.NR.ARMS}}
     return {"parts": parts}
 
 
@@ -108,7 +125,8 @@ def test_precheck_failures_and_beside_row():
     f = S.precheck_failures(b)
     assert f["nr-plain"] == ["p00", "p01"] and f["nr-level"] == [] and f["nr-oracle"] == ["p00", "p01", "p02"]
     parts = [{"pkey": k, "alignment_f": 0.8, "reader_ok": True} for k in b["parts"]]
-    keep = S.beside_sets(parts, f)[S.BESIDE_PRECHECK]
+    keep = S.beside_sets(parts, f, {"nr-level": ["p05"]})[S.BESIDE_PRECHECK]
+    assert S.beside_sets(parts, f, {"nr-level": ["p05"]})[S.BESIDE_PEAK] == [k for k in b["parts"] if k != "p05"]
     assert "p00" not in keep and "p01" not in keep and "p02" in keep and len(keep) == 58       # nr-oracle not counted
 
 
@@ -161,6 +179,20 @@ def test_shards_capped_at_three():
     for bad in ("3/3", "0/4"):
         with pytest.raises(argparse.ArgumentTypeError):
             S._shard(bad)
+
+
+def test_stereo_renders_fold_to_mono():
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
+    sr = S.NR.SR
+    rng = np.random.default_rng(7)
+    x = 0.01 * rng.standard_normal(3 * sr)
+    for t in (0.5, 1.2, 2.1):
+        x[int(t * sr):int(t * sr) + 48] += 0.8
+    st = np.stack([x, x], axis=1)                                   # the plugin's (samples, 2) output
+    assert S.mono(st).shape == x.shape
+    assert S.burst_rate(st, []) == pytest.approx(S.burst_rate(x, []))
+    assert len(S._frames_db(st, 240)) == len(x) // 240
 
 
 def test_hf_checks():

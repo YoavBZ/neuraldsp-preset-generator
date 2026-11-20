@@ -441,6 +441,51 @@ on a grid.
 against the replay's hashed picks (`dist_sha256`); a row with no interval reads N1-incomplete instead of crashing after
 the rows are saved.
 
+### 11b. Amended after `build` and the first `clips` attempt (2026-11-20, before any stage-1 render is read; ledger `phase_nr_1_amend`)
+
+**The clips crashed on a code fault.** The plugin's renders are stereo, (samples, 2), and the burst check assumed mono.
+`mono` now folds every render before a frame measure (`_frames_db`, `burst_rate`); tested on a stereo array. The six
+clips written before the crash were moved aside (`note-rebuild-ear.failed-stereo-…`), not deleted; `clips` runs again
+from the start.
+
+**The peak check is now report-only, and it first caught a real fault.** `build` ran from main at 26e2b635 (60 parts
+× 3 arms, 225 s; build.json sha256 `0e5c077c…4e3e`). Its pre-checks failed 48 of 180 dry guitars, `nr-plain` on 12
+of 60 (8 of those on the peak rule, at most 6 dB over the true DI's peak at the same loudness), which would have
+refused `render` under the 10% bar.
+
+*The fault (found on the review's zero-score look at the extreme peaks, 2026-11-20).* Every extreme peak (+10.5 to
++16 dB) sat on the window's first or last sample, with no note struck near it and its 5-ms energy above 3 kHz 30 to
+60 dB over the window's median: an edge click. A note begun before the window was cut mid-waveform at the first
+sample (and one at the last), with no fade, and the finishing filters turned that step into a spike. **Fixed, with
+half B untouched:** the dry guitar fades in over the window's first 10 ms (`EDGE_FADE_S`), which lie before the
+trimmed timeline and outside both halves. Its end is never faded: `rebuild_dry` synthesises and finishes the guitar
+100 ms past the window (`END_PAD_S`; the finishing filter is 4,096 taps, about 85 ms), so the end fade and the
+filters' edge fall in the pad, and then trims back to the window. (A first draft faded the window's last 10 ms too;
+half B runs to the window's end and is the search half on 27 of the 60 parts, so the pad was chosen instead.) Tested:
+a note ringing across the end keeps its level there, and the start still fades. On items 94, 96 and 113 (in memory,
+zero score) no end spike returns, and the last 50 ms sit at 0.9 to 1.0 of the true DI's level where a note rings
+across. The faulty `build` output was moved aside to a dated folder (not deleted) and `build` runs again after this PR
+merges.
+
+*After the fix* (all 60 parts rebuilt in memory, zero score, nothing written): peaks over the true DI's have medians
++1.7 dB (`nr-plain`), +2.5 (`nr-level`), +3.7 (`nr-oracle`), at most +10.4. The peak flags fall to 4, 4 and 8 parts.
+Every remaining flag sits on a plain note or chord struck within the 80 ms before it, on sparse windows where the
+rebuilt guitar's crest factor is 6 to 9 dB above the true DI's (measured in memory; restated from the rebuilt build
+in the hand-back): the re-synthesis' sharper attack, not a glitch.
+
+*Why it stays report-only.* The rule was meant to catch clipping and glitches. At the measure's −22.9 LUFS, peaks
+above full scale are normal (8 of the 60 true DIs the replay itself renders exceed 1.0, up to 2.02), and the
+remaining flags are real attacks. Kept blocking, it would still refuse `render` (`nr-plain`: 4 peak flags and 4
+other failures, 8 of 60). So the peak is a report-only flag (`flagged`), and every row is also read beside without
+the parts where a deciding arm carries it (`without_peak_flag`). **The sharper attack is a declared confound of the
+N1 reading** (`PEAK_CONFOUND`, `confound_sharper_attack` in the report): the attack sets how hard the amp is driven,
+so on N1-fail or N1-between the read and its audit compare each arm's full row with its `without_peak_flag` row, and
+a row that reads differently without the flagged parts is said so before any route decision.
+
+The blocking checks are unchanged: non-finite samples, tuning, hiss floor, plain-group level spread, and the clips'
+burst check. build.json is written once, so `render` re-derives each stored record's blocking failures under the
+amended rule (`blocking_why`). With the edge fix (in memory): 4, 3 and 3 parts fail a blocking check, under the 10%
+bar. No threshold was changed.
 ### 11c. Any failing Both row asks the user (2026-11-20, after the replay's audited outcome R-alone; ledger `phase_nr_1_both_gate`)
 
 Plan section 5 says that if a Both row of the replay (the stem and the blurred DI together) fails, the user is asked
