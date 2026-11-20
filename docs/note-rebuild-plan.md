@@ -456,15 +456,22 @@ refused `render` under the 10% bar.
 *The fault (found on the review's zero-score look at the extreme peaks, 2026-11-20).* Every extreme peak (+10.5 to
 +16 dB) sat on the window's first or last sample, with no note struck near it and its 5-ms energy above 3 kHz 30 to
 60 dB over the window's median: an edge click. A note begun before the window was cut mid-waveform at the first
-sample (and one at the last), with no fade, and the finishing filters turned that step into a spike. **Fixed:** the
-dry guitar now fades in and out over the window's first and last 10 ms (`EDGE_FADE_S`; tested). Those samples lie
-outside the scored halves. The faulty `build` output was moved aside to a dated folder (not deleted) and `build` runs
-again after this PR merges.
+sample (and one at the last), with no fade, and the finishing filters turned that step into a spike. **Fixed, with
+half B untouched:** the dry guitar fades in over the window's first 10 ms (`EDGE_FADE_S`), which lie before the
+trimmed timeline and outside both halves. Its end is never faded: `rebuild_dry` synthesises and finishes the guitar
+100 ms past the window (`END_PAD_S`; the finishing filter is 4,096 taps, about 85 ms), so the end fade and the
+filters' edge fall in the pad, and then trims back to the window. (A first draft faded the window's last 10 ms too;
+half B runs to the window's end and is the search half on 27 of the 60 parts, so the pad was chosen instead.) Tested:
+a note ringing across the end keeps its level there, and the start still fades. On items 94, 96 and 113 (in memory,
+zero score) no end spike returns, and the last 50 ms sit at 0.9 to 1.0 of the true DI's level where a note rings
+across. The faulty `build` output was moved aside to a dated folder (not deleted) and `build` runs again after this PR
+merges.
 
 *After the fix* (all 60 parts rebuilt in memory, zero score, nothing written): peaks over the true DI's have medians
 +1.7 dB (`nr-plain`), +2.5 (`nr-level`), +3.7 (`nr-oracle`), at most +10.4. The peak flags fall to 4, 4 and 8 parts.
 Every remaining flag sits on a plain note or chord struck within the 80 ms before it, on sparse windows where the
-rebuilt guitar's crest factor is 6 to 9 dB above the true DI's: the re-synthesis' sharper attack, not a glitch.
+rebuilt guitar's crest factor is 6 to 9 dB above the true DI's (measured in memory; restated from the rebuilt build
+in the hand-back): the re-synthesis' sharper attack, not a glitch.
 
 *Why it stays report-only.* The rule was meant to catch clipping and glitches. At the measure's −22.9 LUFS, peaks
 above full scale are normal (8 of the 60 true DIs the replay itself renders exceed 1.0, up to 2.02), and the
