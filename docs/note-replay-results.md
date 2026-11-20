@@ -22,7 +22,8 @@ were not declared before the read.
 and it fails on a full mix.**
 - The comparison works through a blurred dry guitar, keeping 72% of the true DI's gain over a blind pick.
 - It works against X-LANCE's stem of a mix with no other guitar, keeping 83%.
-- It works with both together, keeping 51%.
+- With both together it passes by the declared rule, keeping 51%, but it is not shown a heard size over a blind
+  pick.
 - Against the stem of a full mix with other guitars, it picks **worse than a blind pick**.
 
 **What follows (the declared next):**
@@ -33,9 +34,10 @@ and it fails on a full mix.**
    It does not say a search through it works. Before any product claim comes a from-scratch search through the
    degraded inputs (the stem and the blurred dry guitar), scored on the held half against Cen.
 4. **The rebuild's stage 1 waits for the user** (**audit**). The rebuild plan's gate asks the user before stage 1 when
-   a Both row of the replay fails, and `both-full` fails. Its code checks only the matching Both row's note, which is
-   empty for R-alone, so it would open the gate without asking. The question goes to the user, or a ruling on what the
-   gate means is recorded first, before stage 1 renders.
+   a Both row of the replay fails, and `both-full` fails. PR #532, the rebuild's gate fix, makes the code enforce this:
+   any failing Both row (`failed_both_rows`) refuses stage 1 until the user's go is recorded as `phase_nr_1_both_go`.
+   That holds once #532 merges; until then the rule stands as the plan's, and no stage 1 render runs without the
+   user's go.
 
 **What it does not say:**
 - how a real note-matched dry guitar performs;
@@ -104,7 +106,8 @@ a guard.
 - **Clean and crunch:** every passing row is decided better in both classes on BKS and on GOAT, except BKS clean on
   `both-alone`, −0.119 [−0.243, +0.004]. The panel's class cells are too thin to read.
 - **Without the heavier lenders** (pool I): blurred −0.196, stem alone −0.258, stem full mix +0.229, both alone
-  −0.162, both full mix +0.142. Every reading holds.
+  −0.162, both full mix +0.142. Every reading holds except `both-full`, which reads undecided (I +0.142
+  [−0.162, +0.445], G +0.009).
 
 ## The adversarial read (post hoc)
 
@@ -121,7 +124,8 @@ a guard.
   - its picks sit at a mean level of 13 of 0 to 19, and 79% come from the worst half;
   - it picks S on 24 of 119 parts and the label on 6;
   - its picks turn the second drive on in 66% against the Control's 34%, with the input gain 3.1 dB higher;
-  - the distances spread less inside a part (SD 0.12 against 0.22), and they barely follow the menu's levels
+  - the distances spread less inside a part (the SD of ln distance, 0.12 against the Control's 0.22 on the clean
+    record and 0.19 on the stem with no other guitar), and they barely follow the menu's levels
     (Spearman −0.08, against 0.77 on the stem with no other guitar).
 - **It is worse than blind even in kinder conditions:** +0.133 on the parts whose stem reaches 3 dB SI-SDR or more,
   and +0.229 without the heavier lenders.
@@ -146,8 +150,8 @@ a guard.
 
 ## The audit's corrections, as taken
 
-1. **The rebuild's gate:** `both-full` fails, so stage 1 waits for the user, or a ruling that the gate means the
-   matching Both row is recorded first (the read, item 4).
+1. **The rebuild's gate:** `both-full` fails, so stage 1 waits for the user (the read, item 4). PR #532 makes the
+   gate code enforce it (`failed_both_rows`, `phase_nr_1_both_go`), pending until it merges.
 2. **The six renders with no distance** are disclosed (what ran).
 3. **Both-alone** "passes" and is not called a heard-size gain over blind; the panel's fragility is said for it too
    (the rows, the panel).
