@@ -543,11 +543,42 @@ def require(*keys):
     return e
 
 
+def main_entry(ledger_text):
+    """(Pure.) The `preset-ladder` entry of a ledger file's text, or None."""
+    d = json.loads(ledger_text)
+    return next((t for t in d.get("tests", []) if t.get("test_id") == LEDGER_ID), None)
+
+
+def on_main():
+    """The ledger as main holds it (origin/main after a fetch), and whether this checkout's code is main's:
+    -> (preset-ladder entry or None, refusal or None)."""
+    import subprocess
+
+    from learn import pipeline_fix as P
+
+    def git(*a):
+        return subprocess.run(["git", "-C", str(P.REPO), *a], capture_output=True, text=True)
+    git("fetch", "-q", "origin", "main")
+    led = git("show", "origin/main:docs/dev-test-ledger.json")
+    if led.returncode:
+        return None, f"main's ledger is not readable: {led.stderr.strip()}"
+    same = git("diff", "--quiet", "origin/main", "--", "learn/note_replay.py", "docs/dev-test-ledger.json")
+    why = None if same.returncode == 0 else "this checkout's learn/note_replay.py or ledger differs from main's: run " \
+                                             "from merged code"
+    return main_entry(led.stdout), why
+
+
 def require_hash(phase, path):
+    """Refuse unless the file's sha256 is `phase`'s in this checkout's ledger AND in main's, and the code is main's."""
     e = require(PHASE, phase)
-    why = hash_refusal(e, phase, file_sha(path))
+    sha = file_sha(path)
+    why = hash_refusal(e, phase, sha)
     if why:
         raise SystemExit(why)
+    m, why = on_main()
+    why = why or hash_refusal(m, phase, sha)
+    if why:
+        raise SystemExit(f"{why} (the hash must be on main before this step)")
     return json.loads(pathlib.Path(path).read_text())
 
 

@@ -388,3 +388,11 @@ def test_the_rows_are_declared():
     assert N.ROWS["stem-alone"] == ("true", "xlnoG") and N.ROWS["stem-full"] == ("true", "xl")
     assert set(N.SINGLE_ROWS) >= {"avg-only", "mild-only"}
     assert N.MENU_N == 23 and N.LABEL_INDEX == 2
+
+
+def test_main_entry_reads_the_ledgers_entry():
+    import json
+
+    text = json.dumps({"tests": [{"test_id": "other"}, {"test_id": N.LEDGER_ID, N.PHASE_DRAW: {"sha256": "x"}}]})
+    assert N.hash_refusal(N.main_entry(text), N.PHASE_DRAW, "x") is None
+    assert N.hash_refusal(N.main_entry(json.dumps({"tests": []})), N.PHASE_DRAW, "x")

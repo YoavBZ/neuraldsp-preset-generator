@@ -300,6 +300,7 @@ row (`table_guard`):
   - Otherwise they are dropped at `pick`, which lists them. The user is asleep, so expect the drop. Nothing waits on
     it.
 - **Sealed sets:** V-real, the reserve, NS and R1 are not touched.
+- **The hashes are on main first.** `phase_replay_draw` and `phase_replay_picks` each go in as their own small PR, checked by the orchestrator and merged by the executor. Every step after `draw` (blur, sep, position-check, render, control, pick) and `score` refuses unless the matching hash is in this checkout's ledger **and** in `origin/main`'s (fetched), and this checkout's `learn/note_replay.py` and ledger equal main's (`require_hash`, `on_main`).
 - **Never overwritten:** every output file refuses to be written twice. The draw, the picks and the report are read
   once.
 - **The machine** (the review's costs item):
