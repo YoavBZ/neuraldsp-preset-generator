@@ -166,3 +166,20 @@ def test_attack_lands_on_the_onset_and_skips_count():
     assert rep["played"] == 1 and rep["skipped"] == 1
     env = np.abs(y)
     assert abs(int(np.argmax(env > 0.5 * env.max())) / SR - 1.0) < 0.004
+
+
+def test_coarse_offset_then_snap():
+    rng = np.random.default_rng(3)
+    di = np.zeros(4 * SR)
+    true_on = [0.5, 1.1, 1.8, 2.6, 3.2]
+    for t in true_on:
+        a = int(t * SR)
+        di[a:a + int(0.3 * SR)] += 0.2 * rng.standard_normal(int(0.3 * SR)) * np.exp(-np.arange(int(0.3 * SR)) / 2400)
+    late = [{"on": t + 0.09, "off": t + 0.3, "pitch": 60} for t in true_on]      # the MIDI 90 ms late
+    off = N.coarse_offset(late, di)
+    assert abs(off + 0.09) < 0.004
+    snapped, _ = N.refine_onsets(N.shifted_notes(late, off), di)
+    assert all(abs(n["on"] - t) < 0.004 for n, t in zip(snapped, true_on))
+    unsnapped, sh = N.refine_onsets(late, di)                                    # the +-50 ms snap alone misses
+    assert sh == [0.0] * 5
+    assert N.coarse_offset(late, np.zeros(4 * SR)) == 0.0

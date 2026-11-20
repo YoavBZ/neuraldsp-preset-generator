@@ -76,6 +76,7 @@ DEAD_S, DEAD_DB = 0.040, -6.0           # a dead note: a 40 ms pluck, 6 dB down
 PALM_S = 0.150                          # a palm-muted note: held at most 150 ms
 LEGATO_DB = -6.0                        # hammer-on, pull-off or slide-into: no pick attack, 6 dB down
 GHOST_DB = -10.0
+EARLY_S = 0.300                         # a sample's own pitch is read over its first 300 ms from the attack
 MAX_SHIFT_SEMITONES = 2                 # a note may be resampled this far from its sample's pitch, no further
 LEVEL_SPAN_S = 0.050                    # `nr-level` and `nr-oracle` read the 50 ms after each onset group
 LEVEL_CLAMP_DB = 9.0                    # `nr-level`'s gain about the window's median, held within +-9 dB
@@ -958,17 +959,24 @@ CARRY_TAB_SHARE = 0.8                   # stage 1 reads beside: units with at le
 
 # --- P4: the re-synthesis ------------------------------------------------------------------------------------------------
 
+def denoise_above(x, rate=SR):
+    """The declared hiss removal: noisereduce (non-stationary, prop 0.9, time constant 2 s) on the content above
+    DENOISE_ABOVE_HZ only, the rest untouched (the riff library's lesson)."""
+    import noisereduce
+    import scipy.signal as ss
+
+    low = ss.sosfiltfilt(ss.butter(4, DENOISE_ABOVE_HZ, "lp", fs=rate, output="sos"), x)
+    return low + noisereduce.reduce_noise(y=x - low, sr=rate, stationary=False, prop_decrease=0.9, time_constant_s=2.0)
+
+
 def prepare_sample(x, rate, cents_off):
     """One EGFxSet note made ready (the riff library's lessons, `build_riffs.prepared_note`, with the retune applied
     later): denoised above 3 kHz (noisereduce, non-stationary), trimmed to start PRE_ATTACK_S before its attack with a
     2 ms fade in, set to a common level by its first 0.3 s from the attack. -> (audio, own cents from equal
     temperament)."""
-    import noisereduce
     import numpy as np
-    import scipy.signal as ss
 
-    low = ss.sosfiltfilt(ss.butter(4, DENOISE_ABOVE_HZ, "lp", fs=rate, output="sos"), x)
-    y = low + noisereduce.reduce_noise(y=x - low, sr=rate, stationary=False, prop_decrease=0.9, time_constant_s=2.0)
+    y = denoise_above(x, rate)
     a = attack_index(y, rate) or 0
     y = y[max(0, a - int(PRE_ATTACK_S * rate)):].copy()
     fade = int(NOTE_FADE_IN_S * rate)
@@ -1003,7 +1011,7 @@ class Bank:
         self.pickup, self.root = pickup, root
         self.doc = notes_doc
         self.loader = loader
-        self._prep, self._shift = {}, {}
+        self._prep, self._shift, self._early = {}, {}, {}
 
     def ok(self, s, f):
         if self.doc is None:
@@ -1012,7 +1020,14 @@ class Bank:
         return bool(r and r["ok"])
 
     def own_cents(self, s, f):
-        return self.doc["notes"][f"{self.pickup}/{s}-{f}"]["cents"] if self.doc else 0.0
+        """The sample's own pitch against equal temperament where it is played: its first EARLY_S from the attack
+        (`global_tuning_cents`). P2's figure (0.3-2.3 s in) reads about 4.5 cents flatter, the pick attack's glide
+        (measured on 10 notes at stage 1's declaration), and most notes in a part sound only their first few hundred
+        ms; P2's cents still gate wrong notes."""
+        if (s, f) not in self._early:
+            y = self.prepared(s, f)
+            self._early[(s, f)] = global_tuning_cents(y[:int(EARLY_S * SR)])
+        return self._early[(s, f)]
 
     def prepared(self, s, f):
         if (s, f) not in self._prep:
@@ -1029,7 +1044,7 @@ class Bank:
                     raise SystemExit(f"{self.pickup}/{s}-{f}: the file's hash does not match notes.json")
                 x, rate = sf.read(io.BytesIO(raw), dtype="float64", always_2d=True)
                 x = x.mean(1)
-            self._prep[(s, f)] = prepare_sample(x, rate, self.own_cents(s, f))[0]
+            self._prep[(s, f)] = prepare_sample(x, rate, 0.0)[0]
         return self._prep[(s, f)]
 
     def note(self, s, f, cents):
@@ -1189,31 +1204,39 @@ def group_spans(notes, groups, length, rate=SR):
     return spans
 
 
-def level_gains(notes, reference, rate=SR, clamp=LEVEL_CLAMP_DB):
-    """(Pure.) `nr-level`: each onset group's gain from the reference's RMS over its span, in dB about the median of
-    all spans, held within +-clamp."""
+MIN_SPAN_S = 0.010                      # a group whose level span inside the window is shorter (it began before the
+                                        # window) keeps 0 dB and stays out of the median
+
+
+def _span_gains(db, ok, clamp):
+    """(Pure.) Gains about the median of the usable spans' dB, held within +-clamp; 0 dB where not usable."""
     import numpy as np
 
+    use = [d for d, k in zip(db, ok) if k]
+    if not use:
+        return [0.0] * len(db)
+    med = float(np.median(use))
+    return [float(np.clip(d - med, -clamp, clamp)) if k else 0.0 for d, k in zip(db, ok)]
+
+
+def level_gains(notes, reference, rate=SR, clamp=LEVEL_CLAMP_DB):
+    """(Pure.) `nr-level`: each onset group's gain from the reference's RMS over its span, in dB about the median of
+    all usable spans, held within +-clamp (a group begun before the window: 0 dB)."""
     groups = onset_groups(notes)
     spans = group_spans(notes, groups, len(reference), rate)
-    db = np.array([20 * math.log10(span_rms(reference, a, b) + 1e-12) for a, b in spans])
-    if not len(db):
-        return []
-    return list(np.clip(db - np.median(db), -clamp, clamp))
+    ok = [notes[g[0]]["on"] >= 0 and b - a >= MIN_SPAN_S * rate for g, (a, b) in zip(groups, spans)]
+    db = [20 * math.log10(span_rms(reference, a, b) + 1e-12) for a, b in spans]
+    return _span_gains(db, ok, clamp)
 
 
 def oracle_gains(notes, plain, di, rate=SR, clamp=ORACLE_CLAMP_DB):
     """(Pure.) `nr-oracle`: each onset group's gain so the plain re-synthesis' RMS over its span equals the true DI's
     there, about the median ratio (the overall level is set afterwards), held within +-clamp. Diagnostic only."""
-    import numpy as np
-
     groups = onset_groups(notes)
     spans = group_spans(notes, groups, min(len(di), len(plain)), rate)
-    r = np.array([20 * math.log10((span_rms(di, a, b) + 1e-12) / (span_rms(plain, a, b) + 1e-12))
-                  for a, b in spans])
-    if not len(r):
-        return []
-    return list(np.clip(r - np.median(r), -clamp, clamp))
+    ok = [notes[g[0]]["on"] >= 0 and b - a >= MIN_SPAN_S * rate for g, (a, b) in zip(groups, spans)]
+    r = [20 * math.log10((span_rms(di, a, b) + 1e-12) / (span_rms(plain, a, b) + 1e-12)) for a, b in spans]
+    return _span_gains(r, ok, clamp)
 
 
 def rise_curve(x, rate=SR):
@@ -1230,6 +1253,36 @@ def rise_curve(x, rate=SR):
     idx = np.arange(REFINE_FRAME)[None, :] + hop * np.arange(n)[:, None]
     e = 10 * np.log10(np.mean(h[idx] ** 2, axis=1) + 1e-12)
     return np.concatenate([[0.0], np.diff(e)]), hop
+
+
+COARSE_S = 0.150                        # the onset step's first stage: one offset per window, from rises within +-150 ms
+
+
+def coarse_offset(notes, di, rate=SR, window=COARSE_S):
+    """(Pure.) The window's constant offset between the notes and the true DI (stage 1's oracle onset step, first
+    stage): for each onset group the steepest rise of the DI within +-window of its onset (kept when at least
+    REFINE_MIN_RISE_DB), and the median of those shifts. GOAT's fine-aligned MIDI runs about 30 ms late against the DI's
+    attacks on most items (measured at P8's build), beyond what the +-50 ms snap alone can bring back. -> seconds (0.0
+    with no rise)."""
+    import numpy as np
+
+    rise, hop = rise_curve(di, rate)
+    shifts = []
+    for g in onset_groups(notes):
+        t = notes[g[0]]["on"]
+        lo = max(0, int((t - window) * rate) // hop)
+        hi = min(len(rise), int((t + window) * rate) // hop + 1)
+        if hi <= lo:
+            continue
+        j = lo + int(np.argmax(rise[lo:hi]))
+        if rise[j] >= REFINE_MIN_RISE_DB:
+            shifts.append((j * hop + REFINE_FRAME / 2) / rate - t)
+    return float(np.median(shifts)) if shifts else 0.0
+
+
+def shifted_notes(notes, offset):
+    """(Pure.) Every note moved by `offset` seconds."""
+    return [{**n, "on": n["on"] + offset, "off": n["off"] + offset} for n in notes]
 
 
 def refine_onsets(notes, di, rate=SR):
@@ -1319,8 +1372,15 @@ def loudness(y, rate=SR):
     return pyloudnorm.Meter(rate).integrated_loudness(y)
 
 
-def at_lufs(y, lufs, rate=SR):
-    return y * 10 ** ((lufs - loudness(y, rate)) / 20)
+def at_lufs(y, lufs, rate=SR, tol=0.01, passes=4):
+    """`y` at `lufs` integrated loudness. The gating's absolute -70 LUFS gate makes one gain step inexact when parts of
+    the signal sit near it, so the step repeats until within `tol` LU (at most `passes` times)."""
+    for _ in range(passes):
+        d = lufs - loudness(y, rate)
+        if abs(d) <= tol:
+            break
+        y = y * 10 ** (d / 20)
+    return y
 
 
 def rebuild_dry(arm, notes, length, bank, reference, di=None, finish=None, rate=SR):
@@ -1344,6 +1404,8 @@ def rebuild_dry(arm, notes, length, bank, reference, di=None, finish=None, rate=
         y, _ = synthesise(notes, length, bank, tune, level_gains(notes, reference, rate), rate)
     else:
         y, _ = synthesise(notes, length, bank, tune, oracle_gains(notes, plain, di, rate), rate)
+    if arm != "nr-plain":
+        y = denoise_above(y, rate)          # the level gain lifts each note's residual hiss: removed again after it
     if finish is not None:
         y = finish(y)
     y = at_lufs(y, ASSUMED_LUFS, rate)
