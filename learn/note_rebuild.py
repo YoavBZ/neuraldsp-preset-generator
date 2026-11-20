@@ -959,17 +959,24 @@ CARRY_TAB_SHARE = 0.8                   # stage 1 reads beside: units with at le
 
 # --- P4: the re-synthesis ------------------------------------------------------------------------------------------------
 
+def denoise_above(x, rate=SR):
+    """The declared hiss removal: noisereduce (non-stationary, prop 0.9, time constant 2 s) on the content above
+    DENOISE_ABOVE_HZ only, the rest untouched (the riff library's lesson)."""
+    import noisereduce
+    import scipy.signal as ss
+
+    low = ss.sosfiltfilt(ss.butter(4, DENOISE_ABOVE_HZ, "lp", fs=rate, output="sos"), x)
+    return low + noisereduce.reduce_noise(y=x - low, sr=rate, stationary=False, prop_decrease=0.9, time_constant_s=2.0)
+
+
 def prepare_sample(x, rate, cents_off):
     """One EGFxSet note made ready (the riff library's lessons, `build_riffs.prepared_note`, with the retune applied
     later): denoised above 3 kHz (noisereduce, non-stationary), trimmed to start PRE_ATTACK_S before its attack with a
     2 ms fade in, set to a common level by its first 0.3 s from the attack. -> (audio, own cents from equal
     temperament)."""
-    import noisereduce
     import numpy as np
-    import scipy.signal as ss
 
-    low = ss.sosfiltfilt(ss.butter(4, DENOISE_ABOVE_HZ, "lp", fs=rate, output="sos"), x)
-    y = low + noisereduce.reduce_noise(y=x - low, sr=rate, stationary=False, prop_decrease=0.9, time_constant_s=2.0)
+    y = denoise_above(x, rate)
     a = attack_index(y, rate) or 0
     y = y[max(0, a - int(PRE_ATTACK_S * rate)):].copy()
     fade = int(NOTE_FADE_IN_S * rate)
@@ -1397,6 +1404,8 @@ def rebuild_dry(arm, notes, length, bank, reference, di=None, finish=None, rate=
         y, _ = synthesise(notes, length, bank, tune, level_gains(notes, reference, rate), rate)
     else:
         y, _ = synthesise(notes, length, bank, tune, oracle_gains(notes, plain, di, rate), rate)
+    if arm != "nr-plain":
+        y = denoise_above(y, rate)          # the level gain lifts each note's residual hiss: removed again after it
     if finish is not None:
         y = finish(y)
     y = at_lufs(y, ASSUMED_LUFS, rate)

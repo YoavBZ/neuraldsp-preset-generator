@@ -409,10 +409,18 @@ single blur, avg first when both pass, mild beside). Tested on both paths, go an
   - *Hiss floor:* the first draft took the true DI's gaps only, where a note still ringing in the arm read as hiss; it
     now takes frames quiet in both.
   - *Peak:* sparse windows at −22.9 LUFS peak over 1 in the true DI too, so the peak is judged against the true DI's.
-  - With the rules as fixed: **2 of 54 dev dry guitars fail** (item_150 `nr-plain` level spread 3.5 dB; item_102
-    `nr-level` hiss floor 9.4 dB over the true DI's, where `nr-level` lifts quiet notes and their residual hiss).
-    item_102 is one of the four seeded clip items, so as declared its failure would refuse `render`: the
-    orchestrator rules (the user hears it on the page either way).
+  - With the rules as fixed, 2 of 54 dev dry guitars failed: item_150 `nr-plain`, level spread 3.5 dB; and item_102
+    `nr-level`, hiss floor 9.4 dB over the true DI's, where the level gain lifts quiet notes and their residual hiss.
+  - **The orchestrator's ruling (2026-11-20, before any result): fix the cause, not the threshold.** In the level-gain
+    arms (`nr-level`, `nr-oracle`) the declared hiss removal above 3 kHz (`denoise_above`, the riff library's
+    parameters) now runs again on the dry guitar after the level gain. The fallback, had item_102 still failed, was
+    to waive the hiss check for those arms only, as a declared known confound on their rows; it was not needed.
+  - **Re-run with the thresholds unchanged** (27 development windows, all three arms, 81 dry guitars; nothing saved):
+    item_102's hiss floor is now +3.4 dB (`nr-level`) and +3.1 dB (`nr-oracle`) over the true DI's, inside the 6 dB
+    rule. **1 of 81 fails:** item_150 `nr-plain`, plain-group level spread 3.5 dB against 3.0. It is not a clip item,
+    so it blocks nothing; it is reported in the hand-back as a known spread.
+  - **No threshold was tuned to pass a known item.** The rules were fixed after measuring what the checks measured on
+    development items (the four flaws above), and not changed again after the item_102 and item_150 failures.
 - The loudness step now converges (`at_lufs` repeats until within 0.01 LU: the −70 LUFS absolute gate made one step
   miss by 0.4 LU on the oracle's large gains).
 
