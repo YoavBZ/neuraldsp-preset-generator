@@ -88,3 +88,18 @@ def test_every_command_refuses_without_the_phase(monkeypatch, cmd):
     monkeypatch.setattr(NR, "ledger_entry", lambda: {"test_id": NR.LEDGER_ID, NR.PHASE_P: "declared"})
     with pytest.raises(SystemExit, match="phase_nr_1"):
         getattr(S, cmd)(type("A", (), {"shard": (0, 1)})())
+
+
+def test_declared_subset():
+    keys = [f"goat|{j}" for j in range(60)]
+    decl = {"draw_sha256": "d", "parts": 60, "keys_sha256": S.NR.content_sha(sorted(keys))}
+    assert S.subset_refusal("d", list(reversed(keys)), decl) is None
+    assert "draw" in S.subset_refusal("e", keys, decl)
+    assert "declared 60" in S.subset_refusal("d", keys[:59], decl)
+    assert "declared 60" in S.subset_refusal("d", keys[:59] + ["goat|x"], decl)
+    assert S.DECLARED_SUBSET["parts"] == 60 and len(S.DECLARED_SUBSET["keys_sha256"]) == 64
+
+
+def test_without_f0():
+    parts = [{"pkey": "a", "alignment_f": 0.0}, {"pkey": "b", "alignment_f": 0.8}, {"pkey": "c", "alignment_f": None}]
+    assert S.without_f0(parts) == ["b", "c"]

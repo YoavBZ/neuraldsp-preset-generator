@@ -345,9 +345,13 @@ MIDI's notes land on real attacks (precision within ±50 ms 0.83 to 1.0 on 7 of 
 as many rises as onset groups on 9 of 10 windows, 2.2 times even on an item aligned at F 0.96, so a rise count over-counts (releases, mutes) and is
 not used as a measure. Both stages and their shifts are reported per part.
 
-**The subset (from stage P, the replay's draw).** 60 of the 72 drawn GOAT parts carry (60 items; 31 clean, 29 crunch;
-folds 16, 14, 15, 15); 7 have no fine-aligned MIDI and 5 fewer than 8 notes. One carrying part has GOAT's alignment F
-of 0.0: it stays in as declared and is read in the lowest tertile (the tertiles are the breakdown for exactly this).
+**The subset, hashed now (from stage P and the replay's draw, before the replay's `pick` or `score`).** 60 of the 72
+drawn GOAT parts carry (60 items; 31 clean, 29 crunch; folds 16, 14, 15, 15); 7 have no fine-aligned MIDI and 5 fewer
+than 8 notes. Declared in code (`DECLARED_SUBSET`): the replay's draw file sha256 `c0f834ad…f470` and the sorted part
+keys' sha256 `6570fa70…dac9`; `subset` refuses any other (`subset_refusal`), and its file's sha256 then goes into the
+ledger as `phase_nr_1_subset`. One carrying part (`item_169`, SW50R) has GOAT's alignment F of 0.0: it stays in as
+declared and is read in the lowest tertile, and **every row is also read beside without it** (`without_alignment_f0`),
+so its effect is visible either way.
 
 **Renders (the replay's measured rates; the position check sets the mode).** One primed process a part and arm: 60 ×
 3 × 24 = 4,320; each render primed alone: 8,280. At the ladder's 68 a minute on 3 processes, about 64 min or 2 h 2 min.

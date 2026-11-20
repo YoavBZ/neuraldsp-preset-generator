@@ -40,6 +40,11 @@ CLIP_SEED = 20261211                    # the ear check's development items
 CLIP_ITEMS = 4
 CLIP_AMP = "ac20"
 TERTILES = 3
+# The carrying subset, hashed at declaration (2026-11-20, before the replay's `pick` or `score`): the replay's draw file
+# and the sorted part keys `carrying_subset` gives on stage P's true-notes.json. `subset` refuses any other.
+DECLARED_SUBSET = {"draw_sha256": "c0f834ada8d1d42b337be02a5f10812a3888353e6691a943500bf4a4b344f470",
+                   "parts": 60, "keys_sha256": "6570fa70ba80f06119c7de08168b98caad732a68fe694650dec26d690387dac9"}
+BESIDE_F0 = "without_alignment_f0"      # every row read beside without the parts whose GOAT alignment F is 0.0
 CODE_FILES = ("learn/note_rebuild.py", "learn/note_rebuild_s1.py")
 
 
@@ -114,6 +119,21 @@ def gate_refusal(report, replay_main, nr_main):
     if (report.get("outcome") or {}).get("both_notes") and PHASE_BOTH_GO not in (nr_main or {}):
         return "the replay's outcome carries a Both-row note: the user is asked before stage 1 (phase_nr_1_both_go)"
     return None
+
+
+def subset_refusal(draw_sha, keys, declared=DECLARED_SUBSET):
+    """(Pure.) Why the subset is not the one declared, or None: the replay's draw file and the sorted part keys must
+    hash to the declaration's."""
+    if draw_sha != declared["draw_sha256"]:
+        return "the replay's draw is not the one the subset was declared on"
+    if len(keys) != declared["parts"] or NR.content_sha(sorted(keys)) != declared["keys_sha256"]:
+        return "the carrying parts are not the declared 60"
+    return None
+
+
+def without_f0(sub_parts):
+    """(Pure.) The subset's part keys whose GOAT alignment F is not 0.0 (the beside row)."""
+    return [k["pkey"] for k in sub_parts if k.get("alignment_f") != 0.0]
 
 
 def ear_refusal(nr_main):
@@ -242,6 +262,9 @@ def cmd_subset(_args):
     draw = R.require_draw()
     tn = NR.load_doc("true-notes.json")
     keep, out = carrying_subset(draw["parts"], tn["units"])
+    why = subset_refusal(R.file_sha(R.draw_path()), [k["pkey"] for k in keep])
+    if why:
+        raise SystemExit(why)
     for k in keep:
         rec = tn["items"][k["item"]]
         k["notes_sha256"] = rec["notes_sha256"]
@@ -603,11 +626,13 @@ def cmd_score(_args):
     hs = {p["pkey"]: R.h_of(sd.held((p["set"], p["unit"], p["amp"]), p["menu"])) for p in parts}
     true_d = {p["pkey"]: R.load_dist("true", p)["distances"]["clean"] for p in parts}
     rows = {}
+    nof0 = without_f0(sub["parts"])
     for name, dry in (("control", "true"), ("blurred", "avg+mild")):     # the replay's, on exactly the subset
         per = {p["pkey"]: R.part_numbers(R.load_dist(dry, p)["distances"]["clean"], hs[p["pkey"]]) for p in parts}
         rows[name] = {"parts": per, **{q: goat_row([p["pkey"] for p in parts], {k: (v or {}).get(q)
                                                                                 for k, v in per.items()})
-                                       for q in ("G", "I", "blind")}}
+                                       for q in ("G", "I", "blind")},
+                      BESIDE_F0: {q: goat_row(nof0, {k: (per.get(k) or {}).get(q) for k in nof0}) for q in ("G", "I")}}
     for arm in NR.ARMS:
         per = {}
         for p in parts:
@@ -624,6 +649,7 @@ def cmd_score(_args):
         rows[arm] = {"parts": per, **{q: goat_row(keys, {k: (v or {}).get(q) for k, v in per.items()})
                                       for q in ("G", "I", "G_nl", "I_nl")},
                      "breakdowns": breakdowns(sub["parts"], per, goat_row),
+                     BESIDE_F0: {q: goat_row(nof0, {k: (per.get(k) or {}).get(q) for k in nof0}) for q in ("G", "I")},
                      "no_pick": sorted(k for k, v in per.items() if v is None)}
     out = {"plan": NR.PLAN, "ledger": f"{LEDGER_ID} {PHASE_1}", "subset_sha256": NR.file_sha(subset_path()),
            "picks_sha256": NR.file_sha(picks_path()), "time": time.strftime("%Y-%m-%d %H:%M:%S"), "rows": rows}
