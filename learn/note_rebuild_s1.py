@@ -48,6 +48,7 @@ DECLARED_SUBSET = {"draw_sha256": "c0f834ada8d1d42b337be02a5f10812a3888353e6691a
                    "parts": 60, "keys_sha256": "6570fa70ba80f06119c7de08168b98caad732a68fe694650dec26d690387dac9"}
 BESIDE_F0 = "without_alignment_f0"      # every row read beside without the parts whose GOAT alignment F is 0.0
 BESIDE_READER = "without_reader_fail"   # ... and without the parts whose item fails its own MIDI reader check
+BESIDE_PRECHECK = "without_precheck_fail"   # ... and without the parts where a deciding arm fails a pre-check
 CODE_FILES = ("learn/note_rebuild.py", "learn/note_rebuild_s1.py")
 
 
@@ -374,20 +375,38 @@ def check_bursts(true_render, dry_render, onsets_s, rate=NR.SR, c=PRECHECK):
             "why": [] if ok else [f"bursts {bd:.2f}/s against the true DI's {bt:.2f}/s"]}
 
 
-def precheck_refusal(build, clips_index):
-    """(Pure.) Why `render` may not start on the pre-checks, or None: every arm of every part in build.json, and every
-    clip check in the clips' index, must pass."""
+PRECHECK_MAX_SHARE = 0.10               # render is refused when more than this share of a deciding arm's parts fail
+DECIDING_ARMS = ("nr-plain", "nr-level")
+
+
+def precheck_failures(build):
+    """(Pure.) {arm: [part key]} of the build's dry guitars that fail a pre-check, every arm."""
+    out = {a: [] for a in NR.ARMS}
+    for k, r in sorted(build["parts"].items()):
+        for a, x in r["arms"].items():
+            if not (x.get("precheck") or {}).get("ok"):
+                out.setdefault(a, []).append(k)
+    return out
+
+
+def precheck_refusal(build, clips_index, max_share=PRECHECK_MAX_SHARE):
+    """(Pure.) Why `render` may not start on the pre-checks, or None. Declared 2026-11-20 before `build` (PR #528's
+    re-review): refused on any failing clip check (the clips are what the user hears), or when more than `max_share`
+    of a deciding arm's parts fail (a systematic fault); `nr-oracle`'s failures never block. Otherwise render goes on,
+    each failure is listed, and `score` reads every row beside without the failing parts (`without_precheck_fail`)."""
     if build is None:
         return "run `build` first"
-    bad = [f"{k} {a}" for k, r in build["parts"].items() for a, x in r["arms"].items()
-           if not (x.get("precheck") or {}).get("ok")]
-    if bad:
-        return f"the build's pre-checks fail on {len(bad)} dry guitars, e.g. {bad[0]}"
     if clips_index is None:
         return "run `clips` first"
-    badc = [c["file"] for c in clips_index.get("checks", []) if not c.get("ok")]
-    if badc or not clips_index.get("checks"):
-        return f"the clips' pre-checks fail ({len(badc)}) or are missing"
+    checks = clips_index.get("checks") or []
+    badc = [c["file"] for c in checks if not c.get("ok")]
+    if not checks or badc:
+        return f"the clips' pre-checks fail ({len(badc)}: {badc[:3]}) or are missing"
+    n = len(build["parts"])
+    fails = precheck_failures(build)
+    for a in DECIDING_ARMS:
+        if n and len(fails.get(a, [])) > max_share * n:
+            return f"{len(fails[a])} of {n} {a} dry guitars fail a pre-check: a systematic fault (over {max_share:.0%})"
     return None
 
 
@@ -717,6 +736,9 @@ def cmd_render(args):
     why = precheck_refusal(build, json.loads(ci.read_text()) if ci.exists() else None)
     if why:
         raise SystemExit(why)
+    fl = {a: v for a, v in precheck_failures(build).items() if v}
+    if fl:
+        print(f"pre-check failures (rendered; read beside without them): {json.dumps(fl)}", flush=True)
     if build["subset_sha256"] != NR.file_sha(subset_path()):
         raise SystemExit("build.json was made from another subset")
     from learn import note_replay as R              # after the refusals
@@ -852,11 +874,14 @@ def n1_outcome(readings):
     return {"code": code, "next": dict((c, t) for c, _, t in NR.N1_TABLE)[code], "arm": NR.n1_arm(p, lv)}
 
 
-def beside_sets(sub_parts):
-    """(Pure.) The beside rows' part keys: without the alignment-F 0.0 part, and without the parts whose item fails its
-    own MIDI reader check (stage P's `reader_check`)."""
+def beside_sets(sub_parts, failures=None):
+    """(Pure.) The beside rows' part keys: without the alignment-F 0.0 part, without the parts whose item fails its own
+    MIDI reader check (stage P's `reader_check`), and without the parts where nr-plain or nr-level fails a pre-check
+    (`precheck_failures`; one set for every row)."""
+    bad = {k for a in DECIDING_ARMS for k in (failures or {}).get(a, [])}
     return {BESIDE_F0: without_f0(sub_parts),
-            BESIDE_READER: [k["pkey"] for k in sub_parts if k.get("reader_ok") is not False]}
+            BESIDE_READER: [k["pkey"] for k in sub_parts if k.get("reader_ok") is not False],
+            BESIDE_PRECHECK: [k["pkey"] for k in sub_parts if k["pkey"] not in bad]}
 
 
 def cmd_score(_args):
@@ -903,7 +928,11 @@ def cmd_score(_args):
 
     def goat_row(keys, values):
         return R.summary(sd.units, [by[k] for k in keys], values, band)["goat"]
-    besides = beside_sets(sub["parts"])
+    build = json.loads(build_path().read_text())
+    if build["subset_sha256"] != NR.file_sha(subset_path()):
+        raise SystemExit("build.json was made from another subset")
+    failures = precheck_failures(build)
+    besides = beside_sets(sub["parts"], failures)
 
     def with_besides(per, qs):
         keys = [p["pkey"] for p in parts]
@@ -933,6 +962,7 @@ def cmd_score(_args):
                      "no_pick": sorted(k for k, v in per.items() if v is None)}
     out = {"plan": NR.PLAN, "ledger": f"{LEDGER_ID} {PHASE_1}", "subset_sha256": NR.file_sha(subset_path()),
            "picks_sha256": NR.file_sha(picks_path()), "replay_outcome": outcome, "comparison_dry": main_dry,
+           "precheck_failures": failures,
            "time": time.strftime("%Y-%m-%d %H:%M:%S"), "rows": rows}
     NR.write_once(rows_path(), out)                    # the rows are saved before the code is read
     readings = {arm: safe_reading(rows[arm]["G"], rows[arm]["I"]) for arm in NR.ARMS}

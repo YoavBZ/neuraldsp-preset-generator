@@ -81,17 +81,35 @@ def test_beside_sets_and_safe_readings():
     assert S.n1_outcome({"nr-plain": "fails", "nr-level": "passes"})["arm"] == "nr-level"
 
 
+def _build(fails, n=60):
+    """fails: {arm: number of failing parts}."""
+    parts = {}
+    for j in range(n):
+        parts[f"p{j:02d}"] = {"arms": {a: {"precheck": {"ok": j >= fails.get(a, 0)}} for a in S.NR.ARMS}}
+    return {"parts": parts}
+
+
 def test_precheck_refusal():
-    good = {"parts": {"p": {"arms": {"nr-plain": {"precheck": {"ok": True}}}}}}
-    bad = {"parts": {"p": {"arms": {"nr-plain": {"precheck": {"ok": False}}}}}}
     ci = {"checks": [{"file": "x", "ok": True}]}
-    assert S.precheck_refusal(good, ci) is None
+    assert S.precheck_refusal(_build({}), ci) is None
+    assert S.precheck_refusal(_build({"nr-plain": 6, "nr-level": 6}), ci) is None              # 10%: renders
+    assert "systematic" in S.precheck_refusal(_build({"nr-plain": 7}), ci)                       # over 10%
+    assert "systematic" in S.precheck_refusal(_build({"nr-level": 7}), ci)
+    assert S.precheck_refusal(_build({"nr-oracle": 60}), ci) is None                             # never blocks
     assert "build" in S.precheck_refusal(None, ci)
-    assert "fail on 1" in S.precheck_refusal(bad, ci)
-    assert "clips" in S.precheck_refusal(good, None)
-    assert "fail (1)" in S.precheck_refusal(good, {"checks": [{"file": "x", "ok": False}]})
-    assert "missing" in S.precheck_refusal(good, {"checks": []})
+    assert "clips" in S.precheck_refusal(_build({}), None)
+    assert "clips' pre-checks fail" in S.precheck_refusal(_build({}), {"checks": [{"file": "x", "ok": False}]})
+    assert "missing" in S.precheck_refusal(_build({}), {"checks": []})
     assert S.tuning_diff(49.0, -49.0) == pytest.approx(-2.0)
+
+
+def test_precheck_failures_and_beside_row():
+    b = _build({"nr-plain": 2, "nr-oracle": 3})
+    f = S.precheck_failures(b)
+    assert f["nr-plain"] == ["p00", "p01"] and f["nr-level"] == [] and f["nr-oracle"] == ["p00", "p01", "p02"]
+    parts = [{"pkey": k, "alignment_f": 0.8, "reader_ok": True} for k in b["parts"]]
+    keep = S.beside_sets(parts, f)[S.BESIDE_PRECHECK]
+    assert "p00" not in keep and "p01" not in keep and "p02" in keep and len(keep) == 58       # nr-oracle not counted
 
 
 def test_ear_refusal():

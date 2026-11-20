@@ -421,6 +421,13 @@ single blur, avg first when both pass, mild beside). Tested on both paths, go an
     so it blocks nothing; it is reported in the hand-back as a known spread.
   - **No threshold was tuned to pass a known item.** The rules were fixed after measuring what the checks measured on
     development items (the four flaws above), and not changed again after the item_102 and item_150 failures.
+- **What a pre-check failure does (declared 2026-11-20 before `build`, PR #528's re-review).** Development items fail
+  about 1 in 81, so among the subset's 180 dry guitars at least one failure is likely, and a single one must not stop
+  the night. `render` is refused only on a failing clip check (the clips are what the user hears) or when more than
+  10% of a deciding arm's parts (`nr-plain`, `nr-level`) fail, a systematic fault (`precheck_refusal`,
+  `PRECHECK_MAX_SHARE`). `nr-oracle`'s failures never block. Otherwise render goes on, every failure is listed (in the
+  render log and in the report), and `score` reads every row beside without the parts where a deciding arm fails
+  (`without_precheck_fail`, one set for every row).
 - The loudness step now converges (`at_lufs` repeats until within 0.01 LU: the −70 LUFS absolute gate made one step
   miss by 0.4 LU on the oracle's large gains).
 
