@@ -370,3 +370,14 @@ def test_source_for():
 
 def test_n2_rows_declared_in_order():
     assert N.N2_ROWS == ("B-clean", "B-alone", "B-full")
+
+
+def test_row_reading_agrees_with_the_replays():
+    R = pytest.importorskip("learn.note_replay")
+    grid = [x / 100 for x in range(-40, 21, 3)]
+    for m in grid:
+        for lo_d in (0.01, 0.05, 0.12):
+            for hi_d in (0.01, 0.06, 0.15):
+                g = _iv(m, m - lo_d, m + hi_d)
+                for i in (_iv(-0.2, -0.3, -0.12), _iv(m, m - hi_d, m + lo_d), _iv(0.0, -0.05, 0.05)):
+                    assert N.row_reading(g, i) == R.row_reading(g, i)["reading"], (g, i)
