@@ -440,3 +440,27 @@ on a grid.
 **Nits taken:** true-notes.json's file sha256 is pinned in `DECLARED_SUBSET`; `score` checks each replay distance file
 against the replay's hashed picks (`dist_sha256`); a row with no interval reads N1-incomplete instead of crashing after
 the rows are saved.
+
+### 11b. Amended after `build` and the first `clips` attempt (2026-11-20, before any stage-1 render is read; ledger `phase_nr_1_amend`)
+
+**The clips crashed on a code fault.** The plugin's renders are stereo, (samples, 2), and the burst check assumed mono.
+`mono` now folds every render before a frame measure (`_frames_db`, `burst_rate`); tested on a stereo array. The six
+clips written before the crash were moved aside (`note-rebuild-ear.failed-stereo-…`), not deleted; `clips` runs again
+from the start.
+
+**The peak check is now report-only.** `build` ran from main at 26e2b635 (60 parts × 3 arms, 225 s; build.json
+sha256 `0e5c077c…4e3e`). Its pre-checks failed 48 of 180 dry guitars, 39 of them on the peak rule (at most 6 dB over
+the true DI's peak at the same loudness), which would have refused `render` (nr-plain 8 of 60, over the 10% bar).
+That rule was mine, not the review's, and it does not serve its purpose:
+- The purpose was to catch clipping. At the measure's −22.9 LUFS, peaks above full scale are normal: 8 of the 60
+  true DIs the replay itself renders exceed 1.0 (up to 2.02), and 21 of the 60 `nr-plain` guitars do (up to 2.61).
+- A peak a few dB over the true DI's is the re-synthesis' sharper attacks (median +2.3 dB `nr-plain`, +3.2 `nr-level`,
+  +4.1 `nr-oracle`), the property stage 1 is testing, not a build fault.
+
+So the peak is now a report-only flag (`flagged`), and every row is also read beside without the parts where a
+deciding arm carries it (`without_peak_flag`, 43 of 60 parts kept). The blocking checks are unchanged: non-finite
+samples, tuning, hiss floor, plain-group level spread, and the clips' burst check. build.json is written once, so
+`render` re-derives each stored record's blocking failures under the amended rule (`blocking_why`). Under it: **4 of
+60 parts fail on each arm** (`nr-plain`: 3 on tuning, 1 on spread), under the 10% bar, so `render` would proceed
+once the gate opens. The row without them (`without_precheck_fail`) keeps 54 parts. No threshold was changed. One
+rule moved from blocking to report-only, for the reasons above, before any render of stage 1.

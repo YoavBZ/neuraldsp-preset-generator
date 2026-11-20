@@ -49,6 +49,7 @@ DECLARED_SUBSET = {"draw_sha256": "c0f834ada8d1d42b337be02a5f10812a3888353e6691a
 BESIDE_F0 = "without_alignment_f0"      # every row read beside without the parts whose GOAT alignment F is 0.0
 BESIDE_READER = "without_reader_fail"   # ... and without the parts whose item fails its own MIDI reader check
 BESIDE_PRECHECK = "without_precheck_fail"   # ... and without the parts where a deciding arm fails a pre-check
+BESIDE_PEAK = "without_peak_flag"       # ... and without the parts where a deciding arm's peak is flagged
 CODE_FILES = ("learn/note_rebuild.py", "learn/note_rebuild_s1.py")
 
 
@@ -249,7 +250,7 @@ def n3_card_eligible(pick, blind):
 # --- the automated pre-checks (the PR #528 review's ear-gate ruling; thresholds fixed here) ----------------------------
 
 PRECHECK = {
-    "peak_over_true_db": 6.0,           # a dry guitar's peak at most 6 dB over the true DI's at the same loudness
+    "peak_over_true_db": 6.0,           # report only (2026-11-20 amendment): a peak this far over the true DI's
     "tuning_cents": 5.0,                # each arm's global tuning against the true DI's (circular, in cents)
     "gap_frame_s": 0.020,               # the hiss floor: 20-ms frames where both the true DI and the arm are ...
     "gap_below_db": 30.0,               # ... at least 30 dB under their own loudest frame
@@ -268,10 +269,19 @@ PRECHECK = {
 }
 
 
+def mono(x):
+    """(Pure.) A render folded to mono: the plugin's output is (samples, channels); a 1-D signal is returned as it is."""
+    import numpy as np
+
+    x = np.asarray(x, np.float64)
+    return x.mean(axis=1) if x.ndim == 2 else x
+
+
 def _frames_db(x, n, hp=None, rate=NR.SR):
     import numpy as np
     import scipy.signal as ss
 
+    x = mono(x)
     if hp is not None:
         x = ss.sosfilt(ss.butter(4, hp, "hp", fs=rate, output="sos"), x)
     k = len(x) // n
@@ -328,6 +338,7 @@ def burst_rate(render, onsets_s, rate=NR.SR, c=PRECHECK):
     import numpy as np
     import scipy.ndimage as nd
 
+    render = mono(render)
     n = int(c["burst_frame_s"] * rate)
     e = _frames_db(render, n, c["hf_hz"])
     if not len(e):
@@ -349,10 +360,11 @@ def check_dry(true_di, dry, notes, arm, bank=None, rate=NR.SR, c=PRECHECK):
     peak = float(np.abs(dry).max()) if finite else None
     peak_true = float(np.abs(true_di).max())
     peak_over = 20 * math.log10((peak + 1e-12) / (peak_true + 1e-12)) if finite else None
+    flags = []
     if not finite:
         why.append("non-finite samples")
     elif peak_over > c["peak_over_true_db"]:
-        why.append(f"peak {peak_over:+.1f} dB over the true DI's")
+        flags.append(f"peak {peak_over:+.1f} dB over the true DI's")
     td = tuning_diff(NR.global_tuning_cents(dry, rate), NR.global_tuning_cents(true_di, rate)) if finite else None
     if td is not None and abs(td) > c["tuning_cents"]:
         why.append(f"tuning {td:+.1f} cents from the true DI")
@@ -364,7 +376,7 @@ def check_dry(true_di, dry, notes, arm, bank=None, rate=NR.SR, c=PRECHECK):
     if ls is not None and ls > c["level_spread_db"]:
         why.append(f"onset-group level spread {ls:.1f} dB")
     return {"peak": peak, "peak_over_true_db": peak_over, "tuning_diff_cents": td, "gap_floor_diff_db": gf, "level_spread_db": ls,
-            "ok": not why, "why": why}
+            "ok": not why, "why": why, "flags": flags}
 
 
 def check_bursts(true_render, dry_render, onsets_s, rate=NR.SR, c=PRECHECK):
@@ -379,12 +391,36 @@ PRECHECK_MAX_SHARE = 0.10               # render is refused when more than this 
 DECIDING_ARMS = ("nr-plain", "nr-level")
 
 
-def precheck_failures(build):
-    """(Pure.) {arm: [part key]} of the build's dry guitars that fail a pre-check, every arm."""
+def blocking_why(p, c=PRECHECK):
+    """(Pure.) A stored pre-check record's blocking failures under the rules as amended on 2026-11-20 (the peak is
+    report only), re-derived from its stored figures, so build.json, written once, is read under the amended rule."""
+    why = []
+    if p.get("peak") is None:
+        why.append("non-finite samples")
+    td, gf, ls = p.get("tuning_diff_cents"), p.get("gap_floor_diff_db"), p.get("level_spread_db")
+    if td is not None and abs(td) > c["tuning_cents"]:
+        why.append(f"tuning {td:+.1f} cents from the true DI")
+    if gf is not None and gf > c["gap_floor_over_true_db"]:
+        why.append(f"hiss floor {gf:+.1f} dB over the true DI's")
+    if ls is not None and ls > c["level_spread_db"]:
+        why.append(f"plain-group level spread {ls:.1f} dB")
+    return why
+
+
+def flagged(p, c=PRECHECK):
+    """(Pure.) A stored record's report-only flags: its peak more than `peak_over_true_db` over the true DI's."""
+    po = p.get("peak_over_true_db")
+    return [f"peak {po:+.1f} dB over the true DI's"] if po is not None and po > c["peak_over_true_db"] else []
+
+
+def precheck_failures(build, kind="blocking"):
+    """(Pure.) {arm: [part key]} of the build's dry guitars that fail a blocking pre-check (`kind` "blocking"), or
+    that fail one or carry a report-only flag (`kind` "any": the beside row's set), every arm."""
     out = {a: [] for a in NR.ARMS}
     for k, r in sorted(build["parts"].items()):
         for a, x in r["arms"].items():
-            if not (x.get("precheck") or {}).get("ok"):
+            p = x.get("precheck") or {}
+            if blocking_why(p) or (kind == "any" and flagged(p)):
                 out.setdefault(a, []).append(k)
     return out
 
@@ -736,9 +772,9 @@ def cmd_render(args):
     why = precheck_refusal(build, json.loads(ci.read_text()) if ci.exists() else None)
     if why:
         raise SystemExit(why)
-    fl = {a: v for a, v in precheck_failures(build).items() if v}
+    fl = {a: v for a, v in precheck_failures(build, "any").items() if v}
     if fl:
-        print(f"pre-check failures (rendered; read beside without them): {json.dumps(fl)}", flush=True)
+        print(f"pre-check failures and flags (rendered; read beside without them): {json.dumps(fl)}", flush=True)
     if build["subset_sha256"] != NR.file_sha(subset_path()):
         raise SystemExit("build.json was made from another subset")
     from learn import note_replay as R              # after the refusals
@@ -874,14 +910,27 @@ def n1_outcome(readings):
     return {"code": code, "next": dict((c, t) for c, _, t in NR.N1_TABLE)[code], "arm": NR.n1_arm(p, lv)}
 
 
-def beside_sets(sub_parts, failures=None):
+def beside_sets(sub_parts, failures=None, flags=None):
     """(Pure.) The beside rows' part keys: without the alignment-F 0.0 part, without the parts whose item fails its own
-    MIDI reader check (stage P's `reader_check`), and without the parts where nr-plain or nr-level fails a pre-check
-    (`precheck_failures`; one set for every row)."""
+    MIDI reader check (stage P's `reader_check`), without the parts where nr-plain or nr-level fails a blocking
+    pre-check (`precheck_failures`), and without those where either carries the report-only peak flag (`flags`:
+    {arm: [part key]}). One set for every row."""
     bad = {k for a in DECIDING_ARMS for k in (failures or {}).get(a, [])}
+    peaky = {k for a in DECIDING_ARMS for k in (flags or {}).get(a, [])}
     return {BESIDE_F0: without_f0(sub_parts),
             BESIDE_READER: [k["pkey"] for k in sub_parts if k.get("reader_ok") is not False],
-            BESIDE_PRECHECK: [k["pkey"] for k in sub_parts if k["pkey"] not in bad]}
+            BESIDE_PRECHECK: [k["pkey"] for k in sub_parts if k["pkey"] not in bad],
+            BESIDE_PEAK: [k["pkey"] for k in sub_parts if k["pkey"] not in peaky]}
+
+
+def peak_flags(build):
+    """(Pure.) {arm: [part key]} whose stored pre-check carries the report-only peak flag."""
+    out = {a: [] for a in NR.ARMS}
+    for k, r in sorted(build["parts"].items()):
+        for a, x in r["arms"].items():
+            if flagged(x.get("precheck") or {}):
+                out.setdefault(a, []).append(k)
+    return out
 
 
 def cmd_score(_args):
@@ -932,7 +981,7 @@ def cmd_score(_args):
     if build["subset_sha256"] != NR.file_sha(subset_path()):
         raise SystemExit("build.json was made from another subset")
     failures = precheck_failures(build)
-    besides = beside_sets(sub["parts"], failures)
+    besides = beside_sets(sub["parts"], failures, peak_flags(build))
 
     def with_besides(per, qs):
         keys = [p["pkey"] for p in parts]
@@ -962,7 +1011,7 @@ def cmd_score(_args):
                      "no_pick": sorted(k for k, v in per.items() if v is None)}
     out = {"plan": NR.PLAN, "ledger": f"{LEDGER_ID} {PHASE_1}", "subset_sha256": NR.file_sha(subset_path()),
            "picks_sha256": NR.file_sha(picks_path()), "replay_outcome": outcome, "comparison_dry": main_dry,
-           "precheck_failures": failures,
+           "precheck_failures": failures, "peak_flags": peak_flags(build),
            "time": time.strftime("%Y-%m-%d %H:%M:%S"), "rows": rows}
     NR.write_once(rows_path(), out)                    # the rows are saved before the code is read
     readings = {arm: safe_reading(rows[arm]["G"], rows[arm]["I"]) for arm in NR.ARMS}
