@@ -183,3 +183,23 @@ def test_coarse_offset_then_snap():
     unsnapped, sh = N.refine_onsets(late, di)                                    # the +-50 ms snap alone misses
     assert sh == [0.0] * 5
     assert N.coarse_offset(late, np.zeros(4 * SR)) == 0.0
+
+
+def test_window_edges_fade():
+    notes = [{"on": -0.5, "off": 1.0, "pitch": 60, "string": 2, "fret": 1, "arts": []},      # rings into the window
+             {"on": 1.98, "off": 3.0, "pitch": 64, "string": 1, "fret": 0, "arts": []}]     # cut by its end
+    y, _ = N.synthesise(notes, 2 * SR, _bank())
+    edge = int(N.EDGE_FADE_S * SR)
+    assert y[0] == 0.0 and y[-1] == 0.0
+    assert np.abs(y[:edge // 4]).max() < 0.3 * np.abs(y[edge:2 * edge]).max()
+
+
+def test_rebuild_leaves_the_window_end_unfaded():
+    notes = [{"on": 1.5, "off": 3.0, "pitch": 64, "string": 1, "fret": 0, "arts": []}]   # rings past the window's end
+    ref = _tone(64, seconds=2.0, decay=1.0)
+    y, _ = N.rebuild_dry("nr-plain", notes, 2 * SR, _bank(), ref)
+    assert len(y) == 2 * SR
+    edge = int(N.EDGE_FADE_S * SR)
+    tail = np.abs(y[-edge:]).max()
+    assert tail > 0.5 * np.abs(y[-4 * edge:-2 * edge]).max()               # half B's end: no fade to zero
+    assert y[0] == 0.0                                                      # the start (before the trim) still fades
