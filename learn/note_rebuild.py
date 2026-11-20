@@ -76,6 +76,7 @@ DEAD_S, DEAD_DB = 0.040, -6.0           # a dead note: a 40 ms pluck, 6 dB down
 PALM_S = 0.150                          # a palm-muted note: held at most 150 ms
 LEGATO_DB = -6.0                        # hammer-on, pull-off or slide-into: no pick attack, 6 dB down
 GHOST_DB = -10.0
+EARLY_S = 0.300                         # a sample's own pitch is read over its first 300 ms from the attack
 MAX_SHIFT_SEMITONES = 2                 # a note may be resampled this far from its sample's pitch, no further
 LEVEL_SPAN_S = 0.050                    # `nr-level` and `nr-oracle` read the 50 ms after each onset group
 LEVEL_CLAMP_DB = 9.0                    # `nr-level`'s gain about the window's median, held within +-9 dB
@@ -1003,7 +1004,7 @@ class Bank:
         self.pickup, self.root = pickup, root
         self.doc = notes_doc
         self.loader = loader
-        self._prep, self._shift = {}, {}
+        self._prep, self._shift, self._early = {}, {}, {}
 
     def ok(self, s, f):
         if self.doc is None:
@@ -1012,7 +1013,14 @@ class Bank:
         return bool(r and r["ok"])
 
     def own_cents(self, s, f):
-        return self.doc["notes"][f"{self.pickup}/{s}-{f}"]["cents"] if self.doc else 0.0
+        """The sample's own pitch against equal temperament where it is played: its first EARLY_S from the attack
+        (`global_tuning_cents`). P2's figure (0.3-2.3 s in) reads about 4.5 cents flatter, the pick attack's glide
+        (measured on 10 notes at stage 1's declaration), and most notes in a part sound only their first few hundred
+        ms; P2's cents still gate wrong notes."""
+        if (s, f) not in self._early:
+            y = self.prepared(s, f)
+            self._early[(s, f)] = global_tuning_cents(y[:int(EARLY_S * SR)])
+        return self._early[(s, f)]
 
     def prepared(self, s, f):
         if (s, f) not in self._prep:
@@ -1029,7 +1037,7 @@ class Bank:
                     raise SystemExit(f"{self.pickup}/{s}-{f}: the file's hash does not match notes.json")
                 x, rate = sf.read(io.BytesIO(raw), dtype="float64", always_2d=True)
                 x = x.mean(1)
-            self._prep[(s, f)] = prepare_sample(x, rate, self.own_cents(s, f))[0]
+            self._prep[(s, f)] = prepare_sample(x, rate, 0.0)[0]
         return self._prep[(s, f)]
 
     def note(self, s, f, cents):
@@ -1189,31 +1197,39 @@ def group_spans(notes, groups, length, rate=SR):
     return spans
 
 
-def level_gains(notes, reference, rate=SR, clamp=LEVEL_CLAMP_DB):
-    """(Pure.) `nr-level`: each onset group's gain from the reference's RMS over its span, in dB about the median of
-    all spans, held within +-clamp."""
+MIN_SPAN_S = 0.010                      # a group whose level span inside the window is shorter (it began before the
+                                        # window) keeps 0 dB and stays out of the median
+
+
+def _span_gains(db, ok, clamp):
+    """(Pure.) Gains about the median of the usable spans' dB, held within +-clamp; 0 dB where not usable."""
     import numpy as np
 
+    use = [d for d, k in zip(db, ok) if k]
+    if not use:
+        return [0.0] * len(db)
+    med = float(np.median(use))
+    return [float(np.clip(d - med, -clamp, clamp)) if k else 0.0 for d, k in zip(db, ok)]
+
+
+def level_gains(notes, reference, rate=SR, clamp=LEVEL_CLAMP_DB):
+    """(Pure.) `nr-level`: each onset group's gain from the reference's RMS over its span, in dB about the median of
+    all usable spans, held within +-clamp (a group begun before the window: 0 dB)."""
     groups = onset_groups(notes)
     spans = group_spans(notes, groups, len(reference), rate)
-    db = np.array([20 * math.log10(span_rms(reference, a, b) + 1e-12) for a, b in spans])
-    if not len(db):
-        return []
-    return list(np.clip(db - np.median(db), -clamp, clamp))
+    ok = [notes[g[0]]["on"] >= 0 and b - a >= MIN_SPAN_S * rate for g, (a, b) in zip(groups, spans)]
+    db = [20 * math.log10(span_rms(reference, a, b) + 1e-12) for a, b in spans]
+    return _span_gains(db, ok, clamp)
 
 
 def oracle_gains(notes, plain, di, rate=SR, clamp=ORACLE_CLAMP_DB):
     """(Pure.) `nr-oracle`: each onset group's gain so the plain re-synthesis' RMS over its span equals the true DI's
     there, about the median ratio (the overall level is set afterwards), held within +-clamp. Diagnostic only."""
-    import numpy as np
-
     groups = onset_groups(notes)
     spans = group_spans(notes, groups, min(len(di), len(plain)), rate)
-    r = np.array([20 * math.log10((span_rms(di, a, b) + 1e-12) / (span_rms(plain, a, b) + 1e-12))
-                  for a, b in spans])
-    if not len(r):
-        return []
-    return list(np.clip(r - np.median(r), -clamp, clamp))
+    ok = [notes[g[0]]["on"] >= 0 and b - a >= MIN_SPAN_S * rate for g, (a, b) in zip(groups, spans)]
+    r = [20 * math.log10((span_rms(di, a, b) + 1e-12) / (span_rms(plain, a, b) + 1e-12)) for a, b in spans]
+    return _span_gains(r, ok, clamp)
 
 
 def rise_curve(x, rate=SR):
@@ -1349,8 +1365,15 @@ def loudness(y, rate=SR):
     return pyloudnorm.Meter(rate).integrated_loudness(y)
 
 
-def at_lufs(y, lufs, rate=SR):
-    return y * 10 ** ((lufs - loudness(y, rate)) / 20)
+def at_lufs(y, lufs, rate=SR, tol=0.01, passes=4):
+    """`y` at `lufs` integrated loudness. The gating's absolute -70 LUFS gate makes one gain step inexact when parts of
+    the signal sit near it, so the step repeats until within `tol` LU (at most `passes` times)."""
+    for _ in range(passes):
+        d = lufs - loudness(y, rate)
+        if abs(d) <= tol:
+            break
+        y = y * 10 ** (d / 20)
+    return y
 
 
 def rebuild_dry(arm, notes, length, bank, reference, di=None, finish=None, rate=SR):

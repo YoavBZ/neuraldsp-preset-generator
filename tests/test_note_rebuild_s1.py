@@ -6,28 +6,92 @@ import pytest
 from learn import note_rebuild_s1 as S
 
 
-def _report(code="R-dry-only", picks="abc", both=()):
-    return {"picks_sha256": picks, "outcome": {"code": code, "both_notes": list(both)}}
+def _report(code="R-dry-only", picks="abc", both=(), via="avg+mild"):
+    return {"picks_sha256": picks, "outcome": {"code": code, "both_notes": list(both), "via": via}}
 
 
-REPLAY_MAIN = {"phase_replay_picks": {"sha256": "abc"}, "phase_replay_outcome": "audited"}
+def _main(code="R-dry-only", singles=None):
+    m = {"phase_replay_picks": {"sha256": "abc"}, "phase_replay_outcome": f"audited 2026-11-21: {code}"}
+    if singles:
+        m["phase_replay_picks_singles"] = {"sha256": singles}
+    return m
+
+
+TRIGGERED = {"picks_sha256": "abc", "outcome": {"code": "singles-triggered"}}
 
 
 def test_gate_goes_only_on_a_continue_code():
-    assert S.gate_refusal(_report(), REPLAY_MAIN, {}) is None
-    assert S.gate_refusal(_report("R-alone"), REPLAY_MAIN, {}) is None
-    for code in ("R-dry", "R-stem", "R-undecided", "singles-triggered", "incomplete"):
-        assert "stage 1 does not run" in S.gate_refusal(_report(code), REPLAY_MAIN, {})
+    assert S.gate_refusal(_report(), _main(), {}) is None
+    assert S.gate_refusal(_report("R-alone"), _main("R-alone"), {}) is None
+    for code in ("R-dry", "R-stem", "R-undecided", "incomplete"):
+        assert "stage 1 does not run" in S.gate_refusal(_report(code), _main(code), {})
 
 
 def test_gate_refusals():
-    assert "not been read" in S.gate_refusal(None, REPLAY_MAIN, {})
-    assert "hashed on main" in S.gate_refusal(_report(picks="zzz"), REPLAY_MAIN, {})
+    assert "not been read" in S.gate_refusal(None, _main(), {})
+    assert "hashed on main" in S.gate_refusal(_report(picks="zzz"), _main(), {})
     assert "hashed on main" in S.gate_refusal(_report(), {}, {})
     assert "audited" in S.gate_refusal(_report(), {"phase_replay_picks": {"sha256": "abc"}}, {})
     both = _report(both=["both-full reads fails"])
-    assert "Both-row" in S.gate_refusal(both, REPLAY_MAIN, {})
-    assert S.gate_refusal(both, REPLAY_MAIN, {S.PHASE_BOTH_GO: "the user's go"}) is None
+    assert "Both-row" in S.gate_refusal(both, _main(), {})
+    assert S.gate_refusal(both, _main(), {S.PHASE_BOTH_GO: "the user's go"}) is None
+
+
+def test_gate_needs_the_audited_code_itself():
+    assert "exactly" in S.gate_refusal(_report(), _main("R-undecided"), {})       # an audit correction closes it
+    assert "exactly" in S.gate_refusal(_report(), {**_main(), "phase_replay_outcome": "R-alone or R-dry-only"}, {})
+    assert S.gate_refusal(_report(), {**_main(), "phase_replay_outcome": {"code": "R-dry-only"}}, {}) is None
+    assert S.recorded_codes("R-dry-only, audited") == {"R-dry-only"}
+    assert S.recorded_codes("code R-dry") == {"R-dry"}
+
+
+def test_gate_on_the_single_blur_path():
+    singles = {"picks_sha256": "s1", "outcome": {"code": "R-alone", "via": "avg", "both_notes": []}}
+    assert "not read yet" in S.gate_refusal(TRIGGERED, _main("R-alone", "s1"), {})
+    assert S.gate_refusal(TRIGGERED, _main("R-alone", "s1"), {}, singles) is None                # a passing single
+    assert "single-blur report" in S.gate_refusal(TRIGGERED, _main("R-alone", "zz"), {}, singles)
+    assert "single-blur report" in S.gate_refusal(TRIGGERED, _main("R-alone"), {}, singles)
+    stop = {"picks_sha256": "s1", "outcome": {"code": "R-dry", "via": None}}
+    assert "stage 1 does not run" in S.gate_refusal(TRIGGERED, _main("R-dry", "s1"), {}, stop)    # both singles fail
+    noted = {"picks_sha256": "s1", "outcome": {"code": "R-dry-only", "via": "mild",
+                                               "both_notes": ["mild-both-full reads undecided"]}}
+    assert "Both-row" in S.gate_refusal(TRIGGERED, _main("R-dry-only", "s1"), {}, noted)
+    assert S.deciding_outcome(TRIGGERED, singles) == (singles["outcome"], "singles")
+    assert S.deciding_outcome(_report(), None)[1] == "main"
+
+
+def test_comparison_dry():
+    assert S.comparison_dry({"via": "avg+mild"}) == ("avg+mild", [])
+    assert S.comparison_dry({"via": "mild"}) == ("mild", [])
+    assert S.comparison_dry({"via": "avg, mild"}) == ("avg", ["mild"])
+    assert S.comparison_dry({}) == ("avg+mild", [])
+    with pytest.raises(ValueError):
+        S.comparison_dry({"via": "true"})
+
+
+def test_beside_sets_and_safe_readings():
+    parts = [{"pkey": "a", "alignment_f": 0.0, "reader_ok": True}, {"pkey": "b", "alignment_f": 0.8, "reader_ok": False},
+             {"pkey": "c", "alignment_f": 0.9, "reader_ok": None}]
+    b = S.beside_sets(parts)
+    assert b[S.BESIDE_F0] == ["b", "c"] and b[S.BESIDE_READER] == ["a", "c"]
+    iv = {"mean": -0.2, "lo90": -0.3, "hi90": -0.12}
+    assert S.safe_reading(iv, iv) == "passes"
+    assert S.safe_reading({"mean": None}, iv) is None
+    assert S.n1_outcome({"nr-plain": None, "nr-level": "passes"})["code"] == "N1-incomplete"
+    assert S.n1_outcome({"nr-plain": "fails", "nr-level": "passes"})["arm"] == "nr-level"
+
+
+def test_precheck_refusal():
+    good = {"parts": {"p": {"arms": {"nr-plain": {"precheck": {"ok": True}}}}}}
+    bad = {"parts": {"p": {"arms": {"nr-plain": {"precheck": {"ok": False}}}}}}
+    ci = {"checks": [{"file": "x", "ok": True}]}
+    assert S.precheck_refusal(good, ci) is None
+    assert "build" in S.precheck_refusal(None, ci)
+    assert "fail on 1" in S.precheck_refusal(bad, ci)
+    assert "clips" in S.precheck_refusal(good, None)
+    assert "fail (1)" in S.precheck_refusal(good, {"checks": [{"file": "x", "ok": False}]})
+    assert "missing" in S.precheck_refusal(good, {"checks": []})
+    assert S.tuning_diff(49.0, -49.0) == pytest.approx(-2.0)
 
 
 def test_ear_refusal():
@@ -81,6 +145,22 @@ def test_shards_capped_at_three():
             S._shard(bad)
 
 
+def test_hf_checks():
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
+    rng = np.random.default_rng(5)
+    sr = S.NR.SR
+    tone = np.sin(2 * np.pi * 220 * np.arange(2 * sr) / sr)
+    quiet = np.concatenate([tone * 0.5, 1e-4 * rng.standard_normal(sr)])
+    hissy = np.concatenate([tone * 0.5, 1e-2 * rng.standard_normal(sr)])
+    assert S.gap_floor_diff(quiet, quiet) == pytest.approx(0.0, abs=1e-6)
+    assert S.gap_floor_diff(quiet, hissy) is None or S.gap_floor_diff(quiet, hissy) > 6     # hiss over the floor
+    clicks = 0.01 * rng.standard_normal(3 * sr)
+    for t in (0.5, 1.2, 2.1):
+        clicks[int(t * sr):int(t * sr) + 48] += 0.8
+    assert S.burst_rate(clicks, []) > 0.9 and S.burst_rate(clicks, [0.5, 1.2, 2.1]) == 0.0
+
+
 @pytest.mark.parametrize("cmd", ["cmd_subset", "cmd_build", "cmd_clips", "cmd_render", "cmd_pick", "cmd_score"])
 def test_every_command_refuses_without_the_phase(monkeypatch, cmd):
     from learn import note_rebuild as NR
@@ -92,7 +172,9 @@ def test_every_command_refuses_without_the_phase(monkeypatch, cmd):
 
 def test_declared_subset():
     keys = [f"goat|{j}" for j in range(60)]
-    decl = {"draw_sha256": "d", "parts": 60, "keys_sha256": S.NR.content_sha(sorted(keys))}
+    decl = {"draw_sha256": "d", "true_notes_sha256": "t", "parts": 60, "keys_sha256": S.NR.content_sha(sorted(keys))}
+    assert "true-notes" in S.subset_refusal("d", keys, decl, true_notes_sha="u")
+    assert S.subset_refusal("d", keys, decl, true_notes_sha="t") is None
     assert S.subset_refusal("d", list(reversed(keys)), decl) is None
     assert "draw" in S.subset_refusal("e", keys, decl)
     assert "declared 60" in S.subset_refusal("d", keys[:59], decl)

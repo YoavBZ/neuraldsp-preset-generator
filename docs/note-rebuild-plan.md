@@ -371,3 +371,58 @@ download before N1-pass, and the stem's lag is measured there.
 **Stop rule.** One build, one read. Undecided goes to the user with each arm's share of the Blurred row's I; a
 revision is declared first and read only on the revision pool (49 carrying cap1 parts on 33 GOAT items outside the
 draw).
+
+### 11a. Revised after PR #528's review (2026-11-20, before any stage-1 command runs; ledger `phase_nr_1_review`)
+
+**The gate reads the single-blur outcome (B1).** When the replay's `report.json` reads singles-triggered, the deciding
+outcome is `report-singles.json`'s (`deciding_outcome`), read only from the single-blur picks hashed on main
+(`phase_replay_picks_singles`), with its own code and Both-row notes. `score`'s Blurred comparison row and "share of the
+Blurred row's I" come from the dry guitar that outcome rests on (`comparison_dry`: the combined blur, or the passing
+single blur, avg first when both pass, mild beside). Tested on both paths, go and stop.
+
+**The audited code itself (R1).** Main's `phase_replay_outcome` must name exactly the deciding outcome's code (a dict's
+`code`, or the code as a whole word in a string); an audit correction closes the gate.
+
+**The ear check no longer blocks the night (R2).**
+- `clips` needs only the declaration and the subset, not the replay's outcome (it reads only development items). It
+  takes a render slot, so it waits for the replay's renders, and it never runs beside a separation. Every clip is set
+  to −23 LUFS (loudness matched); an instant-switch page is published privately for the user.
+- `render` refuses unless the automated pre-checks pass (`precheck_refusal`), on every dry guitar in `build` and on
+  the clips. `pick` and `score` (not `render`) refuse without `phase_nr_1_ear` = ok: renders read nothing, and a heard
+  fault discards them under a declared revision before any read.
+- **The pre-checks (`PRECHECK`, fixed here):** no non-finite sample, and a peak at most 6 dB over the true DI's at the
+  same loudness; each arm's global tuning within ±5 cents of the true DI's; the hiss floor (energy above 3 kHz in the
+  20-ms frames where both the true DI and the arm are at least 30 dB under their own loudest, at least 5 such frames)
+  at most 6 dB over the true DI's; in the crunch clip renders, bursts above 3 kHz (5-ms frames at least 12 dB over the
+  100-ms running median, more than 30 ms from every onset) at most 0.5 a second over the true DI's render; and in
+  `nr-plain`, each plain (non-articulated) onset group played alone, its 50-ms level, 90th less 10th percentile at
+  most 3 dB.
+- **Measured before fixing the rules (27 development windows, both arms; nothing saved):**
+  - *Tuning:* the first draft read every arm 5 to 7 cents sharp. EGFxSet's notes sit about 4.5 cents sharp in their
+    first 300 ms (the pick attack's glide; on 10 notes, mean +4.5 early, +0.8 at 0.3–2.3 s), and most notes in a part
+    sound only their first few hundred ms. So **each sample is now retuned from its own early pitch** (its first 300
+    ms from the attack, `Bank.own_cents`); P2's cents still gate wrong notes. After the change: within ±2.4 cents on
+    all 54 dry guitars.
+  - *Level spread:* the first draft counted onset groups begun before the window (their span collapses to a sample)
+    and the declared articulation gains (dead −6, ghost −10, legato −6 dB): 6 to 10 dB. Plain plucks played alone:
+    0.2 to 1.8 dB. The rule now measures exactly that; `nr-level` and `nr-oracle` also give a group begun before the
+    window 0 dB and leave it out of their median (`MIN_SPAN_S`).
+  - *Hiss floor:* the first draft took the true DI's gaps only, where a note still ringing in the arm read as hiss; it
+    now takes frames quiet in both.
+  - *Peak:* sparse windows at −22.9 LUFS peak over 1 in the true DI too, so the peak is judged against the true DI's.
+  - With the rules as fixed: **2 of 54 dev dry guitars fail** (item_150 `nr-plain` level spread 3.5 dB; item_102
+    `nr-level` hiss floor 9.4 dB over the true DI's, where `nr-level` lifts quiet notes and their residual hiss).
+    item_102 is one of the four seeded clip items, so as declared its failure would refuse `render`: the
+    orchestrator rules (the user hears it on the page either way).
+- The loudness step now converges (`at_lufs` repeats until within 0.01 LU: the −70 LUFS absolute gate made one step
+  miss by 0.4 LU on the oracle's large gains).
+
+**Beside rows (R3).** Every row is also read without the subset's 4 parts whose items fail their own MIDI reader check
+(item_54, item_64, item_95, item_110; `without_reader_fail`), as it is without the alignment-F 0.0 part.
+
+**R4** was already met: `test_row_reading_agrees_with_the_replays` (merged with PR #525) asserts the two readings agree
+on a grid.
+
+**Nits taken:** true-notes.json's file sha256 is pinned in `DECLARED_SUBSET`; `score` checks each replay distance file
+against the replay's hashed picks (`dist_sha256`); a row with no interval reads N1-incomplete instead of crashing after
+the rows are saved.
