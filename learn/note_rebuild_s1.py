@@ -162,7 +162,23 @@ def gate_refusal(report, replay_main, nr_main, singles=None):
         return f"the replay reads {code}: stage 1 does not run"
     if out.get("both_notes") and PHASE_BOTH_GO not in (nr_main or {}):
         return "the replay's outcome carries a Both-row note: the user is asked before stage 1 (phase_nr_1_both_go)"
+    failed = failed_both_rows(report, singles)
+    if failed and PHASE_BOTH_GO not in (nr_main or {}):
+        return (f"the replay's Both row {', '.join(failed)} fails: the user is asked before stage 1 (plan section 5; "
+                "phase_nr_1_both_go)")
     return None
+
+
+def failed_both_rows(report, singles=None):
+    """(Pure.) The replay's Both rows (the stem and a blurred dry guitar together: both-alone, both-full and the
+    single-blur avg-both-*, mild-both-*) that read "fails", in the main report and the single-blur report. Plan
+    section 5: if a Both row fails, the user is asked before stage 1, whichever row the outcome's cell rests on."""
+    out = []
+    for rep_ in (report, singles):
+        for name, r in sorted(((rep_ or {}).get("readings") or {}).items()):
+            if "both" in name and (r or {}).get("reading") == "fails":
+                out.append(name)
+    return out
 
 
 def comparison_dry(outcome):

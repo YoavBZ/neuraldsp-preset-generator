@@ -440,3 +440,13 @@ on a grid.
 **Nits taken:** true-notes.json's file sha256 is pinned in `DECLARED_SUBSET`; `score` checks each replay distance file
 against the replay's hashed picks (`dist_sha256`); a row with no interval reads N1-incomplete instead of crashing after
 the rows are saved.
+
+### 11c. Any failing Both row asks the user (2026-11-20, after the replay's audited outcome R-alone; ledger `phase_nr_1_both_gate`)
+
+Plan section 5 says that if a Both row of the replay (the stem and the blurred DI together) fails, the user is asked
+before stage 1. The gate checked only the Both-row notes of the cell the outcome rests on (R-alone's both-alone), so
+the replay's failing both-full (+0.092 [−0.030, +0.214]) would not have stopped it. `gate_refusal` now also refuses
+whenever any Both row in the deciding reports reads "fails" (`failed_both_rows`: both-alone, both-full and the
+single-blur avg-both-*, mild-both-*), until the user's go is recorded on main as `phase_nr_1_both_go`. Undecided Both
+rows stay with the outcome's notes. `render`, `pick` and `score` refuse until then; `build` and `clips` render no
+score and are unaffected. Tested on the replay's case and the single-blur path.

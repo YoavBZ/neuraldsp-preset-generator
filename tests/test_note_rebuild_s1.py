@@ -203,3 +203,16 @@ def test_declared_subset():
 def test_without_f0():
     parts = [{"pkey": "a", "alignment_f": 0.0}, {"pkey": "b", "alignment_f": 0.8}, {"pkey": "c", "alignment_f": None}]
     assert S.without_f0(parts) == ["b", "c"]
+
+
+def test_gate_asks_the_user_when_any_both_row_fails():
+    rep_ = {**_report("R-alone"), "readings": {"both-alone": {"reading": "passes"}, "both-full": {"reading": "fails"}}}
+    assert S.failed_both_rows(rep_) == ["both-full"]
+    assert "both-full fails" in S.gate_refusal(rep_, _main("R-alone"), {})                  # the replay's case
+    assert S.gate_refusal(rep_, _main("R-alone"), {S.PHASE_BOTH_GO: {"by": "the user"}}) is None
+    ok = {**_report("R-alone"), "readings": {"both-alone": {"reading": "passes"}, "both-full": {"reading": "undecided"}}}
+    assert S.gate_refusal(ok, _main("R-alone"), {}) is None                                   # undecided: the notes
+    singles = {"picks_sha256": "s1", "outcome": {"code": "R-alone", "via": "avg", "both_notes": []},
+               "readings": {"avg-both-full": {"reading": "fails"}, "mild-both-full": {"reading": "passes"}}}
+    assert S.failed_both_rows(TRIGGERED, singles) == ["avg-both-full"]
+    assert "avg-both-full" in S.gate_refusal(TRIGGERED, _main("R-alone", "s1"), {}, singles)
