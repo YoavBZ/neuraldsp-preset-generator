@@ -1,6 +1,6 @@
 # The note-matched replay: does render-and-compare pick well through a worse reference or dry guitar? (plan)
 
-**Status:** declared 2026-11-20, before any run, on the user's approval of the three measurements of the 2026-11-19
+**Status:** run 2026-11-20 and audited ([results](note-replay-results.md)): **R-alone** by the score. The comparison picks well through the blurred DI (I −0.190) and the stem with no other guitar (I −0.221), and worse than a blind pick on the stem of a full mix (I +0.171). The route continues only for windows where the target is alone or dominant; the count of such songs is owed; a from-scratch held-half search through the degraded inputs comes before any product claim; the rebuild's stage 1 waits for the user (`both-full` fails). Declared 2026-11-20, before any run, on the user's approval of the three measurements of the 2026-11-19
 strategic review (`~/ndsp-presets/handover/2026-11-19/strategic-review.md`, section 4, Direction 1). The plan passed an
 independent review with changes (approve with changes, three blocking items, all wording and coding before the run,
 zero extra renders). All three are built in here (section 11), with the rulings on the open questions. Nothing has run
