@@ -29,7 +29,9 @@ amp and class), so a search that only drifts to a better fixed preset does not p
 - **Answers:** hashed before the score (`phase_fs_answers_stem`, #540) and byte-identical at score time.
 - **Score:** **940 renders** in 830 s wall, 10 settings a part (Cen, the answer, the 50/100/200 checkpoints, the shrunk
   answer, the row's centre, the 3 borrowed answers). The scoring control held on 47 of 47 (Cen repeated its stored
-  held-half value exactly); 0 non-finite scores.
+  held-half value exactly); 0 non-finite scores. That shows the renders are deterministic, not how non-Cen settings
+  are applied; post hoc (the audit's), the search half's improvement predicting the held half's G (r +0.78) covers
+  that.
 - **Read** once. Trusted data only: Silent Waves was never in the draw and Drowning's parts were left out by the draw.
 
 ## The result: passes (G and I, on the pool and on BKS+GOAT)
@@ -59,19 +61,20 @@ explain it. Post hoc (the audit's): how far a part's search improved its search 
 ## Beside the deciding reading
 
 - **Checkpoints:** most of the gain is there at 50 evaluations (pool G −0.271, I −0.418); 100: −0.287 / −0.434; 200:
-  −0.296 / −0.442. After 50 the search adds −0.044 [−0.059, −0.029] (the audit's); step 2 alone adds about −0.02, not
-  readable by the score.
+  −0.296 / −0.442. Post hoc (the audit's): after 50 the search adds −0.044 [−0.059, −0.029]. Step 2 alone adds about
+  −0.02, not readable by the score.
 - **Shrunk halfway to Cen:** pool G −0.245, I −0.391, a little less than the answer.
 - **The answer against the row's centre:** −0.319 [−0.416, −0.223].
 - **Against the stored label** (C2's label, whose search used this held half, so in-sample here; zero renders): the
-  label reads −0.383 [−0.482, −0.284] against Cen; the answer is worse than it by **+0.067 [+0.038, +0.097]** and
-  beats it on 13 of 47 parts. G and the label correlate across parts (r +0.88: the same parts have the most headroom),
-  but the answer does not land in the label's region: its distance to the label in unit space (RMS 0.256) is larger
-  than Cen's (0.227), and it is closer to the label than Cen on only 16 of 47 parts. The gap is not the stem's cost
+  label reads −0.383 [−0.482, −0.284] against Cen (declared). Post hoc (the audit's): the answer is worse than the
+  label by **+0.067 [+0.038, +0.097]** and beats it on 13 of 47 parts; G and the label correlate across parts (r +0.88:
+  the same parts have the most headroom), but the answer does not land in the label's region: its distance to the
+  label in unit space (RMS 0.256) is larger than Cen's (0.227), and it is closer to the label than Cen on only 16 of
+  47 parts. The gap is not the stem's cost
   against a clean reference: the Control row (true DI, clean record) does not run on this path.
-- **By set, BKS is on the ear line:** BKS G −0.160, its interval reaching −0.086, BKS crunch −0.106; per part, 8 of 16
-  BKS parts reach −0.10 (median −0.113), against 23 of 24 GOAT and 7 of 7 panel parts. One part of 47 has G ≥ 0
-  (+0.005, BKS).
+- **By set, BKS is on the ear line:** BKS G −0.160, its interval reaching −0.086, BKS crunch −0.106. Post hoc (the
+  audit's), per part: 8 of 16 BKS parts reach −0.10 (median −0.113), against 23 of 24 GOAT and 7 of 7 panel parts; one
+  part of 47 has G ≥ 0 (+0.005, BKS).
 - **The heavy cells are weakest:** Storm Of Particles −0.158 [−0.351, +0.035] over 4 parts (BKS crunch Storm −0.039).
   Post hoc (the audit's): BKS+GOAT without that band −0.276 [−0.323, −0.228].
 - **Clean and crunch, half A, without real out, without heavy lenders, each cluster left out:** every mean beyond
@@ -82,7 +85,10 @@ explain it. Post hoc (the audit's): how far a part's search improved its search 
 - **Dropping one 3-part panel DI file** leaves the panel with df 1 and the pool reads **undecided** (Aimee Norwich
   RAW_05_02 out: G −0.280 [−0.582, +0.022]; The Laminar Flow ElecGtr01 out: G −0.311 [−0.803, +0.181]), while the
   means barely move (−0.28 to −0.36). That is the panel's interval width, not the gain moving. Dropping the 1-part panel
-  DI file, or any one BKS DI file, the pool still passes; leaving out any one band, BKS+GOAT passes in all 5 cases.
+  DI file, or any one BKS DI file, the pool still passes.
+- **Leaving out one band:** BKS+GOAT passes in all 5 cases. The deciding pool passes in 4; **without Forkupines it reads
+  undecided**, G −0.348 [−0.846, +0.151] (I −0.464 [−0.870, −0.059]). The same panel df mechanism: all three of The
+  Laminar Flow's parts are in that band.
 - The pool flooring the Welch df is conservative (with the exact df pool G is [−0.432, −0.198]).
 - `pipeline_fix.t95` (z above 30 df, open from W0) touches no deciding interval here (the largest df used is 28); only
   the side row over all 47 parts by DI file (df 34) is about 2.7% too narrow. Left for its separate fix.
@@ -99,7 +105,12 @@ explain it. Post hoc (the audit's): how far a part's search improved its search 
 
 Nothing without the true DI (row (b) is the ceiling on the dry guitar), with other guitars in the mix, on released
 mixes, by ear, about effects, or with level, timing or lag errors. **Row (c)** (`fs-both`: a blurred dry guitar made
-from the true DI against the same stem) is the coded next row; it decides whether a song-only route through a rebuilt
-dry guitar stays alive. It passes only with G and I each decided better at −0.10 or beyond on BKS+GOAT+panel with all
-3 panel DI files read; otherwise row (a) `fs-blur` (the blurred dry guitar against the clean record) runs, by the
-cells. Nothing in the product changes.
+from the true DI against the same stem) is the coded next row. It passes only with G and I each decided better at
+−0.10 or beyond on BKS+GOAT+panel with all 3 panel DI files read (F-both: it licenses the song-time search for alone
+windows behind a flag, for testing only). Otherwise row (a) `fs-blur` (the blurred dry guitar against the clean
+record) runs, the last of at most 3 rows: if (a) passes, F-compound goes to the user (each fault alone survivable,
+together not shown); if (a) fails or is undecided, F-dry: the route waits on a better dry guitar, not a verdict on
+one; if (a) reads constant, F-constant goes to the user.
+
+**The end user gives only the song, never a DI.** So row (b), on the true DI, is necessary, not sufficient. Nothing in
+the product changes.
