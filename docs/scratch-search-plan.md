@@ -1,8 +1,9 @@
 # The from-scratch search: does a search from Cen through the degraded inputs land closer than Cen? (plan)
 
 **Status:** declared 2026-11-21, before any run (Plan 1 of "Direction 1 after R-alone", on the user's "Agree" of
-2026-11-21, after an independent review of the plan: approve with changes, B1 to B5 built in, N1 to N3 adopted). Nothing
-has rendered. Every number is by the score unless it says "by ear": J0, ln(d_row / d_against) on the held half, below
+2026-11-21, after an independent review of the plan: approve with changes, B1 to B5 built in, N1 to N3 adopted). Row (b)
+ran 2026-11-21 and was audited: [results](scratch-search-results.md), passes (G −0.315, I −0.462 on the pool); row (c)
+`fs-both` is the coded next row and is running. Every number is by the score unless it says "by ear": J0, ln(d_row / d_against) on the held half, below
 zero closer; 90% cluster t intervals; the deciding pool is BKS, GOAT and the panel weighted equally
 (`full_controls_c3r.pooled`), with BKS+GOAT pooled alone beside. `PF` is `~/ndsp-presets/learn/trusted-data/pipeline-fix`.
 
