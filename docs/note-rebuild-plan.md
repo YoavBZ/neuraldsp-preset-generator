@@ -386,7 +386,8 @@ single blur, avg first when both pass, mild beside). Tested on both paths, go an
 **The ear check no longer blocks the night (R2).**
 - `clips` needs only the declaration and the subset, not the replay's outcome (it reads only development items). It
   takes a render slot, so it waits for the replay's renders, and it never runs beside a separation. Every clip is set
-  to −23 LUFS (loudness matched); an instant-switch page is published privately for the user.
+  to −23 LUFS (loudness matched); a page is published privately for the user (since 2026-11-21 the regular card
+  layout, section 11d).
 - `render` refuses unless the automated pre-checks pass (`precheck_refusal`), on every dry guitar in `build` and on
   the clips. `pick` and `score` (not `render`) refuse without `phase_nr_1_ear` = ok: renders read nothing, and a heard
   fault discards them under a declared revision before any read.
@@ -470,8 +471,8 @@ merges.
 *After the fix* (all 60 parts rebuilt in memory, zero score, nothing written): peaks over the true DI's have medians
 +1.7 dB (`nr-plain`), +2.5 (`nr-level`), +3.7 (`nr-oracle`), at most +10.4. The peak flags fall to 4, 4 and 8 parts.
 Every remaining flag sits on a plain note or chord struck within the 80 ms before it, on sparse windows where the
-rebuilt guitar's crest factor is 6 to 9 dB above the true DI's (measured in memory; restated from the rebuilt build
-in the hand-back): the re-synthesis' sharper attack, not a glitch.
+rebuilt guitar's crest factor is 6 to 9 dB above the true DI's (measured in memory; the rerun build restates it as
+6.1 to 10.1 dB on the flagged parts, section 11d): the re-synthesis' sharper attack, not a glitch.
 
 *Why it stays report-only.* The rule was meant to catch clipping and glitches. At the measure's −22.9 LUFS, peaks
 above full scale are normal (8 of the 60 true DIs the replay itself renders exceed 1.0, up to 2.02), and the
@@ -496,6 +497,27 @@ single-blur avg-both-*, mild-both-*), until the user's go is recorded on main as
 rows stay with the outcome's notes. `render`, `pick` and `score` refuse until then; `build` and `clips` render no
 score and are unaffected. Tested on the replay's case and the single-blur path.
 
+### 11d. The user's go on stage 1 (2026-11-21; ledger `phase_nr_1_both_go`)
+
+The user was asked on 2026-11-21 at 12:48 UTC (the replay's failing both-full row, +0.092 [−0.030, +0.214], plan
+section 5): "Go for the rebuild's next stage? It's about 1 to 2 hours of renders. Its plan requires asking you,
+because the first test failed in the toughest case, a blurred guitar with other guitars in the mix. I suggest yes: it
+tests whether a guitar rebuilt from the notes alone works where the guitar plays alone." The user's "Agree." came
+later, in reply to a five-item list that included "Rebuild's next stage, about 1 to 2 hours of renders: suggest go";
+it answers that item, so stage 1 goes ahead. `gate_refusal` reads go once this is on main; `render` may run. `pick`
+and `score` still wait for the ear check's verdict, recorded from the answers stored on the ear page
+(`phase_nr_1_ear`). Three records ride with it:
+- the ear page moves to the regular card layout on the user's word, in the same message: "Regarding the listening
+  page, use the regular page structure used so far instead inventing a new one (any recording has it own buttons so I
+  don't have to remember everything or go back and forth when answering)". Each recording gets its own card with its
+  play and answer buttons; the clips and the declared reading (`ok`, or `fault` with what was heard) stay the same;
+  the page's code comes in its own PR (section 11e);
+- the sharper-attack confound's text (`PEAK_CONFOUND`) now gives the rerun build's measured crest figure, 6.1 to
+  10.1 dB above the true DI's on the flagged parts (it said "6 to 9 dB", an in-memory figure); the reading is
+  unchanged;
+- Direction 2 (gear families) is parked by the user, 2026-11-21
+  ([family-class-checks-results.md](family-class-checks-results.md)).
+
 ### 11e. The ear check's page in the regular card layout (2026-11-21, the user's ask; ledger `phase_nr_1_ear_page`)
 
 The user asked that the ear check use the regular listening page, with each recording's own buttons, so nothing has
@@ -513,4 +535,3 @@ listed with the card's note), else "incomplete" when any version is unanswered, 
 "can't judge" (the cards listed; it goes to the orchestrator and the user, and `phase_nr_1_ear` is not recorded as ok
 from it), else "ok", every version on every card heard as real; notes on cards without a fault are listed for the
 orchestrator before the verdict is recorded. A chat "ok" is not the record.
-
