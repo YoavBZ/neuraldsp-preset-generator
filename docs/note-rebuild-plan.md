@@ -470,8 +470,8 @@ merges.
 *After the fix* (all 60 parts rebuilt in memory, zero score, nothing written): peaks over the true DI's have medians
 +1.7 dB (`nr-plain`), +2.5 (`nr-level`), +3.7 (`nr-oracle`), at most +10.4. The peak flags fall to 4, 4 and 8 parts.
 Every remaining flag sits on a plain note or chord struck within the 80 ms before it, on sparse windows where the
-rebuilt guitar's crest factor is 6 to 9 dB above the true DI's (measured in memory; restated from the rebuilt build
-in the hand-back): the re-synthesis' sharper attack, not a glitch.
+rebuilt guitar's crest factor is 6 to 9 dB above the true DI's (measured in memory; the rerun build restates it as
+6.1 to 10.1 dB on the flagged parts, section 11d): the re-synthesis' sharper attack, not a glitch.
 
 *Why it stays report-only.* The rule was meant to catch clipping and glitches. At the measure's −22.9 LUFS, peaks
 above full scale are normal (8 of the 60 true DIs the replay itself renders exceed 1.0, up to 2.02), and the
@@ -495,3 +495,15 @@ whenever any Both row in the deciding reports reads "fails" (`failed_both_rows`:
 single-blur avg-both-*, mild-both-*), until the user's go is recorded on main as `phase_nr_1_both_go`. Undecided Both
 rows stay with the outcome's notes. `render`, `pick` and `score` refuse until then; `build` and `clips` render no
 score and are unaffected. Tested on the replay's case and the single-blur path.
+
+### 11d. The user's go on stage 1 (2026-11-21; ledger `phase_nr_1_both_go`)
+
+Asked about the replay's failing both-full row (+0.092 [−0.030, +0.214]) before stage 1, the user answered "Agree"
+(2026-11-21): stage 1 goes ahead. `gate_refusal` reads go once this is on main; `render` may run. `pick` and `score`
+still wait for the ear check's verdict, recorded from the answers stored on the ear page (`phase_nr_1_ear`). Two
+records ride with it:
+- the sharper-attack confound's text (`PEAK_CONFOUND`) now gives the rerun build's measured crest figure, 6.1 to
+  10.1 dB above the true DI's on the flagged parts (it said "6 to 9 dB", an in-memory figure); the reading is
+  unchanged;
+- Direction 2 (gear families) is parked by the user, 2026-11-21
+  ([family-class-checks-results.md](family-class-checks-results.md)).
