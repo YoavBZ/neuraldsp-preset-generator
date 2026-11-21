@@ -62,6 +62,11 @@ scoped route's reach.
 - **A double-tracked part counts as another guitar** in the deciding count; the same-part count goes beside it (the
   user).
 - **The two shares 0.5 and 0.2 stay as the lines** (the user).
+- **p is the mean of band means, a change from the draft's "each song counts once".**
+  - Songs are averaged inside their band first, so a band with many songs (Music Delta's 15, Doom Flamingo's 4)
+    weighs as one.
+  - **The 0.5 and 0.2 lines apply to this band-weighted p**, with its 90% cluster t interval over bands.
+  - The song-weighted value is reported beside and decides nothing.
 - **R1 is not used.**
 
 ## 3. The definitions
@@ -72,19 +77,23 @@ scoped route's reach.
 **Activity, per 100-ms frame.**
 - **The locator set:**
   - a locator part is active where its DI is within 30 dB of its own loudest frame (the locator's rule);
-  - any other guitar is active where any of its tracks is: a DI within 30 dB, or an amp, mic or other track within
-    20 dB, of its own loudest frame (the locator's no-DI rule);
+  - any other guitar with a DI is active by its DIs: the frame-wise maximum of their envelopes within 30 dB of that
+    maximum's loudest frame;
+  - any other guitar with no DI is active by its tracks, exactly as `locator_truth` does for a no-DI guitar: the
+    frame-wise maximum of the tracks' envelopes within 20 dB of that maximum's loudest frame;
   - tracks are grouped into guitars by `verify_tracks.guitar_part_key`, and a track whose key is a locator part's
     belongs to that part.
 - **The rules are the locator's own.** The 30-dB and 20-dB rules, the 100-ms frames, the windows and the 60% share
   are imported from `learn/locator_truth.py` (`ACT_DB`, `NODI_ACT_DB`, `HOP_S`, `WIN`, `STEP`, `ACTIVE_SHARE`), not
   set anew. A test holds them equal.
 - **The MedleyDB set:** a guitar stem is active where MedleyDB's activation confidence reads at least 0.5 at any
-  annotation sample inside the frame, OR any of its raw tracks on disk is active by the locator's no-DI rule (within
-  20 dB of its own loudest frame; a raw track has no DI).
+  annotation sample inside the frame, OR its raw tracks on disk are active by the locator's no-DI rule (the
+  frame-wise maximum of the raws' envelopes within 20 dB of that maximum's loudest frame; a raw track has no DI).
   - Annotations: `v2` where it exists, else `original`. They are read from the metadata clone's git store at commit
     `537bb7b`, with no download and no checkout change. Each annotation's git blob id is recorded.
-  - Only electric raws are on disk, so an acoustic or lap steel stem rests on its annotation alone.
+  - **Acoustic and lap steel stems rest on the annotation alone**: 13 acoustic and 3 lap steel stems, since only the
+    electric raws are on disk. The annotation is normalised to the mix's energy and can read a quiet acoustic
+    inactive. So for songs with such stems the count **leans optimistic** (more windows read alone).
   - A song with a guitar stem that has neither an annotation nor a raw on disk is left out and counted. A dry check
     of inputs and metadata found none: the 10 songs without any annotation have a single electric guitar stem, read
     from its raws.
@@ -100,8 +109,14 @@ of every other guitar is active in none of them.
 
 **Side counts:**
 - **90%:** the other guitars active in at most 10% of the frames.
-- **Same part:** the part's own "DT" doubles do not count as other guitars. This is the locator's name rule;
-  MedleyDB names no doubles, so there it equals the deciding count.
+- **Same part:** the part's own "DT" doubles do not count as other guitars. This is the locator's name rule.
+  - In MedleyDB a stem may hold several raw tracks: 64 of the 124 target stems hold 2 to 14. The metadata groups them
+    under the stem without saying whether they are microphones of one take or separate takes.
+  - The count ORs a stem's raws into its target, so **a double recorded into the target's own stem never counts as
+    another guitar**. This leans MedleyDB's count optimistic, and the pool's with it.
+  - A double given its own stem does count as another guitar. MedleyDB marks no stem as another's double, so its
+    same-part count equals its deciding count.
+  - **Single-raw side count:** the deciding rule on the 60 target stems with one raw track only.
 - **Three disjoint:** at least 3 non-overlapping alone windows.
 - **The curve:** offers at an allowed other-guitar share of 0, 0.05, 0.1, 0.2, 0.3, 0.5 and 1.0. At 1.0 the target
   only has to play.
@@ -112,6 +127,9 @@ of every other guitar is active in none of them.
 - **MedleyDB without bleed:** songs not marked `has_bleed`.
 - **Rule agreement (a diagnostic):** per electric stem with both sources, the share of frames where the annotation
   and the raw rule agree.
+- **Near-constant guitars (reported, not removed):** every guitar active in at least 95% of its song's frames. A
+  never-played track at a noise floor would read active everywhere and block every window.
+- **Songs under one window (10 s)** are left out and counted; none is expected.
 
 **A part offers a window** when at least one window is alone.
 
@@ -154,11 +172,21 @@ W-some.
 
 ## 6. Running it
 
-1. **This declaration merges first.** Before the merge only a zero-outcome input check ran. It resolved every input:
-   the locator's 36 songs and 84 parts, and MedleyDB's metadata, annotations and raw files. It counted no window and
-   read no MedleyDB audio.
-2. **Then the count.** `window_count run --limit 3` times the first 3 songs (no measured runtime exists), then
-   `window_count run` once over every song. It writes `w0-results.json` and refuses to run again.
+1. **This declaration merges first.** Before the merge only a zero-outcome input check ran. It was a short script,
+   not `window_count check`, and counted no window.
+   - **Locator:** it built every session's activity from the locator's stored envelopes, plus new envelopes of three
+     DI files (development audio). That gave 36 songs and 84 parts.
+   - **MedleyDB:** it read the metadata, the annotations (from git) and which raw files exist. **No MedleyDB audio was
+     read.**
+2. **Then the count, from merged main only.** `run` refuses unless main's `preset-ladder` entry holds `phase_wc`, this
+   checkout's `phase_wc*` keys equal main's, and `learn/window_count.py` and `learn/locator_truth.py` equal main's.
+   - `run --limit 3` times the first 3 songs (no measured runtime exists). It prints and writes seconds only: no
+     share, count or code.
+   - `run` then reads once over every song and writes `w0-results.json`.
+   - **The read refuses a second time** once main's entry holds `phase_wc_outcome`, or once a results file exists in
+     the given data folder or in `~/ndsp-presets`. So a different `--data-dir` does not allow a rerun.
+   - A results file deleted before the outcome entry lands is not caught by the code. The hand-back records the
+     file's sha256, and the outcome entry cites it.
 3. **The raw hand-back** goes to `~/ndsp-presets/handover/2026-11-21/window-count-handback.md` for the parent's
    audit, an independent recompute from the tracks.
 4. **The results** then come with `phase_wc_outcome`.

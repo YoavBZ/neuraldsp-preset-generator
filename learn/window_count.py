@@ -8,11 +8,12 @@ Two sets, each read alone and pooled, clustered by band:
 - `locator`: the part locator's development sessions outside every held band (`capture_labels.HELD_BANDS`), with the
   locator's own 100-ms envelopes (`learn/locator_truth.py`); every guitar track the replay's no-other-guitar backing
   left out counts as another guitar (acoustic ones and the keyboard player's included).
-- `medleydb`: set 6's songs outside the same held bands (the reserve's and the panel's MedleyDB bands), truth from MedleyDB's activation-confidence annotations
-  (every stem, acoustic guitars included) OR'd with the locator's envelope rule on the electric guitars' raw tracks.
+- `medleydb`: set 6's songs outside the same held bands (which removes the panel's five MedleyDB bands), truth from
+  MedleyDB's activation-confidence annotations (every stem, acoustic guitars included) OR'd with the locator's no-DI
+  envelope rule on the electric guitars' raw tracks.
 
-    .venv/bin/python -m learn.window_count run --limit 3      # times the first 3 songs (W0's runtime)
-    .venv/bin/python -m learn.window_count run                # every song, both sets; once
+    .venv/bin/python -m learn.window_count run --limit 3      # times the first 3 songs: seconds only, no count
+    .venv/bin/python -m learn.window_count run                # every song, both sets; once, from merged main
 """
 
 from __future__ import annotations
@@ -96,6 +97,22 @@ def active(db, n, rel_db):
     """A track's activity on the song's n frames: within rel_db of its own loudest frame (silence padded)."""
     d = pad(db, n)
     return d > d.max() - rel_db
+
+
+def group_active(dbs, n, rel_db):
+    """A guitar's activity from several tracks, as `locator_truth` does for a guitar with no DI: the frame-wise
+    maximum of the tracks' envelopes, within rel_db of that maximum's loudest frame."""
+    import numpy as np
+
+    return active(np.max([pad(d, n) for d in dbs], axis=0), n, rel_db)
+
+
+NEAR_CONSTANT = 0.95        # a guitar active in at least 95% of the song's frames is reported (a noise floor?)
+
+
+def near_constant(acts, share=NEAR_CONSTANT):
+    """{guitar: active share} of the guitars active in at least `share` of the frames."""
+    return {k: round(float(v.mean()), 4) for k, v in sorted(acts.items()) if float(v.mean()) >= share}
 
 
 def conf_frames(times, conf, n, hop=HOP_S, thr=MDB_CONF):
@@ -230,6 +247,7 @@ def report(songs_by_set):
              "by_role": {str(k): summarise(songs, parts_filter=lambda p, k=k: p.get("role") == k)
                          for k in ("lead", "rhythm", None)},
              "single_guitar_songs": sum(1 for s in songs if s["single_guitar"]),
+             "near_constant_guitars": {s["id"]: s["near_constant"] for s in songs if s.get("near_constant")},
              "songs": len(songs), "bands": len({s["band"] for s in songs}),
              "parts": sum(len(s["parts"]) for s in songs),
              "parts_offering": sum(p["counts"]["offers"] for s in songs for p in s["parts"])}
@@ -238,6 +256,9 @@ def report(songs_by_set):
                 [dict(s, parts=[dict(p, counts=p["counts_annotation_only"]) for p in s["parts"]])
                  for s in songs if all(p.get("counts_annotation_only") for p in s["parts"])])
             r["side_no_bleed"] = summarise([s for s in songs if s.get("has_bleed") != "yes"])
+            r["side_single_raw"] = summarise(songs, parts_filter=lambda p: p.get("n_raws") == 1)
+            r["target_stems_by_raws"] = {"single": sum(p.get("n_raws") == 1 for s in songs for p in s["parts"]),
+                                         "several": sum((p.get("n_raws") or 0) > 1 for s in songs for p in s["parts"])}
             fl = [p["annotation_flips"] for s in songs for p in s["parts"] if p.get("annotation_flips")]
             r["annotation_flips"] = {k: sum(f[k] for f in fl) for k in ("alone_annotation_only_not_deciding",
                                                                           "alone_deciding_not_annotation_only",
@@ -337,8 +358,9 @@ def locator_groups(s):
 
 
 def locator_acts(s, db):
-    """(n frames, {guitar: bool[n] activity}, parts) of one locator session: a locator part by its DI (ACT_DB), any
-    other guitar by its tracks OR'd (a DI at ACT_DB, an amp or mic track at NODI_ACT_DB). db: {track: dB envelope}."""
+    """(n frames, {guitar: bool[n] activity}, parts) of one locator session, by the locator's rules: a locator part by
+    its DI (ACT_DB); any other guitar with a DI by its DIs (the frame-wise maximum at ACT_DB), else by its tracks (the
+    frame-wise maximum at NODI_ACT_DB, `locator_truth`'s no-DI rule). db: {track: dB envelope}."""
     from learn import clean_di as CD
 
     n = max(len(db[m]) for m in s["mix"] if m in db)
@@ -349,15 +371,12 @@ def locator_acts(s, db):
             acts["part:" + name] = active(db[g["di"]], n, ACT_DB)
     missing = []
     for k, tr in unowned.items():
-        a = None
-        for t in tr:
-            if t not in db:
-                missing.append(t)
-                continue
-            x = active(db[t], n, ACT_DB if CD.is_guitar_di(t) else NODI_ACT_DB)
-            a = x if a is None else (a | x)
-        if a is not None:
-            acts["other:" + k] = a
+        missing += [t for t in tr if t not in db]
+        dis = [t for t in tr if t in db and CD.is_guitar_di(t)]
+        if dis:
+            acts["other:" + k] = group_active([db[t] for t in dis], n, ACT_DB)
+        elif any(t in db for t in tr):
+            acts["other:" + k] = group_active([db[t] for t in tr if t in db], n, NODI_ACT_DB)
     if missing:
         raise SystemExit(f"{s['song']}: no envelope for {missing}")
     return n, acts, parts
@@ -366,6 +385,9 @@ def locator_acts(s, db):
 def locator_song(s, db, labels):
     """One locator session's parts and counts."""
     n, acts, parts = locator_acts(s, db)
+    if n < WIN:
+        return {"set": "locator", "id": f"locator:{s['song']}", "song": s["song"], "band": s["band"],
+                "left_out": [f"shorter than one window ({n * HOP_S:.1f} s)"]}
     starts = windows(n)
     rows = []
     for name in parts:
@@ -381,7 +403,7 @@ def locator_song(s, db, labels):
                      "counts": part_counts(acts[key], others, others_same, starts)})
     return {"set": "locator", "id": f"locator:{s['song']}", "song": s["song"], "band": s["band"],
             "source": s["source"], "length_s": round(n * HOP_S, 1), "single_guitar": len(acts) == 1,
-            "guitars": sorted(acts), "parts": rows}
+            "guitars": sorted(acts), "near_constant": near_constant(acts), "parts": rows}
 
 
 def locator_envelopes(s, cache_dir):
@@ -507,11 +529,8 @@ def mdb_acts(home, inv_s, cache_dir):
     acts, acts_ann, why = {}, {}, []
     for sid, st in stems.items():
         a_ann = conf_frames(*ann[sid], n) if sid in ann else None
-        a_raw = None
-        for r in st["raws"]:
-            if r in env:
-                x = active(env[r], n, NODI_ACT_DB)
-                a_raw = x if a_raw is None else (a_raw | x)
+        raws = [env[r] for r in st["raws"] if r in env]
+        a_raw = group_active(raws, n, NODI_ACT_DB) if raws else None
         if a_ann is None and a_raw is None:
             why.append(f"{sid} ({'/'.join(map(str, st['instruments']))}): no annotation and no raw on disk")
             continue
@@ -523,14 +542,15 @@ def mdb_acts(home, inv_s, cache_dir):
 
 def mdb_song(home, inv_s, cache_dir):
     """One MedleyDB song's parts and counts, or {"left_out": why}."""
-    import numpy as np
-
     song = inv_s["song"]
     m = mdb_acts(home, inv_s, cache_dir)
     n, stems, env, acts, acts_ann = m["n"], m["stems"], m["env"], m["acts"], m["acts_ann"]
     ver, blob, ann = m["ann"]
     if m["why"]:
         return {"set": "medleydb", "id": f"medleydb:{song}", "song": song, "band": inv_s["band"], "left_out": m["why"]}
+    if n < WIN:
+        return {"set": "medleydb", "id": f"medleydb:{song}", "song": song, "band": inv_s["band"],
+                "left_out": [f"shorter than one window ({n * HOP_S:.1f} s)"]}
     starts = windows(n)
     rows, agree = [], {}
     for sid, st in stems.items():
@@ -544,13 +564,10 @@ def mdb_song(home, inv_s, cache_dir):
             c_ann = part_counts(acts_ann[sid], oa, oa, starts)
             flips = flip_counts(alone(acts[sid], others, starts), alone(acts_ann[sid], oa, starts))
         lab = next((i for i in st["instruments"] if i in MDB_ELECTRIC), None)
-        rows.append({"part": sid, "mdb_label": lab, "role": None, "gain_class": None, "counts": c,
-                     "counts_annotation_only": c_ann, "annotation_flips": flips})
+        rows.append({"part": sid, "mdb_label": lab, "role": None, "gain_class": None, "n_raws": len(st["raws"]),
+                     "counts": c, "counts_annotation_only": c_ann, "annotation_flips": flips})
         if sid in ann and any(r in env for r in st["raws"]):
-            a_raw = np.zeros(n, bool)
-            for r in st["raws"]:
-                if r in env:
-                    a_raw |= active(env[r], n, NODI_ACT_DB)
+            a_raw = group_active([env[r] for r in st["raws"] if r in env], n, NODI_ACT_DB)
             a_ann = conf_frames(*ann[sid], n)
             agree[sid] = {"frames_agree": round(float((a_raw == a_ann).mean()), 4),
                           "raw_active": round(float(a_raw.mean()), 4), "annotation_active": round(float(a_ann.mean()), 4)}
@@ -558,6 +575,7 @@ def mdb_song(home, inv_s, cache_dir):
             "has_bleed": inv_s.get("has_bleed"), "length_s": round(n * HOP_S, 1), "annotation": ver,
             "annotation_blob": blob, "single_guitar": len(acts) == 1, "guitars": sorted(acts),
             "guitar_instruments": {k: v["instruments"] for k, v in stems.items()}, "parts": rows,
+            "near_constant": near_constant(acts),
             "rule_agreement": agree}
 
 
@@ -567,19 +585,75 @@ def out_dir(home):
     return home / "learn/window-count"
 
 
+LEDGER_ID = "preset-ladder"
+PHASE, OUTCOME = "phase_wc", "phase_wc_outcome"
+CODE_FILES = ("learn/window_count.py", "learn/locator_truth.py")
+DEFAULT_HOME = pathlib.Path("~/ndsp-presets").expanduser()
+RESULTS = "w0-results.json"
+
+
+def wc_keys(entry):
+    """(Pure.) The `phase_wc*` keys of a ledger entry."""
+    return {k: v for k, v in (entry or {}).items() if k.startswith("phase_wc")}
+
+
+def ledger_entry(text):
+    """(Pure.) The `preset-ladder` entry of a ledger's text, or None."""
+    return next((t for t in json.loads(text)["tests"] if t["test_id"] == LEDGER_ID), None)
+
+
+def run_refusal(main_entry, local_entry, code_differs, read, done):
+    """(Pure.) Why the count may not run, or None. main_entry/local_entry: the `preset-ladder` entry on origin/main and
+    in this checkout; code_differs: the code files that differ from main's; read: the count itself (not the timing
+    run); done: existing results files. The count runs once: an outcome on main or any results file refuses it."""
+    if not main_entry or PHASE not in main_entry:
+        return f"main's {LEDGER_ID} entry has no {PHASE}: merge the declaration before running"
+    if wc_keys(main_entry) != wc_keys(local_entry):
+        return f"this checkout's {PHASE}* keys differ from main's: run from merged main"
+    if code_differs:
+        return f"{', '.join(code_differs)} differ from main's: run from merged code"
+    if read and OUTCOME in main_entry:
+        return f"main's ledger already holds {OUTCOME}: W0 is read once"
+    if read and done:
+        return f"{', '.join(map(str, done))} exists: W0 is read once"
+    return None
+
+
+def on_main():
+    """(main's entry, this checkout's entry, code files differing from origin/main) after a fetch."""
+    def git(*a):
+        return subprocess.run(["git", "-C", str(LT.PLUGIN_ROOT), *a], capture_output=True, text=True)
+    git("fetch", "-q", "origin", "main")
+    led = git("show", "origin/main:docs/dev-test-ledger.json")
+    if led.returncode:
+        raise SystemExit(f"main's ledger is not readable: {led.stderr.strip()}")
+    local = ledger_entry((LT.PLUGIN_ROOT / "docs/dev-test-ledger.json").read_text())
+    differs = [f for f in CODE_FILES if git("diff", "--quiet", "origin/main", "--", f).returncode]
+    return ledger_entry(led.stdout), local, differs
+
+
+def timing_doc(timing, seconds):
+    """(Pure.) The timing run's whole output: seconds per song and in all; no share, count or code."""
+    return {"schema": "window-count-w0-timing-1", "seconds": seconds,
+            "per_song_s": [t["s"] for t in timing], "songs": len(timing)}
+
+
 def cmd_run(a):
     home = pathlib.Path(a.data_dir).expanduser()
     od = out_dir(home)
+    read = a.limit is None
+    done = sorted({p for p in (od / RESULTS, out_dir(DEFAULT_HOME) / RESULTS) if p.exists()})
+    main_entry, local_entry, differs = on_main()
+    why = run_refusal(main_entry, local_entry, differs, read, done)
+    if why:
+        raise SystemExit(why)
     od.mkdir(parents=True, exist_ok=True)
-    final = od / "w0-results.json"
-    if a.limit is None and final.exists():
-        raise SystemExit(f"{final} exists: W0 is read once")
     t0 = time.time()
     labels = locator_labels()
     loc = locator_sessions()
-    mdb, reserve = mdb_sessions(home)
+    mdb, held = mdb_sessions(home)
     jobs = [("locator", s) for s in loc] + [("medleydb", s) for s in mdb]
-    if a.limit is not None:
+    if not read:
         jobs = jobs[:a.limit]
     songs, left_out, timing = {k: [] for k in SETS}, [], []
     for kind, s in jobs:
@@ -593,27 +667,26 @@ def cmd_run(a):
             left_out.append(r)
         else:
             songs[kind].append(r)
-        print(f"{r['id']}: {timing[-1]['s']} s", flush=True)
-    doc = {"schema": "window-count-w0-1", "plan": "docs/window-count-plan.md", "ledger": "preset-ladder phase_wc",
+        print(f"song {len(timing)}: {timing[-1]['s']} s", flush=True)
+    seconds = round(time.time() - t0, 1)
+    if not read:                                    # the timing run: seconds only
+        doc = timing_doc(timing, seconds)
+        (od / f"w0-timing-{a.limit}.json").write_text(json.dumps(doc, indent=1))
+        print(json.dumps(doc))
+        return
+    doc = {"schema": "window-count-w0-1", "plan": "docs/window-count-plan.md", "ledger": f"{LEDGER_ID} {PHASE}",
            "rules": {"hop_s": HOP_S, "window_s": WIN * HOP_S, "step_s": STEP * HOP_S, "active_share": ACTIVE_SHARE,
                      "act_db_di": ACT_DB, "act_db_other": NODI_ACT_DB, "strict": STRICT, "tolerant": TOLERANT,
-                     "curve": CURVE, "wide": WIDE, "rare": RARE, "mdb_conf": MDB_CONF, "mdb_commit": MDB_COMMIT},
-           "held_left_out": {"locator": locator_held(), "medleydb": reserve},
-           "held_left_out_counts": {"locator": left_out_counts(locator_held()), "medleydb": left_out_counts(reserve)},
+                     "curve": CURVE, "wide": WIDE, "rare": RARE, "mdb_conf": MDB_CONF, "mdb_commit": MDB_COMMIT,
+                     "near_constant": NEAR_CONSTANT},
+           "held_left_out": {"locator": locator_held(), "medleydb": held},
+           "held_left_out_counts": {"locator": left_out_counts(locator_held()), "medleydb": left_out_counts(held)},
            "left_out": left_out,
-           "seconds": round(time.time() - t0, 1), "timing": timing,
+           "seconds": seconds, "timing": timing,
            "songs": songs, "report": report(songs), "table": W0_TABLE}
-    path = final if a.limit is None else od / f"w0-timing-{a.limit}.json"
     text = json.dumps(doc, indent=1, default=str)
-    path.write_text(text)
-    print(path, hashlib.sha256(text.encode()).hexdigest()[:12], f"{doc['seconds']} s")
-    h = doc["report"]["headline"]
-    print("headline", h)
-    for k in (*SETS, POOL):
-        if k in doc["report"]:
-            d = doc["report"][k]["deciding"]
-            print(k, {x: (None if d[x] is None else round(d[x], 3)) if isinstance(d[x], float) or d[x] is None
-                      else d[x] for x in ("mean", "lo90", "hi90", "bands", "songs", "code")})
+    (od / RESULTS).write_text(text)
+    print(od / RESULTS, "sha256", hashlib.sha256(text.encode()).hexdigest(), f"{seconds} s")
 
 
 def cmd_check(a):
@@ -622,7 +695,7 @@ def cmd_check(a):
     home = pathlib.Path(a.data_dir).expanduser()
     od = out_dir(home)
     loc = locator_sessions()
-    mdb, reserve = mdb_sessions(home)
+    mdb, held = mdb_sessions(home)
     out = {"locator": [], "medleydb": [], "left_out": []}
     t0 = time.time()
     for s in loc:
@@ -641,8 +714,8 @@ def cmd_check(a):
                       "medleydb_parts": sum(r["electric"] for r in out["medleydb"]),
                       "left_out": out["left_out"],
                       "held_left_out": {"locator": left_out_counts(locator_held()),
-                                        "medleydb": left_out_counts(reserve)},
-                      "held_songs": {"locator": locator_held(), "medleydb": reserve},
+                                        "medleydb": left_out_counts(held)},
+                      "held_songs": {"locator": locator_held(), "medleydb": held},
                       "seconds": out["seconds"]}, indent=1))
 
 

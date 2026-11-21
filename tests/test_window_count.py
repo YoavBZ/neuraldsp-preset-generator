@@ -241,3 +241,62 @@ def test_activity_rule_is_the_locators_own():
 
     assert (W.HOP_S, W.WIN, W.STEP, W.ACTIVE_SHARE, W.ACT_DB, W.NODI_ACT_DB) == \
         (T.HOP_S, T.WIN, T.STEP, T.ACTIVE_SHARE, T.ACT_DB, T.NODI_ACT_DB)
+
+
+def test_group_active_is_the_locators_no_di_rule():
+    a = np.array([0.0, -100.0, -100.0])
+    b = np.array([-100.0, -40.0, -100.0])          # a quiet track: its own loudest frame is -40
+    # the frame-wise maximum, against that maximum's loudest frame (locator_truth's no-DI guitars)
+    assert W.group_active([a, b], 3, 20.0).tolist() == [True, False, False]
+    # not each track against its own loudest frame OR'd, which would mark the quiet track's frame
+    assert (W.active(a, 3, 20.0) | W.active(b, 3, 20.0)).tolist() == [True, True, False]
+    assert W.group_active([a], 3, 30.0).tolist() == W.active(a, 3, 30.0).tolist()
+
+
+def test_near_constant():
+    acts = {"a": np.ones(100, bool), "b": np.r_[np.ones(95, bool), np.zeros(5, bool)], "c": np.zeros(100, bool)}
+    assert W.near_constant(acts) == {"a": 1.0, "b": 0.95}
+
+
+def _entry(**kw):
+    return {"test_id": "preset-ladder", "phase_l0": "x", **kw}
+
+
+def test_run_refusal():
+    m = _entry(phase_wc="d")
+    assert W.run_refusal(None, m, [], True, []) and W.run_refusal(_entry(), m, [], True, [])
+    assert "keys differ" in W.run_refusal(m, _entry(phase_wc="other"), [], True, [])
+    assert "differ from main" in W.run_refusal(m, m, ["learn/window_count.py"], False, [])
+    assert W.run_refusal(m, m, [], True, []) is None
+    assert W.run_refusal(m, dict(m, phase_l9="another session's"), [], True, []) is None    # other keys never block
+    done = _entry(phase_wc="d", phase_wc_outcome="o")
+    assert "read once" in W.run_refusal(done, done, [], True, [])
+    assert W.run_refusal(done, done, [], False, []) is None                                 # the timing run
+    assert "read once" in W.run_refusal(m, m, [], True, ["/x/w0-results.json"])
+
+
+def test_timing_doc_holds_seconds_only():
+    doc = W.timing_doc([{"song": "locator:x", "s": 1.5}, {"song": "medleydb:y", "s": 2.0}], 3.6)
+    assert set(doc) == {"schema", "seconds", "per_song_s", "songs"}
+    assert doc["per_song_s"] == [1.5, 2.0] and doc["songs"] == 2
+    assert not any(k in str(doc) for k in ("W-", "offers", "alone", "mean", "medleydb:", "locator:"))
+
+
+def test_a_song_under_one_window_is_left_out_and_counted():
+    db = {"m.wav": np.zeros(80), "02_ElecGtr1DI.wav": np.zeros(80)}
+    s = {"song": "x", "band": "b", "source": "t", "mix": ["m.wav"], "files": list(db),
+         "parts": [{"part": "ElecGtr1", "di": "02_ElecGtr1DI.wav", "ref": None, "alts": []}]}
+    r = W.locator_song(s, db, {})
+    assert r["left_out"] == ["shorter than one window (8.0 s)"]
+
+
+def test_report_single_raw_side_and_near_constant():
+    mdb = [_song("medleydb", f"m{i}", f"t{i}", [True, False], mdb="clean electric guitar") for i in range(4)]
+    for s in mdb:
+        s["parts"][0]["n_raws"], s["parts"][1]["n_raws"] = 1, 3
+        s["near_constant"] = {"S09": 0.99} if s["id"] == "medleydb:t0" else {}
+    r = W.report({"locator": [], "medleydb": mdb})["medleydb"]
+    assert r["side_single_raw"]["mean"] == pytest.approx(1.0)
+    assert r["deciding"]["mean"] == pytest.approx(0.5)
+    assert r["target_stems_by_raws"] == {"single": 4, "several": 4}
+    assert r["near_constant_guitars"] == {"medleydb:t0": {"S09": 0.99}}
