@@ -8128,5 +8128,17 @@
    ]
   }
  ],
- "held_out_uses": []
+ "held_out_uses": [
+  {
+   "test_id": "window-count-w0-2026-11-21",
+   "kind": "truth for a count (not a test of any preset or model)",
+   "declaration": "docs/window-count-plan.md",
+   "ledger": "preset-ladder phase_wc",
+   "decided": "2026-11-21, the user ('Agree': MedleyDB may be used, declared, as truth for the count only)",
+   "reads": "activity only: no preset, no render, no training, no listening",
+   "what": "each song's guitar-stem activity from MedleyDB's activation-confidence annotations (the metadata clone's git store at 537bb7b) OR'd with 100-ms envelopes of the electric-guitar raw tracks; counts of 10-s windows where an electric guitar stem plays with no other guitar",
+   "songs": "every set-6 song outside capture_labels.HELD_BANDS (the panel's MedleyDB bands Aimee Norwich, Big Troubles, Dahka Band, Little Tybee and Port St Willow are left out)",
+   "note": "Basic Pitch trained on MedleyDB, so this set can never be a note-route test; the crops and parts stay held out of every other use"
+  }
+ ]
 }

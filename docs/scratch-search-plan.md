@@ -66,7 +66,8 @@ selection. The loop is new code; only the pieces are reused.
   `full_controls.SEED`, categoricals by levels, C1a's canonical form, in one renderer process primed with the start.
 - **Step 2:** C1b's stage A (the rooms, 16) and stage B (the mic types and amp EQ, 48, `knob_search`) on step 1's best, in
   a fresh process primed with it; its first evaluation within 0.005 of step 1's best value, the canonical start then the
-  raw start on a miss, step 1's best standing if both miss.
+  raw start on a miss, step 1's best standing if both miss. Only the canonical start is audible-checked (as in C2):
+  the raw start is step 1's best plus the label's spring switch.
 - **The final:** rendered fresh (primed alone). C2's guards and F70's peak bound, on the search half only: an evaluation
   stands when its search-half value is finite and its peak is no lower than `peak_bound` (min of −57 dBFS and the start's
   peak) less 0.05 dB; a final that fails falls back to step 1's best, then to the start.
