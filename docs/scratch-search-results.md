@@ -1,11 +1,15 @@
-# The from-scratch search: results (row (b) audited; row (c) running)
+# The from-scratch search: results (rows (b) and (c) audited; cell F-both)
 
-**Row (b) `fs-stem` ran 2026-11-21 and was audited** (an independent recompute from the 47 per-part score records:
-PASS WITH CORRECTIONS, all taken below). Declaration: [scratch-search-plan.md](scratch-search-plan.md); ledger
-`preset-ladder` `phase_fs`, `phase_fs_draw`, `phase_fs_answers_stem`, `phase_scratch_stem_outcome` (named outside the guarded `phase_fs*` keys, so the declared
-set and the running row's main guard stay as declared). Code
-`learn/scratch_search.py`. Row (c) `fs-both` is the coded next row and is running; `phase_fs_outcome` waits for the
-plan's cell.
+**Row (b) `fs-stem` and row (c) `fs-both` ran 2026-11-21 and were audited.** Each audit was an independent recompute
+from the 47 per-part score records, and each came back PASS WITH CORRECTIONS; all corrections are taken below.
+- Declaration: [scratch-search-plan.md](scratch-search-plan.md).
+- Ledger, entry `preset-ladder`: `phase_fs`, `phase_fs_draw`, `phase_fs_answers_stem`, `phase_fs_answers_both`,
+  `phase_scratch_stem_outcome` and `phase_scratch_both_outcome`. The two outcome keys are named outside the guarded
+  `phase_fs*` keys, so the declared set and the main guard stay as declared. The plan's cell is recorded in
+  `phase_scratch_both_outcome`, and `phase_fs_outcome` is left unwritten.
+- Code: `learn/scratch_search.py`.
+- **The cell is F-both**, after (b) passes and (c) passes. [Row (c)'s section](#row-c-fs-both-the-blurred-dry-guitar-against-the-stem)
+  covers its result and what it licenses. Row (a) does not run.
 
 Every number is **by the score** (J0, ln(d_row / d_against) on the held half against the clean record; below zero is
 closer), never heard. 90% cluster t intervals. "Passes" = decided better with the mean at −0.10 or beyond.
@@ -101,16 +105,168 @@ explain it. Post hoc (the audit's): how far a part's search improved its search 
   against the clean record, not the stem, so the result is not circular. The lag is the stored one, shared by every
   arm, and the separator saw the whole mix.
 
-## What it does not say
+## What row (b) does not say
 
-Nothing without the true DI (row (b) is the ceiling on the dry guitar), with other guitars in the mix, on released
-mixes, by ear, about effects, or with level, timing or lag errors. **Row (c)** (`fs-both`: a blurred dry guitar made
-from the true DI against the same stem) is the coded next row. It passes only with G and I each decided better at
-−0.10 or beyond on BKS+GOAT+panel with all 3 panel DI files read (F-both: it licenses the song-time search for alone
-windows behind a flag, for testing only). Otherwise row (a) `fs-blur` (the blurred dry guitar against the clean
-record) runs, the last of at most 3 rows: if (a) passes, F-compound goes to the user (each fault alone survivable,
-together not shown); if (a) fails or is undecided, F-dry: the route waits on a better dry guitar, not a verdict on
-one; if (a) reads constant, F-constant goes to the user.
+Row (b) says nothing in these cases:
+- without the true DI (row (b) is the ceiling on the dry guitar);
+- with other guitars in the mix;
+- on released mixes;
+- by ear;
+- about effects;
+- with level, timing or lag errors.
+
+**Row (c)** (`fs-both`: a blurred dry guitar made from the true DI, against the same stem) was the coded next row. It
+passed, giving F-both; see below. Row (a) `fs-blur` does not run.
 
 **The end user gives only the song, never a DI.** So row (b), on the true DI, is necessary, not sufficient. Nothing in
 the product changes.
+
+## Row (c) `fs-both`: the blurred dry guitar against the stem
+
+Row (c) runs on the same 47 parts, with the same search, Cen and partners as row (b). One thing changes: the search's
+dry guitar is `di_robustness`'s avg+mild blur of the true DI, in place of the true DI. The reference is still the
+`xlnoG@-3` stem. The score is unchanged: the answer goes through the true DI, judged on the held half against the
+clean record.
+
+**avg+mild is a best case for a dry guitar.** It is made from the true DI, so it is note-exact and time-exact. A dry
+guitar rebuilt from the song's notes must at least match it.
+
+### What ran
+
+- **Search:** from merged main `3a20dbe0`, held half zeros in every search process.
+  - 47 of 47 parts searched, 0 refused, 0 fallbacks.
+  - Step 2 kept the canonical start on all 47.
+  - **12,317 search renders** in 6,287 s wall on 3 processes, about 7,050 an hour.
+  - Post hoc (the audit's), the search used avg+mild on all 47 parts. Its first evaluation equals the draw's position-0
+    value exactly, and differs from the true-DI value on 46 of 47. No search record holds a held-half value.
+- **Answers:** built from main `6e7c7a88` with zero renders. Hashed before the score (`phase_fs_answers_both`, #542),
+  and byte-identical at score time (all 47 score records carry that hash).
+- **Score:** from merged main `e8f21f2f`. **940 renders** in 840 s wall, 10 settings a part, as in row (b).
+  - The scoring control held on 47 of 47: Cen repeated its stored held-half value exactly, and equals row (b)'s Cen,
+    render sha256 included.
+  - The partners are identical to row (b)'s.
+  - 0 non-finite scores and 0 refusals, against a stop of 3.
+- **Read:** once.
+- **Total for the row:** 13,257 renders. Trusted data only.
+
+### The result: passes, narrowly (cell F-both)
+
+| Reading | G (answer against Cen) | I (against borrowed answers) |
+|---|---|---|
+| **Pool, BKS+GOAT+panel (deciding)** | **−0.148 [−0.246, −0.050]** | **−0.376 [−0.452, −0.300]** |
+| BKS+GOAT (beside) | −0.087 [−0.155, −0.018], undecided | −0.365 [−0.461, −0.269] |
+| BKS (16 parts, 8 DI files) | −0.008 [−0.101, +0.085] | −0.337 [−0.516, −0.158] |
+| GOAT (24 parts) | −0.166 [−0.275, −0.057] | −0.393 [−0.474, −0.313] |
+| Panel (7 parts, 3 DI files) | −0.272 [−0.599, +0.055] (part-weighted −0.314) | −0.397 [−0.599, −0.195] |
+| Band-weighted (5 class×lender-band cells, equal, descriptive) | −0.129 | −0.315 |
+
+- **Reading (`row_reading`):** passes. G and I are each decided better, with the mean beyond −0.10, on the deciding pool.
+  - All 3 panel DI files were read.
+  - B1 (constant) does not fire, because I passes.
+  - B2's lever is for row (b) only.
+- **BKS+GOAT reads undecided.** G is decided better, but its mean is short of −0.10. This reading is beside; it does
+  not decide.
+- **The cell:** (b) passes and (c) passes, which gives **F-both**. N3 is met: W0 read W-some.
+- **The edge:** the top of G's interval is −0.050, the edge of the user's 0.05 rule. With the exact t in place of the
+  floored df, it is [−0.243, −0.053].
+
+**G is the size to read.** I adds nothing beyond G here. It is larger only because the borrowed answers read
++0.227 [+0.156, +0.298] worse than Cen on the pool.
+
+**Is the gain the part's own?** The row's centre (the mean of the other parts' answers) against Cen is
+G_centre +0.024 [−0.022, +0.071].
+- By `number_reading`, its lower end reads "fails": it rules out a gain beyond −0.05. So the row's centre is no better
+  constant.
+- On BKS+GOAT the centre is worse than Cen: +0.052 [+0.010, +0.095]. (The answer less the centre, −0.173, is inflated
+  by that bad centre, so it is not cited as the evidence.)
+
+**In-search signal: none** (post hoc, the audit's). In row (b), how much a part's search improved its search half
+predicted its held-half G (r +0.78). In row (c) it does not (r 0.00, Spearman 0.21; BKS −0.48, GOAT −0.19). Nothing seen
+at search time flags a bad answer.
+
+### The pass is narrow and carried by the panel (post hoc, the audit's)
+
+- **The panel carries it.** Its 7 parts of 47 give 61% of the pool mean (equal set weights), and 35% of the summed G.
+  Without the panel the row does not pass: BKS+GOAT is undecided.
+- **Dropping one panel DI file:** under the coded rule the pool reads undecided in 3 of 3 cases. With fewer than 3
+  panel DI files the rule falls back to BKS+GOAT, which reads undecided.
+  - With the panel kept in the pool on its 2 remaining files:
+    - without Aimee Norwich RAW_05_02 it still passes (G −0.112 [−0.163, −0.060]);
+    - without Big Troubles RAW_03_08 (1 part) it reads undecided;
+    - without The Laminar Flow ElecGtr01 it reads undecided.
+- **Dropping any single BKS or GOAT cluster** (32 of them): the pool still passes.
+- **Leaving out one band:** the pool reads undecided without Forkupines or without Storm Of Particles, and passes without
+  each of the other 3 bands. BKS+GOAT is undecided in all 5 cases.
+- **By class, BKS+GOAT:** clean −0.079 [−0.205, +0.048] and crunch −0.095 [−0.175, −0.014]. Both are undecided, and
+  clean is not decided better at all.
+
+### The heard size
+
+- **Parts at −0.10 or beyond, by set (G):** BKS 6 of 16 (median −0.014), GOAT 16 of 24, panel 6 of 7.
+- **Parts at +0.10 or worse than Cen: 8 of 47, against 0 in row (b).** One GOAT clean part reads +0.777.
+  - That is about 1 part in 6 landing worse than Cen, by the score, at a gap the ear usually hears.
+  - Nothing in the search signals it.
+- **The pool as a whole:** its interval reaches −0.050, where the score and the ear agree only at chance.
+  - A heard gain is likely on the panel and GOAT.
+  - It is not shown on BKS.
+  - It is not assured for the pool.
+
+### The blur's cost against row (b) (post hoc, the audit's)
+
+Per part, answer(c) less answer(b) on the held half. Cen is identical in both rows.
+
+- **Pool: +0.167 [+0.110, +0.224].** By set: BKS +0.153, GOAT +0.203, panel +0.146 [−0.015, +0.307].
+- **Per part:** row (c) is worse by 0.10 or more on 27 of 47 parts, and better by 0.10 or more on 2.
+- **Share of row (b)'s G kept:** 47% overall. BKS 5%, GOAT 45%, panel 65%.
+  - BKS had the least headroom in row (b).
+  - r(G(b), G(c)) within BKS is +0.33.
+- **Clean loses most.**
+  - BKS+GOAT clean: BKS +0.220, GOAT +0.305. Crunch: +0.086 and +0.101.
+  - By band: Hazael +0.285, The Travelling Band +0.230, Forkupines +0.118, Storm Of Particles +0.083.
+
+### Beside the deciding reading
+
+- **Checkpoints (pool G):** at 50 evaluations −0.130 [−0.267, +0.006]; at 100 −0.121; at 200 −0.143; the final answer
+  −0.148. For I: −0.358, −0.348, −0.370 and −0.376.
+- **Shrunk halfway to Cen:** pool G −0.198 [−0.276, −0.120], I −0.425. Unlike in row (b), the shrunk answer reads closer
+  than the answer.
+  - Post hoc (the audit's), answer less shrunk: pool +0.049 [−0.027, +0.126], undecided; BKS+GOAT
+    +0.061 [+0.019, +0.103].
+  - This is **not overshoot**. The answer moves as far from Cen as in row (b): unit RMS 0.239 against 0.240. Post hoc,
+    the reading is a noisier direction, so halving the move halves the error.
+  - Even shrunk, row (c) reads +0.118 [+0.063, +0.173] worse than row (b)'s answer.
+- **The stored label less Cen:** −0.383 [−0.482, −0.284]. This is the same in-sample label as row (b), zero renders.
+
+### What it licenses
+
+**F-both, as declared:**
+- build the song-time search for alone windows behind a flag, for testing only (N3 met; W0 W-some);
+- next, a real note-matched dry guitar on the same rows (waits for the user);
+- then a blind sitting;
+- no claim on released mixes.
+
+The coded rule warrants this, and a flagged build is cheap to undo. The audit tempers it:
+- BKS+GOAT and the clean class are undecided.
+- The pass rests on the panel's 3 DI files.
+- G's interval reaches the 0.05 edge.
+- About 1 part in 6 lands worse than Cen at a heard gap, with no in-search signal to catch it.
+- I adds nothing beyond G.
+- avg+mild is a best case, and it keeps under half of row (b)'s gain, least on clean parts.
+
+**The flagged build is held, pending the user.** The audit recommends two steps first:
+1. Score the note rebuild's real dry guitar on these same 47 rows, the same way, with the shrunk answer declared as an
+   arm.
+2. Then a blind sitting that includes the losing parts (the 8 at +0.10 or worse) and reports regret.
+
+### What row (c) does not say
+
+Row (c) says nothing in these cases:
+- with a dry guitar rebuilt from the song's notes (avg+mild is made from the true DI);
+- with other guitars in the mix;
+- on released mixes;
+- by ear;
+- about effects;
+- with level, timing or lag errors.
+
+The halves and the target are as in row (b): adjacent halves of the same recording and rig, and the score judged
+against the clean record, not the stem. Nothing in the product changes.
