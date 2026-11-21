@@ -54,7 +54,8 @@ def test_schema():
 
 def test_every_part_is_held_out_and_unused():
     d = set6.load()
-    assert d["held_out_uses"] == []                       # no declared use yet
+    assert [u["test_id"] for u in d["held_out_uses"]] == ["window-count-w0-2026-11-21"]   # truth for a count only
+    assert d["held_out_uses"][0]["reads"] == "activity only: no preset, no render, no training, no listening"
     assert d["held_out_bands"] == set6.bands()
     assert all(s["split"] == "held_out" and s["fold"] is None for s in d["sessions"])
     assert all(p["split"] == "held_out" and p["fold"] is None for p in d["parts"])
@@ -121,7 +122,7 @@ def test_amendment_2_labelled_parts():
     assert bt["reasons"] == ["two lag clusters"] and bt["crop_record_sha256"]
     assert d["in_scope_bands_by_class"] == {"crunch": ["Little Tybee", "Port St Willow"]}
     assert "AlexanderRoss" in lab["not_counted"]
-    assert d["held_out_uses"] == []
+    assert len(d["held_out_uses"]) == 1
 
 
 def test_amendment_2_musdb_marks_per_part():
