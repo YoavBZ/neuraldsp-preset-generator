@@ -22,9 +22,17 @@ same-take pair is the DI.
 Amendment 2 comes first below, then amendment 1. The sections after them describe the first
 declaration. Where they speak of kept parts, those parts are now excluded.
 
-**Every band is held out, and the set is unused.** Nothing may train, tune or choose on
-it, and nobody may listen to it, until a confirmation is declared in a committed file.
-That use is then added to `held_out_uses`, which is empty.
+**Every band is held out.** Nothing may train, tune or choose on it, and nobody may listen
+to it, until a confirmation is declared in a committed file. That use is then added to
+`held_out_uses`.
+
+**One declared use (2026-11-21, the user's "Agree"): truth for the window count W0**
+([plan](window-count-plan.md), ledger `preset-ladder` `phase_wc`). It reads each guitar stem's
+activity only (MedleyDB's activation-confidence annotations and envelopes of the electric raw
+tracks). It reads no preset, renders nothing, trains nothing and involves no listening. The
+reserve's five bands (Aimee Norwich, Big Troubles, Dahka Band, Little Tybee, Port St Willow) stay
+out of it. The crops and parts stay held out of every other use. **Basic Pitch trained on
+MedleyDB, so set 6 can never be a note-route test.**
 
 ## Amendment 2 (2026-10-13): DIs labelled by ear
 
@@ -134,7 +142,8 @@ point to their replacement (`superseded_by`).
   applies were all declared before: the plan, set 5's rules, and the scorer's reference and
   class.
 
-**Every band stays held out and unused.** `held_out_uses` is empty.
+**Every band stays held out.** `held_out_uses` holds one entry since 2026-11-21, the window
+count (top of this file).
 
 **Next, per the plan:** recompute the deciding test's power with set 5 plus set 6.
 

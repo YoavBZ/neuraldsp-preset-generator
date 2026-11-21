@@ -779,6 +779,8 @@ def main():
         print(f"{len(made)} crops cut")
         return
     out = build(args.inventory.expanduser(), args.crops.expanduser(), args.result.expanduser())
+    if args.json.exists():          # declared uses are append-only: a rebuild keeps them
+        out["held_out_uses"] = json.loads(args.json.read_text(encoding="utf-8")).get("held_out_uses", [])
     args.json.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n")
     print(json.dumps(out["counts"], indent=1))
 
