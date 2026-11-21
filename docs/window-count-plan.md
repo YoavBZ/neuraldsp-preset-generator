@@ -3,7 +3,7 @@
 **Status:** declared 2026-11-21, before any count. It comes from Plan 2 of the draft "Direction 1 after R-alone"
 plans, whose independent review approved W0 only, with changes C1 to C5 (all built in below). Code:
 `learn/window_count.py` (tests `tests/test_window_count.py`). Ledger: `preset-ladder` `phase_wc`, then
-`phase_wc_outcome` after the audit. Data: `~/ndsp-presets/learn/window-count/`. Not run.
+`phase_wc_outcome` after the audit. Data: `~/ndsp-presets/learn/window-count/`. Run 2026-11-21 and audited: [results](window-count-results.md), W-some.
 
 **CPU only.** It makes no render, no separation and no training, uses no plugin and no MPS, and involves no listening.
 It reads no preset and chooses nothing. It changes nothing in the product.
