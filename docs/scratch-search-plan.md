@@ -185,7 +185,7 @@ committed. No separation, no training, no MPS job.
   answers whose sha256 is not `phase_fs_answers_<row>` on main.
 - **The audit:** an independent agent recomputes every row with its own code from the answers and the score files.
 - **Machine:** at most 3 render processes machine-wide, slots from the executor; `setopt no_bg_nice`, caffeinate; PIDs
-  recorded at launch; the 31 GB disk guard; never beside a separation.
+  recorded at launch; the house disk guard, 31 GB in decimal units (`trusted_data.DISK_GUARD_GB` = 31.0 against `pretrain_set.free_gb()`, `shutil.disk_usage(...).free / 1e9`; about 28.9 GiB), checked before every part in `search` and `score`; never beside a separation.
 - **Trusted data:** Silent Waves and Drowning are out. No sealed set. No old DI-rebuild model.
 - **Public repo:** no settings values and no song data in the docs; answers stay under `PF/fs/`.
 
