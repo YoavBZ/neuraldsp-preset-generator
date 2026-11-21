@@ -40,10 +40,15 @@ def test_ear_verdict():
     ok = {it["id"]: {"A": {"real": True}, "B": {"real": True}} for it in items}
     assert NE.ear_verdict(items, ok)["verdict"] == "ok"
     ok["c2"]["note"] = "B a bit thin"
-    ok["c3"]["B"] = {"cant": True}
     r = NE.ear_verdict(items, ok)
-    assert r["verdict"] == "ok" and r["cant_judge"] == [{"n": 3, "version": "nr-level"}]
+    assert r["verdict"] == "ok" and r["cant_judge"] == []
     assert r["notes"] == [{"n": 2, "item": "item_10", "cls": "crunch", "note": "B a bit thin"}]
+    ok["c3"]["B"] = {"cant": True}                          # one can't-judge beside real answers: not ok
+    r = NE.ear_verdict(items, ok)
+    assert r["verdict"] == "undecided" and r["cant_judge"] == [{"n": 3, "version": "nr-level"}]
+    cant = {it["id"]: {"A": {"cant": True}, "B": {"cant": True}} for it in items}
+    r = NE.ear_verdict(items, cant)                         # nothing heard as real: never ok
+    assert r["verdict"] == "undecided" and len(r["cant_judge"]) == 2 * len(items)
     part = {k: v for k, v in ok.items() if k != "c4"}
     r = NE.ear_verdict(items, part)
     assert r["verdict"] == "incomplete" and len(r["unanswered"]) == 2
@@ -78,6 +83,7 @@ def test_player_and_artifact_page():
     page, css, js = NE.page_html(items, clips, "b123")
     assert json.loads(page.split('<script id="data" type="application/json">')[1].split("</script>")[0])["build"] == "b123"
     art = NE.artifact_page(page, css, js)
+    assert f"<title>{NE.TITLE}</title>" in page and "ear-vreal-answers" not in js
     assert art.startswith(f"<title>{NE.TITLE}</title>")
     assert '"answers/" + DATA.build' in art and 'id="save"' not in art.split("<script")[0]
     assert "<body>" not in art

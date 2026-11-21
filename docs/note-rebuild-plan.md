@@ -509,7 +509,8 @@ differ by at most 3e-5) and AAC-encoded at 256 kbps, as the regular pages are. A
 
 The declared reading is unchanged (`ok`, or `fault` with what was heard). `phase_nr_1_ear` is recorded from the stored
 answers by `note_rebuild_ear read` (`ear_verdict`): "fault" when any card marks a fault on either rebuilt guitar (each
-listed with the card's note), else "incomplete" when any version is unanswered, else "ok"; "can't judge" is not a
-fault and is counted beside; notes on cards without a fault are listed for the orchestrator before the verdict is
-recorded. A chat "ok" is not the record.
+listed with the card's note), else "incomplete" when any version is unanswered, else "undecided" when any version is
+"can't judge" (the cards listed; it goes to the orchestrator and the user, and `phase_nr_1_ear` is not recorded as ok
+from it), else "ok", every version on every card heard as real; notes on cards without a fault are listed for the
+orchestrator before the verdict is recorded. A chat "ok" is not the record.
 

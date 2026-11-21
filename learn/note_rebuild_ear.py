@@ -12,9 +12,10 @@ much louder, timing), or "can't judge"; a note per card is optional. Not blind: 
 rebuilt guitar has a fault, not which is closer, so each version is named.
 
 The read (`ear_verdict`, pure): "fault" when any card marks a fault on either rebuilt guitar (each listed with the
-card's note); otherwise "incomplete" when a version on any card is unanswered; otherwise "ok". "Can't judge" is not a
-fault and is counted beside. Notes on cards without a fault are listed beside an "ok", for the orchestrator to read
-before the verdict is recorded.
+card's note); otherwise "incomplete" when a version on any card is unanswered; otherwise "undecided" when any version
+on any card is "can't judge" (the cards listed: it goes to the orchestrator and the user, and `phase_nr_1_ear` is not
+recorded as "ok" from it); otherwise "ok", every version on every card heard as real. Notes on cards without a fault
+are listed beside, for the orchestrator to read before the verdict is recorded.
 """
 
 from __future__ import annotations
@@ -125,7 +126,7 @@ def player_js():
             raise SystemExit(f"ear_vreal's player changed: {old[:60]}")
         js = js.replace(old, new)
     a, b = js.index("function paint() {"), js.index('document.getElementById("export")')
-    return js[:a] + ANSWERS_JS.lstrip("\n") + js[b:]
+    return (js[:a] + ANSWERS_JS.lstrip("\n") + js[b:]).replace('"ear-vreal-answers-"', '"note-rebuild-ear-answers-"')
 
 
 def cards(items):
@@ -194,7 +195,7 @@ def ear_verdict(items, answers):
             faults.append({**where, "heard": mine, "note": note})
         elif note:
             notes.append({**where, "note": note})
-    verdict = "fault" if faults else "incomplete" if unanswered else "ok"
+    verdict = "fault" if faults else "incomplete" if unanswered else "undecided" if cant else "ok"
     return {"verdict": verdict, "faults": faults, "unanswered": unanswered, "cant_judge": cant, "notes": notes}
 
 
@@ -208,7 +209,9 @@ def page_html(items, clips, build):
     page = (E.PAGE[:a] + INTRO + "\n" + E.PAGE[b:]).replace("@@COUNT@@", str(len(items))) \
         .replace("@@CARDS@@", cards(items)).replace("@@CSS@@", css).replace("@@DATA@@", data) \
         .replace("@@CLIPS@@", json.dumps(clips)).replace("@@JS@@", js)
-    return page, css, js
+    if "<title>Record tone check</title>" not in page:
+        raise SystemExit("ear_vreal's page title changed")
+    return page.replace("<title>Record tone check</title>", f"<title>{TITLE}</title>"), css, js
 
 
 def artifact_page(page, css, js):
