@@ -386,7 +386,8 @@ single blur, avg first when both pass, mild beside). Tested on both paths, go an
 **The ear check no longer blocks the night (R2).**
 - `clips` needs only the declaration and the subset, not the replay's outcome (it reads only development items). It
   takes a render slot, so it waits for the replay's renders, and it never runs beside a separation. Every clip is set
-  to −23 LUFS (loudness matched); an instant-switch page is published privately for the user.
+  to −23 LUFS (loudness matched); a page is published privately for the user (since 2026-11-21 the regular card
+  layout, section 11d).
 - `render` refuses unless the automated pre-checks pass (`precheck_refusal`), on every dry guitar in `build` and on
   the clips. `pick` and `score` (not `render`) refuse without `phase_nr_1_ear` = ok: renders read nothing, and a heard
   fault discards them under a declared revision before any read.
@@ -498,10 +499,19 @@ score and are unaffected. Tested on the replay's case and the single-blur path.
 
 ### 11d. The user's go on stage 1 (2026-11-21; ledger `phase_nr_1_both_go`)
 
-Asked about the replay's failing both-full row (+0.092 [−0.030, +0.214]) before stage 1, the user answered "Agree"
-(2026-11-21): stage 1 goes ahead. `gate_refusal` reads go once this is on main; `render` may run. `pick` and `score`
-still wait for the ear check's verdict, recorded from the answers stored on the ear page (`phase_nr_1_ear`). Two
-records ride with it:
+The user was asked on 2026-11-21 at 12:48 UTC (the replay's failing both-full row, +0.092 [−0.030, +0.214], plan
+section 5): "Go for the rebuild's next stage? It's about 1 to 2 hours of renders. Its plan requires asking you,
+because the first test failed in the toughest case, a blurred guitar with other guitars in the mix. I suggest yes: it
+tests whether a guitar rebuilt from the notes alone works where the guitar plays alone." The user's "Agree." came
+later, in reply to a five-item list that included "Rebuild's next stage, about 1 to 2 hours of renders: suggest go";
+it answers that item, so stage 1 goes ahead. `gate_refusal` reads go once this is on main; `render` may run. `pick`
+and `score` still wait for the ear check's verdict, recorded from the answers stored on the ear page
+(`phase_nr_1_ear`). Three records ride with it:
+- the ear page moves to the regular card layout on the user's word, in the same message: "Regarding the listening
+  page, use the regular page structure used so far instead inventing a new one (any recording has it own buttons so I
+  don't have to remember everything or go back and forth when answering)". Each recording gets its own card with its
+  play and answer buttons; the clips and the declared reading (`ok`, or `fault` with what was heard) stay the same;
+  the page's code comes in its own PR (section 11e);
 - the sharper-attack confound's text (`PEAK_CONFOUND`) now gives the rerun build's measured crest figure, 6.1 to
   10.1 dB above the true DI's on the flagged parts (it said "6 to 9 dB", an in-memory figure); the reading is
   unchanged;

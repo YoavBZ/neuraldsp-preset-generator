@@ -51,9 +51,10 @@ BESIDE_READER = "without_reader_fail"   # ... and without the parts whose item f
 BESIDE_PRECHECK = "without_precheck_fail"   # ... and without the parts where a deciding arm fails a pre-check
 BESIDE_PEAK = "without_peak_flag"       # ... and without the parts where a deciding arm's peak is flagged
 PEAK_CONFOUND = ("A declared confound: the rebuilt guitars' attacks are sharper than the players' DIs (crest factor "
-                 "6.1 to 10.1 dB higher on the flagged parts, measured on the stage-1 build), and the attack sets how hard the amp is driven. On N1-fail "
-                 "or N1-between the read and its audit compare each arm's full row with its without_peak_flag row; a "
-                 "row that reads differently without the flagged parts is said so before any route decision.")
+                 "6.1 to 10.1 dB higher on the flagged parts, measured on the stage-1 build), and the attack sets "
+                 "how hard the amp is driven. On N1-fail or N1-between the read and its audit compare each arm's "
+                 "full row with its without_peak_flag row; a row that reads differently without the flagged parts "
+                 "is said so before any route decision.")
 CODE_FILES = ("learn/note_rebuild.py", "learn/note_rebuild_s1.py")
 
 

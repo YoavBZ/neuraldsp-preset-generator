@@ -3818,11 +3818,14 @@
    "phase_nr_1_both_go": {
     "date": "2026-11-21",
     "by": "the user",
-    "asked": "the replay's Both row both-full fails (+0.092 [-0.030, +0.214]); plan section 5 asks the user before stage 1",
+    "asked_at": "2026-11-21 12:48 UTC",
+    "asked": "Go for the rebuild's next stage? It's about 1 to 2 hours of renders. Its plan requires asking you, because the first test failed in the toughest case, a blurred guitar with other guitars in the mix. I suggest yes: it tests whether a guitar rebuilt from the notes alone works where the guitar plays alone.",
+    "why_asked": "the replay's Both row both-full fails (+0.092 [-0.030, +0.214]); plan section 5 asks the user before stage 1",
     "quote": "Agree.",
+    "answered": "a later five-item list that included \"Rebuild's next stage, about 1 to 2 hours of renders: suggest go\"; the \"Agree.\" answers that item",
     "relayed_by": "the ML session, 2026-11-21",
     "go": true,
-    "with": "PEAK_CONFOUND's text restated from the rerun build (crest 6.1 to 10.1 dB on the flagged parts; reading unchanged); Direction 2 (gear families) parked by the user, 2026-11-21. Plan section 11d."
+    "with": "the ear page moves to the regular card layout on the user's word in the same message (same clips, same declared reading; its code in its own PR); PEAK_CONFOUND's text restated from the rerun build (crest 6.1 to 10.1 dB on the flagged parts; reading unchanged); Direction 2 (gear families) parked by the user, 2026-11-21. Plan section 11d."
    }
   }
  ],
