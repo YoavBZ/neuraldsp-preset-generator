@@ -132,6 +132,9 @@ def _song(set_, band, sid, offers, single=False, **kw):
                          "curve": {str(c): o or c >= 0.5 for c in W.CURVE}},
               **({"counts_annotation_only": {"offers": o, "offers_90": True, "offers_same_part": o,
                                              "offers_3": False, "curve": {str(c): o for c in W.CURVE}}}
+                 if set_ == "medleydb" else {}),
+              **({"annotation_flips": {"alone_annotation_only_not_deciding": 2,
+                                       "alone_deciding_not_annotation_only": 1, "windows": 10}}
                  if set_ == "medleydb" else {})}
              for i, o in enumerate(offers)]
     return {"set": set_, "id": f"{set_}:{sid}", "band": band, "single_guitar": single, "parts": parts}
@@ -155,6 +158,8 @@ def test_report_reads_each_set_alone_and_pooled():
     assert r["medleydb"]["by_scope"]["mdb-clean"]["songs"] == 6
     assert r["medleydb"]["side_annotation_only"]["songs"] == 6
     assert r["locator"]["parts"] == 12 and r["locator"]["parts_offering"] == 6
+    assert r["medleydb"]["annotation_flips"] == {"alone_annotation_only_not_deciding": 12,
+                                                 "alone_deciding_not_annotation_only": 6, "windows": 60, "parts": 6}
 
 
 def test_scope_of():
@@ -208,3 +213,31 @@ def test_locator_song_counts_every_other_guitar(monkeypatch):
     # windows start 0..150: the acoustic blocks starts < 100; the double blocks starts > 100
     assert c["alone"] == 1 and c["alone_same_part"] == 6
     assert not r["single_guitar"]
+
+
+def test_flip_counts():
+    d = np.array([1, 0, 0, 1, 0], bool)
+    a = np.array([1, 1, 1, 0, 0], bool)
+    assert W.flip_counts(d, a) == {"alone_annotation_only_not_deciding": 2, "alone_deciding_not_annotation_only": 1,
+                                   "windows": 5}
+
+
+def test_held_reasons_follow_the_one_list():
+    from learn import capture_labels as CL
+
+    assert W.held_reasons("Zeno") == ["V-real"]
+    assert W.held_reasons("Adam Buckley") == ["NS"]
+    assert W.held_reasons("BKS") == ["BKS"]
+    for b in ("Little Tybee", "Port St Willow", "Big Troubles", "Aimee Norwich", "Dahka Band"):   # MedleyDB's
+        assert W.held_reasons(b) == ["panel"]
+    assert W.held_reasons("Doom Flamingo") == []
+    assert all(W.held_reasons(b) for b in CL.HELD_BANDS)
+    assert W.left_out_counts([{"reasons": ["panel"]}, {"reasons": ["V-real"]}, {"reasons": ["panel"]}]) == \
+        {"V-real": 1, "panel": 2}
+
+
+def test_activity_rule_is_the_locators_own():
+    from learn import locator_truth as T
+
+    assert (W.HOP_S, W.WIN, W.STEP, W.ACTIVE_SHARE, W.ACT_DB, W.NODI_ACT_DB) == \
+        (T.HOP_S, T.WIN, T.STEP, T.ACTIVE_SHARE, T.ACT_DB, T.NODI_ACT_DB)

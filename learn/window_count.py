@@ -8,7 +8,7 @@ Two sets, each read alone and pooled, clustered by band:
 - `locator`: the part locator's development sessions outside every held band (`capture_labels.HELD_BANDS`), with the
   locator's own 100-ms envelopes (`learn/locator_truth.py`); every guitar track the replay's no-other-guitar backing
   left out counts as another guitar (acoustic ones and the keyboard player's included).
-- `medleydb`: set 6's songs outside the reserve's bands, truth from MedleyDB's activation-confidence annotations
+- `medleydb`: set 6's songs outside the same held bands (the reserve's and the panel's MedleyDB bands), truth from MedleyDB's activation-confidence annotations
   (every stem, acoustic guitars included) OR'd with the locator's envelope rule on the electric guitars' raw tracks.
 
     .venv/bin/python -m learn.window_count run --limit 3      # times the first 3 songs (W0's runtime)
@@ -28,12 +28,14 @@ import statistics
 import subprocess
 import time
 
-HOP_S = 0.1                 # the locator's 100-ms activity frames
-WIN, STEP = 100, 10         # 10-s windows on a 1-s step, in frames (the search's section length)
-ACTIVE_SHARE = 0.6          # the target plays in at least 60% of the window's frames (the locator's rule)
-ACT_DB = 30.0               # a DI is active within 30 dB of its loudest frame (the locator's rule)
-NODI_ACT_DB = 20.0          # an amp, mic or raw track within 20 dB of its loudest frame (the locator's rule)
-SILENT_DB = -240.0
+from learn import locator_truth as LT  # noqa: E402  (the locator's own activity rule, not a new one)
+
+HOP_S = LT.HOP_S                # the locator's 100-ms activity frames
+WIN, STEP = LT.WIN, LT.STEP     # 10-s windows on a 1-s step, in frames (the search's section length)
+ACTIVE_SHARE = LT.ACTIVE_SHARE  # the target plays in at least 60% of the window's frames
+ACT_DB = LT.ACT_DB              # a DI is active within 30 dB of its loudest frame
+NODI_ACT_DB = LT.NODI_ACT_DB    # a track with no DI (amp, mic, raw) within 20 dB of its loudest frame
+SILENT_DB = LT.SILENT_DB
 GAP = WIN // STEP           # windows apart for two windows not to overlap
 
 STRICT = 0.0                # deciding: the other guitars inactive in 100% of the window's frames (C3)
@@ -131,6 +133,16 @@ def max_disjoint(hit, gap=GAP):
     return n
 
 
+def flip_counts(deciding, annotation_only):
+    """Windows where the annotation alone reads differently from the deciding OR rule: alone by the annotation only
+    (the raw envelopes found a guitar or no target), and alone by the OR rule only (the raws found the target)."""
+    import numpy as np
+
+    d, a = np.asarray(deciding, bool), np.asarray(annotation_only, bool)
+    return {"alone_annotation_only_not_deciding": int((a & ~d).sum()),
+            "alone_deciding_not_annotation_only": int((d & ~a).sum()), "windows": int(len(d))}
+
+
 def same_part_base(name):
     """A double's base part: a Cambridge "DT" double is the same part (locator_truth's rule, for the side count)."""
     return re.sub(r"dt$", "", re.sub(r"\s+", "", str(name)).lower())
@@ -226,6 +238,10 @@ def report(songs_by_set):
                 [dict(s, parts=[dict(p, counts=p["counts_annotation_only"]) for p in s["parts"]])
                  for s in songs if all(p.get("counts_annotation_only") for p in s["parts"])])
             r["side_no_bleed"] = summarise([s for s in songs if s.get("has_bleed") != "yes"])
+            fl = [p["annotation_flips"] for s in songs for p in s["parts"] if p.get("annotation_flips")]
+            r["annotation_flips"] = {k: sum(f[k] for f in fl) for k in ("alone_annotation_only_not_deciding",
+                                                                          "alone_deciding_not_annotation_only",
+                                                                          "windows")} | {"parts": len(fl)}
         out[name] = r
     out["headline"] = {"code": out[POOL]["deciding"]["code"],
                        "per_set": {k: out[k]["deciding"]["code"] for k in SETS if k in out}}
@@ -234,12 +250,43 @@ def report(songs_by_set):
 
 # --- the locator set ------------------------------------------------------------------------------------------------
 
+NS_BANDS = ("Adam Buckley", "The Maybe Next Years")
+
+
+def held_reasons(band):
+    """Why a band is held (`capture_labels.HELD_BANDS`, the one exclusion list for both sets): V-real, NS, the panel
+    (`docs/panel-v1-pairs.json`), BKS, else the reserve; a band can carry several. [] when it is not held."""
+    from learn import capture_labels as CL
+    from learn import pipeline_review as PR
+
+    if band not in CL.HELD_BANDS:
+        return []
+    panel = {src["band"] for src in json.loads((LT.PLUGIN_ROOT / "docs/panel-v1-pairs.json").read_text())["sources"]}
+    out = [k for k, ok in (("V-real", band in {b for b, _ in PR.VREAL.values()}), ("NS", band in NS_BANDS),
+                           ("panel", band in panel), ("BKS", band == "BKS")) if ok]
+    return out or ["reserve"]
+
+
+def left_out_counts(rows):
+    """rows: [{"song", "band", "reasons"}] -> {reason: songs} (a song counts under each of its reasons)."""
+    out = {}
+    for r in rows:
+        for k in r["reasons"]:
+            out[k] = out.get(k, 0) + 1
+    return dict(sorted(out.items()))
+
+
 def locator_sessions(held=None):
     from learn import capture_labels as CL
-    from learn import locator_truth as T
 
     held = set(CL.HELD_BANDS if held is None else held)
-    return [s for s in T.sessions() if s["band"] not in held]
+    return [s for s in LT.sessions() if s["band"] not in held]
+
+
+def locator_held():
+    """The locator's sessions left out, each with why."""
+    return [{"song": s["song"], "band": s["band"], "reasons": held_reasons(s["band"])}
+            for s in LT.sessions() if held_reasons(s["band"])]
 
 
 def locator_labels():
@@ -381,7 +428,8 @@ def mdb_sessions(home, held=None):
     held = set(CL.HELD_BANDS if held is None else held)
     inv = json.loads((mdb_root(home) / "inventory.json").read_text())
     keep = [s for s in inv["sessions"] if s["band"] not in held]
-    return keep, [s["song"] for s in inv["sessions"] if s["band"] in held]
+    return keep, [{"song": s["song"], "band": s["band"], "reasons": held_reasons(s["band"])}
+                  for s in inv["sessions"] if s["band"] in held]
 
 
 def mdb_annotation(home, song):
@@ -490,13 +538,14 @@ def mdb_song(home, inv_s, cache_dir):
             continue
         others = [v for k, v in acts.items() if k != sid]
         c = part_counts(acts[sid], others, others, starts)
-        c_ann = None
+        c_ann, flips = None, None
         if len(acts_ann) == len(acts):
             oa = [v for k, v in acts_ann.items() if k != sid]
             c_ann = part_counts(acts_ann[sid], oa, oa, starts)
+            flips = flip_counts(alone(acts[sid], others, starts), alone(acts_ann[sid], oa, starts))
         lab = next((i for i in st["instruments"] if i in MDB_ELECTRIC), None)
         rows.append({"part": sid, "mdb_label": lab, "role": None, "gain_class": None, "counts": c,
-                     "counts_annotation_only": c_ann})
+                     "counts_annotation_only": c_ann, "annotation_flips": flips})
         if sid in ann and any(r in env for r in st["raws"]):
             a_raw = np.zeros(n, bool)
             for r in st["raws"]:
@@ -549,7 +598,9 @@ def cmd_run(a):
            "rules": {"hop_s": HOP_S, "window_s": WIN * HOP_S, "step_s": STEP * HOP_S, "active_share": ACTIVE_SHARE,
                      "act_db_di": ACT_DB, "act_db_other": NODI_ACT_DB, "strict": STRICT, "tolerant": TOLERANT,
                      "curve": CURVE, "wide": WIDE, "rare": RARE, "mdb_conf": MDB_CONF, "mdb_commit": MDB_COMMIT},
-           "reserve_songs_left_out": reserve, "left_out": left_out,
+           "held_left_out": {"locator": locator_held(), "medleydb": reserve},
+           "held_left_out_counts": {"locator": left_out_counts(locator_held()), "medleydb": left_out_counts(reserve)},
+           "left_out": left_out,
            "seconds": round(time.time() - t0, 1), "timing": timing,
            "songs": songs, "report": report(songs), "table": W0_TABLE}
     path = final if a.limit is None else od / f"w0-timing-{a.limit}.json"
@@ -572,7 +623,7 @@ def cmd_check(a):
     od = out_dir(home)
     loc = locator_sessions()
     mdb, reserve = mdb_sessions(home)
-    out = {"locator": [], "medleydb": [], "left_out": [], "reserve_songs_left_out": reserve}
+    out = {"locator": [], "medleydb": [], "left_out": []}
     t0 = time.time()
     for s in loc:
         n, acts, parts = locator_acts(s, locator_envelopes(s, od / "env-locator"))
@@ -588,7 +639,11 @@ def cmd_check(a):
                       "medleydb_songs": len(out["medleydb"]),
                       "medleydb_bands": len({r["band"] for r in out["medleydb"]}),
                       "medleydb_parts": sum(r["electric"] for r in out["medleydb"]),
-                      "left_out": out["left_out"], "reserve": reserve, "seconds": out["seconds"]}, indent=1))
+                      "left_out": out["left_out"],
+                      "held_left_out": {"locator": left_out_counts(locator_held()),
+                                        "medleydb": left_out_counts(reserve)},
+                      "held_songs": {"locator": locator_held(), "medleydb": reserve},
+                      "seconds": out["seconds"]}, indent=1))
 
 
 def main(argv=None):

@@ -52,8 +52,12 @@ scoped route's reach.
   - It is truth for the count only: it reads no preset and trains nothing. The use is recorded in
     `docs/validation-set6.json` `held_out_uses`.
   - **Basic Pitch trained on MedleyDB, so it can never be a note-route test.**
-  - The reserve's five MedleyDB bands stay sealed (Aimee Norwich, Big Troubles, Dahka Band, Little Tybee and
-    Port St Willow, 6 songs), as the house rules keep the reserve. That leaves 67 songs.
+  - **One exclusion list for both sets:** every band in `capture_labels.HELD_BANDS` (V-real, NS, the panel, the
+    reserve, BKS) is left out, the user's MedleyDB yes notwithstanding (the parent, 2026-11-21).
+    - In MedleyDB it removes the panel's five MedleyDB bands, 6 songs: Aimee Norwich (2), Big Troubles, Dahka Band,
+      Little Tybee and Port St Willow (`docs/panel-v1-pairs.json`). That leaves 67 songs.
+    - In the locator it removes 9 sessions: 8 for V-real, 1 for NS.
+    - The run reports the count for each reason (`held_left_out_counts`).
 - **The locator's 36 songs outside every held set stay in** (the user).
 - **A double-tracked part counts as another guitar** in the deciding count; the same-part count goes beside it (the
   user).
@@ -72,8 +76,12 @@ scoped route's reach.
     20 dB, of its own loudest frame (the locator's no-DI rule);
   - tracks are grouped into guitars by `verify_tracks.guitar_part_key`, and a track whose key is a locator part's
     belongs to that part.
+- **The rules are the locator's own.** The 30-dB and 20-dB rules, the 100-ms frames, the windows and the 60% share
+  are imported from `learn/locator_truth.py` (`ACT_DB`, `NODI_ACT_DB`, `HOP_S`, `WIN`, `STEP`, `ACTIVE_SHARE`), not
+  set anew. A test holds them equal.
 - **The MedleyDB set:** a guitar stem is active where MedleyDB's activation confidence reads at least 0.5 at any
-  annotation sample inside the frame, OR any of its raw tracks on disk is within 20 dB of its own loudest frame.
+  annotation sample inside the frame, OR any of its raw tracks on disk is active by the locator's no-DI rule (within
+  20 dB of its own loudest frame; a raw track has no DI).
   - Annotations: `v2` where it exists, else `original`. They are read from the metadata clone's git store at commit
     `537bb7b`, with no download and no checkout change. Each annotation's git blob id is recorded.
   - Only electric raws are on disk, so an acoustic or lap steel stem rests on its annotation alone.
@@ -99,6 +107,8 @@ of every other guitar is active in none of them.
   only has to play.
 - **MedleyDB, annotation only:** MedleyDB's published rule without the raw envelopes, on songs where every guitar
   stem has an annotation.
+  - Beside it, the windows it flips against the deciding OR rule, both ways (`annotation_flips`): alone by the
+    annotation only, and alone by the OR rule only.
 - **MedleyDB without bleed:** songs not marked `has_bleed`.
 - **Rule agreement (a diagnostic):** per electric stem with both sources, the share of frames where the annotation
   and the raw rule agree.
@@ -110,7 +120,7 @@ of every other guitar is active in none of them.
 | Set | Songs | Bands | Target parts | Activity from |
 |---|---|---|---|---|
 | `locator`: the part locator's development sessions less every band in `capture_labels.HELD_BANDS` (V-real, NS, the panel, the reserve, BKS) | 36 | 20 | 84 | The locator's stored envelopes, plus this count's own for guitar tracks they lack (three DI-only guitars in one session) |
-| `medleydb`: set 6 less the reserve's bands | 67 | 39 | 124 (every electric guitar stem) | Annotations OR raw envelopes |
+| `medleydb`: set 6 less the same held bands (the panel's five MedleyDB bands) | 67 | 39 | 124 (every electric guitar stem) | Annotations OR raw envelopes |
 
 - **Shared bands:** none. Set 6's declaration checked its bands against every earlier set.
 - **Music Delta:** MedleyDB's 15 Music Delta songs are one band.

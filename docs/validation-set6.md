@@ -29,9 +29,9 @@ to it, until a confirmation is declared in a committed file. That use is then ad
 **One declared use (2026-11-21, the user's "Agree"): truth for the window count W0**
 ([plan](window-count-plan.md), ledger `preset-ladder` `phase_wc`). It reads each guitar stem's
 activity only (MedleyDB's activation-confidence annotations and envelopes of the electric raw
-tracks). It reads no preset, renders nothing, trains nothing and involves no listening. The
-reserve's five bands (Aimee Norwich, Big Troubles, Dahka Band, Little Tybee, Port St Willow) stay
-out of it. The crops and parts stay held out of every other use. **Basic Pitch trained on
+tracks). It reads no preset, renders nothing, trains nothing and involves no listening. Every
+band in `capture_labels.HELD_BANDS` stays out of it: the panel's five MedleyDB bands (Aimee Norwich,
+Big Troubles, Dahka Band, Little Tybee, Port St Willow). The crops and parts stay held out of every other use. **Basic Pitch trained on
 MedleyDB, so set 6 can never be a note-route test.**
 
 ## Amendment 2 (2026-10-13): DIs labelled by ear
