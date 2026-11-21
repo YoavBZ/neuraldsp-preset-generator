@@ -517,3 +517,21 @@ and `score` still wait for the ear check's verdict, recorded from the answers st
   unchanged;
 - Direction 2 (gear families) is parked by the user, 2026-11-21
   ([family-class-checks-results.md](family-class-checks-results.md)).
+
+### 11e. The ear check's page in the regular card layout (2026-11-21, the user's ask; ledger `phase_nr_1_ear_page`)
+
+The user asked that the ear check use the regular listening page, with each recording's own buttons, so nothing has
+to be remembered or revisited. `learn/note_rebuild_ear.py` builds it from the same 24 clips (`clips`' index, each
+checked against its sha256), on `ear_vreal`'s player and `c1a_ear`'s Artifact page: one numbered card per window and
+preset (8 cards), the recorded DI and both rebuilt guitars playing in a loop and switching at the same place, and on
+the same card, for each rebuilt guitar, "sounds real", each fault heard (hiss, out of tune, clicks or crackle, one note
+much louder, timing), or "can't judge", with an optional note. The clips are folded to mono (the plugin's two channels
+differ by at most 3e-5) and AAC-encoded at 256 kbps, as the regular pages are. Answers are kept in the page's db
+(`answers/<build>`) and Export.
+
+The declared reading is unchanged (`ok`, or `fault` with what was heard). `phase_nr_1_ear` is recorded from the stored
+answers by `note_rebuild_ear read` (`ear_verdict`): "fault" when any card marks a fault on either rebuilt guitar (each
+listed with the card's note), else "incomplete" when any version is unanswered, else "undecided" when any version is
+"can't judge" (the cards listed; it goes to the orchestrator and the user, and `phase_nr_1_ear` is not recorded as ok
+from it), else "ok", every version on every card heard as real; notes on cards without a fault are listed for the
+orchestrator before the verdict is recorded. A chat "ok" is not the record.
