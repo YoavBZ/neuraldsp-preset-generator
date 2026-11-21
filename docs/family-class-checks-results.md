@@ -7,6 +7,7 @@
 - **Audited:** 2026-11-20 by an independent blind recompute, PASS WITH CORRECTIONS for both checks. Every number
   reproduced, and both cells follow from the declared tables. The corrections are to wording and context and are taken
   here.
+- **Decision:** Direction 2 (gear families) parked by the user, 2026-11-21.
 - **Plan:** [family-class-checks-plan.md](family-class-checks-plan.md).
 - **Ledger:** `pipeline-fix` `phase_family_check_outcome`, `preset-ladder` `phase_class_check_outcome`.
 - **Data** (`PF` is `~/ndsp-presets/learn/trusted-data/pipeline-fix`):
