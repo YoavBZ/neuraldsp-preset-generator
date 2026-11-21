@@ -503,7 +503,8 @@ def outcome(readings):
     table_guard()
     if "stopped" in readings.values():
         bad = sorted(r for r, v in readings.items() if v == "stopped")
-        return {"code": "stopped", "reading": f"{', '.join(bad)} stopped at the refusal count ({REFUSAL_STOP})",
+        return {"code": "stopped", "reading": f"{', '.join(bad)} stopped (the refusal count of {REFUSAL_STOP}, or the "
+                                              "pool lost the panel: the report's stop_reason)",
                 "next": "to the user: no row is read on from a stopped row; any way on is an amendment"}
     nxt = next_row(readings)
     if nxt is not None:
@@ -532,6 +533,20 @@ def b_refined(row, report_rows):
     pg = (report_rows["G"].get("panel") or {}).get("mean")
     pi = (report_rows["I"].get("panel") or {}).get("mean")
     return "undecided-b2" if b2_lever(r, bg, pg, pi) else r
+
+
+DECIDING = ["bks", "goat", "panel"]      # the user's pool (2026-11-21): never read on fewer sets
+
+
+def pool_refusal(rows):
+    """(Pure.) Why the row's deciding pool is not the user's, or None: `preset_ladder.summarise` falls back to BKS+GOAT
+    when fewer than 3 of the panel's DI files are read (`full_controls_c3r.deciding_sets`), which a single refused panel
+    part can cause (the panel's DI files hold 1, 3 and 3 parts). Read on G and on I."""
+    bad = [q for q in ("G", "I") if (rows.get(q) or {}).get("deciding_sets") != DECIDING]
+    if bad:
+        return (f"the deciding pool of {', '.join(bad)} is "
+                f"{[(rows.get(q) or {}).get('deciding_sets') for q in bad]}, not {DECIDING}: the panel lost a DI file")
+    return None
 
 
 def stopped(refused, stop=REFUSAL_STOP):
@@ -566,6 +581,10 @@ def score_path(row, pk):
 
 def report_path(row):
     return fs_dir() / f"report-{row}.json"
+
+
+def rows_path(row):
+    return fs_dir() / f"rows-{row}.json"
 
 
 def file_sha(path):
@@ -634,20 +653,27 @@ def never_overwrite(path):
         raise SystemExit(f"{path} exists: never overwritten")
 
 
-def read_so_far():
-    """{row: table reading} from the reports written so far (row (b)'s refined by B2's lever)."""
+def read_so_far(main=None):
+    """{row: table reading} from the reports written so far (row (b)'s refined by B2's lever). With `main` (main's
+    `preset-ladder` entry), each report's answers sha256 must be main's `phase_fs_answers_<row>`, or this refuses."""
+    from learn import note_replay as NR
+
     out = {}
     for row in ROWS:
         p = report_path(row)
         if p.exists():
             rep = json.loads(p.read_text())
+            if main is not None:
+                why = NR.hash_refusal(main, phase_answers(row), rep.get("answers_sha256"))
+                if why:
+                    raise SystemExit(f"{p}: {why}")
             out[row] = "stopped" if rep.get("stopped") else b_refined(row, rep["rows"])
     return out
 
 
 def require_turn(row):
-    """Refuse unless `row` is the coded next row from the reports so far."""
-    got = read_so_far()
+    """Refuse unless `row` is the coded next row from the reports so far, each read from answers hashed on main."""
+    got = read_so_far(require_on_main(PHASE))
     if "stopped" in got.values():
         raise SystemExit(f"a row stopped ({got}): nothing runs on")
     nxt = next_row(got)
@@ -771,7 +797,7 @@ def step1_choice(evals, budget=BUDGET):
     return bound, i1, {c: best_index(evals, bound, c) for c in CHECKPOINTS}
 
 
-def run_part(p, dry, ref_name, x32, ref_blank, new_renderer, lists, log=print):
+def run_part(p, dry, ref_name, x32, ref_blank, new_renderer, lists, log=print, budget=BUDGET):
     """One part's search for one row: step 1 (C2's), step 2 (C1b's stages A and B in a fresh process primed with step
     1's best, its first evaluation within START_TOL of step 1's best value, canonical then raw on a miss), the final
     rendered fresh, C2's fallbacks (F70's peak guard) on the search half only. Every distance is J0 on the search half
@@ -823,12 +849,12 @@ def run_part(p, dry, ref_name, x32, ref_blank, new_renderer, lists, log=print):
             renders[0] += 1
             return judge(rr.render(x32, sel, sx1(x)))
         try:
-            evals, names, dims1 = step1_search(amp, start, ev1, p["start_ref"][dry][ref_name])
+            evals, names, dims1 = step1_search(amp, start, ev1, p["start_ref"][dry][ref_name], budget=budget)
         except StartRefused as e:
             return {**base, "refused": {"start": e.args[0]}, "renders": renders[0], "seconds": time.time() - t0}
     finally:
         rr.close()
-    bound, i1, cps = step1_choice(evals)
+    bound, i1, cps = step1_choice(evals, budget)
     best1 = evals[i1]
     bx = best1["x"]
     s1 = {"evaluations": len(evals), "curve": [e["value"] for e in evals], "searched_keys": names,
@@ -882,7 +908,7 @@ def run_part(p, dry, ref_name, x32, ref_blank, new_renderer, lists, log=print):
     kind, miss2, s2rec, final, form = "canonical", None, None, None, None
     for kind, x0, canon in (("canonical", C.c1b_start(label1, amp), C.make_canon(amp)),
                             ("raw_after_miss", C.raw_start(label1, amp), None)):
-        if C.audible_change(x0, label1, amp):
+        if kind == "canonical" and C.audible_change(x0, label1, amp):    # C2's check (the raw start is the label)
             raise SystemExit(f"{p['pkey']}: step 2's start changes what sounds")
         try:
             xa, xb, s2rec = dry_stages(x0, canon, best1["value"])
@@ -1153,7 +1179,7 @@ def cmd_read(args):
     per, replaced, ctl_miss = {}, {}, []
     for p in draw["parts"]:
         k = p["pkey"]
-        if k not in ans["parts"]:
+        if ans["stopped"] or k not in ans["parts"]:    # a stopped row was never scored
             per[k] = None
             continue
         sp = score_path(row, k)
@@ -1176,25 +1202,33 @@ def cmd_read(args):
         per[k]["moves"] = moves(ans["parts"][k]["answer"], p["cen"]["settings"])
     out = {"plan": PLAN, "row": row, "letter": LETTER[row], "answers_sha256": file_sha(answers_path(row)),
            "time": time.strftime("%Y-%m-%d %H:%M:%S"), "refused": refused, "stopped": stopped(refused),
+           "stop_reason": f"{len(refused)} refused (the stop is {REFUSAL_STOP})" if stopped(refused) else None,
            "nonfinite_replaced": replaced, "scoring_control_misses": ctl_miss, "parts": per}
-    if out["stopped"]:
-        P.save(report_path(row), dict(out, rows=None))
-        print(f"{row}: STOPPED ({len(refused)} refused, the stop is {REFUSAL_STOP})")
-        o = outcome({**read_so_far()})
-    else:
+    if not out["stopped"]:
         rows = summarise_row(sd, draw, per)
+        never_overwrite(rows_path(row))
+        P.save(rows_path(row), dict(out, rows=rows))     # the rows are saved before the reading (their own file)
+        why = pool_refusal(rows)
+        if why:                                          # the user's pool or nothing: to the user
+            out.update(stopped=True, stop_reason=why)
+        else:
+            rows["reading"] = row_reading(rows["G"]["deciding_pool"], rows["I"]["deciding_pool"])
+            rows["reading_bks_goat"] = row_reading(rows["G"]["bks_goat"], rows["I"]["bks_goat"])
         out["rows"] = rows
-        P.save(report_path(row), out)          # the rows are saved before the reading
-        rows["reading"] = row_reading(rows["G"]["deciding_pool"], rows["I"]["deciding_pool"])
-        rows["reading_bks_goat"] = row_reading(rows["G"]["bks_goat"], rows["I"]["bks_goat"])
-        out["rows"] = rows
-        P.save(report_path(row), out)
-        o = outcome(read_so_far())
+    else:
+        out["rows"] = None
+    P.save(report_path(row), out)                        # one write: the report holds its reading or its stop
+    m = require_on_main(PHASE)
+    o = outcome(read_so_far(m))
+    if out["stopped"]:
+        print(f"{row}: STOPPED ({out['stop_reason']})")
+    else:
+        rows = out["rows"]
         g, i = rows["G"]["deciding_pool"] or {}, rows["I"]["deciding_pool"] or {}
         print(f"{row}: G {g.get('mean')} [{g.get('lo90')}, {g.get('hi90')}], I {i.get('mean')} [{i.get('lo90')}, "
               f"{i.get('hi90')}] -> {(rows['reading'] or {}).get('reading')}; BKS+GOAT "
               f"{(rows['reading_bks_goat'] or {}).get('reading')}")
-    P.save(fs_dir() / "outcome.json", dict(o, readings=read_so_far(), time=time.strftime("%Y-%m-%d %H:%M:%S")))
+    P.save(fs_dir() / "outcome.json", dict(o, readings=read_so_far(m), time=time.strftime("%Y-%m-%d %H:%M:%S")))
     print(f"OUTCOME {o.get('code')}: {o['reading']}. Next: {o['next']}")
 
 

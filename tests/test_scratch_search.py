@@ -115,6 +115,22 @@ def test_the_refusal_stop_is_a_count_of_three():
     assert S.stopped({"a": 1, "b": 2, "c": 3})
 
 
+def test_the_pool_must_keep_the_panel():
+    full = {"G": {"deciding_sets": ["bks", "goat", "panel"]}, "I": {"deciding_sets": ["bks", "goat", "panel"]}}
+    assert S.pool_refusal(full) is None
+    lost = {"G": {"deciding_sets": ["bks", "goat"]}, "I": {"deciding_sets": ["bks", "goat", "panel"]}}
+    assert "G" in S.pool_refusal(lost) and "I" not in S.pool_refusal(lost).split(" is ")[0]
+    assert S.pool_refusal({"G": {}, "I": {}})
+
+
+def test_the_pool_falls_back_on_one_lost_panel_di_file():
+    """The reason for `pool_refusal`: `full_controls_c3r.deciding_sets` drops the panel under 3 DI files."""
+    from learn import full_controls_c3r as R
+
+    assert list(R.deciding_sets(3)) == S.DECIDING
+    assert list(R.deciding_sets(2)) == ["bks", "goat"]
+
+
 def test_a_constant_on_the_path_is_noted():
     got = S.outcome({"fs-stem": "passes", "fs-both": "constant", "fs-blur": "passes"})
     assert got["code"] == "F-compound" and any("row c" in n for n in got["notes"])
@@ -343,11 +359,15 @@ def test_the_loop_replays_every_stored_c2_step1_sequence_of_the_subset():
         start = F.c1a_start(src["best"]["settings"], p["amp"])
         assert LO.sdict(start) == s1["start_settings"]
         f = C2.replaying(s1["trials"], s1["searched_keys"], o["search"], lambda x: pytest.fail("past the record"))
-        evals, names, _ = S.step1_search(p["amp"], start, lambda x: (f(x), -20.0, None),
+        evals, names, _ = S.step1_search(p["amp"], start, lambda x: (f(x), None, None),
                                          s1["trials"][0]["judge"][o["search"]])
         assert names == s1["searched_keys"] and f.state["i"] == len(evals) == len(s1["trials"])
+        # step 1's choice on the search half equals C2's constrained_index on the stored evaluations (peaks unknown)
+        mine = S.best_index(evals, None)
+        c2 = C2.constrained_index([{"judge": t["judge"], "replayed": True} for t in s1["trials"]], o["search"], None)
+        assert mine == c2
         exact += 1
-    assert exact >= 30
+    assert exact == 40
 
 
 def test_the_held_half_never_reaches_the_search():
@@ -390,3 +410,106 @@ def test_the_held_half_never_reaches_the_search():
         for a, b, c in zip(*runs):
             assert a["value"] == b["value"] == c["value"] and a["t"] == b["t"] == c["t"]
         assert NR.half_distance(refs[0], stub(start), dj, p["lag"], p["held"]) == math.inf
+
+
+# --- the whole loop on a stub renderer (numpy, no data) -----------------------------------------------------------------------
+
+class _Stub:
+    """A renderer whose output is a function of the setting; `offset` per process (from the `made`-th renderer on)
+    makes step 2's first evaluation miss step 1's best."""
+    made = 0
+    miss_from = None
+
+    def __init__(self):
+        import numpy as np
+        self.np = np
+        _Stub.made += 1
+        self.off = 0.5 if _Stub.miss_from is not None and _Stub.made >= _Stub.miss_from else 0.0
+
+    def render(self, di, sel, x):
+        import hashlib as H
+        aud = sorted(("/".join(k), v) for k, v in x.items()      # what sounds to the stub: the searched families
+                     if k[0] in ("ac20Amp", "ac20EQ", "drive1", "drive2", "compressor") or k[1].endswith("MicType")
+                     or k == ("parameters", "inputGain"))
+        h = int(H.sha1(json.dumps(aud).encode()).hexdigest()[:6], 16)
+        return self.np.full(len(di), 0.1 + 0.2 * h / 0xffffff + self.off)
+
+    def close(self):
+        pass
+
+
+def _stub_cen(amp):
+    """A complete enough preset for the stub: C1a's start from nothing, with the keys C1b's start would otherwise
+    change audibly (a real Cen stores them)."""
+    from learn import full_controls as F
+    from learn import full_controls_c1b as C
+    from learn import local_objective as LO
+
+    cen = LO.sdict(F.c1a_start({}, amp))
+    x0 = LO.sdict(C.plugin(C.c1b_start(cen, amp), amp))
+    return {**cen, **{k: x0[k] for k in C.audible_change(C.c1b_start(cen, amp), cen, amp)}}
+
+
+def _run(monkeypatch, miss_from=None, silent_final=False, budget=30):
+    np = pytest.importorskip("numpy")
+    from learn import audibility_measure as AM
+    from learn import full_controls as F
+    from learn import local_objective as LO
+    from learn import note_replay as NR
+
+    monkeypatch.setattr(NR, "half_distance", lambda ref, y, di, lag, half: 1.0 + float(np.mean(np.abs(y))))
+    if silent_final:
+        monkeypatch.setattr(AM, "fresh_render", lambda make, di, sel, xp, x: np.zeros(len(di)))
+    _Stub.made, _Stub.miss_from = 0, miss_from
+    amp = "ac20"
+    cen = _stub_cen(amp)
+    x32 = np.ones(48000 * 12, np.float32)
+    y0 = _Stub().render(x32, "0", LO.tdict(LO.sdict(F.c1a_start(cen, amp))))
+    _Stub.made = 0
+    p = {"pkey": "stub", "amp": amp, "search": "A", "lag": 0, "cen": {"select": "0", "settings": cen},
+         "start_ref": {"true": {"xlnoG": 1.0 + float(np.mean(np.abs(y0)))}}}
+    lists = {amp: {"leftMicType": ["1", "2"], "rightMicType": ["3", "4"]}}
+    return S.run_part(p, "true", "xlnoG", x32, np.zeros(len(x32)), _Stub, lists, log=lambda *a: None, budget=budget)
+
+
+def test_run_part_end_to_end(monkeypatch):
+    rec = _run(monkeypatch)
+    assert "refused" not in rec and rec["step2"]["start_kind"] == "canonical" and rec["fallback"] is None
+    assert rec["step1"]["evaluations"] <= 30 and set(rec["step1"]["checkpoints"]) <= {"50", "100", "200"}
+    assert rec["renders"] <= 1 + 30 + 2 + 1 + 64 + 2
+
+
+def test_run_part_step2_misses_twice_and_step1_stands(monkeypatch):
+    rec = _run(monkeypatch, miss_from=2)                 # every process after step 1's renders differently
+    assert rec["step2"]["start_kind"] == "refused" and set(rec["step2"]["first_start_miss"]) == {"canonical",
+                                                                                                  "raw_after_miss"}
+    assert rec["fallback"] is None and rec["answer"]["select"] == "0"
+    assert [d["module"] + "/" + d["key"] for d in rec["searched_dims"]] == rec["step1"]["searched_keys"]   # step 1's
+
+
+def test_run_part_final_unusable_falls_back_to_step1(monkeypatch):
+    rec = _run(monkeypatch, silent_final=True)
+    assert rec["final_fresh"]["unusable"] and rec["fallback"] == "step1"
+
+
+def test_run_part_final_and_step2_unusable_fall_back_to_the_start(monkeypatch):
+    from learn import local_objective as LO
+
+    rec = _run(monkeypatch, miss_from=2, silent_final=True)
+    assert rec["fallback"] == "start" and rec["searched_dims"] == []
+    assert rec["answer"]["settings"] == rec["start_settings"] == LO.sdict(LO.tdict(rec["start_settings"]))
+
+
+def test_run_part_refuses_a_start_off_the_replays_position_0(monkeypatch):
+    np = pytest.importorskip("numpy")
+    from learn import full_controls as F
+    from learn import local_objective as LO
+    from learn import note_replay as NR
+
+    monkeypatch.setattr(NR, "half_distance", lambda ref, y, di, lag, half: 1.0 + float(np.mean(np.abs(y))))
+    cen = _stub_cen("ac20")
+    p = {"pkey": "stub", "amp": "ac20", "search": "A", "lag": 0, "cen": {"select": "0", "settings": cen},
+         "start_ref": {"true": {"xlnoG": 9.0}}}
+    rec = S.run_part(p, "true", "xlnoG", np.ones(48000 * 12, np.float32), np.zeros(48000 * 12), _Stub,
+                     {"ac20": {"leftMicType": ["1"], "rightMicType": ["3"]}}, log=lambda *a: None, budget=10)
+    assert "start" in rec["refused"]

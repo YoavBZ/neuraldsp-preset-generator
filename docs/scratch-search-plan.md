@@ -157,6 +157,11 @@ each ≤ 0. Then, with the Control passing, row (c) runs.
 - `table_guard` refuses unless every reachable path (32) ends in exactly one cell, every cell is reachable, and no path
   reads more than three rows (N1). A constant reading on the path that does not decide the cell is noted ("the gain is
   not shown to be this recording's").
+- **The pool stays the user's:** `preset_ladder.summarise` falls back to BKS+GOAT when fewer than 3 of the panel's DI
+  files are read, and the panel's DI files hold 1, 3 and 3 parts, so one refused panel part can drop it. `read`
+  therefore stops the row (no reading, to the user) unless G's and I's deciding sets are BKS, GOAT and the panel
+  (`pool_refusal`). The rows go to `rows-<row>.json` before the reading; `report-<row>.json` is written once, with
+  its reading or its stop, and every report must be read from answers hashed on main.
 - **The refusal stop (B5):** a row with **3 or more of its 47 parts refused** (a start-check miss, an unusable start, a
   missing borrowed answer, a scoring-control miss) stops: no reading, nothing runs on, to the user. The replay's 3
   parts with non-finite blurred-DI renders were checked at the draw: none is drawn.
