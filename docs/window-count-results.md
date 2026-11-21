@@ -37,8 +37,12 @@ t intervals over bands.
 **Reading (`W0_TABLE`):** a share of songs offer such a window, not most and not few. The scoped route is a branch
 beside today's path, not the main path. W1, the detector, runs only on the user's go after its own review.
 
+**In plain terms:** by the readings beside, about 35–45% of songs offer such a window, so most songs do not. Where
+other guitars play, the material is thin on small-band multitracks. Removing the other guitars stays the key lever.
+
 **The pool hides a real difference between the sets** (z = 2.8, the audit). So the pool is never read without both
-sets beside it, and these alternative poolings (the audit's; the code does not change in any):
+sets beside it, and these alternative poolings. **All of them are post hoc** (the audit's, not declared); the code
+does not change in any:
 
 | Reading | p |
 |---|---|
@@ -63,7 +67,8 @@ sets beside it, and these alternative poolings (the audit's; the code does not c
 
 **By known scope:**
 - Locator:
-  - in scope (clean or crunch) 0.381 [0.162, 0.599] on 25 songs; in its multi-guitar songs 0.195;
+  - in scope (clean or crunch) 0.381 [0.162, 0.599] on 25 songs; in its multi-guitar songs 0.195 (post hoc, the
+    audit);
   - high-gain 0 of 6 songs;
   - unlabelled 0.204.
 - MedleyDB:
@@ -75,7 +80,7 @@ sets beside it, and these alternative poolings (the audit's; the code does not c
 - no role 0.294;
 - rhythm 2 songs, none offering.
 
-## Why the two sets differ (the audit)
+## Why the two sets differ (the audit; post hoc)
 
 - **The single-guitar share** explains 0.11 to 0.15 of the 0.31 gap. 28 of MedleyDB's 67 songs have one guitar,
   against 10 of the locator's 36.
@@ -86,19 +91,22 @@ sets beside it, and these alternative poolings (the audit's; the code does not c
 - **Band weighting matters in the locator:** single-guitar bands with several songs (Doom Flamingo 4, Eggy 3,
   Swatkins 3) each weigh one band. Hence 0.248 band-weighted against 0.414 song-weighted.
 
-## How much material a window gives
+## How much material a window gives (the audit; post hoc)
 
 - **Offering parts in multi-guitar songs:**
-  - pooled: median 65 s alone (IQR 28–126 s), a median of 6 disjoint windows;
-  - locator: median 28 s, 2 disjoint windows; 33% have under 20 s, the minimum is 13 s.
+  - pooled: median 65 s alone (IQR 28–126 s), a median of 6 disjoint windows; 71% have three or more;
+  - MedleyDB: median 103 s, 8 disjoint windows; 89% have three or more;
+  - locator: median 28 s, 2 disjoint windows; 42% have three or more, 33% have under 20 s, the minimum is 13 s.
 - **Single-guitar songs offer the whole song.**
-- So where other guitars play, an offering part usually gives one to three disjoint 10-s sections, thin on small-band
-  multitracks.
+- So where other guitars play, the material differs by set. On the small-band development multitracks an offering
+  part usually gives one to three disjoint 10-s sections. In MedleyDB, and pooled, it usually gives several (a median
+  of 6 to 8).
 
 ## Checks and biases (the audit)
 
 - **Near-constant guitars are real playing.** These are the 46 MedleyDB guitars active in at least 95% of their song.
-  - All sit within 9 dB of the song's loudest guitar.
+  - All 42 read from raws sit within 9 dB of the song's loudest guitar (the other 4 are acoustics, read from the
+    annotation alone).
   - 34 of 42 are near-constant by both the annotation and the raws.
   - The quiet frames of the Music Delta excerpts are tonal.
   - Only Ethan Hein's "Girl On A Bridge" S05 is implausible, and its song has one guitar.
@@ -108,18 +116,18 @@ sets beside it, and these alternative poolings (the audit's; the code does not c
     with the target read from its raws only, moves MedleyDB from 0.532 to 0.451–0.473 and the pool from 0.436 to
     0.382–0.396;
   - the acoustic stems' annotation-only rule flips nothing;
-  - the 90% tolerance adds 0.013;
-  - the OR with the raw rule adds 0.024.
+  - the 90% tolerance adds 0.013 on the pool;
+  - the OR with the raw rule adds 0.024 on MedleyDB (against the annotation alone, on its 57 fully annotated songs).
   - The OR flipped 13 windows against alone and 72 towards it, of 24,501.
-- **One new possible bias:** John Morgan Kimock's "Pre Record Tracks" may hold guitar. If they do, the locator reads
-  0.204.
+- **One new possible bias (post hoc):** John Morgan Kimock's "Pre Record Tracks" may hold guitar. If they do, the
+  locator reads 0.203 [0.066, 0.341].
 - **Provenance and the exclusions hold.**
 
 ## What it changes and what it can't say
 
 - **It changes nothing in the product.** It sizes the scoped route: on these multitracks about a third to a half of
   songs offer a window where the requested guitar plays alone, by the reading. Where other guitars play, such a window
-  gives a few 10-s sections at best.
+  gives one to three 10-s sections on the small-band development multitracks, and several in MedleyDB (post hoc).
   - In scope, leads are the weak case (0.109 in the locator).
   - Heavy parts in multi-guitar arrangements offered none.
 - **What it can't say:**
