@@ -190,15 +190,15 @@ at search time flags a bad answer.
   Without the panel the row does not pass: BKS+GOAT is undecided.
 - **Dropping one panel DI file:** under the coded rule the pool reads undecided in 3 of 3 cases. With fewer than 3
   panel DI files the rule falls back to BKS+GOAT, which reads undecided.
-  - With the panel kept in the pool on its 2 remaining files:
+  - Post hoc (the write-up's), with the panel kept in the pool on its 2 remaining files:
     - without Aimee Norwich RAW_05_02 it still passes (G −0.112 [−0.163, −0.060]);
     - without Big Troubles RAW_03_08 (1 part) it reads undecided;
     - without The Laminar Flow ElecGtr01 it reads undecided.
 - **Dropping any single BKS or GOAT cluster** (32 of them): the pool still passes.
 - **Leaving out one band:** the pool reads undecided without Forkupines or without Storm Of Particles, and passes without
-  each of the other 3 bands. BKS+GOAT is undecided in all 5 cases.
-- **By class, BKS+GOAT:** clean −0.079 [−0.205, +0.048] and crunch −0.095 [−0.175, −0.014]. Both are undecided, and
-  clean is not decided better at all.
+  each of the other 3 bands. Post hoc (the write-up's), BKS+GOAT is undecided in all 5 cases.
+- **By class, BKS+GOAT:** clean −0.079 [−0.205, +0.048] and crunch −0.095. Both are undecided, and clean is not decided
+  better at all. Post hoc (the write-up's), crunch's interval is [−0.175, −0.014].
 
 ### The heard size
 
