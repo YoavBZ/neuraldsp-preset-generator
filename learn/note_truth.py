@@ -33,8 +33,9 @@ CONSISTENT_SHARE = 0.80                  # ... for at least 80% of the clusters
 HUM_MAINS = (50.0, 60.0)
 HUM_HARMONICS = range(1, 7)
 HUM_CENTS = 50.0
-HUM_STOP = 0.05                          # over 5% of a window's found notes are mains-pitch notes no truth note
-                                         # explains: the report stops (12m, relative; the plan's absolute rule was wrong)
+HUM_STOP = 0.05                          # over 5% of a window's found notes are mains-pitch notes that no truth
+                                         # note explains, starting where none sounds: the report stops (12m, relative;
+                                         # the plan's absolute rule and the first correction were both wrong)
 HUM_PAIR_S = 0.050                       # a found note pairs with a truth note: same pitch, onsets within 50 ms
 
 
@@ -198,16 +199,28 @@ def paired_found(found, truth, onset_s=HUM_PAIR_S):
     return uj
 
 
+def sounding(t, truth, lead_s=HUM_PAIR_S):
+    """(Pure.) A truth note sounds at `t`: on - lead_s <= t < off for some truth note (the lead covers a found onset a
+    little early against its note)."""
+    return any(r["on"] - lead_s <= t < r["off"] for r in truth)
+
+
 def hum_share(found, truth):
-    """(Pure.) The hum guard's figure (12m, relative): the share of a window's found notes that sit on a mains
-    harmonic (50 or 60 Hz times 1 to 6, within 50 cents) and pair with no truth note. Over HUM_STOP stops the report.
-    The plan's first rule counted every found note on a mains pitch; those pitches include MIDI 43, 47, 50, 54, 55,
-    59, 62 and 66 (G, B, D and F-sharp), so ordinary playing in G tripped it (228 of 238 windows, with the truth
-    itself as the found notes)."""
+    """(Pure.) The hum guard's figure (12m, relative, second correction): the share of a window's found notes that sit
+    on a mains harmonic (50 or 60 Hz times 1 to 6, within 50 cents), pair with no truth note, and start where no truth
+    note is sounding (`sounding`), which is where hum would show. Over HUM_STOP stops the report.
+    - The plan's first rule counted every found note on a mains pitch; those pitches include MIDI 43, 47, 50, 54, 55,
+      59, 62 and 66 (G, B, D and F-sharp), so ordinary playing in G tripped it (228 of 238 windows, with the truth
+      itself as the found notes).
+    - The first correction (unpaired mains-pitch notes) was also wrong: the truth as found notes cannot fail it, since
+      each truth note pairs with itself, but Basic Pitch's own extra notes do. On the gate rerun's stored notes for the
+      ten hum-free lists it stopped 3 of 10 (37 of 431 notes counted, every one starting while a truth note sounded: 24
+      same-pitch re-finds, 10 harmonics, 3 others)."""
     if not found:
         return 0.0
     ok = paired_found(found, truth)
-    return sum(on_mains(n["pitch"]) and j not in ok for j, n in enumerate(found)) / len(found)
+    return sum(on_mains(n["pitch"]) and j not in ok and not sounding(n["on"], truth)
+               for j, n in enumerate(found)) / len(found)
 
 
 def truth_precision(rows):

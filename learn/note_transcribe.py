@@ -2009,7 +2009,7 @@ def cmd_truth_report(_args):
     """The truth report (zero renders; phase 4), once: Basic Pitch on every usable P1 and P2 window and on GOAT's 27
     development windows (note files written once, reused by `versions`); precision and recall against the cleaned
     truth, chords and scales apart, P1 and P2 apart (`note_truth.truth_precision`), reported, never a gate; the hum
-    guard (12m, relative: over 5% of a window's found notes on a mains harmonic with no truth note stops the report); P2's rest level; P2's chord recall
+    guard (12m, relative: over 5% of a window's found notes on a mains harmonic, with no truth note and none sounding, stops the report); P2's rest level; P2's chord recall
     read against the 0.85 trigger (under it: to the user before step 5). -> redo/truth-report.json."""
     m = require_redo(PHASE_CALIB, PHASE_TRUTH)
     never_overwrite(truth_report_path())

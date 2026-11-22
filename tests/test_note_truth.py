@@ -62,8 +62,12 @@ def test_hum_share_counts_only_unexplained_mains_notes():
         [_n(6.0 + 0.3 * k, p) for k, p in enumerate((55, 57, 59, 60, 62, 64, 66, 67))]
     found = [dict(n, on=n["on"] + 0.01) for n in g_major]                # a perfect transcription, 10 ms late
     assert TR.hum_share(found, g_major) == 0.0 and TR.hum_share(found, g_major) <= TR.HUM_STOP   # no stop in G
-    hum = found + [_n(0.5 + k, 47) for k in range(3)]                     # three unexplained 120-Hz notes
-    assert TR.hum_share(hum, g_major) == pytest.approx(3 / 29) and TR.hum_share(hum, g_major) > TR.HUM_STOP
+    sustained = [_n(0.0, 55, off=3.0)]                                    # a G3 ringing for 3 s, then a rest
+    over = [dict(sustained[0], on=0.01), _n(1.0, 55), _n(0.02, 67)]       # it, a same-pitch re-find, an octave ghost
+    assert TR.hum_share(over, sustained) == 0.0                           # extras over a sounding note never count
+    rest = over + [_n(4.0 + 0.5 * k, 47) for k in range(3)]               # three 120-Hz notes in the rest
+    assert TR.hum_share(rest, sustained) == pytest.approx(3 / 6) and TR.hum_share(rest, sustained) > TR.HUM_STOP
+    assert TR.sounding(2.99, sustained) and not TR.sounding(3.0, sustained) and TR.sounding(-0.04, sustained)
     assert TR.hum_share([], g_major) == 0.0
     assert TR.paired_found([_n(0.0, 60), _n(0.02, 60)], [_n(0.0, 60)]) == {0}
 
@@ -102,3 +106,19 @@ def test_the_dataset_files_are_40_and_45():
     files = TR.truth_files()
     assert sum(f["player"] == "P1" for f in files) == 40 and sum(f["player"] == "P2" for f in files) == 45
     assert not any("P3" in f["di"] or "P3" in f["midi"] for f in files)
+
+
+def test_the_hum_guard_does_not_stop_on_the_gate_reruns_notes():
+    """The ten hum-free known lists' stored Basic Pitch notes (the gate rerun's events) through the guard: no stop."""
+    import json
+
+    from learn import note_transcribe as T
+
+    known = T.gate_work_dir() / "known"
+    if not known.exists():
+        pytest.skip("no stored gate events")
+    files = {pp.stem.split("-", 1)[1]: pp for pp in known.glob("*.json")}
+    assert set(files) == set(T.KNOWN_NOTES)
+    for name, pp in files.items():
+        est, _ = T.clean_transcribed(T.notes_from_events(json.loads(pp.read_text())["events"]))
+        assert TR.hum_share(est, T.KNOWN_NOTES[name]) <= TR.HUM_STOP, name

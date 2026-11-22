@@ -973,12 +973,18 @@ calibration's 25-of-27 rate is `playing-covered`'s; the old rise levels and thei
 
 **3. The truth report (`truth-precision`), reported, never a gate.** Basic Pitch's notes against the cleaned MIDI,
 precision and recall, chords and scales apart, P1 and P2 apart; a mains-hum guard; P2's rest level.
-- **The hum guard, corrected before anything runs:** a window stops the report when over 5% of its found notes sit on
-  a mains harmonic (50 or 60 Hz times 1 to 6, within 50 cents) and pair with no truth note (same pitch, onsets within
-  50 ms). **The plan's first rule was wrong:** it counted every found note on a mains pitch, and those pitches include
-  MIDI 43, 47, 50, 54, 55, 59, 62 and 66 (G, B, D and F-sharp). The review, treating the cleaned truth itself as the
-  found notes, found 228 of 238 windows over 5% (median 0.25): a perfect transcriber would have stopped the report. Only
-  a mains-pitch note that no played note explains now counts. The MIDI trails the DI by 25 to 35 ms on P1 and 18 to 22 ms on P2 on
+- **The hum guard, corrected twice before anything runs:** a window stops the report when over 5% of its found notes
+  sit on a mains harmonic (50 or 60 Hz times 1 to 6, within 50 cents), pair with no truth note (same pitch, onsets
+  within 50 ms), **and start where no truth note is sounding** (from 50 ms before a truth note's onset to its note-off).
+  That is where hum would show.
+  - **The plan's rule was wrong:** it counted every found note on a mains pitch, and those pitches include MIDI 43, 47,
+    50, 54, 55, 59, 62 and 66 (G, B, D and F-sharp). Treating the cleaned truth itself as the found notes, the review
+    found 228 of 238 windows over 5% (median 0.25): a perfect transcriber would have stopped the report.
+  - **The first correction was also wrong:** it counted unpaired mains-pitch notes anywhere. The truth used as found
+    notes cannot fail that test (each truth note pairs with itself), but Basic Pitch's own extra notes do. On the gate
+    rerun's stored notes for the ten hum-free lists it stopped 3 of 10 (37 of 431 notes counted, every one starting
+    while a truth note sounded: 24 same-pitch re-finds, 10 harmonics, 3 others). Under the rule above those lists count
+    0 of 431, a test replays them, and real strums no longer trip it. The MIDI trails the DI by 25 to 35 ms on P1 and 18 to 22 ms on P2 on
 scales; one offset per window leaves about ±10 ms by pitch, acceptable at 50 ms. GuitarSet is in Basic Pitch's training
 data, so its published guitar score is not used as a yardstick.
 
