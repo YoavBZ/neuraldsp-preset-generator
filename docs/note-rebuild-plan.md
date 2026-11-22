@@ -792,3 +792,38 @@ any code. After this row, at most two more reads (the stem-notes row, then a bli
   `ring-on`, `ring-soft`, `stem-notes`, `D_notes`, `FN-` and its codes, `FN_TABLE`, `fn_code`, `paired_reading`,
   `redo_verdict`, `CONTENT` and the six check names, `fault-content`, `fault-signal`, `lean-go`, `lean-stop`,
   `note-rebuild-ear-page-2`, `note-rebuild-ear-2`, `phase_nr_1_redo*`, `phase_nr_1_ear_old`, `phase_scratch_notes*`.
+
+### 12k. The old page's read and the expected failures (step 2, 2026-11-22; ledger `phase_nr_1_ear_old`)
+
+The old ear page's stored answers (build `b1efe3513bca`, the page's Artifact db, exported to
+`PF/note-rebuild/ear-old-export/`, sha256 `e27df9f2…faafa`) were read by the declared method, `note_rebuild_ear read`
+(`ear_verdict`, unchanged code). **The stored read is "incomplete"**: 5 of 8 cards answered, no fault button marked
+(the old page had no content buttons), cards 1 to 4 "can't judge" on both rebuilt guitars, card 5 "sounds real" on
+both, cards 6 to 8 unanswered. It is recorded under `phase_nr_1_ear_old` only, never `phase_nr_1_ear`.
+
+The user's words, quoted from the stored notes:
+
+| Card | Item, preset | The user's note |
+|---|---|---|
+| 1 | item_102, clean | "Many notes are missing from A and B (there's a bend in the recording which is simply missing, only notes before and after it exist)" |
+| 2 | item_102, crunch | "Same comment as Recording 1" |
+| 3 | item_160, clean | "Notes sound cut (short, no width), not like a real guitar playing" |
+| 4 | item_160, crunch | "Same comment as Recording 3" |
+| 5 | item_46, clean | "Both sound real but missing notes. R has chords while A and B only contain single notes playing" |
+
+The stored read (incomplete, not ok) and the words (content faults, no card heard as right) do not disagree, so
+nothing goes to the user on this.
+
+**Which check must fail which rejected clip**, written from the words before any check runs on them. A clip is one old
+dry guitar (item and arm; the preset does not change it). Each must fail at least one of its checks in `calibrate`'s
+negative control, or it is a blind spot:
+
+| Clips | The words | Must fail one of |
+|---|---|---|
+| item_102, `nr-plain` and `nr-level` | many notes missing; a bend missing | `onsets-found`, `playing-covered` (the plan's default) |
+| item_160, `nr-plain` and `nr-level` | notes cut short, no width | `ring-kept`, `playing-covered` |
+| item_46, `nr-plain` and `nr-level` | missing notes; chords played as single notes | `onsets-found`, `playing-covered`, `chords-kept` |
+
+item_57 (cards 7 and 8) is unanswered and carries no words, so it is not in the table. The plan spoke of "the four
+clips the user rejected"; the stored answers hold words on 5 cards over 3 items, each about both rebuilt guitars, so
+the table holds the 6 dry guitars the words describe.

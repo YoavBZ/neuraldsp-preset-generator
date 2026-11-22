@@ -366,9 +366,24 @@ def test_the_guard_covers_the_declared_files_and_keys():
 def test_the_ledger_holds_the_declarations():
     e = T.entries((REPO / "docs" / "dev-test-ledger.json").read_text())
     assert T.PHASE in e["note-rebuild"] and "phase_scratch_notes" in e["preset-ladder"]
-    for later in (T.PHASE_EAR_OLD, T.PHASE_INSTALL, T.PHASE_NOTES, T.PHASE_EAR):
-        assert later not in e["note-rebuild"]                  # each comes with its own PR
-    assert T.PHASE_DRY not in e["preset-ladder"]
+    assert "phase_nr_1_ear" not in e["note-rebuild"]          # the old page's read is never the stage-1 gate key
+
+
+def test_the_old_pages_expected_failure_table():
+    """`phase_nr_1_ear_old` (step 2): the stored read, the user's words, and which check must fail which rejected
+    clip, ledgered before any check runs on them; the table is the shape `calibrate` reads."""
+    e = T.entries((REPO / "docs" / "dev-test-ledger.json").read_text())["note-rebuild"]
+    rec = e[T.PHASE_EAR_OLD]
+    assert rec["verdict"] == "incomplete" and rec["answers"]["sha256"].startswith("e27df9f2")
+    table = T.ear_old_table(e)
+    assert [x["clip"] for x in table] == [f"{it}|{arm}" for it in ("item_102", "item_160", "item_46")
+                                          for arm in ("nr-plain", "nr-level")]
+    for x in table:
+        assert x["must_fail_any"] and set(x["must_fail_any"]) <= set(T.CONTENT) - {"annotated-found"}
+    assert T.expected_failure_refusal(table, {x["clip"]: {k: False for k in x["must_fail_any"]} for x in table}) == []
+    blind = T.expected_failure_refusal(table, {x["clip"]: {k: True for k in T.CONTENT} for x in table})
+    assert len(blind) == 6                                    # an expected failure that does not happen: a blind spot
+    assert len(rec["users_words"]) == 5 and any("chords" in w for w in rec["users_words"].values())
 
 
 @pytest.mark.parametrize("cmd", sorted(T.COMMANDS))

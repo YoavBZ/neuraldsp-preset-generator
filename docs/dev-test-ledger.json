@@ -3893,6 +3893,92 @@
     "code": "learn/note_transcribe.py, learn/bp_run.py, learn/scratch_notes.py (new); learn/note_rebuild.py (the redo's arms appended), learn/note_rebuild_s1.py (retired), learn/note_rebuild_ear.py (the redo's page), learn/scratch_search.py (the per-part bodies shared; rows (b) and (c) unchanged); tests tests/test_note_transcribe.py, tests/test_note_rebuild_redo.py, tests/test_note_rebuild_redo_synth.py, tests/test_scratch_notes.py and additions to the existing files",
     "guard": "every redo command refuses unless learn/scratch_search.py, scratch_notes.py, note_rebuild.py, note_rebuild_s1.py, note_rebuild_ear.py, note_transcribe.py and bp_run.py and the phase_fs*, phase_scratch_notes* and phase_nr* keys equal main's",
     "renders_declared": "about 13,450 (score check 40, search check about 24, ear clips 52, search about 12,400 with 94 start references, score 940); no training, separation or MPS job"
+   },
+   "phase_nr_1_ear_old": {
+    "recorded": "2026-11-22",
+    "plan": "docs/note-rebuild-plan.md section 12k (the redo's step 2; section 12g: never phase_nr_1_ear)",
+    "page": "the old ear page (note-rebuild-ear-page), build b1efe3513bca, as its key.json",
+    "answers": {
+     "file": "PF/note-rebuild/ear-old-export/answers/b1efe3513bca.json",
+     "sha256": "e27df9f23661901426e67931e83da143c0b33a6d52da08e4f9ffda31f36faafa",
+     "source": "the page's Artifact db (answers/b1efe3513bca, db version 52), exported by the orchestrator"
+    },
+    "read": {
+     "method": "python -m learn.note_rebuild_ear read (ear_verdict, the declared reading of the stored answers, unchanged code at cda93caf)",
+     "file": "PF/note-rebuild/redo/ear-old-read.json",
+     "sha256": "64a15fcb42d9fcffe25ee19fa45df1ca2a6602a28cb9c26acc6e2147e0e68357",
+     "note": "the file's own phase field reads phase_nr_1_ear (the old module's constant); it is recorded here only"
+    },
+    "verdict": "incomplete",
+    "stored": {
+     "cards_answered": 5,
+     "cards": 8,
+     "faults_marked": 0,
+     "cant_judge": "cards 1-4, both rebuilt guitars",
+     "sounds_real": "card 5, both rebuilt guitars",
+     "unanswered": "cards 6-8"
+    },
+    "users_words": {
+     "card 1 (item_102, clean)": "Many notes are missing from A and B (there's a bend in the recording which is simply missing, only notes before and after it exist)",
+     "card 2 (item_102, crunch)": "Same comment as Recording 1",
+     "card 3 (item_160, clean)": "Notes sound cut (short, no width), not like a real guitar playing",
+     "card 4 (item_160, crunch)": "Same comment as Recording 3",
+     "card 5 (item_46, clean)": "Both sound real but missing notes. R has chords while A and B only contain single notes playing"
+    },
+    "stored_read_and_words": "the stored read is incomplete, not ok (the old page had no content buttons); the words name content faults on cards 1-5 and no card was heard as right; they do not disagree, so nothing goes to the user on this; never written to phase_nr_1_ear",
+    "expected_failures": [
+     {
+      "clip": "item_102|nr-plain",
+      "must_fail_any": [
+       "onsets-found",
+       "playing-covered"
+      ],
+      "words": "cards 1-2: many notes missing, a bend missing (notes before and after it only)"
+     },
+     {
+      "clip": "item_102|nr-level",
+      "must_fail_any": [
+       "onsets-found",
+       "playing-covered"
+      ],
+      "words": "cards 1-2, as above"
+     },
+     {
+      "clip": "item_160|nr-plain",
+      "must_fail_any": [
+       "ring-kept",
+       "playing-covered"
+      ],
+      "words": "cards 3-4: notes cut short, no width"
+     },
+     {
+      "clip": "item_160|nr-level",
+      "must_fail_any": [
+       "ring-kept",
+       "playing-covered"
+      ],
+      "words": "cards 3-4, as above"
+     },
+     {
+      "clip": "item_46|nr-plain",
+      "must_fail_any": [
+       "onsets-found",
+       "playing-covered",
+       "chords-kept"
+      ],
+      "words": "card 5: missing notes; chords in the recording played as single notes"
+     },
+     {
+      "clip": "item_46|nr-level",
+      "must_fail_any": [
+       "onsets-found",
+       "playing-covered",
+       "chords-kept"
+      ],
+      "words": "card 5, as above"
+     }
+    ],
+    "expected_failures_rule": "written from the user's words above before any check runs on these clips; a clip is a dry guitar (item and arm; the preset does not change it), and each must fail at least one of its listed checks (note_transcribe.expected_failure_refusal); missing notes -> onsets-found or playing-covered (the plan's default); notes cut short -> ring-kept or playing-covered; chords played as single notes -> chords-kept beside the missing-notes pair. item_57 (cards 7-8) is unanswered and has no words (card 6, item_46 crunch, is unanswered too) and is not in the table. The plan's 'four clips' did not match the stored answers (5 cards on 3 items, both rebuilt guitars on each): the table holds every dry guitar the words describe, 6"
    }
   }
  ],
