@@ -411,8 +411,9 @@ def test_the_ledger_holds_the_declarations():
     assert T.PHASE in e["note-rebuild"] and "phase_scratch_notes" in e["preset-ladder"]
     assert "phase_nr_1_ear" not in e["note-rebuild"]          # the old page's read is never the stage-1 gate key
     assert T.PHASE_CALIB in e["note-rebuild"] and "Measure first" in str(e["note-rebuild"][T.PHASE_CALIB])
-    for later in (T.PHASE_TRUTH, T.PHASE_VERSIONS, T.PHASE_GO_CHORDS, T.PHASE_GO_FLAGS, T.PHASE_GO_CLIPS,
-                  T.PHASE_GO_VERSIONS):
+    truth = e["note-rebuild"][T.PHASE_TRUTH]                   # step 2's listing, ledgered before any run reads it
+    assert truth["sha256"].startswith("3056dcbc") and truth["file"] == "PF/note-rebuild/redo/truth.json"
+    for later in (T.PHASE_VERSIONS, T.PHASE_GO_CHORDS, T.PHASE_GO_FLAGS, T.PHASE_GO_CLIPS, T.PHASE_GO_VERSIONS):
         assert later not in e["note-rebuild"]
     for later in (T.PHASE_INSTALL, T.PHASE_NOTES, T.PHASE_EAR):
         assert later not in e["note-rebuild"]                  # each comes with its own PR

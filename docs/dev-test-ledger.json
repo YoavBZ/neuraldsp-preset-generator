@@ -4045,6 +4045,11 @@
     "later_keys": "phase_nr_1_redo_truth (the listing's sha256, before any run reads a window), phase_nr_1_redo_versions (the read: per-set numbers, the code, gamma; the file's sha256); phase_nr_1_redo_install gains the detector's report and the truth report; the go keys only if their trigger fires",
     "code": "learn/note_truth.py, learn/note_attacks.py, learn/attack_run.py, learn/note_versions.py (new); learn/note_rebuild.py (the loudness option), learn/note_transcribe.py (the wiring; commands truth, attacks-report, ghost-ladder, truth-report, versions); CODE_FILES gains the four new files",
     "renders": "zero; no training, no download"
+   },
+   "phase_nr_1_redo_truth": {
+    "sha256": "3056dcbcd26f6c025c3c1b5fc72f02484a3324aec2c8ffa8166fdb641c85f7e8",
+    "file": "PF/note-rebuild/redo/truth.json",
+    "note": "2026-11-23, `truth` run once from main at 0228d98b (PR #547's squash) in a frozen worktree, zero Basic Pitch runs, zero renders, 26 s: 85 Guitar-TECHS files (P1 and P2 only; P3 not read), 16,078 MIDI notes, 14,847 after the clean-up (1,210 under 58 ms dropped, 21 merged); 238 declared windows, 79 consistent (P1 chords 15 of 76, P1 scales 30 of 36, P2 chords 10 of 76, P2 scales 24 of 36, P2 techniques 0 of 14); the consistent windows' median offset -29 ms (P1 chords), -28 ms (P1 scales), -21 ms (P2 chords and scales). Recorded before any run reads a truth window."
    }
   }
  ],
