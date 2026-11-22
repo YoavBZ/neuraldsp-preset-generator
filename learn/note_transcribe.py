@@ -13,6 +13,16 @@ redo's dry guitars `tr-di` and `tr-plain` (`docs/note-rebuild-plan.md` section 1
     $MAIN -m learn.note_transcribe stem-preview   # step 6: Basic Pitch on each part's stem, search half (0 renders)
     $MAIN -m learn.note_transcribe clips          # step 8: the ear page's clips (52 renders)
 
+The second amendment (note-rebuild-plan 12m, "measure first"; ledger `phase_nr_1_redo_calib_amend`), run in this
+order before `calibrate`, each written once under redo/ and refused without `phase_nr_1_redo_calib_amend` (and, after
+`truth`, `phase_nr_1_redo_truth`) on main:
+
+    $MAIN -m learn.note_transcribe truth          # the Guitar-TECHS P1/P2 truth listing (its sha256 -> ledger first)
+    $MAIN -m learn.note_transcribe attacks-report # the flux detector's report: P1 offset, recall overall and ringing
+    $MAIN -m learn.note_transcribe ghost-ladder   # the distance's instrument check (a failing list stops)
+    $MAIN -m learn.note_transcribe truth-report   # Basic Pitch on the truth and GOAT windows; precision, recall
+    $MAIN -m learn.note_transcribe versions       # the note-versions read, once -> phase_nr_1_redo_versions
+
 $MAIN is the main checkout's .venv python (in a worktree add `--data-dir ~/ndsp-presets` through the environment the
 replay used). Every command refuses unless this checkout runs main's code (`redo_on_main`: learn/scratch_search.py,
 scratch_notes.py, note_rebuild.py, note_rebuild_s1.py, note_rebuild_ear.py, note_transcribe.py and bp_run.py equal
@@ -48,6 +58,14 @@ PHASE_NOTES = "phase_nr_1_redo_notes"    # the note files' sha256
 PHASE_EAR = "phase_nr_1_redo_ear"        # the new page's verdict (`note_rebuild_ear.redo_verdict`)
 LADDER_ID = "preset-ladder"
 PHASE_DRY = "phase_scratch_notes_dry"    # the redo build's sha256 (the dry guitar of every fs-notes search record)
+# the second amendment (note-rebuild-plan 12m): measure first
+PHASE_CALIB = "phase_nr_1_redo_calib_amend"   # the declaration: detector, truth report, gate bar reported, the read
+PHASE_TRUTH = "phase_nr_1_redo_truth"    # the truth listing's sha256, before any run reads a truth window
+PHASE_VERSIONS = "phase_nr_1_redo_versions"   # the note-versions read: per-set numbers, the code, gamma if adopted
+PHASE_GO_CHORDS = "phase_nr_1_redo_go_chords"   # the user's go when P2's chord recall reads under 0.85
+PHASE_GO_FLAGS = "phase_nr_1_redo_go_flags"     # ... when onsets-found flags 3 or more of the 40 deciding parts
+PHASE_GO_CLIPS = "phase_nr_1_redo_go_clips"     # ... when a rejected clip is caught by no check
+PHASE_GO_VERSIONS = "phase_nr_1_redo_go_versions"   # ... the user's decision after a code other than NV-loud
 
 REDO = NR.OUT / "redo"                   # PF/note-rebuild/redo/
 STAGE1 = NR.OUT / "stage1"
@@ -94,12 +112,14 @@ MERGE_S = 0.030                          # a pitch struck twice within 30 ms: me
 MAX_AT_ONCE = 6
 OCTAVE_UP_BELOW = 38                     # notes below MIDI 38 are played an octave up (counted)
 
-# --- the content checks (plan section 12e), thresholds frozen; `CONTENT` names each, what it gates, and whether it
-# blocks a row part. `onsets-found`'s rise level is the lowest of RISE_LEVELS that holds the calibration's bars.
+# --- the content checks (plan section 12e, amended in note-rebuild-plan 12m), thresholds frozen; `CONTENT` names each,
+# what it gates, and whether it blocks a row part. `onsets-found` is a report since 12m: librosa's flux detector
+# (`note_attacks`), a flag under 0.90; `annotated-found` admits its windows by `note_truth.consistent`.
 CONTENT = {
     "annotated-found": {"gates": "the transcriber's settings", "blocking": False,
-                        "onset_s": 0.050, "median": 0.85, "floor": 0.75, "lands_share": 0.90, "tertile": "top"},
-    "onsets-found": {"gates": "the notes", "blocking": True, "merge_s": 0.050, "within_s": 0.030, "share": 0.90},
+                        "onset_s": 0.050, "median": 0.85, "floor": 0.75, "admission": "consistent", "tertile": "top"},
+    "onsets-found": {"gates": "a report (flag under 0.90)", "blocking": False, "within_s": 0.050, "share": 0.90,
+                     "detector": "librosa onset_detect, hop 256, delta 0.07, after the P1 offset"},
     "playing-covered": {"gates": "the notes", "blocking": True, "playing": 0.95, "silent": 0.10},
     "judge-accepts": {"gates": "the audio", "blocking": True, "pause_over_true": 0.05, "gap_s": 0.250,
                       "gap_db": 40.0},
@@ -110,12 +130,13 @@ CONTENT = {
 }
 NOTE_CHECKS = ("onsets-found", "playing-covered")
 AUDIO_CHECKS = ("judge-accepts", "ring-kept", "chords-kept")
-RISE_LEVELS = (6.0, 9.0, 12.0)           # calibrated in step 3 on the 27 development windows
 CHECK_FRAME_S, CHECK_HOP_S = 0.020, 0.005   # the level frames of judge-accepts (iii) and ring-kept (i)
 PLAY_FLOOR_DB = 40.0                     # "where the DI plays": within 40 dB of its loudest frame (J0's floor)
 PLAY_FRAME = 2048                        # playing-covered's frames: J0's middle frame size, hop a quarter
-CALIBRATION_PASS = 25                    # of the 27 development windows, each note check (90%)
-RISE_PRECISION = 0.95                    # rise peaks that are true onsets, on the known-notes lists
+CALIBRATION_PASS = 25                    # of the 27 development windows, playing-covered (90%; 12m: onsets-found is
+                                         # a report and not in the rate)
+P2_CHORD_TRIGGER = 0.85                  # P2's chord recall in the truth report under this: to the user before step 5
+FLAG_TRIGGER = 3                         # onsets-found flags on this many of the 40 deciding parts: to the user
 REFUSAL_STOP = 3                         # of the 40 deciding parts (BKS+GOAT)
 DECIDING = ("bks", "goat")               # the user's exception for this row only (2026-11-22, answer 3)
 
@@ -345,13 +366,15 @@ def check_verdict(figs, which=NOTE_CHECKS + AUDIO_CHECKS):
 
 def annotated_found_pass(rows, c=CONTENT["annotated-found"]):
     """(Pure.) `annotated-found` on the development windows: on the windows in the top alignment-F tertile whose own
-    annotation lands on a DI rise for at least `lands_share` of its notes, the median recall at least `median` and no
-    window under `floor`. rows: [{alignment_f, lands_share, recall}]. -> {windows, median, minimum, passes}."""
+    annotation is consistent with the DI (`note_truth.consistent`, 12m: at least 8 notes and 80% of its onset clusters
+    with their steepest rise within 30 ms of the window's one offset; the old "lands" test passed at random times), the
+    median recall at least `median` and no window under `floor`. rows: [{alignment_f, consistent, recall}].
+    -> {windows, median, minimum, passes}."""
     from learn import note_rebuild_s1 as S1
 
     edges = S1.tertile_edges([r["alignment_f"] for r in rows])
     top = [r for r in rows if r.get("alignment_f") is not None and S1.group_of(r["alignment_f"], edges) == len(edges)
-           and (r.get("lands_share") or 0.0) >= c["lands_share"] and r.get("recall") is not None]
+           and r.get("consistent") is True and r.get("recall") is not None]
     if not top:
         return {"windows": 0, "median": None, "minimum": None, "passes": None, "edges": edges}
     rec = [r["recall"] for r in top]
@@ -360,28 +383,70 @@ def annotated_found_pass(rows, c=CONTENT["annotated-found"]):
             "passes": med >= c["median"] and min(rec) >= c["floor"]}
 
 
-def calibration_pick(rates, n=DEV_COUNT, need=CALIBRATION_PASS, precision=None):
-    """(Pure.) The rise level for `onsets-found`: the lowest of RISE_LEVELS at which at least `need` of the `n`
-    windows pass `onsets-found` and `playing-covered` and (when given) the rise detector's precision on the known lists
-    is at least RISE_PRECISION. rates: {level: {"onsets-found": passing windows, "playing-covered": passing windows}};
-    precision: {level: share}. -> level or None (a bar missed: amended by declaration before step 5)."""
-    for lv in RISE_LEVELS:
-        r = rates.get(lv) or rates.get(str(lv)) or {}
-        ok = all((r.get(k) or 0) >= need for k in NOTE_CHECKS)
-        if precision is not None:
-            p = precision.get(lv, precision.get(str(lv)))
-            ok = ok and p is not None and p >= RISE_PRECISION
-        if ok:
-            return lv
+def gate_passes(body):
+    """(Pure.) The install gate passes when the transcriber repeats exactly (12m, the user's decision): its known-notes
+    F is a reported figure, not a bar; the timing is measured and recorded."""
+    return (body or {}).get("repeat_ok") is True
+
+
+def clip_case(expected, results):
+    """(Pure.) Each rejected clip's case (12m): "caught by a blocking check" (a blocking check its line names fails),
+    "caught by a report only" (only a report-only check it names fails: recorded, the page's "missing notes" button is
+    the guard, the user is told, the work goes on) or "caught by no check" (to the user, recommended: go on with the
+    listening page as the guard). -> {clip: case}."""
+    out = {}
+    for e in expected:
+        got = results.get(e["clip"]) or {}
+        failed = [k for k in (e.get("must_fail_any") or list(NOTE_CHECKS)) if got.get(k) is False]
+        if any(CONTENT[k]["blocking"] for k in failed):
+            out[e["clip"]] = "caught by a blocking check"
+        elif failed:
+            out[e["clip"]] = "caught by a report only"
+        else:
+            out[e["clip"]] = "caught by no check"
+    return out
+
+
+def calibration_ok(covered_windows, annotated, positive, cases, clips_go=False, need=CALIBRATION_PASS):
+    """(Pure.) The calibration passes (12m): `playing-covered` holds on at least `need` of the 27 windows;
+    `annotated-found` passes on its windows (it gates the transcriber's settings: a failure, or no window to read it
+    on, stops before step 5); avg+mild and the true DI pass every audio check; and every rejected clip is caught by a
+    check (a clip caught by no check needs the user's go, `PHASE_GO_CLIPS`)."""
+    return (covered_windows >= need and (annotated or {}).get("passes") is True and not positive.get("avg+mild")
+            and not positive.get("true") and (clips_go or "caught by no check" not in cases.values()))
+
+
+def chords_go_refusal(p2_chord_recall, nr_main, trigger=P2_CHORD_TRIGGER):
+    """(Pure.) Why the 47 parts may not be transcribed on the truth report, or None: P2's chord recall under the
+    trigger goes to the user first (their go on main, `PHASE_GO_CHORDS`)."""
+    if p2_chord_recall is None:
+        return "the truth report has no P2 chord recall"
+    if p2_chord_recall < trigger and PHASE_GO_CHORDS not in (nr_main or {}):
+        return f"P2's chord recall {p2_chord_recall:.3f} is under {trigger}: to the user first ({PHASE_GO_CHORDS})"
     return None
 
 
-def calibration_ok(level, annotated, positive, blind):
-    """(Pure.) The calibration passes: a rise level holds the note checks' bars; `annotated-found` passes on its
-    windows (it gates the transcriber's settings: a failure, or no window to read it on, stops before step 5 for a
-    declared amendment); avg+mild and the true DI pass every audio check; no rejected clip is a blind spot."""
-    return (level is not None and (annotated or {}).get("passes") is True and not positive.get("avg+mild")
-            and not positive.get("true") and not blind)
+def flags_go_refusal(flagged_deciding, nr_main, trigger=FLAG_TRIGGER):
+    """(Pure.) Why nothing may be built after transcription, or None: `onsets-found` flags on `trigger` or more of the
+    40 deciding parts go to the user first (their go on main, `PHASE_GO_FLAGS`)."""
+    if len(flagged_deciding) >= trigger and PHASE_GO_FLAGS not in (nr_main or {}):
+        return (f"onsets-found flags {len(flagged_deciding)} of the 40 deciding parts: to the user first "
+                f"({PHASE_GO_FLAGS})")
+    return None
+
+
+def versions_loud(nr_main):
+    """(Pure.) The loudness `build` uses, from main's note-versions read: its gamma when it reads NV-loud; otherwise
+    the user's decision recorded under `PHASE_GO_VERSIONS` ({"loud": gamma or None}). -> (gamma or None, refusal)."""
+    rec = (nr_main or {}).get(PHASE_VERSIONS)
+    if not isinstance(rec, dict) or "code" not in rec:
+        return None, f"main's {PHASE_VERSIONS} holds no code: the read first"
+    if rec["code"] == "NV-loud":
+        return rec.get("gamma"), None
+    go = (nr_main or {}).get(PHASE_GO_VERSIONS)
+    if not isinstance(go, dict) or "loud" not in go:
+        return None, f"the read is {rec['code']}: to the user first ({PHASE_GO_VERSIONS})"
+    return go["loud"], None
 
 
 def content_shares(notes):
@@ -424,6 +489,17 @@ def refusal_count(build_parts, sets_of, deciding=DECIDING):
         if failed:
             (dec if sets_of[k] in deciding else pan)[k] = failed
     return dec, pan, len(dec) >= REFUSAL_STOP
+
+
+def flagged_parts(parts, sets_of, deciding=DECIDING):
+    """(Pure.) The parts `onsets-found` flags (a report), deciding and panel apart. parts: {pkey: {figures}}."""
+    fl = sorted(k for k, r in parts.items() if ((r.get("figures") or {}).get("onsets-found") or {}).get("flag"))
+    return [k for k in fl if sets_of.get(k) in deciding], [k for k in fl if sets_of.get(k) not in deciding]
+
+
+def p2_chord_recall(report):
+    """(Pure.) The truth report's P2 chord recall, or None."""
+    return (((report or {}).get("report") or {}).get("P2|chords") or {}).get("recall")
 
 
 def expected_failure_refusal(expected, results):
@@ -551,7 +627,8 @@ def ledger_pair_refusal(nr_main, pair):
 # --- the guards ------------------------------------------------------------------------------------------------------------
 
 CODE_FILES = ("learn/scratch_search.py", "learn/scratch_notes.py", "learn/note_rebuild.py",
-              "learn/note_rebuild_s1.py", "learn/note_rebuild_ear.py", "learn/note_transcribe.py", "learn/bp_run.py")
+              "learn/note_rebuild_s1.py", "learn/note_rebuild_ear.py", "learn/note_transcribe.py", "learn/bp_run.py",
+              "learn/note_truth.py", "learn/note_attacks.py", "learn/attack_run.py", "learn/note_versions.py")
 KEY_PREFIXES = {LADDER_ID: ("phase_fs", "phase_scratch_notes"), LEDGER_ID: ("phase_nr",)}
 
 
@@ -652,6 +729,50 @@ def gate_work_dir():
 
 def calibration_path():
     return REDO / "calibration.json"
+
+
+def truth_path():
+    return REDO / "truth.json"
+
+
+def attacks_path():
+    return REDO / "attacks.json"
+
+
+def ladder_path():
+    return REDO / "ghost-ladder.json"
+
+
+def truth_report_path():
+    return REDO / "truth-report.json"
+
+
+def versions_path():
+    return REDO / "versions.json"
+
+
+def require_truth(m):
+    """The truth listing, refused unless its sha256 is main's `phase_nr_1_redo_truth`."""
+    if not truth_path().exists():
+        raise SystemExit("no truth listing (run `truth` first)")
+    return require_file_hash(m.get(LEDGER_ID), PHASE_TRUTH, truth_path())["body"]
+
+
+def require_attacks():
+    """The detector's report (`attacks-report`): its P1 offset is read by every `onsets-found` figure."""
+    if not attacks_path().exists():
+        raise SystemExit("no detector report (run `attacks-report` first)")
+    return json.loads(attacks_path().read_text())["body"]
+
+
+def require_truth_report():
+    """The truth report (`truth-report`), refused when its hum guard stopped it."""
+    if not truth_report_path().exists():
+        raise SystemExit("no truth report (run `truth-report` first)")
+    body = json.loads(truth_report_path().read_text())["body"]
+    if body.get("stopped"):
+        raise SystemExit(f"the truth report stopped on its hum guard ({body['stopped']})")
+    return body
 
 
 def transcribe_path():
@@ -775,43 +896,12 @@ def load_manifest():
 
 # --- the checks' measures (numpy) -------------------------------------------------------------------------------------------
 
-def attack_times(di, rise_db, rate=NR.SR, c=CONTENT["onsets-found"]):
-    """The DI's attacks: `note_rebuild.rise_curve` peaks of `rise_db` or more, merged within `merge_s` (the first
-    kept), where the DI plays (its 20-ms level within PLAY_FLOOR_DB of its loudest). -> [seconds]."""
-    from scipy.signal import find_peaks
+def attacks_found(attacks, notes, di, offset):
+    """`onsets-found`'s figure (12m, a report): the detector's attacks (`note_attacks.run_attacks`) where the DI plays,
+    after the detector's P1 offset, with a note onset within 50 ms; flagged under 0.90."""
+    from learn import note_attacks as NA
 
-    rise, hop = NR.rise_curve(di, rate)
-    if not len(rise):
-        return []
-    pk, _ = find_peaks(rise, height=rise_db)
-    n, h = int(CHECK_FRAME_S * rate), int(CHECK_HOP_S * rate)
-    L = NR.frame_levels_db(di, n, h)
-    top = float(L.max()) if len(L) else 0.0
-    out = []
-    for j in pk:
-        t = (j * hop + NR.REFINE_FRAME / 2) / rate
-        f = min(len(L) - 1, max(0, int((t * rate - n / 2) // h))) if len(L) else 0
-        if len(L) and L[f] < top - PLAY_FLOOR_DB:
-            continue
-        if out and t - out[-1] < c["merge_s"]:
-            continue
-        out.append(float(t))
-    return out
-
-
-def onsets_found(notes, di, rise_db, rate=NR.SR, c=CONTENT["onsets-found"]):
-    """`onsets-found`'s figure: the DI's attacks with a note onset within `within_s`."""
-    att = attack_times(di, rise_db, rate)
-    ons = sorted(n["on"] for n in notes)
-    found = sum(any(abs(a - o) <= c["within_s"] for o in ons) for a in att)
-    return {"attacks": len(att), "found": found, "share": found / len(att) if att else None, "rise_db": rise_db}
-
-
-def rise_precision(audio, true_onsets, rise_db, rate=NR.SR, c=CONTENT["onsets-found"]):
-    """The rise detector's precision on a known list: the share of its attacks within `within_s` of a true onset."""
-    att = attack_times(audio, rise_db, rate)
-    hit = sum(any(abs(a - o) <= c["within_s"] for o in true_onsets) for a in att)
-    return {"attacks": len(att), "true": hit, "precision": hit / len(att) if att else None}
+    return NA.onsets_found(NA.plays_filter(attacks, di), [n["on"] for n in notes], offset)
 
 
 def playing_covered(notes, di, c=CONTENT["playing-covered"]):
@@ -833,18 +923,12 @@ def playing_covered(notes, di, c=CONTENT["playing-covered"]):
             "silent_frames": int((~play).sum()), "silent_share": float(sound[~play].mean()) if (~play).any() else 0.0}
 
 
-def annotation_lands(ann, di, rate=NR.SR):
-    """The share of annotated notes (after the onset steps) whose onset has a DI rise of REFINE_MIN_RISE_DB or more
-    within +-SNAP_S (the snap's own rule)."""
-    import numpy as np
+def annotation_consistent(raw, di, rate=NR.SR):
+    """A development window's GOAT annotation admitted by the consistency test (12m; `note_truth.consistent`): the
+    annotation as it is (before the onset steps) against the window's one offset (`coarse_offset`)."""
+    from learn import note_truth as NT_
 
-    rise, hop = NR.rise_curve(di, rate)
-    hits = 0
-    for n in ann:
-        lo = max(0, int((n["on"] - NR.SNAP_S) * rate) // hop)
-        hi = min(len(rise), int((n["on"] + NR.SNAP_S) * rate) // hop + 1)
-        hits += hi > lo and float(np.max(rise[lo:hi])) >= NR.REFINE_MIN_RISE_DB
-    return hits / len(ann) if ann else None
+    return NT_.consistent(NT_.cluster_shifts(raw, di, rate), NR.coarse_offset(raw, di, rate), len(raw))
 
 
 def judge_pause_share(di_trim, lag, half, n_fft):
@@ -1032,12 +1116,16 @@ def window_audio(x, start_s, rate=NR.SR):
         start_s - a
 
 
-def dev_true_notes(item, start_s, di):
-    """A development window's GOAT annotation (stage P's fine-aligned true notes) after the same onset steps."""
+def dev_annotation(item, start_s, di):
+    """A development window's GOAT annotation (stage P's fine-aligned true notes) as it is, on the window's timeline."""
     p = NR.OUT / "true-notes" / f"{item}.json"
     rec = json.loads(p.read_text())
-    w = NR.window_notes(rec["notes"], start_s, len(di) / NR.SR)
-    w = [dict(n, bends=[]) for n in w]
+    return [dict(n, bends=[]) for n in NR.window_notes(rec["notes"], start_s, len(di) / NR.SR)]
+
+
+def dev_true_notes(item, start_s, di):
+    """A development window's GOAT annotation (stage P's fine-aligned true notes) after the same onset steps."""
+    w = dev_annotation(item, start_s, di)
     off = NR.coarse_offset(w, di)
     return NR.snap_onsets(NR.shifted_notes(w, off), di, NR.SNAP_S)[0]
 
@@ -1237,7 +1325,7 @@ def cmd_install_gate(_args):
     body = {"repeat": repeat, "repeat_ok": all(repeat.values()), "known": res, "known_f": f,
             "known_ok": f is not None and f >= KNOWN_F, "seconds_per_window": secs,
             "manifest_sha256": NR.file_sha(MANIFEST), "pair": list(install_pair(load_manifest()))}
-    body["ok"] = body["repeat_ok"] and body["known_ok"]
+    body["ok"] = gate_passes(body)        # 12m: the gate passes on repeatability; known F is a reported figure
     NR.write_once(gate_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}",
                                 "made": time.strftime("%Y-%m-%d %H:%M:%S"), "body": body})
     print(f"INSTALL GATE {'PASS' if body['ok'] else 'FAIL'}: repeat {body['repeat']}; known F {f}; "
@@ -1278,22 +1366,27 @@ def dev_others_maker():
 
 
 def cmd_calibrate(_args):
-    """Step 3 (zero renders), once, after the install gate passed: on the 27 development windows, the DI's
-    transcription, the note checks at each RISE_LEVELS level (pass rates; `calibration_pick`), the rise detector's
-    precision on the known lists (and against the annotated onsets of the top-tertile windows, reported),
-    `annotated-found` (the annotation's own ceiling, `annotation_lands`, first), the ring variant (`ring_choice` on
-    tr-di's `envelope_corr`), and the checks' test: avg+mild must pass every audio check, the true DI through the same
-    finish must pass, and each clip the user rejected must fail a check main's `phase_nr_1_ear_old` names for it
-    (`expected_failure_refusal`). -> redo/calibration.json (its facts go into phase_nr_1_redo_install)."""
-    m = require_redo(PHASE_EAR_OLD)
+    """Step 7 of note-rebuild-plan 12m (zero renders), once, after the install gate passed (on repeatability), the
+    detector's report and the note-versions read, with the adopted synthesis (`versions_loud`): on the 27 development
+    windows, the DI's transcription; `playing-covered` (the declared pass rate, 25 of 27) and `onsets-found` (a report:
+    the flux detector after the P1 offset, flagged under 0.90); `annotated-found` on the top-tertile windows its
+    consistency test admits; the ring variant (`ring_choice` on tr-di's `envelope_corr`); and the checks' test: avg+mild
+    and the true DI must pass every audio check, and each clip the user rejected is placed by `clip_case` (caught by a
+    blocking check; caught by a report only: recorded, the user told, the work goes on; caught by no check: the user's
+    go first, `PHASE_GO_CLIPS`). -> redo/calibration.json (its facts go into phase_nr_1_redo_install)."""
+    m = require_redo(PHASE_EAR_OLD, PHASE_CALIB, PHASE_TRUTH)
     never_overwrite(calibration_path())
     gate = json.loads(gate_path().read_text())["body"] if gate_path().exists() else None
-    if not gate or not gate["ok"]:
-        raise SystemExit("the install gate has not passed")
+    if not gate_passes(gate):
+        raise SystemExit("the install gate has not passed (repeatability)")
+    loud, why = versions_loud(m.get(LEDGER_ID))
+    if why:
+        raise SystemExit(why)
+    offset = require_attacks()["offset_s"]
     expected = ear_old_table(m.get(LEDGER_ID))
     import numpy as np
 
-    from learn import note_rebuild_s1 as S1
+    from learn import note_attacks as NA
     from learn import song_bank as SB
 
     excl, tn, z, meta = _dev_context()
@@ -1307,43 +1400,23 @@ def cmd_calibrate(_args):
         dis[w["item"]] = SB.measure(sec)
         ins.append((inp, w["item"], pre))
     bp = run_bp([(i, t) for i, t, _ in ins], work / "di")
+    att = NA.run_attacks(ins, work / "attacks")
     rows, notes_of = {}, {}
-    for (_, it, pre), r in zip(ins, bp):
-        rec = {"events": r["events"], "pre_s": pre}
+    for (_, it, pre), r, a in zip(ins, bp, att):
         di = dis[it]
-        notes, rep = timed_notes(rec, di)
+        notes, rep = timed_notes({"events": r["events"], "pre_s": pre}, di)
         notes_of[it] = notes
-        ann = dev_true_notes(it, next(w["start_s"] for w in wins if w["item"] == it), di)
+        st = next(w["start_s"] for w in wins if w["item"] == it)
+        raw = dev_annotation(it, st, di)
+        ann = dev_true_notes(it, st, di)
         rows[it] = {"timing": rep, "alignment_f": tn["items"][it].get("alignment_f"),
-                    "lands_share": annotation_lands(ann, di),
+                    "consistent": annotation_consistent(raw, di)["consistent"],
+                    "admission": annotation_consistent(raw, di),
                     "recall": match_notes(ann, notes, CONTENT["annotated-found"]["onset_s"])["recall"],
-                    "onsets_found": {str(lv): onsets_found(notes, di, lv) for lv in RISE_LEVELS},
-                    "playing_covered": playing_covered(notes, di)}
-    rates = {str(lv): {"onsets-found": sum(bool(onsets_found_pass(r["onsets_found"][str(lv)])) for r in rows.values()),
-                       "playing-covered": sum(bool(playing_covered_pass(r["playing_covered"])) for r in rows.values())}
-             for lv in RISE_LEVELS}
-    prec = {}
-    for lv in RISE_LEVELS:
-        hits = [rise_precision(known_audio(nm, bank), sorted({n["on"] for n in KNOWN_NOTES[nm]}), lv)
-                for nm in sorted(KNOWN_NOTES)]
-        a = sum(h["attacks"] for h in hits)
-        prec[str(lv)] = sum(h["true"] for h in hits) / a if a else None
-    level = calibration_pick(rates, precision=prec)
-    ann_rows = [dict(r, item=it) for it, r in rows.items()]
-    af = annotated_found_pass(ann_rows)
-    top = [r["item"] for r in ann_rows if r["alignment_f"] is not None and af["edges"]
-           and S1.group_of(r["alignment_f"], af["edges"]) == len(af["edges"])]
-    prec_ann = {}
-    for lv in RISE_LEVELS:
-        a = t = 0
-        for it in top:
-            att = attack_times(dis[it], lv)
-            w_ = next(w["start_s"] for w in wins if w["item"] == it)
-            ons = [n["on"] for n in dev_true_notes(it, w_, dis[it])]
-            a += len(att)
-            t += sum(any(abs(x - o) <= CONTENT["onsets-found"]["within_s"] for o in ons) for x in att)
-        prec_ann[str(lv)] = t / a if a else None
-    # the ring variant, then the checks' test on the audio checks (at the calibrated level where it exists)
+                    "onsets_found": attacks_found(a, notes, di, offset), "playing_covered": playing_covered(notes, di)}
+    covered = sum(bool(playing_covered_pass(r["playing_covered"])) for r in rows.values())
+    flagged = sorted(it for it, r in rows.items() if r["onsets_found"]["flag"])
+    af = annotated_found_pass([dict(r, item=it) for it, r in rows.items()])
     corr, audio = {v: [] for v in NR.RING_VARIANTS}, {}
     rt_jobs = []
     dev_others = dev_others_maker()
@@ -1352,7 +1425,7 @@ def cmd_calibrate(_args):
         key = f"dev|{it}"
         drys = {}
         for v in NR.RING_VARIANTS:
-            drys[v], _ = NR.rebuild_redo("tr-di", notes_of[it], len(di), bank, di, v, finish=SB.measure)
+            drys[v], _ = NR.rebuild_redo("tr-di", notes_of[it], len(di), bank, di, v, finish=SB.measure, loud=loud)
             corr[v].append(NR.envelope_corr(np.asarray(di, np.float64), drys[v]))
         drys["avg+mild"] = np.asarray(_avg_mild(di, key, dev_others(key)), np.float64)
         drys["true"] = np.asarray(di, np.float64)
@@ -1371,35 +1444,38 @@ def cmd_calibrate(_args):
                     "chords-kept": chords_kept(got, notes_of[it])}
             checks.setdefault(d, {})[it] = {"figures": figs, **check_verdict(figs, AUDIO_CHECKS)}
     positive = {d: sorted(it for it, r in checks[d].items() if r["failed"]) for d in ("avg+mild", "true")}
-    neg = negative_control(expected, bank, z, meta, excl, level or RISE_LEVELS[0], work)
-    blind = expected_failure_refusal(expected, {c: r["passes"] for c, r in neg.items()})
-    body = {"windows": [w["item"] for w in wins], "rows": rows, "rates": rates, "rise_precision_known": prec,
-            "rise_precision_annotated_top": prec_ann, "rise_level": level, "annotated_found": af,
-            "ring_corr": corr, "ring_variant": ring, "checks": checks, "positive_failures": positive,
-            "negative": neg, "blind_spots": blind, "gate_sha256": NR.file_sha(gate_path())}
-    body["ok"] = calibration_ok(level, af, positive, blind)
-    NR.write_once(calibration_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}",
+    neg = negative_control(expected, bank, z, meta, excl, offset, work)
+    results = {c: r["passes"] for c, r in neg.items()}
+    cases = clip_case(expected, results)
+    body = {"windows": [w["item"] for w in wins], "rows": rows, "playing_covered_windows": covered,
+            "onsets_found_flagged": flagged, "detector_offset_s": offset, "annotated_found": af,
+            "ring_corr": corr, "ring_variant": ring, "loud_gamma": loud, "checks": checks, "positive_failures": positive,
+            "negative": neg, "clip_cases": cases, "blind_spots": expected_failure_refusal(expected, results),
+            "gate_sha256": NR.file_sha(gate_path()), "attacks_sha256": NR.file_sha(attacks_path())}
+    body["ok"] = calibration_ok(covered, af, positive, cases, PHASE_GO_CLIPS in (m.get(LEDGER_ID) or {}))
+    NR.write_once(calibration_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_CALIB}",
                                        "made": time.strftime("%Y-%m-%d %H:%M:%S"), "body": body})
-    print(f"CALIBRATE {'PASS' if body['ok'] else 'STOP'}: rise level {level} (rates {rates}, precision {prec}); "
-          f"annotated-found {af}; ring {ring}; positive failures {positive}; blind spots {blind}; "
+    print(f"CALIBRATE {'PASS' if body['ok'] else 'STOP'}: playing-covered {covered} of {len(wins)}; onsets-found "
+          f"flags {flagged}; annotated-found {af}; ring {ring}; positive failures {positive}; clips {cases}; "
           f"sha256 {NR.file_sha(calibration_path())}")
 
 
-def negative_control(expected, bank, z, meta, excl, rise_db, work):
+def negative_control(expected, bank, z, meta, excl, offset, work):
     """The checks on the clips the user rejected: each old clip's dry guitar rebuilt in memory as `note_rebuild_s1
     clips` built it (GOAT's true notes, the two-stage oracle onset step, `rebuild_dry` with `song_bank.measure`), its
-    notes (the old ones) through the note checks, its audio through the audio checks. clip keys: "<item>|<arm>".
-    -> {clip: {passes, failed, figures}}."""
+    notes (the old ones) through the note checks (`onsets-found` by the flux detector, a report), its audio through the
+    audio checks. clip keys: "<item>|<arm>". -> {clip: {passes, failed, figures}}."""
     import numpy as np
 
+    from learn import note_attacks as NA
     from learn import song_bank as SB
 
-    out, jobs, built = {}, [], {}
+    out, jobs, built, ajobs = {}, [], {}, []
     for e in expected:
         it, arm = e["clip"].split("|")[:2]
         x = goat_audio(z, it)
         st = probe_start(len(x) / NR.SR)
-        sec, _, _ = window_audio(x, st)
+        sec, inp, pre = window_audio(x, st)
         di = SB.measure(sec)
         rec = NR.true_notes_for(it, z, meta)
         wn = NR.window_notes(rec["notes"], st, len(di) / NR.SR)
@@ -1407,10 +1483,12 @@ def negative_control(expected, bank, z, meta, excl, rise_db, work):
         y, _ = NR.rebuild_dry(arm, notes, len(di), bank, di, finish=SB.measure)
         built[e["clip"]] = (di, notes, np.asarray(y, np.float64))
         jobs.append((y, e["clip"].replace("|", "-")))
+        ajobs.append((inp, e["clip"].replace("|", "-"), pre))
     rt = run_bp(jobs, work / "rejected") if jobs else []
-    for (clip, (di, notes, y)), r in zip(built.items(), rt):
+    att = NA.run_attacks(ajobs, work / "rejected-attacks") if ajobs else []
+    for (clip, (di, notes, y)), r, a in zip(built.items(), rt, att):
         got = clean_transcribed(notes_from_events(r["events"]))[0]
-        figs = {"onsets-found": onsets_found(notes, di, rise_db), "playing-covered": playing_covered(notes, di),
+        figs = {"onsets-found": attacks_found(a, notes, di, offset), "playing-covered": playing_covered(notes, di),
                 "judge-accepts": judge_accepts(y, di, 0, "A"), "ring-kept": ring_kept(y, di, [n["on"] for n in notes]),
                 "chords-kept": chords_kept(got, [dict(n, bends=[]) for n in notes])}
         out[clip] = {"figures": figs, **check_verdict(figs)}
@@ -1424,7 +1502,7 @@ def require_install_facts():
         if not p.exists():
             raise SystemExit(f"{p.name} missing: run step 3 first")
     g, c = (json.loads(p.read_text())["body"] for p in (gate_path(), calibration_path()))
-    if not g["ok"] or not c["ok"]:
+    if not gate_passes(g) or not c["ok"]:
         raise SystemExit("the install gate or the calibration did not pass: a declared amendment first")
     if c["gate_sha256"] != NR.file_sha(gate_path()):
         raise SystemExit("calibration.json was made from another install gate")
@@ -1448,23 +1526,28 @@ def cmd_transcribe(_args):
     """Step 5 (zero renders): Basic Pitch on each of the 47 parts' raw DI sections (with up to MARGIN_S either side)
     and on the 8 ear items' windows (the 4 the user heard, at their old windows; 4 new by `pick_ear_items` from a
     whole-item scan, at `grid_window`); each note file written once with the install's pair; the note checks
-    (`onsets-found` at the calibrated level, `playing-covered`) and, on GOAT parts, `annotated-found`'s recall,
-    reported. -> redo/notes/<kind>/<key>.json, redo/ear-items.json, redo/transcribe.json."""
-    m = require_redo()
+    (`playing-covered`, blocking; `onsets-found`, a report since 12m: the flux detector after the P1 offset) and, on
+    GOAT parts, `annotated-found`'s recall, reported. Refuses while the truth report's P2 chord recall is under 0.85
+    without the user's go (`chords_go_refusal`). The flagged-parts trigger is counted straight after: flags on 3 or
+    more of the 40 deciding parts go to the user before any build (`flags_go_refusal`, read by `build`).
+    -> redo/notes/<kind>/<key>.json, redo/ear-items.json, redo/transcribe.json."""
+    m = require_redo(PHASE_CALIB, PHASE_TRUTH)
     _, cal = require_install_facts()
     pair = install_pair(load_manifest())
-    why = ledger_pair_refusal(m.get(LEDGER_ID), pair)
+    why = ledger_pair_refusal(m.get(LEDGER_ID), pair) or chords_go_refusal(p2_chord_recall(require_truth_report()),
+                                                                           m.get(LEDGER_ID))
     if why:
         raise SystemExit(why)
     never_overwrite(transcribe_path())
     import numpy as np
 
+    from learn import note_attacks as NA
     from learn import note_replay as R
     from learn import song_bank as SB
 
     draw, rby, sd = row_parts()
     work = REDO / "work" / "transcribe"
-    level = cal["rise_level"]
+    offset = require_attacks()["offset_s"]
     jobs, meta_of = [], []
     for p in sorted(draw["parts"], key=lambda p: p["pkey"]):
         never_overwrite(note_path("part", p["pkey"]))
@@ -1506,9 +1589,11 @@ def cmd_transcribe(_args):
         jobs.append((inp, "ear"))
         meta_of.append(("ear", e["item"], pre, {"start_s": e["start_s"]}))
     bp = run_bp(jobs, work / "notes")
-    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}", "pair": list(pair), "rise_level": level, "parts": {},
-           "ear": {}, "calibration_sha256": NR.file_sha(calibration_path())}
-    for (kind, key, pre, info), r in zip(meta_of, bp):
+    att = NA.run_attacks([(x, tag, mo[2]) for (x, tag), mo in zip(jobs, meta_of)], work / "attacks")
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}", "pair": list(pair), "detector_offset_s": offset,
+           "parts": {}, "ear": {}, "calibration_sha256": NR.file_sha(calibration_path()),
+           "attacks_sha256": NR.file_sha(attacks_path()), "truth_report_sha256": NR.file_sha(truth_report_path())}
+    for (kind, key, pre, info), r, a in zip(meta_of, bp, att):
         rec = note_record(r, pre, info)
         NR.write_once(note_path(kind, key), rec)
         if kind == "part":
@@ -1518,7 +1603,7 @@ def cmd_transcribe(_args):
             e = next(q for q in ear if q["item"] == key)
             di = SB.measure(window_audio(goat_audio(z, key), e["start_s"])[0])
         notes, rep = timed_notes(rec, di)
-        figs = {"onsets-found": onsets_found(notes, di, level), "playing-covered": playing_covered(notes, di)}
+        figs = {"onsets-found": attacks_found(a, notes, di, offset), "playing-covered": playing_covered(notes, di)}
         row = {"note_file_sha256": NR.file_sha(note_path(kind, key)), "timing": rep, "figures": figs,
                **check_verdict(figs, NOTE_CHECKS)}
         if kind == "part" and info["set"] == "goat":
@@ -1526,10 +1611,10 @@ def cmd_transcribe(_args):
             tp = NR.OUT / "true-notes" / f"{it}.json"
             if tp.exists():
                 w0 = float(p["section"].rsplit("@", 1)[1]) - 0.25
-                ann = NR.window_notes(json.loads(tp.read_text())["notes"], w0, len(di) / NR.SR)
-                ann = NR.snap_onsets(NR.shifted_notes(ann, NR.coarse_offset(ann, di)), di)[0]
+                raw = NR.window_notes(json.loads(tp.read_text())["notes"], w0, len(di) / NR.SR)
+                ann = NR.snap_onsets(NR.shifted_notes(raw, NR.coarse_offset(raw, di)), di)[0]
                 row["annotated_found"] = {"recall": match_notes(ann, notes, CONTENT["annotated-found"]["onset_s"])[
-                    "recall"], "lands_share": annotation_lands(ann, di)}
+                    "recall"], "consistent": annotation_consistent(raw, di)["consistent"]}
         (out["parts"] if kind == "part" else out["ear"])[key] = row
     out["ear_items"] = ear
     NR.write_once(ear_items_path(), {"plan": PLAN, "items": ear, "kinds_scanned": {k: sorted(v) for k, v in
@@ -1537,12 +1622,17 @@ def cmd_transcribe(_args):
                                      "order_seed": EAR_SEED})
     sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}
     dec, pan, stop = refusal_count(out["parts"], sets_of)
+    fl = flagged_parts(out["parts"], sets_of)
     out.update(note_refused_deciding=dec, note_refused_panel=pan, stopped=stop,
-               ear_failing=sorted(k for k, r in out["ear"].items() if r["failed"]))
+               ear_failing=sorted(k for k, r in out["ear"].items() if r["failed"]),
+               onsets_flagged_deciding=fl[0], onsets_flagged_panel=fl[1],
+               flags_trigger=len(fl[0]) >= FLAG_TRIGGER)
     NR.write_once(transcribe_path(), out)
     print(f"TRANSCRIBE: {len(out['parts'])} parts, {len(out['ear'])} ear items; note-check refusals deciding "
           f"{len(dec)} {sorted(dec)}{' (STOPPED: no render)' if stop else ''}, panel {sorted(pan)}; ear failing "
-          f"{out['ear_failing']}; sha256 {NR.file_sha(transcribe_path())}")
+          f"{out['ear_failing']}; onsets-found flags deciding {len(fl[0])}"
+          f"{' (TO THE USER before any build)' if out['flags_trigger'] else ''}, panel {len(fl[1])}; "
+          f"sha256 {NR.file_sha(transcribe_path())}")
 
 
 def cmd_build(_args):
@@ -1553,17 +1643,24 @@ def cmd_build(_args):
     half; the ear items have no stem: clauses (ii) and (iii)); Basic Pitch's round trip for `chords-kept`; a part
     failing a blocking check is refused (3 or more of the 40 deciding stop the row before any render; a panel refusal
     is listed). Every note file must name the install's pair (and main's phase_nr_1_redo_install's, once merged).
+    12m: loudness is used only as main's note-versions read gives it (`versions_loud`: its gamma on NV-loud, else the
+    user's recorded decision); refuses while `onsets-found` flags 3 or more of the 40 deciding parts without the user's
+    go (`flags_go_refusal`).
     -> redo/dry/<arm>/<key>.npy, redo/build.json; its sha256 goes into the ledger as phase_scratch_notes_dry."""
-    m = require_redo()
+    m = require_redo(PHASE_CALIB, PHASE_TRUTH)
     _, cal = require_install_facts()
     pair = install_pair(load_manifest())
-    why = ledger_pair_refusal(m.get(LEDGER_ID), pair)
+    loud, why = versions_loud(m.get(LEDGER_ID))
+    why = why or ledger_pair_refusal(m.get(LEDGER_ID), pair)
     if why:
         raise SystemExit(why)
     never_overwrite(build_path())
     tr = json.loads(transcribe_path().read_text())
     if tr["stopped"]:
         raise SystemExit("the note checks refused 3 or more deciding parts: nothing is built (one declared fix)")
+    why = flags_go_refusal(tr.get("onsets_flagged_deciding") or [], m.get(LEDGER_ID))
+    if why:
+        raise SystemExit(why)
     import numpy as np
 
     from learn import di_robustness as DR
@@ -1603,7 +1700,7 @@ def cmd_build(_args):
     for kind, key, info, rec, di, finish in todo:
         notes, rep = timed_notes(rec, di)
         for arm in NR.REDO_ARMS:
-            y, yrep = NR.rebuild_redo(arm, notes, len(di), bank, di, ring, finish=finish)
+            y, yrep = NR.rebuild_redo(arm, notes, len(di), bank, di, ring, finish=finish, loud=loud)
             y32 = np.asarray(y, np.float32)
             if len(y32) != len(di) or not np.isfinite(y32).all():
                 raise SystemExit(f"{key}: a bad {arm} dry guitar")
@@ -1615,6 +1712,7 @@ def cmd_build(_args):
             jobs.append((y32, f"{arm}"))
     rt = run_bp(jobs, work / "round-trip")
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}", "pair": list(pair), "ring_variant": ring,
+           "loud_gamma": loud,
            "transcribe_sha256": NR.file_sha(transcribe_path()), "parts": {}, "ear": {}}
     for (kind, key, info, arm, notes, rep, yrep, di, y32, sha), r in zip(built, rt):
         got = clean_transcribed(notes_from_events(r["events"]))[0]
@@ -1749,9 +1847,308 @@ def cmd_clips(_args):
     print(f"CLIPS DONE: {len(cards)} cards, {2 * len(cards)} clips, {4 * len(cards)} renders -> {dest}")
 
 
+# --- the second amendment's commands (note-rebuild-plan 12m; zero renders) -------------------------------------------------
+
+class TruthAudio:
+    """The truth windows' audio and notes, each file read once and checked against the listing's sha256."""
+
+    def __init__(self, listing):
+        self.files = {f"{f['player']}|{f['kind']}|{f['name']}": f for f in listing["files"]}
+        self.cache = {}
+
+    def window(self, w):
+        """-> (DI as rendered, the transcriber's input, pre_s, the truth notes)."""
+        from learn import note_truth as TR
+        from learn import song_bank as SB
+
+        k = f"{w['player']}|{w['kind']}|{w['name']}"
+        if k not in self.cache:
+            f = self.files[k]
+            for path, want in ((f["di"], f["di_sha256"]), (f["midi"], f["midi_sha256"])):
+                if NR.file_sha(path) != want:
+                    raise SystemExit(f"{pathlib.Path(path).name}: not the file the truth listing hashed")
+            self.cache = {k: (TR.di_audio(f["di"]), TR.clean_truth(TR.midi_truth(f["midi"]))[0])}
+        x, clean = self.cache[k]
+        sec, inp, pre = window_audio(x, w["start"])
+        di = SB.measure(sec)
+        return di, inp, pre, TR.truth_notes(clean, w["start"], di)[0]
+
+
+def usable_windows(listing, players=("P1", "P2")):
+    """(Pure.) The listing's windows that pass the consistency test, for `players`."""
+    return [w for w in listing["windows"] if w["consistent"] and w["player"] in players]
+
+
+def ladder_windows(listing):
+    """(Pure.) The instrument check's six real windows: for P1 and for P2, the first usable window of the first two
+    chord files and of the first scale file that have one, by name."""
+    out = []
+    for pl in ("P1", "P2"):
+        for kind, k in (("chords", 2), ("scales", 1)):
+            names = sorted({w["name"] for w in usable_windows(listing, (pl,)) if w["kind"] == kind})[:k]
+            for nm in names:
+                out.append(min((w for w in usable_windows(listing, (pl,)) if w["kind"] == kind and w["name"] == nm),
+                               key=lambda w: w["start"]))
+    return out
+
+
+def cmd_truth(_args):
+    """The truth listing (zero Basic Pitch runs; note-rebuild-plan 12m phase 2): every P1 and P2 file's DI and MIDI
+    sha256, the clean-up's counts, every declared window with its consistency test. Written once; its sha256 goes into
+    the ledger as phase_nr_1_redo_truth before any run reads a truth window. -> redo/truth.json."""
+    require_redo(PHASE_CALIB)
+    never_overwrite(truth_path())
+    from learn import note_truth as TR
+
+    body = TR.build_listing()
+    NR.write_once(truth_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_CALIB}",
+                                 "made": time.strftime("%Y-%m-%d %H:%M:%S"), "body": body})
+    print(f"TRUTH: {len(body['files'])} files, {len(body['windows'])} windows {json.dumps(body['by_player_kind'])}; "
+          f"clean-up {body['cleanup']}; sha256 {NR.file_sha(truth_path())} (into the ledger as {PHASE_TRUTH})")
+
+
+def cmd_attacks_report(_args):
+    """The detector's report (zero renders; phase 3): librosa's flux detector on the usable P1 and P2 windows and the
+    ten known lists, timed on 3 windows first; its steady offset from P1 only; its recall of true onset groups, overall
+    and on ringing onsets, per set (should it ever gate again, 0.90 on both); "truth passes" per window. Written once.
+    -> redo/attacks.json."""
+    m = require_redo(PHASE_CALIB, PHASE_TRUTH)
+    never_overwrite(attacks_path())
+    listing = require_truth(m)
+    from learn import note_attacks as NA
+    from learn import song_bank as SB
+
+    ta = TruthAudio(listing)
+    bank = NR.Bank(NR.load_notes_doc(), excl=NR.load_exclusion())
+    items = []
+    for w in usable_windows(listing):
+        di, inp, pre, truth = ta.window(w)
+        items.append((w["player"], w["key"], di, truth, (inp, w["player"], pre)))
+    for nm in sorted(KNOWN_NOTES):
+        y = known_audio(nm, bank)
+        items.append(("lists", nm, SB.measure(y), KNOWN_NOTES[nm], (y, "list", 0.0)))
+    work = REDO / "work" / "attacks"
+    t0 = time.perf_counter()
+    NA.run_attacks([it[4] for it in items[:3]], work / "timing")
+    secs = (time.perf_counter() - t0) / max(1, min(3, len(items)))
+    att = NA.run_attacks([it[4] for it in items], work / "all")
+    offset = NA.detector_offset([(a, [n["on"] for n in it[3]]) for it, a in zip(items, att) if it[0] == "P1"])
+    rec, passes = {}, {}
+    for st in ("P1", "P2", "lists"):
+        figs = [NA.detector_recall(a, it[3], offset) for it, a in zip(items, att) if it[0] == st]
+        rec[st] = NA.pooled_recall(figs)
+    for it, a in zip(items, att):
+        passes[it[1]] = attacks_found(a, it[3], it[2], offset)
+    body = {"detector": CONTENT["onsets-found"]["detector"], "hop": NA.ATTACK_HOP, "delta": NA.ATTACK_DELTA,
+            "offset_s": offset, "offset_from": "P1", "seconds_per_window": secs, "recall": rec,
+            "truth_passes": passes, "windows": len(items), "truth_sha256": NR.file_sha(truth_path())}
+    NR.write_once(attacks_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_CALIB}",
+                                   "made": time.strftime("%Y-%m-%d %H:%M:%S"), "body": body})
+    print(f"ATTACKS: offset {1000 * offset:.1f} ms (P1); recall {json.dumps({k: [v['recall'], v['ringing_recall']] for k, v in rec.items()})}; "
+          f"{secs:.2f} s a window; sha256 {NR.file_sha(attacks_path())}")
+
+
+def cmd_ghost_ladder(_args):
+    """The instrument check (zero Basic Pitch runs; phase 3b): made-up octave ghosts added to the true-notes rebuild at
+    0, -6, -12 and -20 dB must lower `floored_logmel` at every step, the -20 dB version not below the plain rebuild, on
+    each of the ten lists and on six real windows (`ladder_windows`). Any list failing stops the work (to the user);
+    a real window failing alone makes the real set reported only. Written once. -> redo/ghost-ladder.json."""
+    m = require_redo(PHASE_CALIB, PHASE_TRUTH)
+    never_overwrite(ladder_path())
+    listing = require_truth(m)
+    from learn import note_versions as NV
+    from learn import song_bank as SB
+
+    ta = TruthAudio(listing)
+    bank = NR.Bank(NR.load_notes_doc(), excl=NR.load_exclusion())
+    lists, real = {}, {}
+    for nm in sorted(KNOWN_NOTES):
+        di = SB.measure(known_audio(nm, bank))
+        lists[nm] = NV.ghost_ladder(di, KNOWN_NOTES[nm], bank, SB.measure)
+    for w in ladder_windows(listing):
+        di, _, _, truth = ta.window(w)
+        real[w["key"]] = NV.ghost_ladder(di, truth, bank, SB.measure)
+    go, real_only = NV.ladder_outcome({k: v["passes"] for k, v in lists.items()},
+                                      {k: v["passes"] for k, v in real.items()})
+    body = {"lists": lists, "real": real, "go": go, "real_reported_only": real_only, "steps_db": NV.GHOST_STEPS_DB,
+            "truth_sha256": NR.file_sha(truth_path())}
+    NR.write_once(ladder_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_CALIB}",
+                                  "made": time.strftime("%Y-%m-%d %H:%M:%S"), "body": body})
+    print(f"GHOST-LADDER {'GO' if go else 'STOP (to the user)'}: lists {sum(v['passes'] for v in lists.values())} of "
+          f"{len(lists)}, real {sum(v['passes'] for v in real.values())} of {len(real)}"
+          f"{' (the real set is reported only)' if real_only else ''}; sha256 {NR.file_sha(ladder_path())}")
+
+
+def rest_level_db(di, notes, rate=NR.SR):
+    """The DI's median 20-ms level where no truth note sounds, less its loudest frame's (P2's rest level, reported)."""
+    import numpy as np
+
+    n, h = int(CHECK_FRAME_S * rate), int(CHECK_HOP_S * rate)
+    L = NR.frame_levels_db(di, n, h)
+    if not len(L):
+        return None
+    t = (np.arange(len(L)) * h + n / 2) / rate
+    rest = np.ones(len(L), bool)
+    for q in notes:
+        rest &= ~((t >= q["on"]) & (t < q["off"]))
+    return float(np.median(L[rest]) - L.max()) if rest.any() else None
+
+
+def cmd_truth_report(_args):
+    """The truth report (zero renders; phase 4), once: Basic Pitch on every usable P1 and P2 window and on GOAT's 27
+    development windows (note files written once, reused by `versions`); precision and recall against the cleaned
+    truth, chords and scales apart, P1 and P2 apart (`note_truth.truth_precision`), reported, never a gate; the hum
+    guard (over 5% of a window's found notes on a mains harmonic stops the report); P2's rest level; P2's chord recall
+    read against the 0.85 trigger (under it: to the user before step 5). -> redo/truth-report.json."""
+    m = require_redo(PHASE_CALIB, PHASE_TRUTH)
+    never_overwrite(truth_report_path())
+    listing = require_truth(m)
+    pair = install_pair(load_manifest())
+    from learn import note_truth as TR
+    from learn import song_bank as SB
+
+    ta = TruthAudio(listing)
+    excl, tn, z, _ = _dev_context()
+    jobs, meta = [], []
+    for w in usable_windows(listing):
+        never_overwrite(note_path("truth", w["key"]))
+        di, inp, pre, truth = ta.window(w)
+        jobs.append((inp, w["player"]))
+        meta.append(("truth", w["key"], pre, w, di, truth))
+    for w in dev_windows(z, excl, tn["items"]):
+        never_overwrite(note_path("goat", w["item"]))
+        sec, inp, pre = window_audio(goat_audio(z, w["item"]), w["start_s"])
+        jobs.append((inp, "goat"))
+        meta.append(("goat", w["item"], pre, w, SB.measure(sec), None))
+    bp = run_bp(jobs, REDO / "work" / "truth-report")
+    rows, hum, rest, goat = [], [], [], {}
+    for (kind, key, pre, w, di, truth), r in zip(meta, bp):
+        rec = note_record(r, pre, {"truth_window": key} if kind == "truth" else {"start_s": w["start_s"]})
+        NR.write_once(note_path(kind, key), rec)
+        est, _ = timed_notes(rec, di)
+        if kind == "goat":
+            goat[key] = {"notes": len(est), "note_file_sha256": NR.file_sha(note_path(kind, key))}
+            continue
+        mt = match_notes(truth, est)
+        hs = TR.hum_share(est)
+        if hs > TR.HUM_STOP:
+            hum.append((key, hs))
+        if w["player"] == "P2":
+            rest.append(rest_level_db(di, truth))
+        rows.append({"key": key, "player": w["player"], "kind": w["kind"], "matched": mt["matched"], "ref": mt["ref"],
+                     "est": mt["est"], "hum_share": hs, "note_file_sha256": NR.file_sha(note_path(kind, key))})
+    report = TR.truth_precision(rows)
+    rl = [x for x in rest if x is not None]
+    body = {"report": report, "windows": rows, "goat": goat, "pair": list(pair),
+            "p2_chord_recall": (report.get("P2|chords") or {}).get("recall"),
+            "p2_scale_recall": (report.get("P2|scales") or {}).get("recall"),
+            "p2_rest_level_db": statistics.median(rl) if rl else None, "hum_windows": hum,
+            "stopped": hum or None, "truth_sha256": NR.file_sha(truth_path())}
+    body["p2_chord_trigger"] = body["p2_chord_recall"] is not None and body["p2_chord_recall"] < P2_CHORD_TRIGGER
+    NR.write_once(truth_report_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_CALIB}",
+                                        "made": time.strftime("%Y-%m-%d %H:%M:%S"), "body": body})
+    print(f"TRUTH REPORT: {json.dumps({k: [v['precision'], v['recall']] for k, v in report.items()})}; P2 chord recall "
+          f"{body['p2_chord_recall']}{' (UNDER 0.85: to the user before step 5)' if body['p2_chord_trigger'] else ''};"
+          f" hum {hum or 'none'}; sha256 {NR.file_sha(truth_report_path())}")
+
+
+def cmd_versions(_args):
+    """The note-versions read (zero renders; phase 5), once: refused unless the instrument check let it go. Per window
+    (the ten lists, with the rerun's stored events; the usable P1 and P2 windows; GOAT's 27, nv-asis and the loud
+    versions only) every version built as `tr-di` (`note_versions.build_versions`, `song_bank.measure` finish,
+    `ring-soft` deciding, `ring-on` beside), its `floored_logmel` to the DI, the beside figures; the build rate timed on
+    3 real windows first; Basic Pitch on nv-asis, nv-loud and nv-loud2 for the chord and soft-note guard; then
+    `note_versions.summarise_read` (C, G, E per set with 90% intervals, the readings, the guard, one code, the
+    `other-gap` flag, the declared recommendation) and the turned-down shares on P1, P2 and GOAT. Per-window distances
+    and the rate written once. -> redo/versions.json."""
+    m = require_redo(PHASE_CALIB, PHASE_TRUTH)
+    never_overwrite(versions_path())
+    listing = require_truth(m)
+    if not ladder_path().exists():
+        raise SystemExit("the instrument check has not run (`ghost-ladder` first)")
+    ladder = json.loads(ladder_path().read_text())["body"]
+    if not ladder["go"]:
+        raise SystemExit("the instrument check failed on a list: nothing is read with that distance (to the user)")
+    require_truth_report()
+    pair = install_pair(load_manifest())
+    from learn import note_versions as NV
+    from learn import song_bank as SB
+
+    ta = TruthAudio(listing)
+    excl, tn, z, _ = _dev_context()
+    bank = NR.Bank(NR.load_notes_doc(), excl=excl)
+    known = {pp.stem.split("-", 1)[1]: pp for pp in (gate_work_dir() / "known").glob("*.json")}
+    todo = []
+    for w in usable_windows(listing):
+        di, _, _, truth = ta.window(w)
+        est, _ = timed_notes(load_note("truth", w["key"], pair), di)
+        todo.append(("real", f"{w['player']}|{w['kind']}|{w['name']}", w["key"], di, truth, est, w["player"]))
+    for nm in sorted(KNOWN_NOTES):
+        di = SB.measure(known_audio(nm, bank))
+        est, _ = timed_notes({"events": json.loads(known[nm].read_text())["events"], "pre_s": 0.0}, di)
+        todo.append(("lists", nm, nm, di, KNOWN_NOTES[nm], est, "lists"))
+    for w in dev_windows(z, excl, tn["items"]):
+        di = SB.measure(window_audio(goat_audio(z, w["item"]), w["start_s"])[0])
+        est, _ = timed_notes(load_note("goat", w["item"], pair), di)
+        todo.append(("goat", w["item"], w["item"], di, dev_true_notes(w["item"], w["start_s"], di), est, "goat"))
+    t0, timed = time.perf_counter(), 0
+    windows, rt_jobs, rt_of = [], [], []
+    for st, cluster, key, di, truth, est, group in todo:
+        deciding_truth = None if st == "goat" else truth
+        d, side, audio = NV.build_versions(di, deciding_truth, est, bank, SB.measure)
+        if st == "real" and timed < 3:
+            timed += 1
+            if timed == 3:
+                rate_s = (time.perf_counter() - t0) / (3 * sum(len(v) for v in d.values()))
+        rec = {"set": st, "cluster": cluster, "key": key, "group": group, "d": d, "beside": side,
+               "turned_down": {str(g): NV.turned_down_share(est, truth, g) for g in NR.LOUD_GAMMA}}
+        windows.append(rec)
+        for v in NV.ROUND_TRIP:
+            if v in audio:
+                rt_jobs.append((audio[v], v))
+                rt_of.append((len(windows) - 1, v))
+    rt = run_bp(rt_jobs, REDO / "work" / "versions-round-trip")
+    trips = {}
+    for (i, v), r in zip(rt_of, rt):
+        trips.setdefault(i, {})[v] = clean_transcribed(notes_from_events(r["events"]))[0]
+    for i, w in enumerate(windows):
+        st, _, _, _, truth, est, _ = todo[i]
+        if st == "goat":
+            w["round_trip_notes"] = {v: len(n) for v, n in trips.get(i, {}).items()}
+            continue
+        ch = NV.chord_indices(truth)
+        asis = NV.found_true(trips[i]["nv-asis"], truth)
+        w["guard"] = {}
+        for g, v in zip(NR.LOUD_GAMMA, ("nv-loud", "nv-loud2")):
+            loud = NV.found_true(trips[i][v], truth)
+            soft = NV.soft_indices(est, truth, g)
+            w["guard"][g] = {"chord": (len(asis & set(ch)), len(loud & set(ch)), len(ch)),
+                             "soft": (len(asis & set(soft)), len(loud & set(soft)), len(soft))}
+        w["round_trip_precision"] = {v: match_notes(truth, n)["precision"] for v, n in trips[i].items()}
+        w["pitch_class_cosine"] = pitch_class_cosine(truth, est)
+    read = NV.summarise_read(windows, ladder["real_reported_only"])
+    shares = {}
+    for grp in ("P1", "P2", "goat"):
+        for g in NR.LOUD_GAMMA:
+            v = [w["turned_down"][str(g)] for w in windows if w["group"] == grp and w["turned_down"][str(g)] is not None]
+            shares.setdefault(grp, {})[str(g)] = statistics.mean(v) if v else None
+    body = {"windows": windows, "read": read, "turned_down_shares": shares, "build_seconds": rate_s if timed >= 3
+            else None, "real_reported_only": ladder["real_reported_only"],
+            "ladder_sha256": NR.file_sha(ladder_path()), "truth_sha256": NR.file_sha(truth_path()),
+            "truth_report_sha256": NR.file_sha(truth_report_path()), "gate_sha256": NR.file_sha(gate_path())}
+    NR.write_once(versions_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_CALIB}",
+                                    "made": time.strftime("%Y-%m-%d %H:%M:%S"), "body": body})
+    c = read["code"]
+    print(f"VERSIONS {c['code']}{' gamma ' + str(c['gamma']) if c['gamma'] else ''}: readings "
+          f"{json.dumps({str(k): v for k, v in read['readings'].items()})}; other-gap {read['other_gap']}; "
+          f"recommendation: {read['recommendation']['text']}; sha256 {NR.file_sha(versions_path())}")
+
+
 COMMANDS = {"set-aside": cmd_set_aside, "install": cmd_install, "install-gate": cmd_install_gate,
             "calibrate": cmd_calibrate, "transcribe": cmd_transcribe, "build": cmd_build,
-            "stem-preview": cmd_stem_preview, "clips": cmd_clips}
+            "stem-preview": cmd_stem_preview, "clips": cmd_clips, "truth": cmd_truth,
+            "attacks-report": cmd_attacks_report, "ghost-ladder": cmd_ghost_ladder, "truth-report": cmd_truth_report,
+            "versions": cmd_versions}
 
 
 def main(argv=None):
