@@ -878,3 +878,141 @@ their declared span, and real let-ring DIs will show the same.
   lists: 6 dB 0.193 (old audio) and 0.258 (amended), 9 dB 0.544 and 0.664, 12 dB 0.907 and 0.937. Using the amended
   audio makes the figure easier to pass, but no level reaches 0.95, so `calibration_pick` will return None and the
   calibration will need its declared amendment whatever this change does.
+
+### 12m. The second amendment: measure first (2026-11-22, the user's decision; ledger `phase_nr_1_redo_calib_amend`)
+
+Declared 2026-11-22, before anything in it runs, from the amendment plan approved by its independent review after
+three rounds. Code: `learn/note_truth.py` (the truth), `learn/note_attacks.py` and `learn/attack_run.py` (the
+detector), `learn/note_versions.py` (the read), the loudness option in `learn/note_rebuild.py`, and the wiring and
+five new commands in `learn/note_transcribe.py`. Tests: `tests/test_note_truth.py`, `tests/test_note_attacks.py`,
+`tests/test_note_versions.py` and additions to the redo's test files. Nothing here has run.
+
+**Where it starts.** The gate's rerun read F 0.751: every true note found (259 of 259), 431 notes in all. Of the 172
+extra notes, 126 are harmonics (median amplitude 0.36 against 0.72 for real notes), 31 re-find a pitch still sounding,
+and 15 are others. The review found that no amplitude floor separates them (the best reaches F 0.895 and costs chord
+notes), that the drafted clean-up rule's best case only just reaches 0.90, and that the rebuild plays every note of an
+onset group at the same level, so a ghost sounds as loud as a real note.
+
+**The user's decision (2026-11-22, by AskUserQuestion): "Measure first".**
+
+| Term, as put to the user | Where it lands |
+|---|---|
+| With no renders, rebuild the dry guitar four ways and compare each with the real DI | The note-versions read |
+| If loudness alone lands near the hand-cleaned version, that becomes the fix | Code `NV-loud` |
+| The 0.90 note-test bar becomes a reported figure, not a stop | The install gate passes on repeatability, with timing measured; F 0.751 is recorded and reported |
+| The automatic checks and the listening page still catch extra notes | Unchanged. Said plainly: the page's "extra or wrong notes" button is the main guard |
+| A clean-up rule is built only if loudness isn't enough | Code `NV-short`: a rule under its own later declaration |
+
+**1. The note-versions read.** Each version is built as `tr-di` is built (`ring-soft` deciding, `ring-on` beside,
+the `song_bank.measure` finish), and compared with the DI.
+
+| Version | Notes | Levels |
+|---|---|---|
+| `nv-true` | the true notes | as today |
+| `nv-asis` | Basic Pitch's notes after the clean-up | as today |
+| `nv-hand` | Basic Pitch's notes that pair with a true note (same pitch, onsets within 50 ms, one to one); nothing added | as today |
+| `nv-loud` | all of Basic Pitch's notes | each note at its detected loudness, gamma 1 |
+| beside: `nv-loud2`, `nv-hand-loud` | the stronger setting (gamma 2); the hand-cleaned notes at gamma 1 | — |
+
+- **Each note at its detected loudness** (`synthesise_redo`'s two new options, both off by default so `tr-di` stays
+  byte for byte, proved by stored hashes). Inside an onset group a note's weight is its amplitude over the group's
+  largest, to the power gamma, the group rescaled to today's power. A group that starts under louder ringing notes is
+  turned down by its largest amplitude over the largest still sounding (never up), applied after the group's level.
+  Gamma 1 first, 2 only if 1 is not enough. No note is dropped.
+- **Material:** Guitar-TECHS P1 and P2 direct-input recordings (development material, CC BY 4.0; P3 is held out and
+  never read), with their MIDI cleaned first (notes under 58 ms dropped, same-pitch notes within 30 ms merged); the ten
+  made-up lists (their "DI" is the list's own audio); GOAT's 27 development windows (no usable truth: `nv-asis` and the
+  loud versions only).
+- **A truth window is used only if its truth is consistent:** at least 8 notes, and at least 80% of its onset
+  clusters (onsets chained within 150 ms) have their steepest DI rise within 30 ms of the window's one offset. The same
+  test replaces `annotated-found`'s admission, whose old "lands" test passed at 84 to 88% of random times.
+- **The distance**, `floored_logmel`: `logmel_distance` (left as it is) with each side floored 60 dB under its own
+  loudest bin. The floor was chosen after the review's look at six windows with made-up ghosts.
+- **The instrument check, `ghost-ladder`, first:** made-up octave ghosts added at 0, −6, −12 and −20 dB must lower the
+  distance at every step, the −20 dB version not below the plain rebuild, on the ten lists and six real windows. Any
+  list failing stops the work (to the user). A real window failing alone makes the real set reported only.
+- **The numbers per set** (cluster means, 90% intervals): the extras' cost C = `nv-asis` − `nv-hand`; what loudness
+  leaves, G = `nv-loud` − `nv-hand`; the other gap, E = `nv-hand` − `nv-true`. "Near": C clear of zero, G's mean at most
+  a quarter of C's mean and G's upper end at most half of it. "Short": G's lower end above half of C's mean. "Cost not
+  shown": C's interval is not clear above zero, whether it reaches zero or lies wholly below it (extras that bring the
+  rebuild closer to the DI show no cost); it never counts as a pass and never reads "short".
+
+| Code (the first that holds) | When | What follows |
+|---|---|---|
+| `NV-loud` | near on the lists; on the real DIs near, cost not shown or reported only; on GOAT `nv-loud` not decided worse than `nv-asis`; the chord guard holds; gamma 1 if it qualifies, else 2 | Loudness is adopted at that gamma. No note dropped, no Basic Pitch setting changed. The calibration then runs with it |
+| `NV-short` | short on either set at both gammas | A clean-up rule under its own later declaration, fitted on fresh made-up lists; if it fails, the row runs with the listening page as the guard, or the work stops; no second rule |
+| `NV-none` | cost not shown on the lists | Run as is, with the listening page as the guard |
+| `NV-undecided` | anything else | If the lists read near at either gamma with the guard holding and GOAT not decided worse, adopt that gamma; otherwise run as is, with the page as the guard |
+
+- **The chord guard:** on windows with five or more notes in groups of three or more, Basic Pitch run again on
+  `nv-loud` finds chord notes no more than 0.05 less often than on `nv-asis`; the same for soft notes (truth-paired
+  notes that loudness turns down by more than 3 dB). The share of such notes is reported on P1, P2 and GOAT, pooled
+  over each set's paired notes. When the real set is reported only, its windows stay out of the guard too: a
+  reported-only set enters no reading.
+- **The `other-gap` flag:** on the real DIs, E clear of zero and larger than C. Reported, and the work goes on.
+- **Expected:** gamma 1 will probably read "short" on the lists and gamma 2 is borderline; `NV-undecided` or gamma 2
+  is more likely than a clean pass. The made-up lists carry the read; the real DIs will mostly say "cost not shown".
+
+**2. The attack detector is replaced, and `onsets-found` becomes a report.** librosa's spectral-flux onset detector
+(defaults except a 256-sample hop, threshold 0.07) on the transcriber's own input, run in the Basic Pitch venv. Per
+part, the share of the DI's attacks with a note within 50 ms (after the detector's offset, measured on P1), flagged
+under 0.90; flagged parts are listed and the row is also read beside without them. Its report carries the detector's
+recall of true onset groups, overall and on ringing onsets (one that starts while another note has sounded 100 ms and
+goes on 100 ms more); should it ever gate again, it needs 0.90 on both. Chords and scales are reported apart, and on
+chord windows the recall is also reported on 150-ms groups, since a strum spreads 120 to 200 ms. `playing-covered` stays blocking, so the
+calibration's 25-of-27 rate is `playing-covered`'s; the old rise levels and their precision bar are retired.
+- **Two triggers:** P2's chord recall in the truth report under 0.85 goes to the user before any of the 47 parts is
+  transcribed; `onsets-found` flags on 3 or more of the 40 deciding parts, counted straight after transcription, go to
+  the user before any build. The user's go is recorded as `phase_nr_1_redo_go_chords` or `phase_nr_1_redo_go_flags`.
+- **The rejected clips, measured now** (CPU only, nothing saved): all six fail the blocking `playing-covered`, and all
+  sit under 0.90 on the report-only `onsets-found` (0.17, 0.67, 0.79). Should `calibrate` read differently: (a) a clip
+  caught only by a report is recorded "caught by a report only", the page's "missing notes" button is its guard, the
+  user is told, and the work goes on; (b) a clip caught by no check goes to the user, recommended "go on with the
+  listening page as the guard" (their go: `phase_nr_1_redo_go_clips`). This spends the plan's one calibration
+  amendment.
+
+**3. The truth report (`truth-precision`), reported, never a gate.** Basic Pitch's notes against the cleaned MIDI,
+precision and recall, chords and scales apart, P1 and P2 apart; a mains-hum guard; P2's rest level.
+- **The hum guard, corrected twice before anything runs:** a window stops the report when over 5% of its found notes
+  sit on a mains harmonic (50 or 60 Hz times 1 to 6, within 50 cents), pair with no truth note (same pitch, onsets
+  within 50 ms), **and start where no truth note is sounding** (from 50 ms before a truth note's onset to its note-off).
+  That is where hum would show.
+  - **The plan's rule was wrong:** it counted every found note on a mains pitch, and those pitches include MIDI 43, 47,
+    50, 54, 55, 59, 62 and 66 (G, B, D and F-sharp). Treating the cleaned truth itself as the found notes, the review
+    found 228 of 238 windows over 5% (median 0.25): a perfect transcriber would have stopped the report.
+  - **The first correction was also wrong:** it counted unpaired mains-pitch notes anywhere. The truth used as found
+    notes cannot fail that test (each truth note pairs with itself), but Basic Pitch's own extra notes do. On the gate
+    rerun's stored notes for the ten hum-free lists it stopped 3 of 10 (37 of 431 notes counted, every one starting
+    while a truth note sounded: 24 same-pitch re-finds, 10 harmonics, 3 others). Under the rule above those lists count
+    0 of 431, a test replays them, and real strums no longer trip it. The MIDI trails the DI by 25 to 35 ms on P1 and 18 to 22 ms on P2 on
+scales; one offset per window leaves about ±10 ms by pitch, acceptable at 50 ms. GuitarSet is in Basic Pitch's training
+data, so its published guitar score is not used as a yardstick.
+
+**4. The install gate.** The 0.90 known-notes bar is a reported figure, by the user's decision; the gate passes on
+repeatability, with its timing measured. The rerun's record stands: repeatable, 1.24 s a window, F 0.751 reported.
+
+| # | Step | Waits for |
+|---|---|---|
+| 1 | This declaration | an independent review |
+| 2 | `truth`: the listing (zero Basic Pitch runs); its sha256 into `phase_nr_1_redo_truth` | 1 |
+| 3 | `attacks-report` (timed on 3 windows first); `ghost-ladder` (a failing list stops) | 2 |
+| 4 | `truth-report`; P2's chord recall against its trigger | 3 |
+| 5 | `versions`, once (3 real builds timed first); an independent recompute; `phase_nr_1_redo_versions` | 4 |
+| 6 | By the code: adopt loudness, or back to the user (`phase_nr_1_redo_go_versions`) | 5 |
+| 7 | `calibrate` with the adopted synthesis; then the 47 parts, the flagged-parts trigger before any build | 6 |
+
+Zero renders throughout, no training, no download. Basic Pitch: about 265 runs on DIs and 800 round trips at the
+measured 1.24 s a window; about 3,100 dry-guitar builds at the review's measured 0.14 to 0.48 s each.
+
+**Filled in at declaration:** the user's go keys (`phase_nr_1_redo_go_chords`, `_go_flags`, `_go_clips`,
+`_go_versions`), named here because the plan left them unnamed; `build` reads loudness from main's
+`phase_nr_1_redo_versions` (its gamma on `NV-loud`, else the user's recorded decision); the made-up lists' "DI" goes
+through the same `song_bank.measure` finish as the versions, as the development windows' DI does; `ring-on` beside is
+built for every version (it enters no reading); the soft-note turndown counts weight and trim together; the six ladder
+windows are the first usable window of the first two chord files and of the first scale file that have one, by name;
+the ladder records how many of its ghosts the bank could play (a ghost above its range is not played); every truth
+window is checked against its listing's note count and offset when read, and the lists' stored events against the
+install's model and settings.
+
+**What it can't say:** how the plugin reacts to an extra note (nothing is rendered); much about real guitars (the
+lists carry the read); how many extras Basic Pitch makes on full songs (GOAT has no usable truth); anything about stems.

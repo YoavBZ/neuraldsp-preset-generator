@@ -168,17 +168,19 @@ def _plucks(onsets, seconds=5.25, seed=7):
 
 
 def test_the_note_checks_find_missed_notes_under_ringing_ones():
+    """The 12m report: attacks (here the true onsets themselves, as a perfect detector would give them) where the DI
+    plays, against the notes: every other note missing reads under the 0.90 flag, while frame coverage alone cannot
+    see notes missed under ringing ones."""
     notes = [_n(0.5 + 0.5 * k, 60 + k, off=0.5 + 0.5 * k + 1.5) for k in range(8)]
     di = _plucks([n["on"] for n in notes])
-    att = T.attack_times(di, 6.0)
-    assert len(att) == 8
-    full = T.onsets_found(notes, di, 6.0)
-    assert full["found"] == 8 and T.onsets_found_pass(full)
-    missed = T.onsets_found(notes[::2], di, 6.0)                 # every other note missing, the rest still ringing
-    assert missed["found"] == 4 and not T.onsets_found_pass(missed)
+    att = [n["on"] + 0.004 for n in notes]
+    full = T.attacks_found(att, notes, di, -0.004)
+    assert full["found"] == 8 and not full["flag"] and T.onsets_found_pass(full)
+    missed = T.attacks_found(att, notes[::2], di, -0.004)        # every other note missing, the rest still ringing
+    assert missed["found"] == 4 and missed["flag"] and not T.onsets_found_pass(missed)
     ringing = [dict(n, off=n["off"] + 1.0) for n in notes[::2]]
     assert T.playing_covered_pass(T.playing_covered(ringing, di))   # frame coverage alone cannot see them
-    assert not T.onsets_found_pass(T.onsets_found(ringing, di, 6.0))
+    assert T.check_verdict({"onsets-found": missed}, ("onsets-found",))["failed"] == []    # a report, not a refusal
 
 
 def test_the_audio_checks_on_the_true_di_and_a_gap():
@@ -289,3 +291,115 @@ def test_two_parts_old_arms_rebuild_to_build_jsons_sha256():
             np.save(buf, np.asarray(y, np.float32))
             assert hashlib.sha256(buf.getvalue()).hexdigest() == build["parts"][k["pkey"]]["arms"][arm]["sha256"], \
                 (k["pkey"], arm)
+
+
+# --- the loudness option (note-rebuild-plan 12m) --------------------------------------------------------------------------
+
+def test_equal_amplitudes_give_todays_audio_sample_for_sample():
+    notes = [_n(0.5, 60), _n(0.5, 64), _n(1.5, 67)]
+    for n in notes:
+        n["amp"] = 0.6
+    a, _ = N.synthesise_redo(notes, 3 * SR, _Bank(), 0.0, "ring-soft")
+    b, _ = N.synthesise_redo(notes, 3 * SR, _Bank(), 0.0, "ring-soft", note_weights=N.note_weights(notes, 1.0),
+                             group_trim=N.group_trims(notes, 1.0))
+    assert a.tobytes() == b.tobytes()
+
+
+def test_a_half_amplitude_note_sits_six_db_under_its_partner():
+    def level(notes, w):
+        y, _ = N.synthesise_redo(notes, 3 * SR, _Bank(), 0.0, "ring-on", note_weights=w)
+        return y
+    pair = [dict(_n(0.5, 60, off=2.0), amp=0.8), dict(_n(0.5, 67, off=2.0), amp=0.4)]
+    w = N.note_weights(pair, 1.0)
+    alone = [level([pair[k]], [w[k]]) for k in (0, 1)]
+    r = [N.span_rms(x, int(0.6 * SR), int(1.0 * SR)) for x in alone]
+    assert 20 * np.log10(r[1] / r[0]) == pytest.approx(-6.0, abs=0.8)       # the samples differ a little by pitch
+    assert w[0] ** 2 + w[1] ** 2 == pytest.approx(1.0)
+
+
+def test_rebuild_redo_loud_changes_the_audio_and_keeps_every_note():
+    from learn import note_versions as NV
+
+    rng = np.random.default_rng(9)
+    notes = [dict(_n(0.5 + 0.7 * k, 55 + (k * 5) % 12, off=0.5 + 0.7 * k + 0.6), amp=0.8) for k in range(8)]
+    ghosts = [dict(n, pitch=n["pitch"] + 12, amp=0.35) for n in notes]
+    di, _ = N.synthesise_redo(notes, int(10.25 * SR), _Bank(), 0.0, "ring-soft")
+    di = di * (1 + 0.2 * rng.random(len(di)))
+    plain, rep0 = N.rebuild_redo("tr-di", notes + ghosts, len(di), _Bank(), di, "ring-soft")
+    loud, rep1 = N.rebuild_redo("tr-di", notes + ghosts, len(di), _Bank(), di, "ring-soft", loud=1.0)
+    assert rep1["loud_gamma"] == 1.0 and rep1["played"] == rep0["played"] == 16
+    assert plain.tobytes() != loud.tobytes()
+    assert np.isfinite(NV.floored_logmel(di, loud))                         # whether the cost falls is the read's question
+
+
+# stored before the loudness option, from main at 7a2673c4 on the real bank (sha256 of float32 / float64 samples)
+OLD_KNOWN_INPUT_SHA = {
+    "bend": "0f70cc2c5117b45878eec7525cb12f3e8f39953f8f8801aeff853f7e634ec191",
+    "chords-five": "1c88b3cba0184131ebbcca6cd1033680c539770618642a5d3d655ff1b519b314",
+    "chords-four": "3dd7b54b9d68f9a6a183397d9ab25f7b9444a866112d1288a1f48bbf7d4b5fba",
+    "chords-six": "644bc580a896546ec10cda33b767d2d7c6f8909a618caa290bbb6953775102e8",
+    "chromatic-down": "4083fe0f97cc01e22d0bf21e4bbfbc8d6dc1d427bdcdcfc5dfe92b95c9958b5a",
+    "let-ring-arpeggio": "5cf0e7242709074c669f954f317cb7da1071da973ae629041ee4874dee93e031",
+    "power-chords": "5b7637ed8bc22f89c795fa26ebd2127b6abc0f421384bf1531eddaa567832d72",
+    "scale-c-major": "be7fb85840839e3d6c77416dc1c0a697da89e261cd4792917937bfb203b24d56",
+    "scale-e-minor-fast": "407ddeef9fa9b3f24c0635280a8439c4bf5d5eaa82491fabfc9b3d3f5d15af53",
+    "triads-and-singles": "b40b99848c06d5fd3773336b2732a85a74d5e0976703117086f513396857b444"}
+OLD_TR_SHA = {"tr-di": "77d96235d459ab74024e835722e58559c80b50c4b4c0c4e43451e797247a7ca7",
+              "tr-plain": "fe8300896d850a0c01040d411d21ca267d7c151f2e2855cb4db87f09b5701267"}
+
+
+def test_the_option_off_reproduces_the_stored_audio():
+    """The ten known lists' transcriber inputs (the rerun's stored WAVs' samples, equal to main's at the hashing) and a
+    tr-di and tr-plain build, each reproduced sample for sample with the loudness option off (the default)."""
+    import hashlib
+
+    from learn import song_bank as SB
+
+    if not N.EGFX.exists() or not (N.OUT / "notes.json").exists():
+        pytest.skip("no stored note bank")
+
+    def h(x, dt):
+        return hashlib.sha256(np.ascontiguousarray(x, dt).tobytes()).hexdigest()
+    bank = N.Bank(N.load_notes_doc())
+    import soundfile as sf
+
+    stored = {pp.stem.split("-", 1)[1]: pp for pp in (T.gate_work_dir() / "known").glob("*.wav")}
+    for name, want in OLD_KNOWN_INPUT_SHA.items():
+        assert h(T.transcriber_input(T.known_audio(name, bank)), np.float32) == want, name
+        if name in stored:                                               # the rerun's own evidence, read now
+            assert h(sf.read(str(stored[name]), dtype="float32")[0], np.float32) == want, name
+    di = np.asarray(T.known_audio("triads-and-singles", bank), np.float64)
+    notes = [dict(n, amp=0.5 + 0.05 * (i % 7)) for i, n in enumerate(T.KNOWN_NOTES["triads-and-singles"])]
+    for arm, want in OLD_TR_SHA.items():
+        y, _ = N.rebuild_redo(arm, notes, len(di), bank, di, "ring-soft", finish=SB.measure)
+        assert h(y, np.float64) == want, arm
+
+
+def test_trims_reach_the_last_pass_only(monkeypatch):
+    calls = []
+    real = N.synthesise_redo
+
+    def spy(*a, **k):
+        calls.append((k.get("note_weights") is not None, k.get("group_trim") is not None))
+        return real(*a, **k)
+    monkeypatch.setattr(N, "synthesise_redo", spy)
+    notes = [dict(_n(0.5, 60, off=3.0), amp=0.9), dict(_n(1.0, 72, off=1.5), amp=0.3)]
+    di, _ = real(notes, int(4 * SR), _Bank(), 0.0, "ring-soft")
+    N.rebuild_redo("tr-di", notes, len(di), _Bank(), di, "ring-soft", loud=1.0)
+    assert calls == [(True, False), (True, False), (True, True)]        # weights everywhere, trims last
+    calls.clear()
+    N.rebuild_redo("tr-plain", notes, len(di), _Bank(), di, "ring-soft", loud=1.0)
+    assert calls[-1] == (True, True) and all(c == (True, False) for c in calls[:-1])
+    calls.clear()
+    N.rebuild_redo("tr-di", notes, len(di), _Bank(), di, "ring-soft")
+    assert calls == [(False, False)] * 3                                 # off: today's three passes
+
+
+def test_the_ladder_records_its_ghosts():
+    from learn import note_versions as NV
+
+    notes = [_n(0.5 + 0.6 * k, 55 + k, off=0.5 + 0.6 * k + 0.5) for k in range(8)] + [_n(5.5, 80, off=6.0)]
+    di, _ = N.synthesise_redo(notes, int(10.25 * SR), _Bank(), 0.0, "ring-soft")
+    got = NV.ghost_ladder(di, notes, _Bank(), None)
+    assert got["ghosts"] == 9 and got["ghosts_played"] == 8              # 92 is above the bank: recorded, not played
+    assert len(got["steps"]) == 4

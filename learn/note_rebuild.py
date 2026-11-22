@@ -1624,14 +1624,17 @@ def apply_bend(y, steps, lead_s, rate=SR):
 
 
 def synthesise_redo(notes, length, bank, tuning_cents=0.0, ring="ring-soft", mutes=(), tilt_db_s=0.0,
-                    group_gain_db=None, rate=SR, cut=False):
+                    group_gain_db=None, rate=SR, cut=False, note_weights=None, group_trim=None):
     """The redo's dry guitar for a transcribed note list (`on`, `off`, `pitch`, `bends`) on `length` samples. Strings
     by `placed_free` in onset order (each group's notes low to high); a pitch struck again within VARIETY_S whose
     placed source is the sample it last played takes `next_source` in `variety_sources`' order (a re-struck pitch never
     reuses its last sample); each note ends by `note_end` (repluck, a mute in the DI, the `ring` variant's note-off, the
     sample's end); its bend by `bend_curve`; the sustain tilt `tilt_db_s` on every note (capped at +TILT_MAX_GAIN_DB);
     a group of k notes struck together at 1/sqrt(k); `group_gain_db` (one per onset group) adds the levels. The
-    edge fade as stage 1's. Deterministic. -> (audio, report)."""
+    edge fade as stage 1's. Deterministic. The loudness option (note-rebuild-plan 12m, `phase_nr_1_redo_calib_amend`):
+    `note_weights` (one gain per note, replacing 1/sqrt(k); `note_weights()`) and `group_trim` (one factor per onset
+    group, never above 1; `group_trims()`); with both left out the gain line is today's, so `tr-di` and `tr-plain` stay
+    byte for byte. -> (audio, report)."""
     import numpy as np
 
     if ring not in RING_VARIANTS:
@@ -1642,7 +1645,11 @@ def synthesise_redo(notes, length, bank, tuning_cents=0.0, ring="ring-soft", mut
     for gi, g in enumerate(groups):
         extra = 0.0 if group_gain_db is None else group_gain_db[gi]
         for k in g:
-            gain_of[k] = 10 ** (extra / 20) / math.sqrt(len(g))
+            if note_weights is None and group_trim is None:
+                gain_of[k] = 10 ** (extra / 20) / math.sqrt(len(g))
+            else:
+                w = note_weights[k] if note_weights is not None else 1 / math.sqrt(len(g))
+                gain_of[k] = 10 ** (extra / 20) * w * (group_trim[gi] if group_trim is not None else 1.0)
     src, busy, last = {}, {}, {}
     swaps = 0
     for g in groups:
@@ -1742,27 +1749,94 @@ def sustain_tilt(notes, plain, di, rate=SR):
                   "clamped": tilt != raw}
 
 
-def rebuild_redo(arm, notes, length, bank, di, ring, finish=None, rate=SR):
+LOUD_GAMMA = (1.0, 2.0)                  # the loudness option's settings: 1 first, 2 only if 1 is not enough
+SOFT_DB = -3.0                          # a note turned down by more than 3 dB (weight and trim together) is "soft"
+
+
+def note_weights(notes, gamma):
+    """(Pure.) Each note's gain inside its onset group at its detected loudness: its amplitude over the group's
+    largest, to the power `gamma`, the group rescaled so its power is today's (k notes at 1/sqrt(k) have power 1).
+    Equal amplitudes give exactly today's 1/sqrt(k). A note without an amplitude counts as 1. -> [gain per note]."""
+    out = [0.0] * len(notes)
+    for g in onset_groups(notes):
+        amps = [float(notes[k].get("amp", 1.0) or 0.0) for k in g]
+        top = max(amps)
+        if top <= 0:
+            w = [1.0] * len(g)
+        else:
+            w = [(a / top) ** gamma for a in amps]
+        norm = math.sqrt(sum(x * x for x in w))
+        for k, x in zip(g, w):
+            out[k] = x / norm if norm > 0 else 1 / math.sqrt(len(g))
+    return out
+
+
+def group_trims(notes, gamma):
+    """(Pure.) Each onset group's turndown: a group that starts while louder notes still sound (another group's
+    note with on < onset < off, the transcriber's times) is turned down by its largest amplitude over the largest still
+    sounding, to the power `gamma`; never turned up. -> [factor per group]."""
+    groups = onset_groups(notes)
+    out = []
+    for g in groups:
+        t = notes[g[0]]["on"]
+        top = max(float(notes[k].get("amp", 1.0) or 0.0) for k in g)
+        inside = set(g)
+        sounding = [float(m.get("amp", 1.0) or 0.0) for j, m in enumerate(notes)
+                    if j not in inside and m["on"] < t < m["off"]]
+        loud = max(sounding) if sounding else 0.0
+        out.append(min(1.0, top / loud) ** gamma if loud > 0 else 1.0)
+    return out
+
+
+def note_turndown_db(notes, gamma):
+    """(Pure.) Each note's turndown in dB at `gamma`, weight and trim together, against today's 1/sqrt(k)."""
+    w, t = note_weights(notes, gamma), group_trims(notes, gamma)
+    out = [0.0] * len(notes)
+    for gi, g in enumerate(onset_groups(notes)):
+        for k in g:
+            f = w[k] * math.sqrt(len(g)) * t[gi]
+            out[k] = 20 * math.log10(f) if f > 0 else -math.inf
+    return out
+
+
+def rebuild_redo(arm, notes, length, bank, di, ring, finish=None, rate=SR, loud=None):
     """One redo dry guitar. `notes`: the window's transcribed notes after the clean-up and the onset steps
     (`note_transcribe.timed_notes`); `di`: the true DI as the row renders it (its tuning, mutes, sustain tilt and, for
     `tr-di`, levels by `oracle_gains`); `ring`: the variant chosen at `note_transcribe calibrate`; `finish`: the row's chain
     (`song_bank.measure`, then `average_balance` with the part's others) or None. `tr-plain` is `tr-di` without the
     per-group levels. Both end at ASSUMED_LUFS; the hiss removal runs again after `tr-di`'s level gain, as stage 1's
-    level arms. -> (audio, report)."""
+    level arms. `loud` (a LOUD_GAMMA value, or None: off) plays each note at its detected loudness: `note_weights` in
+    every pass, `group_trims` in the last only, after the group's level, so the level step cannot undo it.
+    -> (audio, report)."""
     if arm not in REDO_ARMS:
         raise ValueError(arm)
     tune = global_tuning_cents(di, rate)
     mutes = mute_times(di, rate)
     padded = length + int(round(END_PAD_S * rate))
-    plain0, _ = synthesise_redo(notes, padded, bank, tune, ring, mutes, 0.0, None, rate)
-    tilt, trep = sustain_tilt(notes, plain0[:length], di, rate)
-    plain, rep = synthesise_redo(notes, padded, bank, tune, ring, mutes, tilt, None, rate)
-    if arm == "tr-plain":
-        y = plain
+    if loud is None:
+        plain0, _ = synthesise_redo(notes, padded, bank, tune, ring, mutes, 0.0, None, rate)
+        tilt, trep = sustain_tilt(notes, plain0[:length], di, rate)
+        plain, rep = synthesise_redo(notes, padded, bank, tune, ring, mutes, tilt, None, rate)
+        if arm == "tr-plain":
+            y = plain
+        else:
+            y, rep = synthesise_redo(notes, padded, bank, tune, ring, mutes, tilt,
+                                     oracle_gains(notes, plain[:length], di, rate), rate)
+            y = denoise_above(y, rate)
     else:
-        y, rep = synthesise_redo(notes, padded, bank, tune, ring, mutes, tilt,
-                                 oracle_gains(notes, plain[:length], di, rate), rate)
-        y = denoise_above(y, rate)
+        w, trims = note_weights(notes, loud), group_trims(notes, loud)
+        plain0, _ = synthesise_redo(notes, padded, bank, tune, ring, mutes, 0.0, None, rate, note_weights=w)
+        tilt, trep = sustain_tilt(notes, plain0[:length], di, rate)
+        plain, rep = synthesise_redo(notes, padded, bank, tune, ring, mutes, tilt, None, rate, note_weights=w)
+        if arm == "tr-plain":
+            y, rep = synthesise_redo(notes, padded, bank, tune, ring, mutes, tilt, None, rate, note_weights=w,
+                                     group_trim=trims)
+        else:
+            y, rep = synthesise_redo(notes, padded, bank, tune, ring, mutes, tilt,
+                                     oracle_gains(notes, plain[:length], di, rate), rate, note_weights=w,
+                                     group_trim=trims)
+            y = denoise_above(y, rate)
+        rep = {**rep, "loud_gamma": loud}
     if finish is not None:
         y = finish(y)
     y = at_lufs(y[:length], ASSUMED_LUFS, rate)

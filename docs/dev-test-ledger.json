@@ -4018,6 +4018,33 @@
      "rise_precision": "pooled over the known lists, old/amended audio: 6 dB 0.193/0.258, 9 dB 0.544/0.664, 12 dB 0.907/0.937; no level reaches 0.95, so calibration_pick returns None and the calibration needs its declared amendment either way; the amended audio makes the figure easier to pass"
     },
     "bars_and_settings": "none changed"
+   },
+   "phase_nr_1_redo_calib_amend": {
+    "declared": "2026-11-22",
+    "plan": "docs/note-rebuild-plan.md section 12m (note-rebuild-plan 12m)",
+    "reviews": "the amendment plan approved by an independent review after three rounds (changes needed; changes needed; approve)",
+    "users_decision": {
+     "asked": "2026-11-22, by AskUserQuestion",
+     "answer": "Measure first",
+     "terms": [
+      "with no renders, rebuild the dry guitar four ways and compare each with the real DI",
+      "if loudness alone lands near the hand-cleaned version, that becomes the fix",
+      "the 0.90 note-test bar becomes a reported figure, not a stop",
+      "the automatic checks and the listening page still catch extra notes",
+      "a clean-up rule is built only if loudness isn't enough"
+     ]
+    },
+    "install_gate": "passes on repeatability, timing measured; the known-notes F is reported (the rerun: repeatable, 1.24 s a window, F 0.751, install-gate.json 23251597...30da)",
+    "detector": "librosa onset_detect, defaults except hop_length 256, delta 0.07, on the transcriber's input, run in the Basic Pitch venv (learn/attack_run.py); onsets-found a report (within 50 ms after the P1 offset, flag under 0.90), no longer blocking; its report carries recall overall and on ringing onsets; the rise levels and their precision bar retired; chords and scales reported apart, chord windows also on 150-ms groups (strums)",
+    "truth": "Guitar-TECHS P1 and P2 direct-input with MIDI (P3 never read), cleaned (under 58 ms dropped, same pitch within 30 ms merged); windows at 10, 70 and 130 s; admitted when consistent (8 notes, 80% of onset clusters within 30 ms of the window's offset); the truth report (precision, recall, chords and scales apart) reported only; the hum guard relative: a window stops when over 5% of its found notes sit on a mains harmonic, pair with no truth note, and start where no truth note is sounding (50 ms before its onset to its note-off). The plan's rule, every note on a mains pitch, was wrong: MIDI 43, 47, 50, 54, 55, 59, 62 and 66 are mains pitches, and 228 of 238 windows of the truth itself tripped it. The first correction, unpaired mains-pitch notes anywhere, was also wrong: the truth cannot fail it, but Basic Pitch's extras do; it stopped 3 of the 10 hum-free lists on the gate rerun's notes (37 of 431, all starting while a truth note sounded); the rule above counts 0 of them",
+    "annotated_found": "its admission by the same consistency test (the old 'lands' test passed at random times)",
+    "read": "the note-versions read: nv-true, nv-asis, nv-hand, nv-loud (gamma 1), beside nv-loud2 (gamma 2) and nv-hand-loud; floored_logmel (60 dB under each side's loudest bin; logmel_distance untouched) after the ghost-ladder instrument check; C, G, E per set with 90% intervals; near / short / cost not shown (C not clear above zero, below zero included; never short) / undecided; codes NV-loud, NV-short, NV-none, NV-undecided and the other-gap flag, each with its declared recommendation; the chord and soft-note guard at 0.05; a reported-only real set stays out of the guard too; the turned-down shares pooled over paired notes",
+    "loudness": "synthesise_redo note_weights and group_trim, rebuild_redo loud; off by default (tr-di and tr-plain byte for byte, stored-hash tests)",
+    "triggers": "P2 chord recall under 0.85 before the 47 parts are transcribed (phase_nr_1_redo_go_chords); onsets-found flags on 3 or more of the 40 deciding parts before any build (phase_nr_1_redo_go_flags)",
+    "rejected_clips": "measured now: all six fail the blocking playing-covered and sit under 0.90 on onsets-found (0.17, 0.67, 0.79); (a) caught by a report only: recorded, the user told, go on; (b) caught by no check: to the user, recommended go on with the listening page (phase_nr_1_redo_go_clips); this spends the plan's one calibration amendment",
+    "later_keys": "phase_nr_1_redo_truth (the listing's sha256, before any run reads a window), phase_nr_1_redo_versions (the read: per-set numbers, the code, gamma; the file's sha256); phase_nr_1_redo_install gains the detector's report and the truth report; the go keys only if their trigger fires",
+    "code": "learn/note_truth.py, learn/note_attacks.py, learn/attack_run.py, learn/note_versions.py (new); learn/note_rebuild.py (the loudness option), learn/note_transcribe.py (the wiring; commands truth, attacks-report, ghost-ladder, truth-report, versions); CODE_FILES gains the four new files",
+    "renders": "zero; no training, no download"
    }
   }
  ],

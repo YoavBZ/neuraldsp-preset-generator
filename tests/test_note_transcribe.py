@@ -35,12 +35,11 @@ def test_the_settings_are_the_declared_ones():
 def test_the_checks_are_the_six_declared():
     assert list(T.CONTENT) == ["annotated-found", "onsets-found", "playing-covered", "judge-accepts", "ring-kept",
                                "chords-kept"]
-    assert [k for k, v in T.CONTENT.items() if not v["blocking"]] == ["annotated-found"]
+    assert [k for k, v in T.CONTENT.items() if not v["blocking"]] == ["annotated-found", "onsets-found"]   # 12m
     c = T.CONTENT
-    assert (c["annotated-found"]["median"], c["annotated-found"]["floor"], c["annotated-found"]["lands_share"]) == \
-        (0.85, 0.75, 0.90)
-    assert (c["onsets-found"]["share"], c["onsets-found"]["within_s"], c["onsets-found"]["merge_s"]) == \
-        (0.90, 0.030, 0.050)
+    assert (c["annotated-found"]["median"], c["annotated-found"]["floor"], c["annotated-found"]["admission"]) == \
+        (0.85, 0.75, "consistent")
+    assert (c["onsets-found"]["share"], c["onsets-found"]["within_s"]) == (0.90, 0.050)
     assert (c["playing-covered"]["playing"], c["playing-covered"]["silent"]) == (0.95, 0.10)
     assert (c["judge-accepts"]["pause_over_true"], c["judge-accepts"]["gap_s"], c["judge-accepts"]["gap_db"]) == \
         (0.05, 0.250, 40.0)
@@ -48,7 +47,9 @@ def test_the_checks_are_the_six_declared():
             c["ring-kept"]["env_corr"]) == (0.600, 3.0, 20, 0.80)
     assert (c["chords-kept"]["note_f"], c["chords-kept"]["chord_recall"], c["chords-kept"]["min_chord_notes"]) == \
         (0.85, 0.85, 5)
-    assert T.RISE_LEVELS == (6.0, 9.0, 12.0) and T.CALIBRATION_PASS == 25 and T.DEV_COUNT == 27
+    assert not hasattr(T, "RISE_LEVELS") and not hasattr(T, "RISE_PRECISION")             # retired in 12m
+    assert T.CALIBRATION_PASS == 25 and T.DEV_COUNT == 27
+    assert T.P2_CHORD_TRIGGER == 0.85 and T.FLAG_TRIGGER == 3
     assert T.REFUSAL_STOP == 3 and T.DECIDING == ("bks", "goat")
 
 
@@ -225,35 +226,76 @@ def test_check_verdict_blocks_only_on_blocking_failures():
 
 
 def test_annotated_found_on_the_top_tertile():
-    rows = [{"alignment_f": f, "lands_share": 0.95, "recall": r} for f, r in
+    rows = [{"alignment_f": f, "consistent": True, "recall": r} for f, r in
             [(0.5, 0.1), (0.6, 0.2), (0.7, 0.3), (0.80, 0.9), (0.81, 0.8), (0.82, 0.9), (0.9, 0.86), (0.91, 0.9),
              (0.92, 0.88)]]
     got = T.annotated_found_pass(rows)
     assert got["windows"] == 3 and got["median"] == 0.88 and got["passes"]
     rows[-1]["recall"] = 0.74                                                             # one window under 0.75
     assert not T.annotated_found_pass(rows)["passes"]
-    rows[-1]["lands_share"] = 0.89                                                        # its annotation fails the rise
+    rows[-1]["consistent"] = False                                     # its annotation fails the consistency test
     assert T.annotated_found_pass(rows)["windows"] == 2
 
 
-def test_calibration_pick_takes_the_lowest_level_holding_both_bars():
-    rates = {"6.0": {"onsets-found": 24, "playing-covered": 27}, "9.0": {"onsets-found": 25, "playing-covered": 25},
-             "12.0": {"onsets-found": 27, "playing-covered": 27}}
-    assert T.calibration_pick(rates) == 9.0
-    assert T.calibration_pick(rates, precision={"6.0": 0.99, "9.0": 0.94, "12.0": 0.96}) == 12.0
-    assert T.calibration_pick({"6.0": {"onsets-found": 27, "playing-covered": 24}}) is None
-
-
-def test_calibration_needs_annotated_found_to_pass():
+def test_calibration_needs_annotated_found_and_playing_covered():
     af = {"passes": True}
     pos = {"avg+mild": [], "true": []}
-    assert T.calibration_ok(9.0, af, pos, [])
-    assert not T.calibration_ok(9.0, {"passes": False}, pos, [])          # it gates the transcriber's settings
-    assert not T.calibration_ok(9.0, {"passes": None, "windows": 0}, pos, [])   # no window to read it on
-    assert not T.calibration_ok(None, af, pos, [])
-    assert not T.calibration_ok(9.0, af, {"avg+mild": ["item_5"], "true": []}, [])
-    assert not T.calibration_ok(9.0, af, {"avg+mild": [], "true": ["item_5"]}, [])
-    assert not T.calibration_ok(9.0, af, pos, [("item_46|nr-plain", ["onsets-found"])])
+    caught = {"item_102|nr-plain": "caught by a blocking check", "item_46|nr-plain": "caught by a report only"}
+    assert T.calibration_ok(25, af, pos, caught)
+    assert not T.calibration_ok(24, af, pos, caught)                     # playing-covered on 25 of the 27
+    assert not T.calibration_ok(27, {"passes": False}, pos, caught)      # it gates the transcriber's settings
+    assert not T.calibration_ok(27, {"passes": None, "windows": 0}, pos, caught)   # no window to read it on
+    assert not T.calibration_ok(27, af, {"avg+mild": ["item_5"], "true": []}, caught)
+    assert not T.calibration_ok(27, af, {"avg+mild": [], "true": ["item_5"]}, caught)
+    blind = dict(caught, **{"item_160|nr-level": "caught by no check"})
+    assert not T.calibration_ok(27, af, pos, blind)                      # caught by no check: the user's go first
+    assert T.calibration_ok(27, af, pos, blind, clips_go=True)
+
+
+def test_the_gate_passes_on_repeatability():
+    assert T.gate_passes({"repeat_ok": True, "known_ok": False, "known_f": 0.751})   # 12m: F is a reported figure
+    assert not T.gate_passes({"repeat_ok": False, "known_ok": True}) and not T.gate_passes(None)
+
+
+def test_the_rejected_clips_cases():
+    exp = [{"clip": "a|nr-plain", "must_fail_any": ["onsets-found", "playing-covered"]},
+           {"clip": "b|nr-plain", "must_fail_any": ["ring-kept", "playing-covered"]},
+           {"clip": "c|nr-plain", "must_fail_any": ["onsets-found", "playing-covered"]}]
+    res = {"a|nr-plain": {"onsets-found": False, "playing-covered": False},
+           "b|nr-plain": {"ring-kept": True, "playing-covered": True},
+           "c|nr-plain": {"onsets-found": False, "playing-covered": True}}
+    assert T.clip_case(exp, res) == {"a|nr-plain": "caught by a blocking check", "b|nr-plain": "caught by no check",
+                                     "c|nr-plain": "caught by a report only"}
+
+
+def test_the_two_triggers_and_the_versions_loudness():
+    assert T.chords_go_refusal(0.86, {}) is None
+    assert "to the user first" in T.chords_go_refusal(0.84, {})
+    assert T.chords_go_refusal(0.84, {T.PHASE_GO_CHORDS: {"go": True}}) is None
+    assert "no P2 chord recall" in T.chords_go_refusal(None, {})
+    assert T.p2_chord_recall({"report": {"P2|chords": {"recall": 0.9}}}) == 0.9 and T.p2_chord_recall({}) is None
+    assert T.flags_go_refusal(["a", "b"], {}) is None
+    assert "3 of the 40" in T.flags_go_refusal(["a", "b", "c"], {})
+    assert T.flags_go_refusal(["a", "b", "c"], {T.PHASE_GO_FLAGS: {}}) is None
+    parts = {"a": {"figures": {"onsets-found": {"flag": True}}}, "b": {"figures": {"onsets-found": {"flag": False}}},
+             "p": {"figures": {"onsets-found": {"flag": True}}}}
+    assert T.flagged_parts(parts, {"a": "goat", "b": "bks", "p": "panel"}) == (["a"], ["p"])
+    assert T.versions_loud({T.PHASE_VERSIONS: {"code": "NV-loud", "gamma": 2.0}}) == (2.0, None)
+    assert "holds no code" in T.versions_loud({})[1]
+    assert "to the user first" in T.versions_loud({T.PHASE_VERSIONS: {"code": "NV-short"}})[1]
+    assert T.versions_loud({T.PHASE_VERSIONS: {"code": "NV-none"}, T.PHASE_GO_VERSIONS: {"loud": None}}) == (None, None)
+
+
+def test_the_ladder_windows_and_usable_windows():
+    ws = [{"player": pl, "kind": k, "name": nm, "start": st, "consistent": c, "key": f"{pl}{k}{nm}{st}"}
+          for pl in ("P1", "P2") for k, nm, st, c in (("chords", "b", 10.0, True), ("chords", "a", 70.0, True),
+                                                       ("chords", "a", 10.0, False), ("chords", "c", 10.0, True),
+                                                       ("scales", "z", 70.0, True), ("scales", "y", 130.0, True))]
+    lw = T.ladder_windows({"windows": ws})
+    assert [(w["player"], w["kind"], w["name"], w["start"]) for w in lw] == [
+        ("P1", "chords", "a", 70.0), ("P1", "chords", "b", 10.0), ("P1", "scales", "y", 130.0),
+        ("P2", "chords", "a", 70.0), ("P2", "chords", "b", 10.0), ("P2", "scales", "y", 130.0)]
+    assert len(T.usable_windows({"windows": ws})) == 10 and len(T.usable_windows({"windows": ws}, ("P1",))) == 5
 
 
 def test_content_shares():
@@ -352,7 +394,8 @@ def test_listing_sha_is_the_hand_backs_form():
 def test_the_guard_covers_the_declared_files_and_keys():
     assert set(T.CODE_FILES) == {"learn/scratch_search.py", "learn/scratch_notes.py", "learn/note_rebuild.py",
                                  "learn/note_rebuild_s1.py", "learn/note_rebuild_ear.py", "learn/note_transcribe.py",
-                                 "learn/bp_run.py"}
+                                 "learn/bp_run.py", "learn/note_truth.py", "learn/note_attacks.py",
+                                 "learn/attack_run.py", "learn/note_versions.py"}
     assert all((REPO / f).exists() for f in T.CODE_FILES)
     assert T.KEY_PREFIXES == {"preset-ladder": ("phase_fs", "phase_scratch_notes"), "note-rebuild": ("phase_nr",)}
     local = {"preset-ladder": {"phase_fs": 1, "phase_scratch_notes": 2, "phase_l0": 3},
@@ -367,6 +410,10 @@ def test_the_ledger_holds_the_declarations():
     e = T.entries((REPO / "docs" / "dev-test-ledger.json").read_text())
     assert T.PHASE in e["note-rebuild"] and "phase_scratch_notes" in e["preset-ladder"]
     assert "phase_nr_1_ear" not in e["note-rebuild"]          # the old page's read is never the stage-1 gate key
+    assert T.PHASE_CALIB in e["note-rebuild"] and "Measure first" in str(e["note-rebuild"][T.PHASE_CALIB])
+    for later in (T.PHASE_TRUTH, T.PHASE_VERSIONS, T.PHASE_GO_CHORDS, T.PHASE_GO_FLAGS, T.PHASE_GO_CLIPS,
+                  T.PHASE_GO_VERSIONS):
+        assert later not in e["note-rebuild"]
     for later in (T.PHASE_INSTALL, T.PHASE_NOTES, T.PHASE_EAR):
         assert later not in e["note-rebuild"]                  # each comes with its own PR
     assert T.PHASE_DRY not in e["preset-ladder"]
@@ -420,6 +467,36 @@ def test_the_gate_never_overwrites_a_runs_raw_events(monkeypatch, tmp_path):
     (tmp_path / "install-gate.json").write_text("{}")
     with pytest.raises(SystemExit, match="install-gate.json exists"):
         T.cmd_install_gate(None)
+
+
+NEW_COMMANDS = ("truth", "attacks-report", "ghost-ladder", "truth-report", "versions")
+
+
+@pytest.mark.parametrize("cmd", NEW_COMMANDS + ("calibrate", "transcribe", "build"))
+def test_the_amendments_commands_need_its_declaration_on_main(monkeypatch, cmd):
+    monkeypatch.setattr(T, "redo_on_main", lambda: ({"note-rebuild": {T.PHASE: "d", T.PHASE_EAR_OLD: {}}}, None))
+    with pytest.raises(SystemExit, match=T.PHASE_CALIB):
+        T.COMMANDS[cmd](None)
+
+
+@pytest.mark.parametrize("cmd", [c for c in NEW_COMMANDS if c != "truth"] + ["calibrate", "transcribe", "build"])
+def test_the_amendments_commands_need_the_truth_listing_on_main(monkeypatch, cmd):
+    monkeypatch.setattr(T, "redo_on_main", lambda: ({"note-rebuild": {T.PHASE: "d", T.PHASE_EAR_OLD: {},
+                                                                      T.PHASE_CALIB: "d"}}, None))
+    with pytest.raises(SystemExit, match=T.PHASE_TRUTH):
+        T.COMMANDS[cmd](None)
+
+
+@pytest.mark.parametrize("cmd, path", [("truth", "truth.json"), ("attacks-report", "attacks.json"),
+                                       ("ghost-ladder", "ghost-ladder.json"), ("truth-report", "truth-report.json"),
+                                       ("versions", "versions.json")])
+def test_each_new_output_is_written_once(monkeypatch, tmp_path, cmd, path):
+    monkeypatch.setattr(T, "redo_on_main", lambda: ({"note-rebuild": {T.PHASE: "d", T.PHASE_CALIB: "d",
+                                                                      T.PHASE_TRUTH: {"sha256": "x"}}}, None))
+    monkeypatch.setattr(T, "REDO", tmp_path)
+    (tmp_path / path).write_text("{}")
+    with pytest.raises(SystemExit, match="never overwritten"):      # versions refuses a second run
+        T.COMMANDS[cmd](None)
 
 
 def test_calibrate_needs_the_old_ear_table(monkeypatch, tmp_path):

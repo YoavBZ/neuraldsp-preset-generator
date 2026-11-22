@@ -1,6 +1,7 @@
 """The redo's synthesis rules on made-up lists (`learn/note_rebuild.py`, the arms `tr-di` and `tr-plain`;
 `docs/note-rebuild-plan.md` section 12): the ring rule, the placing rule, the sample variety and the bend rule, and the
 stage-1 arms' code left as it was. Pure: runs on the light CI runner (no numpy)."""
+import math
 import pathlib
 import subprocess
 
@@ -131,3 +132,36 @@ def test_the_stage1_arms_code_is_byte_for_byte_main_at_declaration():
     assert set(a) == set(STAGE1_FUNCTIONS) and a == b
     head = now.split("\n# --- the redo's dry guitars")[0]          # the redo's block is inserted, nothing else changes
     assert old.stdout.startswith(head) and now.endswith(old.stdout[len(head):])
+
+
+# --- the loudness option (note-rebuild-plan 12m; off by default) -----------------------------------------------------------
+
+def test_note_weights_keep_the_groups_power_and_equal_amplitudes_give_today():
+    notes = [_note(0.0, 48), _note(0.0, 52), _note(1.0, 60)]
+    for n, a in zip(notes, (0.8, 0.4, 0.5)):
+        n["amp"] = a
+    w = N.note_weights(notes, 1.0)
+    assert w[0] ** 2 + w[1] ** 2 == pytest.approx(1.0) and w[2] == pytest.approx(1.0)     # the group's power as today
+    assert 20 * math.log10(w[1] / w[0]) == pytest.approx(-6.0206, abs=1e-3)               # half the amplitude: -6 dB
+    assert 20 * math.log10(N.note_weights(notes, 2.0)[1] / N.note_weights(notes, 2.0)[0]) == \
+        pytest.approx(-12.04, abs=1e-2)
+    same = [dict(n, amp=0.6) for n in notes]
+    assert N.note_weights(same, 1.0) == [1 / math.sqrt(2), 1 / math.sqrt(2), 1.0]          # exactly today's 1/sqrt(k)
+    assert N.note_weights([_note(0.0, 60)], 1.0) == [1.0]                                  # no amplitude counts as 1
+
+
+def test_group_trims_turn_down_under_louder_ringing_notes_and_never_up():
+    loud = dict(_note(0.0, 48, off=3.0), amp=0.8)
+    ghost = dict(_note(1.0, 60, off=1.5), amp=0.4)
+    late = dict(_note(4.0, 62, off=4.5), amp=0.9)
+    trims = N.group_trims([loud, ghost, late], 1.0)
+    assert trims == [1.0, pytest.approx(0.5), 1.0]                    # under the ringing 0.8: turned down by half
+    assert N.group_trims([loud, dict(ghost, amp=0.95)], 1.0) == [1.0, 1.0]   # louder than what rings: never up
+    assert N.group_trims([loud, ghost], 2.0)[1] == pytest.approx(0.25)
+    down = N.note_turndown_db([loud, ghost, late], 1.0)
+    assert down[0] == 0.0 and down[1] == pytest.approx(-6.0206, abs=1e-3) and down[2] == 0.0
+
+
+def test_no_note_is_dropped_by_loudness():
+    notes = [dict(_note(0.0, 48), amp=a) for a in (0.0, 0.2, 1.0)]
+    assert len(N.note_weights(notes, 2.0)) == 3 and all(x >= 0 for x in N.note_weights(notes, 2.0))
