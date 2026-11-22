@@ -822,8 +822,12 @@ negative control, or it is a blind spot:
 |---|---|---|
 | item_102, `nr-plain` and `nr-level` | many notes missing; a bend missing | `onsets-found`, `playing-covered` (the plan's default) |
 | item_160, `nr-plain` and `nr-level` | notes cut short, no width | `ring-kept`, `playing-covered` |
-| item_46, `nr-plain` and `nr-level` | missing notes; chords played as single notes | `onsets-found`, `playing-covered`, `chords-kept` |
+| item_46, `nr-plain` and `nr-level` | missing notes; chords played as single notes | `onsets-found`, `playing-covered` |
 
-item_57 (cards 7 and 8) is unanswered and carries no words, so it is not in the table. The plan spoke of "the four
+**The control holds only when all 6 clips fail one of their checks;** any clip that passes them all is a blind
+spot. "Chords played as single notes" (card 5) is not testable by any of the six checks here: `negative_control`
+measures `chords-kept` against the old clip's own notes, not the DI, so chords the old tab lacked leave it
+nothing to recall (the transcriber's chord recall is covered only by the install gate's known notes).
+`chords-kept` is reported for item_46, not counted. item_57 (cards 7 and 8) is unanswered and carries no words, so it is not in the table. The plan spoke of "the four
 clips the user rejected"; the stored answers hold words on 5 cards over 3 items, each about both rebuilt guitars, so
 the table holds the 6 dry guitars the words describe.

@@ -3963,22 +3963,22 @@
       "clip": "item_46|nr-plain",
       "must_fail_any": [
        "onsets-found",
-       "playing-covered",
-       "chords-kept"
+       "playing-covered"
       ],
-      "words": "card 5: missing notes; chords in the recording played as single notes"
+      "words": "card 5: missing notes; chords in the recording played as single notes (the chords: not testable here, see chords_not_testable)"
      },
      {
       "clip": "item_46|nr-level",
       "must_fail_any": [
        "onsets-found",
-       "playing-covered",
-       "chords-kept"
+       "playing-covered"
       ],
       "words": "card 5, as above"
      }
     ],
-    "expected_failures_rule": "written from the user's words above before any check runs on these clips; a clip is a dry guitar (item and arm; the preset does not change it), and each must fail at least one of its listed checks (note_transcribe.expected_failure_refusal); missing notes -> onsets-found or playing-covered (the plan's default); notes cut short -> ring-kept or playing-covered; chords played as single notes -> chords-kept beside the missing-notes pair. item_57 (cards 7-8) is unanswered and has no words (card 6, item_46 crunch, is unanswered too) and is not in the table. The plan's 'four clips' did not match the stored answers (5 cards on 3 items, both rebuilt guitars on each): the table holds every dry guitar the words describe, 6"
+    "expected_failures_rule": "written from the user's words above before any check runs on these clips; a clip is a dry guitar (item and arm; the preset does not change it), and each must fail at least one of its listed checks (note_transcribe.expected_failure_refusal); missing notes -> onsets-found or playing-covered (the plan's default); notes cut short -> ring-kept or playing-covered; chords played as single notes: not testable here (chords_not_testable). item_57 (cards 7-8) is unanswered and has no words (card 6, item_46 crunch, is unanswered too) and is not in the table. The plan's 'four clips' did not match the stored answers (5 cards on 3 items, both rebuilt guitars on each): the table holds every dry guitar the words describe, 6",
+    "chords_not_testable": "'chords played as single notes' (card 5, item_46) is not testable by any of the six checks in this control: negative_control measures chords-kept against the old clip's own notes, not the DI, so notes the old tab lacked leave it nothing to recall; the transcriber's chord recall is covered only by the install gate's known notes. chords-kept is reported for item_46, not counted",
+    "control_stop_rule": "the negative control holds only when all 6 clips fail one of their listed checks; any clip that passes them all is a blind spot (to the orchestrator; one declared amendment that keeps avg+mild passing)"
    }
   }
  ],

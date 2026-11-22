@@ -367,6 +367,9 @@ def test_the_ledger_holds_the_declarations():
     e = T.entries((REPO / "docs" / "dev-test-ledger.json").read_text())
     assert T.PHASE in e["note-rebuild"] and "phase_scratch_notes" in e["preset-ladder"]
     assert "phase_nr_1_ear" not in e["note-rebuild"]          # the old page's read is never the stage-1 gate key
+    for later in (T.PHASE_INSTALL, T.PHASE_NOTES, T.PHASE_EAR):
+        assert later not in e["note-rebuild"]                  # each comes with its own PR
+    assert T.PHASE_DRY not in e["preset-ladder"]
 
 
 def test_the_old_pages_expected_failure_table():
@@ -380,6 +383,13 @@ def test_the_old_pages_expected_failure_table():
                                           for arm in ("nr-plain", "nr-level")]
     for x in table:
         assert x["must_fail_any"] and set(x["must_fail_any"]) <= set(T.CONTENT) - {"annotated-found"}
+    want = {"item_102": ["onsets-found", "playing-covered"], "item_160": ["ring-kept", "playing-covered"],
+            "item_46": ["onsets-found", "playing-covered"]}      # item_46's chords: reported, not counted (R1)
+    assert all(x["must_fail_any"] == want[x["clip"].split("|")[0]] for x in table)
+    assert "chords-kept" in rec["chords_not_testable"] and "all 6" in rec["control_stop_rule"]
+    only_chords = {x["clip"]: {k: True for k in T.CONTENT} for x in table}
+    only_chords["item_46|nr-plain"]["chords-kept"] = False      # a chords-kept failure alone does not catch item_46
+    assert ("item_46|nr-plain", want["item_46"]) in T.expected_failure_refusal(table, only_chords)
     assert T.expected_failure_refusal(table, {x["clip"]: {k: False for k in x["must_fail_any"]} for x in table}) == []
     blind = T.expected_failure_refusal(table, {x["clip"]: {k: True for k in T.CONTENT} for x in table})
     assert len(blind) == 6                                    # an expected failure that does not happen: a blind spot
