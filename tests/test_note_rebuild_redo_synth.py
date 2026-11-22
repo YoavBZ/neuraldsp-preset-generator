@@ -211,7 +211,8 @@ def test_known_lists_play():
 
 def test_two_parts_old_arms_rebuild_to_build_jsons_sha256():
     """Section 12's proof without reading a result: two parts' stage-1 dry guitars rebuilt in memory through the
-    unchanged code (as `note_rebuild_s1 build` built them) hash to build.json's sha256, in stage1/ or set aside."""
+    unchanged code (as `note_rebuild_s1 build` built them) hash to build.json's sha256, in stage1/ or set aside. It
+    reads build.json's dry-guitar hashes only, never a render's distance, pick or score (plan section 12a)."""
     from learn import di_robustness as DR
     from learn import knob_ceiling as K
     from learn import note_rebuild_s1 as S1

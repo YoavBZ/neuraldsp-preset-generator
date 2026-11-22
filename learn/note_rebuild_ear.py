@@ -540,7 +540,8 @@ def cmd_redo_page(_args):
     for name in ("index.html", "artifact.html", "key.json"):
         NT.never_overwrite(out / name)
     src = NT.clips_dir()
-    items = redo_items(json.loads((src / "index.json").read_text()))
+    index = json.loads((src / "index.json").read_text())
+    items = redo_items(index)
     build = redo_build_id(items)
     clips = {}
     for it in items:
@@ -554,7 +555,8 @@ def cmd_redo_page(_args):
             clips[f"{it['id']}-{k}"] = E.encode(np.asarray(y).mean(1), out / "aac-cache")
     page, css, js = redo_page_html(items, clips, build)
     out.mkdir(parents=True, exist_ok=True)
-    NR.write_once(out / "key.json", {"phase": REDO_PHASE, "build": build, "items": items})
+    NR.write_once(out / "key.json", {"phase": REDO_PHASE, "build": build, "dry_build_sha256": index["build_sha256"],
+                                     "items": items})
     for name, text in (("index.html", page), ("artifact.html", redo_artifact_page(page, css, js))):
         NT.never_overwrite(out / name)
         (out / name).write_text(text)
@@ -574,7 +576,8 @@ def cmd_redo_read(args):
     ex = EE.stored_answers(pathlib.Path(args.answers).read_text())
     if ex.get("build") != key["build"]:
         raise SystemExit(f"answers for build {ex.get('build')}, the page's is {key['build']}")
-    rep = {"phase": REDO_PHASE, "build": key["build"], **redo_verdict(key["items"], ex["answers"])}
+    rep = {"phase": REDO_PHASE, "build": key["build"], "dry_build_sha256": key["dry_build_sha256"],
+           **redo_verdict(key["items"], ex["answers"])}
     pathlib.Path(args.out).write_text(json.dumps(rep, indent=1))
     print(json.dumps(rep, indent=1))
 

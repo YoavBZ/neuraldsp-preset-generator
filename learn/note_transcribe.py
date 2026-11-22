@@ -67,6 +67,9 @@ MANIFEST = TOOLS / "manifest.json"
 PIP_PIN = ("pip", "26.0.1", "bdb1b08f4274833d62c1aa29e20907365a2ceb950410df15fc9521bad440122b")
 BASIC_PITCH = ("basic-pitch", "0.4.0", "738adb503aae7fdfc7d1e1511aa0ce35052315f260a19531ef4c356708425db0", 758279)
 ONNXRUNTIME = ("onnxruntime", "1.19.2", "006c8d326835c017a9e9f74c9c77ebb570a71174a1e89fe078b29a557d9c3848", 16776457)
+ONNXRUNTIME_CP311 = ("onnxruntime", "1.19.2", "d863e8acdc7232d705d49e41087e10b274c42f09e259016a46f32c34e06dc4fd",
+                     16779187)          # the declared fallback (Python 3.11): the same version's cp311 universal2 wheel
+ONNX_PIN = {"3.9": ONNXRUNTIME, "3.11": ONNXRUNTIME_CP311}   # the interpreter's minor version -> its onnxruntime pin
 KNOWN_WHEELS = {"pretty-midi": ("0.2.11.post0", "a3e2321736245a9c92259716d85a4762f16b7bde2f591fb0dba95bdb6e793d8a"),
                 "mir-eval": ("0.8.2", "114cda33d8e17408c170598e0b36ed0d71ff4a2fee8eaf9e165b58ecf1c87170")}
 REQUIREMENTS = ("librosa>=0.8.0", "mir-eval==0.8.2", "numpy>=1.18", "pretty-midi==0.2.11.post0",
@@ -373,6 +376,38 @@ def calibration_pick(rates, n=DEV_COUNT, need=CALIBRATION_PASS, precision=None):
     return None
 
 
+def calibration_ok(level, annotated, positive, blind):
+    """(Pure.) The calibration passes: a rise level holds the note checks' bars; `annotated-found` passes on its
+    windows (it gates the transcriber's settings: a failure, or no window to read it on, stops before step 5 for a
+    declared amendment); avg+mild and the true DI pass every audio check; no rejected clip is a blind spot."""
+    return (level is not None and (annotated or {}).get("passes") is True and not positive.get("avg+mild")
+            and not positive.get("true") and not blind)
+
+
+def content_shares(notes):
+    """(Pure.) A part's two figures read beside the bottleneck: the share of bent notes (`note_rebuild.bend_curve`)
+    and the share of onset groups holding 3 or more notes (chords). None without notes."""
+    if not notes:
+        return {"bent_share": None, "chord_share": None}
+    gs = groups_of(notes)
+    return {"bent_share": sum(any(NR.bend_curve(n, notes)) for n in notes) / len(notes),
+            "chord_share": sum(len(g) >= 3 for g in gs) / len(gs)}
+
+
+def install_record_refusal(rec, gate_sha, calibration_sha, pair):
+    """(Pure.) Why main's `phase_nr_1_redo_install` does not hold this install's facts, or None: the lock and model
+    sha256 (`pair`), the install gate's and the calibration's file sha256."""
+    if not isinstance(rec, dict):
+        return f"main's {PHASE_INSTALL} names no install"
+    if (rec.get("lock_sha256"), rec.get("model_sha256")) != tuple(pair):
+        return f"main's {PHASE_INSTALL} names another lock or model"
+    if rec.get("gate_sha256") != gate_sha:
+        return f"install-gate.json is not main's {PHASE_INSTALL} gate_sha256"
+    if rec.get("calibration_sha256") != calibration_sha:
+        return f"calibration.json is not main's {PHASE_INSTALL} calibration_sha256"
+    return None
+
+
 def ring_choice(corr_on, corr_soft, tie=RING_TIE):
     """(Pure.) The ring variant: the higher median `envelope_corr` over the development windows; `ring-soft` within
     `tie` (it cannot leave a released chord note sounding). corr_*: [per window]."""
@@ -463,9 +498,10 @@ def lock_lines(report, extra=()):
     return "".join(f"{n}=={v} --hash=sha256:{s}" + (f"  # {f}" if f else "") + "\n" for n, v, s, f in sorted(rows))
 
 
-def lock_refusal(text):
-    """(Pure.) Why a lock does not hold the declared pins, or None: basic-pitch and onnxruntime at their declared
-    versions and sha256, pretty-midi and mir-eval at their known wheels, no coremltools, every line hashed."""
+def lock_refusal(text, onnx=ONNXRUNTIME):
+    """(Pure.) Why a lock does not hold the declared pins, or None: basic-pitch and onnxruntime (`onnx`: the cp39
+    pin, or ONNXRUNTIME_CP311 on the 3.11 fallback) at their declared versions and sha256, pretty-midi and mir-eval at
+    their known wheels, no coremltools, every line hashed."""
     pins = {}
     for ln in text.splitlines():
         if not ln.strip() or ln.startswith("#"):
@@ -475,7 +511,7 @@ def lock_refusal(text):
         spec, h = ln.split("--hash=sha256:", 1)
         n, v = spec.strip().split("==")
         pins[n] = (v, h.split()[0])
-    for n, v, s, *_ in (BASIC_PITCH, ONNXRUNTIME):
+    for n, v, s, *_ in (BASIC_PITCH, onnx):
         if pins.get(n) != (v, s):
             return f"{n} is not {v} at its declared sha256"
     for n, (v, s) in KNOWN_WHEELS.items():
@@ -1081,8 +1117,9 @@ def cmd_set_aside(_args):
           f"build.json {build_sha} -> {SET_ASIDE}")
 
 
-def cmd_install(_args):
-    """Step 3 (a declared download): the venv from /usr/bin/python3, pip upgraded by its hashed pin, the lock made by
+def cmd_install(args):
+    """Step 3 (a declared download): the venv from /usr/bin/python3 (or `--interpreter`, the declared 3.11 fallback,
+    whose onnxruntime pin is ONNXRUNTIME_CP311; no other version is accepted), pip upgraded by its hashed pin, the lock made by
     `pip install --dry-run --ignore-installed --only-binary :all: --report` over REQUIREMENTS (basic-pitch's own list
     without coremltools) with the basic-pitch wheel added, then `pip install --require-hashes --only-binary :all:
     --no-deps -r requirements.lock`; the manifest (every file, the lock's and the model's sha256, resolve.json, the
@@ -1104,7 +1141,12 @@ def cmd_install(_args):
         if r.returncode:
             raise SystemExit(f"{' '.join(map(str, a))[:120]}: {r.stderr.strip()[-600:]}")
         return r.stdout
-    run(INTERPRETER, "-m", "venv", TOOLS)
+    interp = getattr(args, "interpreter", None) or INTERPRETER
+    minor = run(interp, "-c", "import sys; print('%d.%d' % sys.version_info[:2])").strip()
+    if minor not in ONNX_PIN:
+        raise SystemExit(f"{interp} is Python {minor}: only 3.9 (declared) or 3.11 (the declared fallback)")
+    onnx = ONNX_PIN[minor]
+    run(interp, "-m", "venv", TOOLS)
     pip = TOOLS / "bin" / "pip"
     pin = TOOLS / "pip-pin.txt"
     pin.write_text(f"{PIP_PIN[0]}=={PIP_PIN[1]} --hash=sha256:{PIP_PIN[2]}\n")
@@ -1112,7 +1154,7 @@ def cmd_install(_args):
     run(pip, "install", "--dry-run", "--ignore-installed", "--only-binary", ":all:", "--report", RESOLVE,
         *REQUIREMENTS)
     text = lock_lines(json.loads(RESOLVE.read_text()), [BASIC_PITCH[:3]])
-    why = lock_refusal(text)
+    why = lock_refusal(text, onnx)
     if why:
         raise SystemExit(f"the lock: {why}")
     LOCK.write_text(text)
@@ -1124,7 +1166,7 @@ def cmd_install(_args):
     files = [{"path": str(p.relative_to(TOOLS)), "size": p.stat().st_size, "sha256": NR.file_sha(p)}
              for p in sorted(TOOLS.rglob("*")) if p.is_file() and not p.is_symlink() and "__pycache__" not in p.parts]
     man = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}", "made": time.strftime("%Y-%m-%d %H:%M:%S"),
-           "interpreter": INTERPRETER, "python": run(BP_PYTHON, "-c", "import sys; print(sys.version)").strip(),
+           "interpreter": interp, "python": run(BP_PYTHON, "-c", "import sys; print(sys.version)").strip(),
            "lock_sha256": NR.file_sha(LOCK), "resolve_sha256": NR.file_sha(RESOLVE), "model_path": str(model),
            "model_sha256": NR.file_sha(model), "pip_pin": list(PIP_PIN), "requirements": list(REQUIREMENTS),
            "installed_bytes": sum(f["size"] for f in files), "files": files,
@@ -1323,7 +1365,7 @@ def cmd_calibrate(_args):
             "rise_precision_annotated_top": prec_ann, "rise_level": level, "annotated_found": af,
             "ring_corr": corr, "ring_variant": ring, "checks": checks, "positive_failures": positive,
             "negative": neg, "blind_spots": blind, "gate_sha256": NR.file_sha(gate_path())}
-    body["ok"] = (level is not None and not positive["avg+mild"] and not positive["true"] and not blind)
+    body["ok"] = calibration_ok(level, af, positive, blind)
     NR.write_once(calibration_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}",
                                        "made": time.strftime("%Y-%m-%d %H:%M:%S"), "body": body})
     print(f"CALIBRATE {'PASS' if body['ok'] else 'STOP'}: rise level {level} (rates {rates}, precision {prec}); "
@@ -1576,7 +1618,8 @@ def cmd_build(_args):
                 "logmel": NR.logmel_distance(di, np.asarray(y32, np.float64)),
                 "above2k_dry": NR.share_above(np.asarray(y32, np.float64)), "above2k_true": NR.share_above(di),
                 "mask": NR.mask_agreement(di, np.asarray(y32, np.float64))}
-        row = (out["parts"] if kind == "part" else out["ear"]).setdefault(key, {"timing": rep, "arms": {}})
+        row = (out["parts"] if kind == "part" else out["ear"]).setdefault(key, {"timing": rep, "arms": {},
+                                                                               **content_shares(notes)})
         row["arms"][arm] = {"sha256": sha, "report": yrep, "figures": figs, "beside": side, **check_verdict(figs)}
     for rows in (out["parts"], out["ear"]):
         for key, row in rows.items():
@@ -1707,6 +1750,7 @@ def main(argv=None):
             sys.path.insert(0, p_)
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=sorted(COMMANDS))
+    ap.add_argument("--interpreter", default=None, help="install only: the declared 3.11 fallback's interpreter")
     args = ap.parse_args(argv)
     COMMANDS[args.cmd](args)
 

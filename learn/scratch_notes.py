@@ -211,6 +211,60 @@ def bottleneck(upper, lower, big=BIG):
     return (out or ["not separable by these figures"]), d
 
 
+FIGURES = ("ring_kept_db", "bent_share", "chord_share")   # read beside the bottleneck (plan 5, section 10b)
+
+
+def part_figures(build_parts, keys):
+    """(Pure.) The three figures read beside the bottleneck, per part in `keys`, from the build record: `ring-kept`'s
+    late-level median (dB; None where not measured), the share of bent notes and the share of chords (`note_transcribe.
+    content_shares`). -> {figure: {pkey: value or None}}."""
+    out = {f: {} for f in FIGURES}
+    for k in keys:
+        r = build_parts.get(k) or {}
+        rk = (((r.get("arms") or {}).get(DRY) or {}).get("figures") or {}).get("ring-kept") or {}
+        out["ring_kept_db"][k] = rk.get("late_median_db")
+        out["bent_share"][k] = r.get("bent_share")
+        out["chord_share"][k] = r.get("chord_share")
+    return out
+
+
+def spearman(pairs):
+    """(Pure.) Spearman's rho of [(x, y)] (ties at their mean rank), or None under 3 pairs or with no spread."""
+    if len(pairs) < 3:
+        return None
+
+    def ranks(v):
+        order = sorted(range(len(v)), key=lambda i: v[i])
+        r = [0.0] * len(v)
+        i = 0
+        while i < len(order):
+            j = i
+            while j + 1 < len(order) and v[order[j + 1]] == v[order[i]]:
+                j += 1
+            for q in order[i:j + 1]:
+                r[q] = (i + j) / 2
+            i = j + 1
+        return r
+    return _pearson(list(zip(ranks([x for x, _ in pairs]), ranks([y for _, y in pairs]))))
+
+
+def by_figure(d, values):
+    """(Pure.) D_notes read by a figure: Spearman's rho over the parts carrying both, and the parts split at the
+    figure's median (`median_split`) with each half's mean D_notes. d: {pkey: D_notes}; values: {pkey: figure}."""
+    v = {k: values.get(k) for k in d}
+    lower, upper = median_split(v)
+    mean = (lambda ks: sum(d[k] for k in ks) / len(ks) if ks else None)    # noqa: E731
+    return {"parts": len(lower) + len(upper), "spearman": spearman([(v[k], d[k]) for k in lower + upper]),
+            "lower": lower, "upper": upper, "lower_mean": mean(lower), "upper_mean": mean(upper)}
+
+
+def share_of(row, ref):
+    """(Pure.) row's mean over ref's (the share of row (b)'s gain kept), or None when either is missing or ref is 0."""
+    if not row or not ref or row.get("mean") is None or not ref.get("mean"):
+        return None
+    return row["mean"] / ref["mean"]
+
+
 def check_parts(parts):
     """(Pure.) The checks' two parts: the first BKS and the first GOAT part by key."""
     return [sorted(p["pkey"] for p in parts if p["set"] == s)[0] for s in CHECK_SETS]
@@ -282,14 +336,17 @@ def redo_hash_refusal(nr_main, build, transcribe_sha, pair):
     return None
 
 
-def ear_refusal(nr_main):
+def ear_refusal(nr_main, build_sha=None):
     """(Pure.) Why answers, score and read may not run on the ear check, or None: main's phase_nr_1_redo_ear must
-    read ok (from the page's stored answers, `note_rebuild_ear.redo_verdict`)."""
+    read ok (from the page's stored answers, `note_rebuild_ear.redo_verdict`) and, given `build_sha`, name the build
+    its clips were rendered from (`dry_build_sha256`, the build hashed as phase_scratch_notes_dry)."""
     rec = (nr_main or {}).get(NT.PHASE_EAR)
     if not isinstance(rec, dict) or "verdict" not in rec:
         return f"the redo's ear check is not recorded on main ({NT.PHASE_EAR})"
     if rec["verdict"] != "ok":
         return f"the redo's ear check reads {rec['verdict']}: nothing is answered, scored or read"
+    if build_sha is not None and rec.get("dry_build_sha256") != build_sha:
+        return f"main's {NT.PHASE_EAR} was heard on clips from another build"
     return None
 
 
@@ -377,16 +434,35 @@ def check_result(kind):
     return json.loads(p.read_text()) if p.exists() else None
 
 
+def build_refusal(build):
+    """(Pure.) The stop rule on the build, or None: 3 or more of the 40 deciding parts refused, or any ear item
+    failing a content check: nothing is rendered (plan section 12h)."""
+    if build.get("stopped"):
+        return "the build refused 3 or more of the 40 deciding parts: nothing is searched"
+    if build.get("ear_failing"):
+        return f"ear items fail a content check ({build['ear_failing']}): nothing is searched"
+    return None
+
+
 def require_build(m):
-    """The redo build, refused unless its sha256 is main's phase_scratch_notes_dry and it did not stop."""
+    """The redo build, refused unless its sha256 is main's phase_scratch_notes_dry, it comes from main's hashed
+    notes and install, and the stop rule holds (`build_refusal`)."""
     b = NT.require_file_hash(m.get(LEDGER_ID), PHASE_DRY, NT.build_path())
     why = redo_hash_refusal(m.get(NT.LEDGER_ID), b, NT.NR.file_sha(NT.transcribe_path()),
-                            NT.install_pair(NT.load_manifest()))
+                            NT.install_pair(NT.load_manifest())) or build_refusal(b)
     if why:
         raise SystemExit(why)
-    if b["stopped"]:
-        raise SystemExit("the build refused 3 or more of the 40 deciding parts: nothing is searched")
     return b
+
+
+def require_install_record(m):
+    """Refuse unless main's phase_nr_1_redo_install holds this install's lock and model and the sha256 of the install
+    gate and calibration records the build read."""
+    why = NT.install_record_refusal((m.get(NT.LEDGER_ID) or {}).get(NT.PHASE_INSTALL),
+                                    NT.NR.file_sha(NT.gate_path()), NT.NR.file_sha(NT.calibration_path()),
+                                    NT.install_pair(NT.load_manifest()))
+    if why:
+        raise SystemExit(why)
 
 
 def comparator_answers():
@@ -491,10 +567,13 @@ def start_reference(p, x32, ref_blank, new_renderer, path, dry_sha):
     """The row's start reference for a part: the exact first evaluation step 1 asks for (`sx1` of Cen in C1a's start
     form as `coord_search` evaluates it, through C1a's canon; `first_evaluation`) through `tr-di` in its own fresh
     primed process (2 renders), judged on the search half as `run_part` judges, written once just before the part's
-    search (an existing file for the same dry guitar is the reference). -> the value."""
+    search (an existing file for the same dry guitar is the reference). It refuses a part whose first evaluation is
+    not `sx1(start)`, `run_part`'s priming (equal on all 47 parts at declaration). -> (the value, renders used)."""
     import numpy as np
 
     from learn import audibility_measure as AM
+    from learn import full_controls as F
+    from learn import local_objective as LO
     from learn import note_replay as R
     from learn import pipeline_fix as P
     from learn import pretrain_set as PS
@@ -503,16 +582,18 @@ def start_reference(p, x32, ref_blank, new_renderer, path, dry_sha):
         rec = json.loads(path.read_text())
         if rec["dry_sha256"] != dry_sha:
             raise SystemExit(f"{path.name}: a start reference for another dry guitar")
-        return rec["value"]
+        return rec["value"], 0
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
     dj = np.asarray(x32, np.float64)[trim[0]:trim[1]]
     xs = first_evaluation(p)
+    if xs != LO.tdict(LO.sdict(F.c1a_start(p["cen"]["settings"], p["amp"]))):
+        raise SystemExit(f"{p['pkey']}: the first evaluation is not run_part's priming sx1(start): an amendment first")
     y = np.asarray(AM.fresh_render(new_renderer, x32, p["cen"]["select"], xs, xs), np.float64)[trim[0]:trim[1]]
     v = R.half_distance(ref_blank, y, dj, p["lag"], p["search"]) if np.isfinite(y).all() else math.inf
     P.save(path, {"plan": PLAN, "part": p["pkey"], "dry": DRY, "dry_sha256": dry_sha, "value": v,
                   "render_sha256": AM.audio_sha(np.nan_to_num(y)), "renders": 2,
                   "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-    return v
+    return v, 2
 
 
 def cmd_search(args):
@@ -525,6 +606,7 @@ def cmd_search(args):
     if why:
         raise SystemExit(why)
     build = require_build(m)
+    require_install_record(m)
     from learn import cc_build as CB
     from learn import full_controls_c1b as C
     from learn import local_objective as LO
@@ -558,12 +640,14 @@ def cmd_search(args):
             print(f"{p['pkey'][-60:]}: REFUSED by the content checks {row['failed']}", flush=True)
             continue
         x32 = NT.load_dry(DRY, p["pkey"], build)
-        sha = row["arms"][DRY]["sha256"]
+        sha = row["arms"][DRY]["sha256"]               # the hashed build's (phase_scratch_notes_dry)
+        if S.npy_sha(x32) != sha:                      # the audio itself, before any render
+            raise SystemExit(f"{p['pkey']}: the loaded dry guitar is not the hashed build's {DRY}")
         ref_blank = S.load_ref_blank(sd, p, REF)
-        sref = start_reference(p, x32, ref_blank, CB.new_renderer, start_path(p["pkey"]), sha)
+        sref, used = start_reference(p, x32, ref_blank, CB.new_renderer, start_path(p["pkey"]), sha)
         rec = S.search_row_part(p, DRY, REF, x32, ref_blank, CB.new_renderer, lists, out, f"{LEDGER_ID} {PHASE}",
                                 start_ref=sref, dry_sha256=sha)
-        total += rec.get("renders", 0) + 2
+        total += rec.get("renders", 0) + used
         if "refused" in rec:
             print(f"{p['pkey'][-60:]}: REFUSED {rec['refused']}", flush=True)
         print(f"shard {k_}/{n_}: {total} renders in {time.time() - t0:.0f} s "
@@ -576,7 +660,7 @@ def cmd_answers(_args):
     (`dry_refusal`); `scratch_search.answer_parts`; the refusal stop on the 40 deciding parts (`deciding_stop`).
     -> answers.json; its sha256 into the ledger as phase_scratch_notes_answers before `score`."""
     m = require_row(NT.PHASE_INSTALL, NT.PHASE_NOTES, NT.PHASE_EAR, ladder=(PHASE_DRY,))
-    why = ear_refusal(m.get(NT.LEDGER_ID))
+    why = ear_refusal(m.get(NT.LEDGER_ID), ((m.get(LEDGER_ID) or {}).get(PHASE_DRY) or {}).get("sha256"))
     if why:
         raise SystemExit(why)
     build = require_build(m)
@@ -610,7 +694,7 @@ def cmd_score(args):
     """One shard of the row's score (renders): `scratch_search.score_row_part` on the hashed answers, exactly as rows
     (b) and (c) were scored. -> score/<part>.json."""
     m = require_row(NT.PHASE_INSTALL, NT.PHASE_NOTES, NT.PHASE_EAR, ladder=(PHASE_DRY, PHASE_ANSWERS))
-    why = ear_refusal(m.get(NT.LEDGER_ID))
+    why = ear_refusal(m.get(NT.LEDGER_ID), ((m.get(LEDGER_ID) or {}).get(PHASE_DRY) or {}).get("sha256"))
     if why:
         raise SystemExit(why)
     ans = NT.require_file_hash(m.get(LEDGER_ID), PHASE_ANSWERS, answers_path())
@@ -676,9 +760,10 @@ def cmd_read(_args):
     code; beside: G and I on the pool, D_notes on the pool and on the panel by its MedleyDB and Laminar Flow files, each
     set's leave-one-cluster-out range, D with refused parts as Cen, the shrunk answer against row (c)'s full answer,
     the answer less the shrunk answer, the parts at +0.10 or worse, the share of row (b)'s gain kept, the
-    checkpoints, the search-half gain against held G, tr-plain's checks, and the bottleneck. -> rows.json, report.json."""
+    checkpoints, the search-half gain against held G, tr-plain's checks, and the bottleneck with D_notes by `ring-kept`'s
+    figure, the share of bent notes and the share of chords (`part_figures`, `by_figure`). -> rows.json, report.json."""
     m = require_row(NT.PHASE_INSTALL, NT.PHASE_NOTES, NT.PHASE_EAR, ladder=(PHASE_DRY, PHASE_ANSWERS))
-    why = ear_refusal(m.get(NT.LEDGER_ID))
+    why = ear_refusal(m.get(NT.LEDGER_ID), ((m.get(LEDGER_ID) or {}).get(PHASE_DRY) or {}).get("sha256"))
     if why:
         raise SystemExit(why)
     ans = NT.require_file_hash(m.get(LEDGER_ID), PHASE_ANSWERS, answers_path())
@@ -726,7 +811,14 @@ def cmd_read(_args):
         beside[arm] = {"D_rows": rd, "G_rows": rg, "D_refused_as_cen": (set_rows(sd, draw, as_cen) or {}).get(
                            "bks_goat"),
                        "parts_at_or_over_0.10": sorted(k for k, v in g.items() if v >= BIG),
-                       "bottleneck": {"names": names, "difference": diff, "lower": lower, "upper": upper}}
+                       "bottleneck": {"names": names, "difference": diff, "lower": lower, "upper": upper,
+                                      "by_figure": {}}}
+        dec = {k: v for k, v in d.items() if sets_of[k] in DECIDING}
+        for name, vals in part_figures(build["parts"], dec).items():     # beside the bottleneck, inside this read
+            fig = by_figure(dec, vals)
+            fig["rows"] = {h: ((set_rows(sd, draw, d, set(fig[h])) or {}).get("bks_goat") or {}).get("all")
+                           for h in ("lower", "upper")}
+            beside[arm]["bottleneck"]["by_figure"][name] = fig
     man = NT.load_manifest()
     idx_ok = NT.MEDLEYDB_INDEX.exists() and man.get("medleydb_index_sha256") == NT.NR.file_sha(NT.MEDLEYDB_INDEX)
     beside["transcriber_overlap"] = (NT.transcriber_overlap_songs(draw["parts"], NT.medleydb_index_ids(
@@ -743,8 +835,8 @@ def cmd_read(_args):
                                                         if per[k].get("G_shrunk") is not None}) or {}).get("bks_goat")
     gb = set_rows(sd, draw, {k: per_b[k]["G"] for k in scored if per_b.get(k)})
     gn = beside["answer"]["G_rows"]
-    beside["share_of_row_b_gain"] = ((gn["bks_goat"]["all"] or {}).get("mean") / gb["bks_goat"]["all"]["mean"]
-                                     if gb and (gb["bks_goat"]["all"] or {}).get("mean") else None)
+    beside["share_of_row_b_gain"] = share_of(((gn or {}).get("bks_goat") or {}).get("all"),
+                                            ((gb or {}).get("bks_goat") or {}).get("all"))
     rows_full = S.summarise_row(sd, draw, per)
     gain = {}
     for k in scored:

@@ -982,12 +982,31 @@ def load_ref_blank(sd, p, ref_name):
     return ref
 
 
+def npy_sha(x):
+    """sha256 of `x` as float32 in `.npy` form: the same bytes a dry guitar's file holds when `np.save`d."""
+    import io
+
+    import numpy as np
+
+    buf = io.BytesIO()
+    np.save(buf, np.asarray(x, np.float32))
+    return hashlib.sha256(buf.getvalue()).hexdigest()
+
+
 def search_row_part(p, dry, ref_name, x32, ref_blank, new_renderer, lists, out, ledger, start_ref=None,
                     dry_sha256=None, log=print):
     """One part's search for any row, written once to `out` (the per-part body of `cmd_search`, shared with the
-    `fs-notes` row): `run_part`, its record tagged with `ledger`. -> the record."""
+    `fs-notes` row): `run_part`, its record tagged with `ledger`. With `dry_sha256` (the dry guitar the row declared),
+    the audio handed to `run_part` is hashed itself (`npy_sha`) and refused before any render unless it is that one;
+    the measured sha256 goes into the record. Rows (b) and (c) pass none and run as before. -> the record."""
     from learn import pipeline_fix as P
 
+    if dry_sha256 is not None:
+        got = npy_sha(x32)
+        if got != dry_sha256:
+            raise SystemExit(f"{p['pkey']}: the dry guitar handed to the search is not the declared one "
+                             f"({got[:12]}, not {dry_sha256[:12]}): nothing rendered")
+        dry_sha256 = got
     rec = run_part(p, dry, ref_name, x32, ref_blank, new_renderer, lists, log=log, start_ref=start_ref,
                    dry_sha256=dry_sha256)
     rec["ledger"] = ledger

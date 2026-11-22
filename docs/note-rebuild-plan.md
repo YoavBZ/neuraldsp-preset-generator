@@ -613,13 +613,16 @@ stage-1 function byte for byte against main at `1f13b563`.
   the model type is ONNX and the providers are exactly the CPU's. Nothing in the main `.venv` or on CI imports Basic
   Pitch.
 - **Fallback that keeps the design:** if ONNX does not load or repeat on 3.9.6, Python 3.11 (a declared download)
-  with onnxruntime 1.19.2's cp311 wheel and the same `nmp.onnx` by sha256. Every note file comes from one install.
+  with onnxruntime 1.19.2's cp311 macOS universal2 wheel (16,779,187 bytes, sha256
+  `d863e8acdc7232d705d49e41087e10b274c42f09e259016a46f32c34e06dc4fd`, pinned in code as `ONNXRUNTIME_CP311`;
+  `install --interpreter` takes it) and the same `nmp.onnx` by sha256. Every note file comes from one install.
 - **The install gate** (`install-gate`; all must hold, else the fallback, else stop): repeatable (four development
   windows, three runs each, two in one process and one fresh, identical events); known notes (ten made-up lists played
   from the note bank, scales, chords of 3 to 6 notes, a let-ring arpeggio and a bend: pooled note F at least 0.90,
   onset within 50 ms, same pitch; each list reported); the seconds per 10-s window, measured.
 - **Each note file names the install's lock and model sha256;** `build` refuses a file whose pair is not the
-  install's (and, once the hash PR merges, main's `phase_nr_1_redo_install`'s).
+  install's (and, once the hash PR merges, main's `phase_nr_1_redo_install`'s). That key holds the lock's and the
+  model's sha256 and the install gate's and the calibration's file sha256; `search` checks all four.
 
 ### 12c. The transcriber's settings and the clean-up (frozen)
 
@@ -666,7 +669,9 @@ what the stem-notes row will face on levels.
 
 - **What a failure does.** An ear-page item failing any check: no page until fixed. A row part failing a blocking
   check (all but `annotated-found`) is refused. 3 or more refused of the 40 deciding parts stop the row before any
-  render; a panel refusal is listed and stops nothing.
+  render, and so does any ear item failing (`search` refuses on either); a panel refusal is listed and stops nothing.
+  `annotated-found` gates the transcriber's settings: the calibration does not pass unless it does (a failure, or no
+  window to read it on, stops before step 5 for a declared amendment).
 - **The note checks are calibrated first (step 3)** on the 27 development windows' DI transcriptions: the declared
   pass rate is at least 25 of 27 windows for each check. The rise level is the lowest of 6, 9 and 12 dB that holds
   both bars and whose precision on the known lists is at least 95%; its precision against the annotated onsets of the

@@ -238,6 +238,104 @@ def test_the_ear_check_gates_answers_score_and_read():
     for v in ("fault-content", "fault-signal", "ask", "incomplete"):
         assert v in SN.ear_refusal({T.PHASE_EAR: {"verdict": v}})
     assert SN.ear_refusal({T.PHASE_EAR: {"verdict": "ok"}}) is None
+    heard = {T.PHASE_EAR: {"verdict": "ok", "dry_build_sha256": "B"}}
+    assert SN.ear_refusal(heard, "B") is None
+    assert "another build" in SN.ear_refusal(heard, "B2")
+    assert "another build" in SN.ear_refusal({T.PHASE_EAR: {"verdict": "ok"}}, "B")
+
+
+def test_the_build_stop_rule_refuses_on_any_failing_ear_item():
+    assert SN.build_refusal({"stopped": False, "ear_failing": []}) is None
+    assert "3 or more" in SN.build_refusal({"stopped": True, "ear_failing": []})
+    assert "item_23" in SN.build_refusal({"stopped": False, "ear_failing": ["item_23"]})
+
+
+def test_require_build_refuses_a_search_when_an_ear_item_fails(monkeypatch):
+    build = {"stopped": False, "ear_failing": ["item_46"], "parts": {}}
+    monkeypatch.setattr(T, "require_file_hash", lambda entry, phase, path: build)
+    monkeypatch.setattr(T, "load_manifest", lambda: {"lock_sha256": "L", "model_sha256": "M"})
+    monkeypatch.setattr(T.NR, "file_sha", lambda path: "N")
+    monkeypatch.setattr(SN, "redo_hash_refusal", lambda *a: None)
+    with pytest.raises(SystemExit, match="ear items fail a content check"):
+        SN.require_build({})
+    build["ear_failing"] = []
+    assert SN.require_build({}) is build
+
+
+def test_main_must_hold_the_installs_gate_and_calibration():
+    rec = {"lock_sha256": "L", "model_sha256": "M", "gate_sha256": "G", "calibration_sha256": "C"}
+    assert T.install_record_refusal(rec, "G", "C", ("L", "M")) is None
+    assert "names no install" in T.install_record_refusal(None, "G", "C", ("L", "M"))
+    assert "another lock" in T.install_record_refusal(rec, "G", "C", ("L", "X"))
+    assert "install-gate.json" in T.install_record_refusal(rec, "G2", "C", ("L", "M"))
+    assert "calibration.json" in T.install_record_refusal(rec, "G", "C2", ("L", "M"))
+
+
+def _build_part(ring_db, bent, chord):
+    return {"arms": {"tr-di": {"figures": {"ring-kept": {"late_median_db": ring_db}}}}, "bent_share": bent,
+            "chord_share": chord}
+
+
+def test_the_three_figures_beside_the_bottleneck():
+    parts = {"a": _build_part(-1.0, 0.0, 0.5), "b": _build_part(-4.0, 0.2, 0.1), "c": _build_part(None, 0.1, 0.0),
+             "d": _build_part(-2.0, 0.3, 0.9)}
+    figs = SN.part_figures(parts, ["a", "b", "c", "d"])
+    assert set(figs) == set(SN.FIGURES) == {"ring_kept_db", "bent_share", "chord_share"}
+    assert figs["ring_kept_db"] == {"a": -1.0, "b": -4.0, "c": None, "d": -2.0}
+    assert figs["chord_share"]["d"] == 0.9 and SN.part_figures({}, ["x"])["bent_share"] == {"x": None}
+    d = {"a": 0.0, "b": 0.3, "c": 0.1, "d": 0.2}
+    got = SN.by_figure(d, figs["ring_kept_db"])                           # c carries no figure: left out
+    assert got["parts"] == 3 and got["lower"] == ["b"] and got["upper"] == ["d", "a"]
+    assert got["lower_mean"] == pytest.approx(0.3) and got["upper_mean"] == pytest.approx(0.1)
+    assert got["spearman"] == pytest.approx(-1.0)                          # less late level, larger D_notes
+    assert SN.by_figure(d, figs["bent_share"])["spearman"] == pytest.approx(0.8)
+
+
+def test_spearman_and_share_of():
+    assert SN.spearman([(1, 1), (2, 2), (3, 3)]) == pytest.approx(1.0)
+    assert SN.spearman([(1, 3), (2, 2), (3, 1)]) == pytest.approx(-1.0)
+    assert SN.spearman([(1, 1), (1, 2), (2, 3)]) == pytest.approx(math.sqrt(3) / 2)       # ties at their mean rank
+    assert SN.spearman([(1, 1), (2, 2)]) is None and SN.spearman([(1, 1), (1, 2), (1, 3)]) is None
+    assert SN.share_of({"mean": -0.1}, {"mean": -0.2}) == pytest.approx(0.5)
+    for a, b in ((None, {"mean": -0.2}), ({"mean": -0.1}, None), ({"mean": None}, {"mean": -0.2}),
+                 ({"mean": -0.1}, {"mean": 0.0})):
+        assert SN.share_of(a, b) is None
+
+
+def test_the_dry_guitar_is_hashed_from_the_audio_handed_to_the_search(monkeypatch, tmp_path):
+    np = pytest.importorskip("numpy")
+    x = np.linspace(-0.5, 0.5, 4800).astype(np.float32)
+    np.save(tmp_path / "x.npy", x)
+    assert S.npy_sha(np.load(tmp_path / "x.npy")) == T.NR.file_sha(tmp_path / "x.npy")   # the build's own hash
+    seen = {}
+
+    def fake_run_part(*a, **k):
+        seen.update(k)
+        return {"renders": 0}
+    monkeypatch.setattr(S, "run_part", fake_run_part)
+    p = {"pkey": "goat__x"}
+    with pytest.raises(SystemExit, match="not the declared one"):
+        S.search_row_part(p, "tr-di", "xlnoG", x * 1.0001, None, None, None, tmp_path / "r.json", "l",
+                          dry_sha256=S.npy_sha(x))
+    assert not seen and not (tmp_path / "r.json").exists()                  # refused before any render
+    rec = S.search_row_part(p, "tr-di", "xlnoG", x, None, None, None, tmp_path / "r.json", "l",
+                            dry_sha256=S.npy_sha(x))
+    assert seen["dry_sha256"] == S.npy_sha(x) and rec["ledger"] == "l"
+    seen.clear()
+    S.search_row_part(p, "true", "xlnoG", x, None, None, None, tmp_path / "s.json", "l")    # rows (b), (c): as before
+    assert seen["dry_sha256"] is None
+
+
+def test_the_start_reference_refuses_a_priming_other_than_sx1_start(monkeypatch, tmp_path):
+    pytest.importorskip("numpy")
+    p = {"pkey": "x", "amp": "ac20", "cen": {"settings": {}, "select": "0"}, "lag": 0, "search": "A"}
+    monkeypatch.setattr(SN, "first_evaluation", lambda p: {("other", "key"): "1"})
+    with pytest.raises(SystemExit, match="priming"):
+        SN.start_reference(p, [0.0], None, lambda: pytest.fail("rendered"), tmp_path / "s.json", "D")
+    (tmp_path / "s.json").write_text(json.dumps({"dry_sha256": "D", "value": 1.25}))
+    assert SN.start_reference(p, [0.0], None, None, tmp_path / "s.json", "D") == (1.25, 0)    # reused: no renders
+    with pytest.raises(SystemExit, match="another dry guitar"):
+        SN.start_reference(p, [0.0], None, None, tmp_path / "s.json", "E")
 
 
 def test_the_refusal_stop_counts_the_forty():

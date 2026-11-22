@@ -244,6 +244,24 @@ def test_calibration_pick_takes_the_lowest_level_holding_both_bars():
     assert T.calibration_pick({"6.0": {"onsets-found": 27, "playing-covered": 24}}) is None
 
 
+def test_calibration_needs_annotated_found_to_pass():
+    af = {"passes": True}
+    pos = {"avg+mild": [], "true": []}
+    assert T.calibration_ok(9.0, af, pos, [])
+    assert not T.calibration_ok(9.0, {"passes": False}, pos, [])          # it gates the transcriber's settings
+    assert not T.calibration_ok(9.0, {"passes": None, "windows": 0}, pos, [])   # no window to read it on
+    assert not T.calibration_ok(None, af, pos, [])
+    assert not T.calibration_ok(9.0, af, {"avg+mild": ["item_5"], "true": []}, [])
+    assert not T.calibration_ok(9.0, af, {"avg+mild": [], "true": ["item_5"]}, [])
+    assert not T.calibration_ok(9.0, af, pos, [("item_46|nr-plain", ["onsets-found"])])
+
+
+def test_content_shares():
+    notes = [_n(0.0, p) for p in (48, 52, 55)] + [_n(1.0, 60, bends=[3] * 10), _n(2.0, 62), _n(3.0, 64)]
+    assert T.content_shares(notes) == {"bent_share": pytest.approx(1 / 6), "chord_share": pytest.approx(1 / 4)}
+    assert T.content_shares([]) == {"bent_share": None, "chord_share": None}
+
+
 def test_ring_choice():
     assert T.ring_choice([0.85, 0.86, 0.87], [0.84, 0.85, 0.86]) == "ring-soft"       # within 0.02
     assert T.ring_choice([0.90, 0.91, 0.92], [0.85, 0.86, 0.87]) == "ring-on"
@@ -299,6 +317,10 @@ def test_lock_from_the_report():
     assert "coremltools" in T.lock_refusal(text + "coremltools==7.0 --hash=sha256:" + "cd" * 32 + "\n")
     assert "unhashed" in T.lock_refusal(text + "six==1.16.0\n")
     assert "onnxruntime" in T.lock_refusal(text.replace(T.ONNXRUNTIME[2], "00" * 32))
+    fallback = text.replace(T.ONNXRUNTIME[2], T.ONNXRUNTIME_CP311[2])       # the declared 3.11 fallback's wheel
+    assert T.lock_refusal(fallback, T.ONNXRUNTIME_CP311) is None and "onnxruntime" in T.lock_refusal(fallback)
+    assert T.ONNX_PIN["3.11"][2] == "d863e8acdc7232d705d49e41087e10b274c42f09e259016a46f32c34e06dc4fd"
+    assert set(T.ONNX_PIN) == {"3.9", "3.11"} and T.ONNX_PIN["3.9"] == T.ONNXRUNTIME
     bad = _report(("x", "1", "ab" * 32))
     bad["install"][0]["download_info"]["url"] = "https://files/x-1.tar.gz"
     with pytest.raises(SystemExit):

@@ -241,11 +241,11 @@ check.
 
 | Step | Shared with rows (b) and (c) | New for this row |
 |---|---|---|
-| `search` | `search_row_part` (`run_part`), `load_ref_blank`, the start check at 0.005, the disk guard, at most 3 shards | The start reference: the exact first evaluation (`sx1(start)`) through `tr-di` in its own fresh primed process, just before the part's search (2 renders), written once. Every search record holds the dry guitar's sha256. A part refused by the content checks is recorded as refused, unrendered |
+| `search` | `search_row_part` (`run_part`), `load_ref_blank`, the start check at 0.005, the disk guard, at most 3 shards | The start reference: the exact first evaluation (`sx1(start)`) through `tr-di` in its own fresh primed process, just before the part's search (2 renders), written once. Every search record holds the sha256 of the dry guitar's audio as handed to the search, measured, and the search refuses before any render unless it is the hashed build's `tr-di`. A part refused by the content checks is recorded as refused, unrendered; any failing ear item stops the search. The install record (lock, model, gate and calibration sha256) is checked |
 | `answers` | `answer_parts` (`borrowed`, `shrunk` at 0.5, `centre`) | Refuses a search record whose dry guitar is not the `tr-di` of the build hashed as `phase_scratch_notes_dry`. The refusal stop counts the 40 deciding parts (3 or more stop), content refusals included |
 | `score` | `score_row_part`: through the true DI, the held half against the clean record, the scoring control, 10 settings a part | — |
 | `read` | `read_row_parts`, `nonfinite_rule`, `part_numbers`, `summarise_row`, `row_reading`, `number_reading` | `paired_reading`, `FN_TABLE`, `fn_code` |
-| Guards | `never_overwrite` on every output; the hashes of the draw, the build and the answers | `redo_on_main`: `learn/scratch_search.py`, `scratch_notes.py`, `note_rebuild.py`, `note_rebuild_s1.py`, `note_rebuild_ear.py`, `note_transcribe.py`, `bp_run.py` and the keys `phase_fs*`, `phase_scratch_notes*`, `phase_nr*` equal main's. Every command needs `phase_scratch_both_outcome`, `phase_scratch_notes` and `phase_nr_1_redo` on main; `search` both checks passed and the install, notes and build hashed; `answers`, `score` and `read` `phase_nr_1_redo_ear` = ok |
+| Guards | `never_overwrite` on every output; the hashes of the draw, the build and the answers | `redo_on_main`: `learn/scratch_search.py`, `scratch_notes.py`, `note_rebuild.py`, `note_rebuild_s1.py`, `note_rebuild_ear.py`, `note_transcribe.py`, `bp_run.py` and the keys `phase_fs*`, `phase_scratch_notes*`, `phase_nr*` equal main's. Every command needs `phase_scratch_both_outcome`, `phase_scratch_notes` and `phase_nr_1_redo` on main; `search` both checks passed and the install, notes and build hashed; `answers`, `score` and `read` `phase_nr_1_redo_ear` = ok, heard on clips from the hashed build |
 
 **The proof that every row is scored the same way:**
 - tests: the 32 paths and every cell of `OUTCOME_TABLE` as before; the loop-equivalence test still replays 40 of 40
@@ -307,8 +307,9 @@ of Drowning, which is left out; row (c) never ran on them).
 **Naming the bottleneck (descriptive, after the read).** The 40 are split at the median of `onsets-found`. "The
 synthesis" when `D_notes`' mean on the better-transcribed half is at +0.10 or worse with its interval clear of zero;
 "the transcriber" when the lower half's mean is worse than the upper's by 0.10 or more with the difference's interval
-clear of zero (the halves' half-widths in quadrature); otherwise "not separable by these figures". Beside it:
-`D_notes` against `ring-kept`'s figure, the share of bent notes, the share of chords.
+clear of zero (the halves' half-widths in quadrature); otherwise "not separable by these figures". Beside it,
+computed inside the one read: `D_notes` by `ring-kept`'s figure, by the share of bent notes and by the share of
+chords (Spearman's rho, and each half at the figure's median with its own interval).
 
 **Power** (planning read from rows (b) and (c), reproduced by the review; paired half-widths of (c) less (b)):
 

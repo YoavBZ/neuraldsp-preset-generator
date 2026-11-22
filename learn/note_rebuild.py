@@ -1741,7 +1741,7 @@ def sustain_tilt(notes, plain, di, rate=SR):
 def rebuild_redo(arm, notes, length, bank, di, ring, finish=None, rate=SR):
     """One redo dry guitar. `notes`: the window's transcribed notes after the clean-up and the onset steps
     (`note_transcribe.timed_notes`); `di`: the true DI as the row renders it (its tuning, mutes, sustain tilt and, for
-    `tr-di`, levels by `oracle_gains`); `ring`: the variant frozen at the install gate; `finish`: the row's chain
+    `tr-di`, levels by `oracle_gains`); `ring`: the variant chosen at `note_transcribe calibrate`; `finish`: the row's chain
     (`song_bank.measure`, then `average_balance` with the part's others) or None. `tr-plain` is `tr-di` without the
     per-group levels. Both end at ASSUMED_LUFS; the hiss removal runs again after `tr-di`'s level gain, as stage 1's
     level arms. -> (audio, report)."""
