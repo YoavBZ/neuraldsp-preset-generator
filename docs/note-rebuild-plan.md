@@ -7,6 +7,12 @@ Revised the same day after PR #525's review (changes needed: three blocking, sev
 Ledger `note-rebuild`, phase `phase_nr_p`. Code `learn/note_rebuild.py`; tests `tests/test_note_rebuild.py` (pure) and
 `tests/test_note_rebuild_synth.py` (numpy). Outputs under `PF/note-rebuild/`, each written once and never overwritten.
 
+**Status, 2026-11-22:** stage 1 is retired unissued on the user's answer (its renders set aside unread; `N1_TABLE` never
+issued; no note-route read of any part so far). The redo is declared in
+[section 12](#12-the-redo-notes-transcribed-from-the-di-read-as-the-fs-notes-row-2026-11-22-ledger-phase_nr_1_redo):
+notes transcribed from the DI by Basic Pitch, one rebuilt guitar (`tr-di`), read as the from-scratch search's
+`fs-notes` row on its 47 parts with BKS+GOAT deciding. Nothing in it has run.
+
 **The user's word (2026-11-20):** try the rebuild again, and "this time we must do it right". **The user's rule:** no
 action rests on a J0 gap under 0.05; "passes" means decided better with the mean at −0.10 or beyond. Everything here is
 by the score until the blind sitting.
@@ -535,3 +541,254 @@ listed with the card's note), else "incomplete" when any version is unanswered, 
 "can't judge" (the cards listed; it goes to the orchestrator and the user, and `phase_nr_1_ear` is not recorded as ok
 from it), else "ok", every version on every card heard as real; notes on cards without a fault are listed for the
 orchestrator before the verdict is recorded. A chat "ok" is not the record.
+
+## 12. The redo: notes transcribed from the DI, read as the `fs-notes` row (2026-11-22; ledger `phase_nr_1_redo`)
+
+Declared 2026-11-22, before anything in it runs, from the redo plan approved after an independent review (changes
+needed; every blocking and required item taken) and its re-review (approve with changes; every required item and nit
+taken). Code: `learn/note_transcribe.py` (the transcription, the checks, the builds, the ear clips), `learn/bp_run.py`
+(Basic Pitch in its own venv), `learn/scratch_notes.py` (the row), the redo's arms in `learn/note_rebuild.py`, the
+redo's page in `learn/note_rebuild_ear.py`. Tests: `tests/test_note_transcribe.py`, `tests/test_note_rebuild_redo.py`
+(pure), `tests/test_note_rebuild_redo_synth.py` (numpy), `tests/test_scratch_notes.py`. The row itself is declared in
+[scratch-search-plan.md section 10](scratch-search-plan.md#10-the-fs-notes-row-2026-11-22-ledger-phase_scratch_notes).
+Every number is by the score unless it says "by ear".
+
+**The question.** The flagged song-time search (licensed by F-both, held by the user) needs a dry guitar the product
+can make. Row (c) used a blurred copy of the true DI, which the product never has. With one transcriber's notes read
+from the cleanest input there is, does a guitar re-played from single recorded notes drive the search as well as that
+blurred DI? A pass ships nothing: the notes, levels, mutes, sustain and onsets all come from the true DI. The
+product-real test is the next row, the stem-notes row (every input read from the `xlnoG@-3` stem), under its own
+declaration. The full-mix case (stage 2's `B-full`) is deferred, not replaced.
+
+**Said plainly:** by the row's own power, a match on clean needs a mean paired difference near −0.02 (answer) or +0.02
+(shrunk). `FN-undecided` or `FN-crunch` is the probable outcome; the recommendation for each is declared now
+(scratch-search-plan section 10).
+
+### 12a. The user's three answers (2026-11-22, by AskUserQuestion)
+
+| # | The user's answer | Recorded as |
+|---|---|---|
+| 1 | Drop stage 1's 60-part rerun. The 47-part `fs-notes` row decides. The old renders are moved aside unread | **`N1_TABLE` is retired unissued.** `note_rebuild_s1`'s commands refuse for good (`retired_refusal`) |
+| 2 | One rebuilt guitar, `tr-di`, plus a zero-render `tr-plain` side figure on levels for the later stem-notes row | Section 12d |
+| 3 | The deciding set is BKS+GOAT (40 parts). The 7 panel parts are read beside and cannot swing the result | **The user's explicit exception** to the from-scratch search's rule "the user's pool: never read on fewer sets", for `fs-notes` only |
+
+**No note-route read of any part has happened.** Stage 1's 4,320 renders were never picked or scored, so section 7's
+"revisions on fresh parts" rule is not breached. Retiring stage 1 loses its larger GOAT sample (60 parts), its
+alignment-F breakdowns, a cheaper read (1,440 renders against about 13,450) and stage 2's three-row ladder.
+
+**Stage 1's renders.** `note_transcribe set-aside` hashes `stage1/di` first, checks `stage1/dist` against the render
+hand-back's list hash, then moves `dist`, `di` and `build.json` (never deleted, never read) to
+`stage1.set-aside-20261122/`, with a note: "unread: no pick, no score". `subset.json` stays. The folder joins the
+protect-in-cleanup list. The proof that the old arms' code is unchanged needs no result: a test rebuilds two parts'
+stage-1 dry guitars in memory and matches `build.json`'s sha256 (it passes at declaration), and another holds every
+stage-1 function byte for byte against main at `1f13b563`.
+
+**How it differs from what failed.**
+
+| The GOAT-annotation rebuild (failed by ear) | The redo |
+|---|---|
+| Notes from GOAT's aligned MIDI and tab (a median 58% of onsets); GOAT parts only | Notes transcribed from the DI (Basic Pitch); BKS and the panel too |
+| Bends played plain | Bends from the transcriber's bend track |
+| Each note muted 20 ms after its notated note-off | A ring rule chosen on development windows; one sustain tilt per window |
+| One sample per string and fret | A re-struck pitch never reuses its last sample |
+| No check compared content with the DI | Six content checks against the DI before anyone listens or renders |
+| 215 refused judge windows found after the renders | The judge's own refusal dry-run per part at zero renders (`judge-accepts`) |
+| Ear page: "sounds real" and five signal faults | Adds missing notes, chords as single notes, notes cut short, extra or wrong notes |
+| A pick among 23 menu settings on 60 GOAT parts | A from-scratch search on the 47 Plan-1 parts, paired per part against row (c) |
+
+### 12b. Basic Pitch: the install and its gate
+
+- **Package and model:** `basic-pitch` 0.4.0 (Apache-2.0); its weights ship in the wheel (`nmp.onnx`). The backend is
+  ONNX on the CPU (`onnxruntime` 1.19.2, MIT): with only onnxruntime installed the package runs the CPU provider.
+- **Venv:** a new `~/ndsp-presets/tools/basic-pitch-venv` from `/usr/bin/python3` (3.9.6). pip is first upgraded by
+  a hashed pin. The lock is made by `pip install --dry-run --ignore-installed --only-binary :all: --report` over
+  basic-pitch's own requirement list for this platform without `coremltools` (with pretty_midi 0.2.11.post0 and
+  mir_eval 0.8.2, the versions with wheels), plus onnxruntime; the basic-pitch wheel is added. The install is
+  `--require-hashes --only-binary :all: --no-deps`. A package with no wheel stops the install (the declared sdist
+  build is its own step). The install refuses under 32 GB free.
+- **Manifest:** every file's name, size and sha256; the lock's and the model's sha256; `resolve.json`; the Python
+  version; the installed size; the approval; the date; the MedleyDB index's sha256 (section 12f).
+- **Runner:** `bp_run.py` runs under the venv's interpreter with `-I`, called by `note_transcribe`. It passes the
+  `.onnx` path explicitly, replaces the package's session with one of one intra-op and one inter-op thread, and asserts
+  the model type is ONNX and the providers are exactly the CPU's. Nothing in the main `.venv` or on CI imports Basic
+  Pitch.
+- **Fallback that keeps the design:** if ONNX does not load or repeat on 3.9.6, Python 3.11 (a declared download)
+  with onnxruntime 1.19.2's cp311 macOS universal2 wheel (16,779,187 bytes, sha256
+  `d863e8acdc7232d705d49e41087e10b274c42f09e259016a46f32c34e06dc4fd`, pinned in code as `ONNXRUNTIME_CP311`;
+  `install --interpreter` takes it) and the same `nmp.onnx` by sha256. Every note file comes from one install.
+- **The install gate** (`install-gate`; all must hold, else the fallback, else stop): repeatable (four development
+  windows, three runs each, two in one process and one fresh, identical events); known notes (ten made-up lists played
+  from the note bank, scales, chords of 3 to 6 notes, a let-ring arpeggio and a bend: pooled note F at least 0.90,
+  onset within 50 ms, same pitch; each list reported); the seconds per 10-s window, measured.
+- **Each note file names the install's lock and model sha256;** `build` refuses a file whose pair is not the
+  install's (and, once the hash PR merges, main's `phase_nr_1_redo_install`'s). That key holds the lock's and the
+  model's sha256 and the install gate's and the calibration's file sha256; `search` checks all four.
+
+### 12c. The transcriber's settings and the clean-up (frozen)
+
+| Setting | Value |
+|---|---|
+| Input | The part's raw DI section with up to 1.0 s of the file either side; mono; 48 kHz to 22.05 kHz by `resample_poly(x, 147, 320)`; peak at −1 dBFS; float32 WAV |
+| Thresholds | onset 0.5, frame 0.3 (the defaults) |
+| Minimum note length | 58 ms (the default, 127.7 ms, drops fast notes) |
+| Frequency range | 60 Hz to 1,400 Hz |
+| Melodia trick, bends per note | on, on |
+| Kept | note events (start, end, pitch, amplitude, bend track), times to 0.1 ms |
+| Clean-up | MIDI 36 to 88; below MIDI 38 an octave up (counted); a pitch struck twice within 30 ms merged; at most six at once |
+| Timing | `coarse_offset`, then the onset snap at ±20 ms (a rise of 3 dB); stage 1's ±50 ms could snap a note to its neighbour |
+
+A setting changes after the install gate only by a reviewed amendment, before any of the 47 parts is transcribed.
+
+### 12d. The rebuilt guitars: `tr-di` and `tr-plain`
+
+`note_rebuild.rebuild_redo` and `synthesise_redo`, added after the stage-1 code without changing it.
+
+| Part | Rule |
+|---|---|
+| Note ends | A note ends when its string is plucked again (10-ms fade), at a mute in the DI (its 20-ms level falls 12 dB or more inside 60 ms, from a frame where the DI plays: a 30-ms fade on every note sounding), or at its sample's end. The transcriber's note-off: `ring-on` (it never cuts) or `ring-soft` (it starts a 150-ms release), chosen on the 27 development windows by the higher median `envelope_corr`, `ring-soft` within 0.02 |
+| Strings | No tab: the lowest fret on a free string that is not still ringing, else the lowest fret |
+| Sustain | One tilt per window: over onset groups with no other onset for 600 ms, the level at 300–500 ms against 0–50 ms, the DI's less the plain rebuild's; the median in dB per second, within ±12 dB/s and at most +12 dB on any note; under 3 such groups, none (reported) |
+| Bends | The bend track (thirds of a semitone, 11.6-ms frames), a 3-frame median, applied by variable-rate resampling where a bend of one step or more lasts five frames; within ±3 semitones; not while another note within 2 semitones sounds |
+| Variety | A pitch struck again within 2.0 s whose placed sample is the one it last played takes the next source in a fixed order: the placed string and fret; the same pitch on another free string; the placed string's neighbours a semitone either side, retuned. No randomness |
+| Levels | `tr-di`: each onset group's level from the DI (`oracle_gains`); chords at 1/√k. `tr-plain`: none |
+| Unchanged | Retuning; the hiss removal above 3 kHz (again after `tr-di`'s levels); the edge fade and end pad; the finish (`song_bank.measure`, `average_balance` with the part's others, as avg+mild); −22.9 LUFS |
+
+`tr-plain` is never rendered and never on the ear page. Its content checks and figures sit beside `tr-di`'s, to show
+what the stem-notes row will face on levels.
+
+### 12e. The content checks against the DI (zero renders)
+
+| Check | Compares | Passes when, per part | Gates |
+|---|---|---|---|
+| `annotated-found` | the notes with GOAT's aligned notes, both after the onset steps | on the development windows in the top alignment-F tertile whose own annotation lands on a DI rise for 90% of its notes: median recall (same pitch, onset within 50 ms) at least 0.85, no window under 0.75. Reported on the row's GOAT parts | the transcriber's settings (not a row refusal) |
+| `onsets-found` | the note onsets with the DI's attacks (rise peaks of the calibrated level, merged within 50 ms, where the DI plays) | at least 0.90 of the attacks have an onset within 30 ms | the notes |
+| `playing-covered` | the transcriber's own note spans with the DI's playing frames (J0's middle frame size) | a note sounds in at least 95% of the playing frames and in at most 10% of the rest | the notes |
+| `judge-accepts` | the finished `tr-di` with the judge and the true DI | (i) J0 does not refuse on the search half, `tr-di` as DI and render, against the stem zeroed outside it; (ii) on each half and frame size, `tr-di`'s pause share at most the true DI's + 0.05; (iii) no stretch over 250 ms where the DI plays and `tr-di` is 40 dB under its loudest | the audio |
+| `ring-kept` | the finished `tr-di` with the DI | (i) over frames where the DI plays 600 ms or more after the last onset, the median of `tr-di`'s level less the DI's (each against its own level in the 50 ms after that onset) within ±3 dB, not measured under 20 frames; (ii) `envelope_corr` at least 0.80 | the audio |
+| `chords-kept` | Basic Pitch again on `tr-di`, with the DI's notes | note F at least 0.85; recall of notes in groups of 3 or more at least 0.85 (parts with 5 such notes); the pitch-class cosine reported only | the audio |
+
+- **What a failure does.** An ear-page item failing any check: no page until fixed. A row part failing a blocking
+  check (all but `annotated-found`) is refused. 3 or more refused of the 40 deciding parts stop the row before any
+  render, and so does any ear item failing (`search` refuses on either); a panel refusal is listed and stops nothing.
+  `annotated-found` gates the transcriber's settings: the calibration does not pass unless it does (a failure, or no
+  window to read it on, stops before step 5 for a declared amendment).
+- **The note checks are calibrated first (step 3)** on the 27 development windows' DI transcriptions: the declared
+  pass rate is at least 25 of 27 windows for each check. The rise level is the lowest of 6, 9 and 12 dB that holds
+  both bars and whose precision on the known lists is at least 95%; its precision against the annotated onsets of the
+  top-tertile windows is reported. A missed bar is amended by declaration before step 5 (calibration, not the one
+  fix).
+- **The checks' own test (once, nothing saved as evidence):** avg+mild, the bar's own guitar, must pass every audio
+  check on the 27 windows; the true DI through the same finish must pass (a code check); each clip the user rejected
+  must fail a check named for it in `phase_nr_1_ear_old`, written from the user's words before the checks run (the
+  default: `onsets-found` or `playing-covered`). An expected failure that does not happen is a blind spot: to the
+  orchestrator, and a threshold changes only by one declared amendment that keeps avg+mild passing.
+- **Beside, never gating:** crest factor, log-mel distance, energy above 2 kHz, mask agreement, pitch-class cosine.
+
+### 12f. Basic Pitch's training data against our parts
+
+| Source | In its training? | Our parts | Reading |
+|---|---|---|---|
+| GuitarSet; MAESTRO, Slakh; iKala | yes | none | — |
+| MedleyDB's pitch-tracking subset (103 stems) | train | the panel: 4 of 7 parts on 2 DI files, Aimee Norwich "Flying" (3) and Big Troubles "Phantom" (1); the index holds other stems of the same songs | beside |
+| Cambridge-MT sessions | no | BKS (16 parts); the panel's The Laminar Flow "Headspace" (3) | clean |
+| GOAT (2025) | no, it postdates Basic Pitch | 24 parts; every development item (disjoint from the row) | clean |
+| EGFxSet (the note bank) | no | — | clean |
+
+The panel is 2 MedleyDB DI files and 1 Cambridge DI file. `note_transcribe.transcriber_overlap_songs` rebuilds the
+overlap song by song from mirdata's `medleydb_pitch` index (its sha256 in the manifest), where
+`note_rebuild.transcriber_overlap` marked the whole panel at set level.
+
+### 12g. The ear page (regular card layout)
+
+| Item | Declared |
+|---|---|
+| Folder | New: `listening/note-rebuild-ear-page-2`, clips in `note-rebuild-ear-2`, every file written once. The old page and its key.json are never touched (its `page` command now refuses to overwrite) |
+| Items | 8 GOAT development items clear of the exclusion list: the 4 the user heard, at the same windows, and 4 new, one of each kind |
+| Kinds, from the DI's transcription | chord-led (half or more of the onset groups hold 3 or more notes); single-note (80% or more hold one note, and no bend); bends (3 or more bent notes); let-ring (half or more are single notes still sounding 100 ms into the next onset). In a seeded order, each item fills the first kind it shows that is still open; its window is the 10 s with the most notes on a 5-s grid |
+| Cards | 13: each item through the clean class start on the AC20; the 4 new items again through the crunch start; 1 hidden control (the true DI through the same finish, labelled "Rebuilt") on a seeded item's clean window; the cards in a seeded order |
+| On a card | Recorded DI and Rebuilt, looping, switching at the same place; −23 LUFS; mono; AAC 256 kbps |
+| Buttons | "Same notes and timing (the guitar's own sound may differ)"; content faults: missing notes, chords played as single notes, notes cut short, extra or wrong notes; signal faults: hiss, out of tune, clicks or crackle, one note much louder, timing off; "can't judge"; a note |
+| Answers | the page's db (`answers/<build>`) and Export; the verdict read by `redo_verdict` from the stored answers, never from chat, into `phase_nr_1_redo_ear` |
+| Built only when | every item passes every content check |
+| Renders | 13 cards × 2 versions, each primed alone: 52 |
+
+| Stored answers (the first that holds) | Verdict | What happens |
+|---|---|---|
+| a content fault on any real card | `fault-content` | stops the step; search renders set aside unread; each faulty card laid beside its checks (a check that passed a heard fault is a blind spot, fixed first); a second build needs a declared revision |
+| signal faults on 3 or more real cards | `fault-signal` | stops the step; a declared fix first |
+| a card unanswered | `incomplete` | nothing recorded |
+| signal faults on 1 or 2 real cards; any "can't judge"; any fault on the control card | `ask` | to the user, with the cards, the notes and a recommendation |
+| "Same notes and timing" on all 12 real cards | `ok` | the row's `answers`, `score` and `read` may run |
+
+**The old page's verdict goes under its own key, `phase_nr_1_ear_old`, with the user's words beside it**, never into
+`phase_nr_1_ear`: the old page has no content buttons, so its stored answers could read "ok", and that key unlocked
+stage 1's `pick` and `score`. If the stored read and the user's words disagree, the user is asked.
+
+### 12h. The order, the costs and the stop rules
+
+| # | Step | Renders | Waits for |
+|---|---|---|---|
+| 1 | This declaration: both plan sections, the code, the tests | 0 | an independent review, goal check included |
+| 2 | `set-aside`; the old page's read into `phase_nr_1_ear_old`, with which check must fail which rejected clip | 0 | 1 |
+| 3 | `install`; `install-gate`; `calibrate` (the note checks on 25 of 27 windows, the checks' test, the ring variant) | 0 | 2 |
+| 4 | `scratch_notes score-check` and `search-check` on two parts of row (c) | about 64 | 1 |
+| 5 | `transcribe` the 47 parts and the 8 ear items; the note checks | 0 | 3 |
+| 6 | `build` `tr-di` and `tr-plain`; the audio checks; `stem-preview` | 0 | 5 |
+| 7 | Hash PR: `phase_nr_1_redo_install`, `phase_nr_1_redo_notes`, `phase_scratch_notes_dry` | 0 | 6, under 3 of the 40 refused |
+| 8 | `clips` and the page; the user listens | 52 | 6, every ear item passing |
+| 9 | `scratch_notes search`, 3 shards (it may run while the user listens; a heard fault sets it aside unread) | about 12,400 | 4 and 7 |
+| 10 | `answers`; hash PR (`phase_scratch_notes_answers`) | 0 | 9, and the ear verdict `ok` |
+| 11 | `score`, then `read`, once | 940 | 10 |
+| 12 | An independent audit (its own recompute from the score files), then the results PR (`phase_scratch_notes_outcome`) | 0 | 11 |
+
+About 13,450 renders, about 2 hours on 3 processes at row (b)'s measured rate; Basic Pitch's speed is measured at the
+install gate. No training, separation or MPS job.
+
+**Stop rules.** The content checks fail on 3 or more of the 40 deciding parts, or on any ear item: nothing is
+rendered; one declared fix; a second failure goes to the user with "stop" recommended. An ear content fault stops the
+step before any read; a second one goes to the user the same way. One build, one read; no rerun on these parts under
+any code. After this row, at most two more reads (the stem-notes row, then a blind sitting) before a product decision.
+
+### 12i. Filled in at declaration (the plan left these open; each is in code and tested)
+
+- **The 27 development windows:** every GOAT item clear of the exclusion list with fine-aligned MIDI and a full window
+  at the probe's start (30 s into items over 45 s, else 1 s), in item order. This rule gives exactly 27 (tested on the
+  stored data), the set stage 1's declaration measured on.
+- **Steps 5 and 6 read the install's own records** (the manifest, `install-gate.json`, `calibration.json`, each
+  written once) because their hashes reach main only with the hash PR at step 7; from step 9 on, the row checks
+  main's keys.
+- **A mute** is only detected from a frame where the DI plays (within 40 dB of its loudest 20-ms frame), and the note
+  ends at the end of the first frame 12 dB down.
+- **"Lands on a DI rise"** (for `annotated-found`'s windows) uses the snap's own rule: a rise of 3 dB within ±20 ms.
+- **Pooled note F** over the ten known lists decides the install gate's known-notes bar; each list is reported.
+- **The positive control's avg+mild** on development windows draws its other guitars from the replay's non-GOAT
+  parts, seeded per window.
+- **Ear items have no stem:** `judge-accepts` there is clauses (ii) and (iii).
+- **The bottleneck's difference interval** combines the two halves' half-widths in quadrature.
+- **Variety:** the next source is taken only when the placing rule gives the sample the pitch last played (a string
+  still ringing already moves it).
+- **Stage 1's commands:** `subset`, `build` and `clips` refuse for good too, beside `render`, `pick` and `score`, so
+  nothing set aside can be rebuilt; `gate` still prints.
+- **An ear item "fails a check"** when it fails a blocking check (`annotated-found` is a set-level bar).
+- **The search check** stops `run_part` after step 1 (about 11 renders a part). **The start reference** renders the
+  settings step 1 evaluates first, C1a's canon applied, which equal `sx1(start)` on all 47 parts.
+- **mirdata's index** is placed by a declared download before `install`, which records its sha256; the panel's
+  beside split uses the MedleyDB file naming, the index only confirms the overlap.
+- **A package with no wheel** stops `install`; the declared sdist build is its own step.
+- **Seeds:** the ear items' order 20261401, the control card and the cards' order 20261402, the development blur
+  20261403 (grepped: unused).
+
+### 12j. What it can't say
+
+- Anything about notes taken from a stem or a song; this row's notes, levels and mutes come from the true DI.
+- Which of transcriber and synthesis caused a fail, beyond the declared descriptive split.
+- Anything with other guitars in the mix, on released mixes, or about effects; anything by ear about presets.
+- Whether a pass would survive another note bank or another transcriber.
+- The panel: read beside; 4 of its 7 parts are songs the transcriber trained on (other stems).
+- Whether the transcriber finds every note where no truth exists; chords are checked on made-up lists and by round
+  trip only.
+- One listener stands behind the ear check.
+- Names, grepped against the docs, the ledger, `learn/` and `tests/` before use: `fs-notes`, `tr-di`, `tr-plain`,
+  `ring-on`, `ring-soft`, `stem-notes`, `D_notes`, `FN-` and its codes, `FN_TABLE`, `fn_code`, `paired_reading`,
+  `redo_verdict`, `CONTENT` and the six check names, `fault-content`, `fault-signal`, `lean-go`, `lean-stop`,
+  `note-rebuild-ear-page-2`, `note-rebuild-ear-2`, `phase_nr_1_redo*`, `phase_nr_1_ear_old`, `phase_scratch_notes*`.

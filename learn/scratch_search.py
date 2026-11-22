@@ -23,6 +23,11 @@ replay used). The pure parts (the subset, the partners, the blank, the guards, t
 readings, `OUTCOME_TABLE`, the refusal stop, the non-finite rule) are tested in tests/test_scratch_search.py on the
 light CI runner (no numpy); the loop's equivalence with C2 and the blank's independence run where numpy and the stored
 data exist.
+
+The per-part bodies of `search`, `answers`, `score` and `read` are shared functions (`search_row_part`, `answer_parts`,
+`score_row_part`, `read_row_parts`, `report_body`), so one code path scores every row: the note rebuild's `fs-notes`
+row (`learn/scratch_notes.py`, plan section 10) runs through them. This module's own commands, `ROWS` and
+`OUTCOME_TABLE` are unchanged and still refuse any row but their four.
 """
 
 from __future__ import annotations
@@ -797,11 +802,17 @@ def step1_choice(evals, budget=BUDGET):
     return bound, i1, {c: best_index(evals, bound, c) for c in CHECKPOINTS}
 
 
-def run_part(p, dry, ref_name, x32, ref_blank, new_renderer, lists, log=print, budget=BUDGET):
+def run_part(p, dry, ref_name, x32, ref_blank, new_renderer, lists, log=print, budget=BUDGET, start_ref=None,
+             dry_sha256=None, step1_only=False):
     """One part's search for one row: step 1 (C2's), step 2 (C1b's stages A and B in a fresh process primed with step
     1's best, its first evaluation within START_TOL of step 1's best value, canonical then raw on a miss), the final
     rendered fresh, C2's fallbacks (F70's peak guard) on the search half only. Every distance is J0 on the search half
-    against `ref_blank` (zeros outside the search half). -> the part's record (no held-half value exists in it)."""
+    against `ref_blank` (zeros outside the search half). -> the part's record (no held-half value exists in it).
+
+    Added for the `fs-notes` row (`learn/scratch_notes.py`), each a no-op at its default, so rows (b) and (c) run
+    exactly as they did: `start_ref`, the start check's reference when it is not the draw's `p["start_ref"][dry]
+    [ref_name]`; `dry_sha256`, the dry guitar's sha256, recorded in the record; `step1_only`, the search check's stop
+    after step 1 (its record has no answer)."""
     import numpy as np
 
     from learn import arm_a_mega53 as A
@@ -838,6 +849,8 @@ def run_part(p, dry, ref_name, x32, ref_blank, new_renderer, lists, log=print, b
         return {"refused": {"start_changes_what_sounds": bad}, "renders": 0}
     base = {"plan": PLAN, "part": p["pkey"], "dry": dry, "ref": ref_name, "amp": amp, "select": sel, "search": search,
             "lag": lag, "budget": BUDGET, "start_settings": LO.sdict(start)}
+    if dry_sha256 is not None:
+        base["dry_sha256"] = dry_sha256
     t0 = time.time()
     # --- step 1 ---
     rr = new_renderer()
@@ -849,7 +862,8 @@ def run_part(p, dry, ref_name, x32, ref_blank, new_renderer, lists, log=print, b
             renders[0] += 1
             return judge(rr.render(x32, sel, sx1(x)))
         try:
-            evals, names, dims1 = step1_search(amp, start, ev1, p["start_ref"][dry][ref_name], budget=budget)
+            evals, names, dims1 = step1_search(amp, start, ev1, p["start_ref"][dry][ref_name] if start_ref is None
+                                               else start_ref, budget=budget)
         except StartRefused as e:
             return {**base, "refused": {"start": e.args[0]}, "renders": renders[0], "seconds": time.time() - t0}
     finally:
@@ -859,11 +873,14 @@ def run_part(p, dry, ref_name, x32, ref_blank, new_renderer, lists, log=print, b
     bx = best1["x"]
     s1 = {"evaluations": len(evals), "curve": [e["value"] for e in evals], "searched_keys": names,
           "trials": [{"t": e["t"], "value": e["value"], "peak_dbfs": e["peak_dbfs"]} for e in evals],
-          "start": {"value": evals[0]["value"], "ref_value": p["start_ref"][dry][ref_name],
+          "start": {"value": evals[0]["value"], "ref_value": p["start_ref"][dry][ref_name] if start_ref is None
+                    else start_ref,
                     "peak_dbfs": evals[0]["peak_dbfs"], "render_sha256": evals[0]["render_sha256"]},
           "bound": bound, "best_index": i1, "best_value": best1["value"],
           "checkpoints": {str(c): {"index": i, "value": evals[i]["value"], "settings": LO.sdict(sx1(evals[i]["x"]))}
                           for c, i in cps.items() if i is not None}}
+    if step1_only:
+        return {**base, "step1": s1, "step1_only": True, "renders": renders[0], "seconds": time.time() - t0}
     # --- step 2: C1b's stages A and B ---
     label1 = LO.sdict(bx)
     wet = C.dry_start_problems(LO.tdict(label1), amp)
@@ -965,6 +982,38 @@ def load_ref_blank(sd, p, ref_name):
     return ref
 
 
+def npy_sha(x):
+    """sha256 of `x` as float32 in `.npy` form: the same bytes a dry guitar's file holds when `np.save`d."""
+    import io
+
+    import numpy as np
+
+    buf = io.BytesIO()
+    np.save(buf, np.asarray(x, np.float32))
+    return hashlib.sha256(buf.getvalue()).hexdigest()
+
+
+def search_row_part(p, dry, ref_name, x32, ref_blank, new_renderer, lists, out, ledger, start_ref=None,
+                    dry_sha256=None, log=print):
+    """One part's search for any row, written once to `out` (the per-part body of `cmd_search`, shared with the
+    `fs-notes` row): `run_part`, its record tagged with `ledger`. With `dry_sha256` (the dry guitar the row declared),
+    the audio handed to `run_part` is hashed itself (`npy_sha`) and refused before any render unless it is that one;
+    the measured sha256 goes into the record. Rows (b) and (c) pass none and run as before. -> the record."""
+    from learn import pipeline_fix as P
+
+    if dry_sha256 is not None:
+        got = npy_sha(x32)
+        if got != dry_sha256:
+            raise SystemExit(f"{p['pkey']}: the dry guitar handed to the search is not the declared one "
+                             f"({got[:12]}, not {dry_sha256[:12]}): nothing rendered")
+        dry_sha256 = got
+    rec = run_part(p, dry, ref_name, x32, ref_blank, new_renderer, lists, log=log, start_ref=start_ref,
+                   dry_sha256=dry_sha256)
+    rec["ledger"] = ledger
+    P.save(out, rec)
+    return rec
+
+
 def cmd_search(args):
     """One shard of a row's searches (renders): the coded next row only; each part's record written once."""
     from learn import note_replay as NR
@@ -982,7 +1031,6 @@ def cmd_search(args):
     from learn import cc_build as CB
     from learn import full_controls_c1b as C
     from learn import local_objective as LO
-    from learn import pipeline_fix as P
     from learn import pretrain_set as PS
     from learn import trusted_data as T
 
@@ -1007,9 +1055,7 @@ def cmd_search(args):
         di32 = NR.di_section(prt)
         x32 = di32 if dry == "true" else NR.load_dry(dry, rby[p["pkey"]], di32, blur_rec)
         ref_blank = load_ref_blank(sd, p, ref_name)
-        rec = run_part(p, dry, ref_name, x32, ref_blank, CB.new_renderer, lists)
-        rec["ledger"] = f"{LEDGER_ID} {PHASE}"
-        P.save(out, rec)
+        rec = search_row_part(p, dry, ref_name, x32, ref_blank, CB.new_renderer, lists, out, f"{LEDGER_ID} {PHASE}")
         total += rec.get("renders", 0)
         if "refused" in rec:
             print(f"{p['pkey'][-60:]}: REFUSED {rec['refused']}", flush=True)
@@ -1020,23 +1066,11 @@ def cmd_search(args):
 
 # --- the answers (zero renders): hashed before the score -------------------------------------------------------------------
 
-def cmd_answers(args):
-    """The row's answers from its search records (zero renders): per part the answer, step 1's incumbents at 50, 100
-    and 200, the shrunk answer, the borrowed answer's partners (`borrowed`) and the row's centre (`centre`), every
-    refusal with why; the refusal count against REFUSAL_STOP. -> answers-<row>.json; its sha256 into the ledger as
-    phase_fs_answers_<row> before `score`."""
-    from learn import pipeline_fix as P
-
-    row = args.row
-    draw = require_draw()
-    require_turn(row)
-    never_overwrite(answers_path(row))
-    recs = {}
-    for p in draw["parts"]:
-        sp = search_path(row, p["pkey"])
-        if not sp.exists():
-            raise SystemExit(f"{p['pkey']}: not searched")
-        recs[p["pkey"]] = json.loads(sp.read_text())
+def answer_parts(draw, recs, search_sha):
+    """(Pure but for `search_sha`.) The answers of any row from its search records (the per-part body of `cmd_answers`,
+    shared with the `fs-notes` row): per part the answer, step 1's incumbents at 50, 100 and 200, the shrunk answer,
+    the borrowed answer's partners and the row's centre; each refusal with why. recs: {pkey: search record};
+    search_sha(pkey) -> the record file's sha256. -> (parts, refused)."""
     answered = {k for k, r in recs.items() if "refused" not in r}
     parts, refused = {}, {}
     for p in draw["parts"]:
@@ -1057,7 +1091,28 @@ def cmd_answers(args):
                     "centre": centre([(recs[q]["answer"]["settings"], recs[q]["searched_dims"]) for q in pool],
                                      p["cen"]["settings"]),
                     "borrowed": bq, "centre_pool": pool, "fallback": r.get("fallback"),
-                    "search_sha256": file_sha(search_path(row, k))}
+                    "search_sha256": search_sha(k)}
+    return parts, refused
+
+
+def cmd_answers(args):
+    """The row's answers from its search records (zero renders): per part the answer, step 1's incumbents at 50, 100
+    and 200, the shrunk answer, the borrowed answer's partners (`borrowed`) and the row's centre (`centre`), every
+    refusal with why; the refusal count against REFUSAL_STOP. -> answers-<row>.json; its sha256 into the ledger as
+    phase_fs_answers_<row> before `score`."""
+    from learn import pipeline_fix as P
+
+    row = args.row
+    draw = require_draw()
+    require_turn(row)
+    never_overwrite(answers_path(row))
+    recs = {}
+    for p in draw["parts"]:
+        sp = search_path(row, p["pkey"])
+        if not sp.exists():
+            raise SystemExit(f"{p['pkey']}: not searched")
+        recs[p["pkey"]] = json.loads(sp.read_text())
+    parts, refused = answer_parts(draw, recs, lambda k: file_sha(search_path(row, k)))
     out = {"plan": PLAN, "row": row, "dry": ROWS[row][0], "ref": REF_NAME[ROWS[row][1]],
            "draw_sha256": file_sha(draw_path()), "time": time.strftime("%Y-%m-%d %H:%M:%S"),
            "renders": sum(r.get("renders", 0) for r in recs.values()),
@@ -1076,16 +1131,49 @@ def to_score(a):
     return {k: a[k] for k in ("answer", "cp50", "cp100", "cp200", "shrunk", "centre") if a.get(k) is not None}
 
 
+def score_row_part(p, a, ans_parts, row, answers_sha, sd, new_renderer):
+    """One part's score for any row (the per-part body of `cmd_score`, shared with the `fs-notes` row and its score
+    check): Cen, `to_score`'s settings and the borrowed partners' answers (from `ans_parts`) through the part's true
+    DI, each primed alone, judged on the held half against the clean record; the scoring control against Cen's stored
+    held-half value. -> (the record, renders)."""
+    import numpy as np
+
+    from learn import audibility_measure as AM
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+    from learn import note_replay as NR
+    from learn import pipeline_fix as P
+    from learn import pretrain_set as PS
+
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    prt = sd.units[(p["set"], p["unit"], p["amp"])]["prt"]
+    di32 = NR.di_section(prt)
+    di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
+    clean = P.real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+    sets = {"cen": p["cen"]["settings"], **to_score(a), **{q: ans_parts[q]["answer"] for q in a["borrowed"]}}
+    done, held, shas, renders = {}, {}, {}, 0
+    for name, s in sets.items():
+        x = LO.tdict(s)
+        kk = K.key(x)
+        if kk not in done:
+            y = np.asarray(AM.fresh_render(new_renderer, di32, a["select"], x, x), np.float64)[trim[0]:trim[1]]
+            renders += 2
+            done[kk] = (NR.half_distance(clean, y, di, p["lag"], p["held"]) if np.isfinite(y).all()
+                        else math.inf, AM.audio_sha(np.nan_to_num(y)))
+        held[name], shas[name] = done[kk]
+    stored = sd.cen_judge((p["set"], p["unit"], p["amp"]))[p["held"]]
+    ctl = finite_pos(held["cen"]) and finite_pos(stored) and abs(math.log(held["cen"] / stored)) <= SCORE_TOL
+    return ({"plan": PLAN, "row": row, "part": p["pkey"], "held": held, "render_sha256": shas, "cen_stored": stored,
+             "scoring_control_ok": ctl, "borrowed": a["borrowed"], "answers_sha256": answers_sha,
+             "distinct_renders": len(done)}, renders)
+
+
 def cmd_score(args):
     """One shard of a row's score (renders): every setting of the hashed answers through the part's true DI, each primed
     alone (`audibility_measure.fresh_render`, as the ladder rendered Cen's stored value), judged on the held half
     against the clean record; Cen re-rendered beside (the scoring control: within SCORE_TOL of its stored held-half
     value). -> score/<row>/<part>.json."""
-    import numpy as np
-
-    from learn import audibility_measure as AM
     from learn import cc_build as CB
-    from learn import knob_ceiling as K
     from learn import local_objective as LO
     from learn import note_replay as NR
     from learn import pipeline_fix as P
@@ -1104,7 +1192,6 @@ def cmd_score(args):
         raise SystemExit("C3r's state changed since the draw")
     k, n = args.shard
     mine = [p for j, p in enumerate(sorted(draw["parts"], key=lambda p: p["pkey"])) if j % n == k]
-    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
     LO._wait_cap()
     total, t0 = 0, time.time()
     for p in mine:
@@ -1114,28 +1201,12 @@ def cmd_score(args):
             continue
         if PS.free_gb() < T.DISK_GUARD_GB:
             raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
-        prt = sd.units[(p["set"], p["unit"], p["amp"])]["prt"]
-        di32 = NR.di_section(prt)
-        di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
-        clean = P.real_amp_track(prt["sd"], prt["track"], prt["start_s"])
-        sets = {"cen": p["cen"]["settings"], **to_score(a), **{q: ans["parts"][q]["answer"] for q in a["borrowed"]}}
-        done, held, shas = {}, {}, {}
-        for name, s in sets.items():
-            x = LO.tdict(s)
-            kk = K.key(x)
-            if kk not in done:
-                y = np.asarray(AM.fresh_render(CB.new_renderer, di32, a["select"], x, x), np.float64)[trim[0]:trim[1]]
-                total += 2
-                done[kk] = (NR.half_distance(clean, y, di, p["lag"], p["held"]) if np.isfinite(y).all()
-                            else math.inf, AM.audio_sha(np.nan_to_num(y)))
-            held[name], shas[name] = done[kk]
-        stored = sd.cen_judge((p["set"], p["unit"], p["amp"]))[p["held"]]
-        ctl = finite_pos(held["cen"]) and finite_pos(stored) and abs(math.log(held["cen"] / stored)) <= SCORE_TOL
-        P.save(out, {"plan": PLAN, "row": row, "part": p["pkey"], "held": held, "render_sha256": shas,
-                     "cen_stored": stored, "scoring_control_ok": ctl, "borrowed": a["borrowed"],
-                     "answers_sha256": file_sha(answers_path(row)), "distinct_renders": len(done)})
-        print(f"{p['pkey'][-60:]}: scored {len(done)} settings; Cen {held['cen']:.5g} vs stored {stored:.5g} "
-              f"({'ok' if ctl else 'MISS'}); {total} renders, {time.time() - t0:.0f} s", flush=True)
+        rec, used = score_row_part(p, a, ans["parts"], row, file_sha(answers_path(row)), sd, CB.new_renderer)
+        total += used
+        P.save(out, rec)
+        held, stored, ctl = rec["held"], rec["cen_stored"], rec["scoring_control_ok"]
+        print(f"{p['pkey'][-60:]}: scored {rec['distinct_renders']} settings; Cen {held['cen']:.5g} vs stored "
+              f"{stored:.5g} ({'ok' if ctl else 'MISS'}); {total} renders, {time.time() - t0:.0f} s", flush=True)
     print(f"FS-SCORE DONE {row} {k}/{n}: {total} renders in {time.time() - t0:.0f} s")
 
 
@@ -1161,6 +1232,48 @@ def summarise_row(sd, draw, per):
     return out
 
 
+def read_row_parts(draw, ans, answers_sha, score_file, sd, rby):
+    """The per-part numbers of any row from its scored files (the per-part body of `cmd_read`, shared with the
+    `fs-notes` row): `nonfinite_rule`, `part_numbers`, the scoring-control misses as refusals, the stored label less
+    Cen and the moves beside. score_file(pkey) -> the score file's path. -> (per, refused, replaced, misses)."""
+    from learn import note_replay as NR
+
+    refused = dict(ans["refused"])
+    per, replaced, ctl_miss = {}, {}, []
+    for p in draw["parts"]:
+        k = p["pkey"]
+        if ans["stopped"] or k not in ans["parts"]:    # a stopped row was never scored
+            per[k] = None
+            continue
+        sp = score_file(k)
+        if not sp.exists():
+            raise SystemExit(f"{k}: not scored")
+        sc = json.loads(sp.read_text())
+        if sc["answers_sha256"] != answers_sha:
+            raise SystemExit(f"{k}: scored from other answers")
+        if not sc["scoring_control_ok"]:
+            refused[k] = {"scoring_control": {"cen": sc["held"]["cen"], "stored": sc["cen_stored"]}}
+            ctl_miss.append(k)
+            per[k] = None
+            continue
+        held, rep = nonfinite_rule(sc["held"])
+        if rep:
+            replaced[k] = rep
+        per[k] = part_numbers(held, sc["borrowed"])
+        rp = rby[k]                            # beside, zero renders: the stored label less Cen (the replay's menu)
+        per[k]["label_less_cen"] = NR.h_of(sd.held((rp["set"], rp["unit"], rp["amp"]), rp["menu"]))[NR.LABEL_INDEX]
+        per[k]["moves"] = moves(ans["parts"][k]["answer"], p["cen"]["settings"])
+    return per, refused, replaced, ctl_miss
+
+
+def report_body(row, letter, answers_sha, per, refused, replaced, ctl_miss):
+    """(Pure.) A row's report before its rows: as `cmd_read` writes it."""
+    return {"plan": PLAN, "row": row, "letter": letter, "answers_sha256": answers_sha,
+            "time": time.strftime("%Y-%m-%d %H:%M:%S"), "refused": refused, "stopped": stopped(refused),
+            "stop_reason": f"{len(refused)} refused (the stop is {REFUSAL_STOP})" if stopped(refused) else None,
+            "nonfinite_replaced": replaced, "scoring_control_misses": ctl_miss, "parts": per}
+
+
 def cmd_read(args):
     """The row's reading (zero renders), once: the per-part numbers from the scored files (`nonfinite_rule`,
     `part_numbers`), the refusals (search, borrowed answer, scoring control) against REFUSAL_STOP, the rows saved
@@ -1175,35 +1288,9 @@ def cmd_read(args):
     never_overwrite(report_path(row))
     sd = NR.Stored()
     rby = {p["pkey"]: p for p in NR.require_draw()["parts"]}
-    refused = dict(ans["refused"])
-    per, replaced, ctl_miss = {}, {}, []
-    for p in draw["parts"]:
-        k = p["pkey"]
-        if ans["stopped"] or k not in ans["parts"]:    # a stopped row was never scored
-            per[k] = None
-            continue
-        sp = score_path(row, k)
-        if not sp.exists():
-            raise SystemExit(f"{k}: not scored")
-        sc = json.loads(sp.read_text())
-        if sc["answers_sha256"] != file_sha(answers_path(row)):
-            raise SystemExit(f"{k}: scored from other answers")
-        if not sc["scoring_control_ok"]:
-            refused[k] = {"scoring_control": {"cen": sc["held"]["cen"], "stored": sc["cen_stored"]}}
-            ctl_miss.append(k)
-            per[k] = None
-            continue
-        held, rep = nonfinite_rule(sc["held"])
-        if rep:
-            replaced[k] = rep
-        per[k] = part_numbers(held, sc["borrowed"])
-        rp = rby[k]                            # beside, zero renders: the stored label less Cen (the replay's menu)
-        per[k]["label_less_cen"] = NR.h_of(sd.held((rp["set"], rp["unit"], rp["amp"]), rp["menu"]))[NR.LABEL_INDEX]
-        per[k]["moves"] = moves(ans["parts"][k]["answer"], p["cen"]["settings"])
-    out = {"plan": PLAN, "row": row, "letter": LETTER[row], "answers_sha256": file_sha(answers_path(row)),
-           "time": time.strftime("%Y-%m-%d %H:%M:%S"), "refused": refused, "stopped": stopped(refused),
-           "stop_reason": f"{len(refused)} refused (the stop is {REFUSAL_STOP})" if stopped(refused) else None,
-           "nonfinite_replaced": replaced, "scoring_control_misses": ctl_miss, "parts": per}
+    per, refused, replaced, ctl_miss = read_row_parts(draw, ans, file_sha(answers_path(row)),
+                                                      lambda k: score_path(row, k), sd, rby)
+    out = report_body(row, LETTER[row], file_sha(answers_path(row)), per, refused, replaced, ctl_miss)
     if not out["stopped"]:
         rows = summarise_row(sd, draw, per)
         never_overwrite(rows_path(row))

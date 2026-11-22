@@ -9,6 +9,9 @@ future gate for the flagged build must read `phase_scratch_both_outcome`. Row (a
 held pending the user. Every number is by the score unless it says "by ear": J0, ln(d_row / d_against) on the held half, below
 zero closer; 90% cluster t intervals; the deciding pool is BKS, GOAT and the panel weighted equally
 (`full_controls_c3r.pooled`), with BKS+GOAT pooled alone beside. `PF` is `~/ndsp-presets/learn/trusted-data/pipeline-fix`.
+**2026-11-22:** a new row, `fs-notes`, the note rebuild's `tr-di` against the same stem, is declared in
+[section 10](#10-the-fs-notes-row-2026-11-22-ledger-phase_scratch_notes) (ledger `phase_scratch_notes`), with BKS+GOAT
+deciding on the user's exception for that row only. It does not touch rows (b) and (c) or `OUTCOME_TABLE`. Not run.
 
 **The user's rule.** No action rests on a gap under 0.05. "Passes" means decided better with the mean at −0.10 or
 beyond. An interval inside ±0.05 reads "not readable by the score". Undecided is not failed.
@@ -205,3 +208,137 @@ committed. No separation, no training, no MPS job.
 - Anything on released mixes, on full mixes with other guitars, or by ear.
 - Anything about effects.
 - Whether a search over the whole window, as the product would run, does better than over one half.
+
+## 10. The `fs-notes` row (2026-11-22; ledger `phase_scratch_notes`)
+
+Declared 2026-11-22, before anything in it runs, with the note rebuild's redo
+([note-rebuild-plan.md section 12](note-rebuild-plan.md#12-the-redo-notes-transcribed-from-the-di-read-as-the-fs-notes-row-2026-11-22-ledger-phase_nr_1_redo)),
+after an independent review and its re-review. Code: `learn/scratch_notes.py`; tests: `tests/test_scratch_notes.py`.
+Data: `PF/fs/notes/`.
+
+**The question.** Does a guitar re-played from single recorded notes, at notes Basic Pitch read from the true DI,
+drive the search as well as row (c)'s blurred true DI? A pass ships nothing; the next row (the stem-notes row) reads
+every input from the stem.
+
+**The row.** `fs-notes` = (`tr-di`, `xlnoG`). `tr-di` is the dry guitar of every search render and the judge's DI; the
+search-half reference is `xlnoG@-3`, the held half zeros. The answers are rendered through the **true DI** and judged
+on the **held half** against the **clean record**. Same draw (`phase_fs_draw`), Cen, partners, budget, seeds,
+checkpoints and halves as rows (b) and (c). All 47 parts are searched and scored.
+
+**The deciding set: BKS+GOAT, 40 parts** (the user's answer of 2026-11-22, the explicit exception to this plan's
+"never read on fewer sets", for this row only). The panel's 7 parts are read beside, split into its MedleyDB files and
+The Laminar Flow; they cannot swing the result. `pool_refusal` does not stop this row: a panel refusal or a lost panel
+DI file only shortens the beside readings. The stem-notes row's deciding set comes from its own declaration.
+
+### 10a. One code path for every row (the refactor)
+
+`ROWS`, `phase_answers`, `require_turn`, `OUTCOME_TABLE`, `next_row`, `table_guard`, `DECIDING` and `pool_refusal`
+are unchanged, so `scratch_search`'s own commands still refuse any row but its four (rows (b) and (c) are finished and
+`next_row` reads none). The per-part bodies became shared functions: `search_row_part`, `answer_parts`,
+`score_row_part` and `read_row_parts` (with `report_body`). `run_part` gained three arguments that do nothing at their
+defaults: a start reference, the dry guitar's sha256 recorded in the record, and a stop after step 1 for the search
+check.
+
+| Step | Shared with rows (b) and (c) | New for this row |
+|---|---|---|
+| `search` | `search_row_part` (`run_part`), `load_ref_blank`, the start check at 0.005, the disk guard, at most 3 shards | The start reference: the exact first evaluation (`sx1(start)`) through `tr-di` in its own fresh primed process, just before the part's search (2 renders), written once. Every search record holds the sha256 of the dry guitar's audio as handed to the search, measured, and the search refuses before any render unless it is the hashed build's `tr-di`. A part refused by the content checks is recorded as refused, unrendered; any failing ear item stops the search. The install record (lock, model, gate and calibration sha256) is checked |
+| `answers` | `answer_parts` (`borrowed`, `shrunk` at 0.5, `centre`) | Refuses a search record whose dry guitar is not the `tr-di` of the build hashed as `phase_scratch_notes_dry`. The refusal stop counts the 40 deciding parts (3 or more stop), content refusals included |
+| `score` | `score_row_part`: through the true DI, the held half against the clean record, the scoring control, 10 settings a part | — |
+| `read` | `read_row_parts`, `nonfinite_rule`, `part_numbers`, `summarise_row`, `row_reading`, `number_reading` | `paired_reading`, `FN_TABLE`, `fn_code` |
+| Guards | `never_overwrite` on every output; the hashes of the draw, the build and the answers | `redo_on_main`: `learn/scratch_search.py`, `scratch_notes.py`, `note_rebuild.py`, `note_rebuild_s1.py`, `note_rebuild_ear.py`, `note_transcribe.py`, `bp_run.py` and the keys `phase_fs*`, `phase_scratch_notes*`, `phase_nr*` equal main's. Every command needs `phase_scratch_both_outcome`, `phase_scratch_notes` and `phase_nr_1_redo` on main; `search` both checks passed and the install, notes and build hashed; `answers`, `score` and `read` `phase_nr_1_redo_ear` = ok, heard on clips from the hashed build |
+
+**The proof that every row is scored the same way:**
+- tests: the 32 paths and every cell of `OUTCOME_TABLE` as before; the loop-equivalence test still replays 40 of 40
+  stored C2 records;
+- `read` at zero renders (a test on the stored data): the shared path on row (c)'s stored answers and score files
+  reproduces `rows-fs-both.json` exactly, and the paired (c) less (b) reproduces +0.167 [+0.110, +0.224] on the pool
+  (both pass at declaration);
+- `score-check` (about 40 renders, once, after the merge): row (c)'s first BKS and first GOAT part re-scored through
+  `score_row_part`; every render's sha256 and held value must equal the stored file's. It writes to
+  `PF/fs/notes/check-score/` only;
+- `search-check` (about 12 renders a part, once): the same two parts through `run_part` with avg+mild as the dry
+  guitar (passed as this row passes `tr-di`), row (c)'s start reference passed explicitly and a step-1 budget of 10;
+  its evaluations must equal the start of row (c)'s stored step-1 curve exactly. A pure test shows a budget of 10 asks
+  for the same first settings as 200. It writes to `PF/fs/notes/check-search/` only. The start check alone cannot catch
+  a wrong dry guitar, since the start reference comes from the same code;
+- `search` refuses until both checks have passed.
+
+### 10b. The number and the reading
+
+**Arms:** the answer and the shrunk answer (every searched continuous control halfway back to Cen), both always scored,
+each compared like for like with row (c)'s. Two arms share the parts, so a false match is at most 10%.
+
+**`D_notes`:** per part, G(`fs-notes`) − G(`fs-both`) (Cen is the same render in both rows). Above zero, the rebuilt
+guitar did worse than avg+mild. Row (c)'s bar is recomputed on exactly the parts this row scores. Read on BKS+GOAT, on
+its clean 20 and on its crunch 20 by `paired_reading`:
+
+| Reading | When |
+|---|---|
+| better | the whole interval below zero, the mean at −0.10 or beyond |
+| matches | the upper end under +0.10 (a heard-size loss ruled out) and the mean under +0.05; an interval inside ±0.05 is worded "level, not readable by the score" |
+| worse | the whole interval above zero, the mean at +0.10 or beyond |
+| undecided | the rest |
+
+**`FN_TABLE`** (BKS+GOAT; the first row that holds; "an arm" is the same arm throughout a row):
+
+| Code | When | Reading |
+|---|---|---|
+| `FN-match` | an arm matches or is better on the 40 and on the clean 20, its own G on the 40 has its upper end below zero, and its own G on clean does not read "fails" | with these notes the rebuilt guitar drives the search as well as the blurred true DI, clean included, and the row itself beats Cen |
+| `FN-crunch` | not the above; an arm matches or is better on the crunch 20, and its own G on crunch has its upper end below zero | it holds on crunch; clean is worded from its own reading: "worse", "undecided", or "matches, but the row does not beat Cen there" |
+| `FN-worse` | both arms read worse on the 40 | it fails with the current transcriber and synthesis; not a verdict on the note route |
+| `FN-clean-worse` | both arms read worse on the clean 20 | clean fails with the current parts; the 40 and crunch are not decided |
+| `FN-undecided` | anything else | not decided; undecided is not failed |
+
+**What each licenses, as a recommendation to the user (nothing continues on its own):**
+
+| Code | Recommendation |
+|---|---|
+| `FN-match` | the stem-notes row, under its own declaration; then a blind sitting that includes the losing parts. The flagged build stays held |
+| `FN-crunch` | the stem-notes row, its declaration asking the user for crunch to decide with clean beside. Where clean read worse: clean leaves the note route with the current parts and keeps today's start; the bottleneck is named. No clean claim |
+| `FN-worse` | no stem-notes row. To the user with the bottleneck named and one recommendation: fix that part, or the declared fallbacks (the guided or network route). Audited adversarially first |
+| `FN-clean-worse` | as `FN-worse` for clean; for crunch, `FN-undecided`'s rule on the crunch 20 |
+| `FN-undecided` | **lean-go** when some arm's mean `D_notes` on the 40 is under +0.05 and its own G has its upper end below zero: the stem-notes row, read against row (c)'s bar directly, said with it that a heard-size loss against avg+mild is not ruled out and that the split is a cut on the point estimate of an undecided interval; **lean-stop** otherwise, worded "undecided, recommend no more renders on this build", never "fails", the bottleneck named |
+
+In every case: no rerun on these 47 parts. One fix is allowed after a named bottleneck; it must first show at zero
+renders on development windows, and its read comes under its own later declaration, with its own comparator and
+measured cost (the replay holds 75 parts outside the 47: 48 GOAT on fresh items, 24 BKS on the same 8 DI files, and 3
+of Drowning, which is left out; row (c) never ran on them).
+
+**Naming the bottleneck (descriptive, after the read).** The 40 are split at the median of `onsets-found`. "The
+synthesis" when `D_notes`' mean on the better-transcribed half is at +0.10 or worse with its interval clear of zero;
+"the transcriber" when the lower half's mean is worse than the upper's by 0.10 or more with the difference's interval
+clear of zero (the halves' half-widths in quadrature); otherwise "not separable by these figures". Beside it,
+computed inside the one read: `D_notes` by `ring-kept`'s figure, by the share of bent notes and by the share of
+chords (Spearman's rho, and each half at the figure's median with its own interval).
+
+**Power** (planning read from rows (b) and (c), reproduced by the review; paired half-widths of (c) less (b)):
+
+| Set | Answer | Shrunk |
+|---|---|---|
+| BKS+GOAT, 40 parts | ±0.067 | ±0.041 |
+| Clean, 20 parts (16 clusters) | ±0.122 | ±0.077 |
+| Crunch, 20 parts | ±0.062 | ±0.028 |
+
+So "matches" needs a mean `D_notes` of about +0.03 or less (answer) or +0.05 (shrunk) on the 40, about −0.02 or +0.02
+on clean, about +0.04 or +0.05 on crunch. The bar, row (c) on BKS+GOAT: the answer −0.087 [−0.155, −0.018], the shrunk
+answer −0.148 [−0.201, −0.095] (both reproduced by a test at declaration); 8 of 47 parts (answer) and 2 (shrunk) at
++0.10 or worse than Cen.
+
+**Beside, never deciding:** G and I on the pool by `row_reading`, each set, clean and crunch; `D_notes` on the pool, on
+the panel by its MedleyDB and Laminar Flow files, band-weighted, with each cluster left out, and with refused parts
+counted as Cen; the shrunk answer against row (c)'s full answer; the answer less the shrunk answer (declared now; row
+(c)'s +0.049 was post hoc); the parts at +0.10 or worse for both arms; the share of row (b)'s gain kept; the
+checkpoints; whether search-half gain predicts held G; `tr-plain`'s content checks; the stem preview (Basic Pitch on
+each part's stem, search half only, against the DI's notes; it sizes the stem-notes row).
+
+### 10c. Cost, stop rule, ledger
+
+- **Renders:** score check 40, search check about 24, start references 94, search about 12,300 (rows (b) and (c):
+  12,351 and 12,317), score 940; about 2 hours on 3 processes at row (b)'s measured re-timing rate of 6,560 an hour.
+  No training, separation or MPS job.
+- **Stop rule:** one build, one read. The row stops at 3 refused of the 40 deciding parts. After it, at most two more
+  reads (the stem-notes row, then a blind sitting) before a product decision.
+- **Ledger:** `preset-ladder` `phase_scratch_notes` (this declaration), `phase_scratch_notes_dry` (the build's sha256,
+  with the install and notes hashes), `phase_scratch_notes_answers` (before `score`), `phase_scratch_notes_outcome`
+  (after the audit). `phase_fs*` keys are untouched.
+- **Public repo:** no settings values, audio, note files or song paths in git; answers stay under `PF/fs/notes/`.
