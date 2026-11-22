@@ -93,12 +93,13 @@ def ghost_ladder(di, notes, bank, finish, ring=DECIDING_RING, rate=NR.SR):
     n = len(di)
     base, _ = NR.rebuild_redo("tr-di", notes, n, bank, di, ring, finish=finish)
     pad = n + int(round(NR.END_PAD_S * rate))
-    G, _ = NR.synthesise_redo(ghost_notes(notes), pad, bank, 0.0, ring, (), 0.0, None, rate)
+    G, grep = NR.synthesise_redo(ghost_notes(notes), pad, bank, 0.0, ring, (), 0.0, None, rate)
     P, _ = NR.synthesise_redo(notes, pad, bank, 0.0, ring, (), 0.0, None, rate)
     k = float(np.sqrt(np.mean(base ** 2)) / (np.sqrt(np.mean(P[:n] ** 2)) + 1e-12))
     b = floored_logmel(di, base, rate)
     steps = [floored_logmel(di, base + 10 ** (db / 20) * k * G[:n], rate) for db in GHOST_STEPS_DB]
-    return {"base": b, "steps": steps, "passes": ladder_passes(b, steps)}
+    return {"base": b, "steps": steps, "passes": ladder_passes(b, steps), "ghosts": grep["notes"],
+            "ghosts_played": grep["played"]}    # ghosts above the bank's range are not played (recorded)
 
 
 def ladder_outcome(lists, real):
@@ -206,10 +207,11 @@ def clear_of_zero(iv):
 
 
 def set_reading(C, G):
-    """(Pure.) "Lands near", declared: "cost not shown" when C's interval reaches zero (never a pass); "near" when C is
-    clear of zero, G's mean at most a quarter of C's mean and G's upper end at most half of C's mean; "short" when C is
-    clear of zero and G's lower end above half of C's mean; else "undecided"."""
-    if not C or C.get("lo90") is None or not clear_of_zero(C):
+    """(Pure.) "Lands near", declared: "cost not shown" when C's interval is not clear above zero (it reaches zero, or
+    lies below it: extras that bring the rebuild closer show no cost; never a pass, never "short"); "near" when C is
+    clear above zero, G's mean at most a quarter of C's mean and G's upper end at most half of C's mean; "short" when C
+    is clear above zero and G's lower end above half of C's mean; else "undecided"."""
+    if not C or C.get("lo90") is None or not C["lo90"] > 0:
         return "cost not shown"
     if not G or G.get("lo90") is None:
         return "undecided"
@@ -256,8 +258,19 @@ def soft_indices(est, true_notes, gamma, soft_db=NR.SOFT_DB):
 
 def turned_down_share(est, true_notes, gamma, soft_db=NR.SOFT_DB):
     """(Pure.) The share of truth-paired Basic Pitch notes turned down by more than 3 dB at `gamma`."""
-    pairs = hand_pairs(est, true_notes)
-    return len(soft_indices(est, true_notes, gamma, soft_db)) / len(pairs) if pairs else None
+    soft, paired = turned_down_counts(est, true_notes, gamma, soft_db)
+    return soft / paired if paired else None
+
+
+def turned_down_counts(est, true_notes, gamma, soft_db=NR.SOFT_DB):
+    """(Pure.) (soft notes, truth-paired notes) at `gamma`, for the share pooled over windows."""
+    return len(soft_indices(est, true_notes, gamma, soft_db)), len(hand_pairs(est, true_notes))
+
+
+def pooled_share(counts):
+    """(Pure.) A share pooled over windows from [(part, whole)]; None with no whole."""
+    a, b = sum(x for x, _ in counts), sum(y for _, y in counts)
+    return a / b if b else None
 
 
 def found_true(round_trip, true_notes, onset_s=0.050):
@@ -313,8 +326,9 @@ def summarise_read(windows, real_reported_only):
             numbers[ring][st] = {f: set_numbers(rows, f) for f in ("C", "G", "G2", "E", "loud_less_asis",
                                                                     "loud2_less_asis", "hand_loud_less_hand")}
     n = numbers[DECIDING_RING]
-    guard = {g: chord_guard([w["guard"][g] for w in windows if w["set"] in ("lists", "real") and g in
-                             w.get("guard", {})]) for g in (g1, g2)}
+    sets = ("lists",) if real_reported_only else ("lists", "real")     # a reported-only set enters no reading
+    guard = {g: chord_guard([w["guard"][g] for w in windows if w["set"] in sets and g in w.get("guard", {})])
+             for g in (g1, g2)}
     read = {}
     for g, gf, ga in ((g1, "G", "loud_less_asis"), (g2, "G2", "loud2_less_asis")):
         read[g] = {"lists": set_reading(n["lists"]["C"], n["lists"][gf]),

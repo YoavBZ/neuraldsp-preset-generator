@@ -26,6 +26,8 @@ FLAG_UNDER = 0.90                        # a part is flagged under this share (a
 RINGING_S = 0.100
 RECALL_FLOOR = 0.90                      # the detector's own recall, overall and ringing, should it ever gate again
 GROUP_S = NR.CHORD_S                     # true onsets within 50 ms are one onset group
+STRUM_GROUP_S = 0.150                    # on chord windows a strum spreads 120 to 200 ms: their recall is also
+                                         # reported on 150-ms groups (a report only)
 
 
 def onset_groups(onsets, gap=GROUP_S):
@@ -66,11 +68,12 @@ def ringing(t, notes, wait=RINGING_S):
     return any(m["on"] <= t - wait and m["off"] >= t + wait for m in notes)
 
 
-def detector_recall(attacks, notes, offset=0.0, within=FOUND_S):
-    """(Pure.) The detector's recall of the true onset groups, overall and on ringing onsets. notes: the true notes
-    [{on, off}]. -> {groups, found, recall, ringing, ringing_found, ringing_recall}."""
+def detector_recall(attacks, notes, offset=0.0, within=FOUND_S, gap=GROUP_S):
+    """(Pure.) The detector's recall of the true onset groups (onsets within `gap` of a group's first; STRUM_GROUP_S
+    on chord windows, reported beside), overall and on ringing onsets. notes: the true notes [{on, off}].
+    -> {groups, found, recall, ringing, ringing_found, ringing_recall}."""
     att = [a + offset for a in attacks]
-    gs = onset_groups([n["on"] for n in notes])
+    gs = onset_groups([n["on"] for n in notes], gap)
     hit = [any(abs(a - g) <= within for a in att) for g in gs]
     rg = [i for i, g in enumerate(gs) if ringing(g, notes)]
     return {"groups": len(gs), "found": sum(hit), "recall": sum(hit) / len(gs) if gs else None,

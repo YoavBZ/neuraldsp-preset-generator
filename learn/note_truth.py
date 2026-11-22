@@ -33,7 +33,9 @@ CONSISTENT_SHARE = 0.80                  # ... for at least 80% of the clusters
 HUM_MAINS = (50.0, 60.0)
 HUM_HARMONICS = range(1, 7)
 HUM_CENTS = 50.0
-HUM_STOP = 0.05                          # over 5% of a window's found notes on a mains harmonic stops the report
+HUM_STOP = 0.05                          # over 5% of a window's found notes are mains-pitch notes no truth note
+                                         # explains: the report stops (12m, relative; the plan's absolute rule was wrong)
+HUM_PAIR_S = 0.050                       # a found note pairs with a truth note: same pitch, onsets within 50 ms
 
 
 def refuse_path(path):
@@ -183,9 +185,29 @@ def on_mains(pitch, mains=HUM_MAINS, harmonics=HUM_HARMONICS, cents=HUM_CENTS):
     return any(abs(1200 * math.log2(f / (m * k))) <= cents for m in mains for k in harmonics)
 
 
-def hum_share(notes):
-    """(Pure.) The share of a window's found notes on a mains harmonic (the hum guard: over HUM_STOP stops the report)."""
-    return sum(on_mains(n["pitch"]) for n in notes) / len(notes) if notes else 0.0
+def paired_found(found, truth, onset_s=HUM_PAIR_S):
+    """(Pure.) The found notes' indices that pair one to one with a truth note (same pitch, onsets within `onset_s`,
+    the closest first, as `match_notes`)."""
+    pairs = sorted((abs(r["on"] - e["on"]), i, j) for i, r in enumerate(truth) for j, e in enumerate(found)
+                   if r["pitch"] == e["pitch"] and abs(r["on"] - e["on"]) <= onset_s)
+    ui, uj = set(), set()
+    for _, i, j in pairs:
+        if i not in ui and j not in uj:
+            ui.add(i)
+            uj.add(j)
+    return uj
+
+
+def hum_share(found, truth):
+    """(Pure.) The hum guard's figure (12m, relative): the share of a window's found notes that sit on a mains
+    harmonic (50 or 60 Hz times 1 to 6, within 50 cents) and pair with no truth note. Over HUM_STOP stops the report.
+    The plan's first rule counted every found note on a mains pitch; those pitches include MIDI 43, 47, 50, 54, 55,
+    59, 62 and 66 (G, B, D and F-sharp), so ordinary playing in G tripped it (228 of 238 windows, with the truth
+    itself as the found notes)."""
+    if not found:
+        return 0.0
+    ok = paired_found(found, truth)
+    return sum(on_mains(n["pitch"]) and j not in ok for j, n in enumerate(found)) / len(found)
 
 
 def truth_precision(rows):

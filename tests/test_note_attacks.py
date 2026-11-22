@@ -56,6 +56,13 @@ def test_detector_recall_overall_and_ringing():
     assert NA.pooled_recall([NA.detector_recall([0.0, 0.5, 1.0, 2.0], notes)])["holds_floor"]
 
 
+def test_strums_group_wider_beside():
+    strum = [_n(1.0 + 0.04 * k, 4.0, 50 + k) for k in range(5)]         # a 160-ms strum
+    assert NA.detector_recall([1.0], strum)["groups"] == 3             # 50-ms groups split it
+    got = NA.detector_recall([1.0], strum, gap=NA.STRUM_GROUP_S)
+    assert got["groups"] == 2 and NA.STRUM_GROUP_S == 0.150
+
+
 def test_truth_passes():
     assert NA.truth_passes([1.0, 2.0], [1.0, 2.0])
     assert not NA.truth_passes([1.0, 2.0, 2.5], [1.0, 2.0])

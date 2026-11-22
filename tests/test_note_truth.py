@@ -55,9 +55,17 @@ def test_consistency():
     assert TR.consistent([], 0.0, 20) == {"consistent": False, "clusters": 0, "share": None}
 
 
-def test_hum_share():
+def test_hum_share_counts_only_unexplained_mains_notes():
     assert TR.on_mains(35) and TR.on_mains(47) and not TR.on_mains(64)   # 60 Hz is MIDI 35; 120 Hz is MIDI 47
-    assert TR.hum_share([_n(0, 47), _n(1, 64), _n(2, 69), _n(3, 71)]) == 0.25 and TR.hum_share([]) == 0.0
+    assert [p for p in range(36, 89) if TR.on_mains(p)] == [43, 47, 50, 54, 55, 59, 62, 66]   # G, B, D, F-sharp
+    g_major = [_n(t, p) for t in (0.0, 2.0, 4.0) for p in (43, 47, 50, 55, 59, 67)] + \
+        [_n(6.0 + 0.3 * k, p) for k, p in enumerate((55, 57, 59, 60, 62, 64, 66, 67))]
+    found = [dict(n, on=n["on"] + 0.01) for n in g_major]                # a perfect transcription, 10 ms late
+    assert TR.hum_share(found, g_major) == 0.0 and TR.hum_share(found, g_major) <= TR.HUM_STOP   # no stop in G
+    hum = found + [_n(0.5 + k, 47) for k in range(3)]                     # three unexplained 120-Hz notes
+    assert TR.hum_share(hum, g_major) == pytest.approx(3 / 29) and TR.hum_share(hum, g_major) > TR.HUM_STOP
+    assert TR.hum_share([], g_major) == 0.0
+    assert TR.paired_found([_n(0.0, 60), _n(0.02, 60)], [_n(0.0, 60)]) == {0}
 
 
 def test_truth_precision_pools_by_player_and_kind():

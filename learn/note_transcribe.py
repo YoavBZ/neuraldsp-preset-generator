@@ -24,15 +24,15 @@ order before `calibrate`, each written once under redo/ and refused without `pha
     $MAIN -m learn.note_transcribe versions       # the note-versions read, once -> phase_nr_1_redo_versions
 
 $MAIN is the main checkout's .venv python (in a worktree add `--data-dir ~/ndsp-presets` through the environment the
-replay used). Every command refuses unless this checkout runs main's code (`redo_on_main`: learn/scratch_search.py,
-scratch_notes.py, note_rebuild.py, note_rebuild_s1.py, note_rebuild_ear.py, note_transcribe.py and bp_run.py equal
-main's, and the `phase_fs*`, `phase_scratch_notes*` and `phase_nr*` keys equal main's) and main's ledger holds the
+replay used). Every command refuses unless this checkout runs main's code (`redo_on_main`: `CODE_FILES`, the redo's
+eleven modules from learn/scratch_search.py to learn/note_versions.py, equal main's, and the `phase_fs*`, `phase_scratch_notes*` and `phase_nr*` keys equal main's) and main's ledger holds the
 phases the step needs. Every output is written once (`never_overwrite`). Basic Pitch is imported only inside
 `learn/bp_run.py`, run by its venv's own interpreter in a subprocess; nothing here imports it.
 
 The pure parts (the clean-up, the note matching, the kinds and windows of the ear items, every check's pass rule, the
-calibration's pick, the ring variant's rule, the refusal count, the expected-failure table, the lock, the overlap
-song by song) are tested in tests/test_note_transcribe.py on the light CI runner (no numpy).
+calibration's rule (12m), the gate's pass, the rejected clips' cases, the triggers, the ring variant's rule, the
+refusal count, the expected-failure table, the lock, the overlap song by song) are tested in
+tests/test_note_transcribe.py on the light CI runner (no numpy).
 """
 
 from __future__ import annotations
@@ -1871,7 +1871,10 @@ class TruthAudio:
         x, clean = self.cache[k]
         sec, inp, pre = window_audio(x, w["start"])
         di = SB.measure(sec)
-        return di, inp, pre, TR.truth_notes(clean, w["start"], di)[0]
+        notes, off = TR.truth_notes(clean, w["start"], di)
+        if len(notes) != w["notes"] or abs(1000 * off - w["offset_ms"]) > 1e-6:
+            raise SystemExit(f"{w['key']}: the truth no longer matches its listing (notes or offset)")
+        return di, inp, pre, notes
 
 
 def usable_windows(listing, players=("P1", "P2")):
@@ -1934,9 +1937,17 @@ def cmd_attacks_report(_args):
     att = NA.run_attacks([it[4] for it in items], work / "all")
     offset = NA.detector_offset([(a, [n["on"] for n in it[3]]) for it, a in zip(items, att) if it[0] == "P1"])
     rec, passes = {}, {}
+    kind_of = {w["key"]: w["kind"] for w in usable_windows(listing)}
     for st in ("P1", "P2", "lists"):
         figs = [NA.detector_recall(a, it[3], offset) for it, a in zip(items, att) if it[0] == st]
         rec[st] = NA.pooled_recall(figs)
+        for kind in ("chords", "scales", "techniques"):
+            sub = [(it, a) for it, a in zip(items, att) if it[0] == st and kind_of.get(it[1]) == kind]
+            if sub:
+                rec[f"{st}|{kind}"] = NA.pooled_recall([NA.detector_recall(a, it[3], offset) for it, a in sub])
+                if kind == "chords":
+                    rec[f"{st}|chords|strum"] = NA.pooled_recall(
+                        [NA.detector_recall(a, it[3], offset, gap=NA.STRUM_GROUP_S) for it, a in sub])
     for it, a in zip(items, att):
         passes[it[1]] = attacks_found(a, it[3], it[2], offset)
     body = {"detector": CONTENT["onsets-found"]["detector"], "hop": NA.ATTACK_HOP, "delta": NA.ATTACK_DELTA,
@@ -1998,7 +2009,7 @@ def cmd_truth_report(_args):
     """The truth report (zero renders; phase 4), once: Basic Pitch on every usable P1 and P2 window and on GOAT's 27
     development windows (note files written once, reused by `versions`); precision and recall against the cleaned
     truth, chords and scales apart, P1 and P2 apart (`note_truth.truth_precision`), reported, never a gate; the hum
-    guard (over 5% of a window's found notes on a mains harmonic stops the report); P2's rest level; P2's chord recall
+    guard (12m, relative: over 5% of a window's found notes on a mains harmonic with no truth note stops the report); P2's rest level; P2's chord recall
     read against the 0.85 trigger (under it: to the user before step 5). -> redo/truth-report.json."""
     m = require_redo(PHASE_CALIB, PHASE_TRUTH)
     never_overwrite(truth_report_path())
@@ -2030,7 +2041,7 @@ def cmd_truth_report(_args):
             goat[key] = {"notes": len(est), "note_file_sha256": NR.file_sha(note_path(kind, key))}
             continue
         mt = match_notes(truth, est)
-        hs = TR.hum_share(est)
+        hs = TR.hum_share(est, truth)
         if hs > TR.HUM_STOP:
             hum.append((key, hs))
         if w["player"] == "P2":
@@ -2078,6 +2089,10 @@ def cmd_versions(_args):
     excl, tn, z, _ = _dev_context()
     bank = NR.Bank(NR.load_notes_doc(), excl=excl)
     known = {pp.stem.split("-", 1)[1]: pp for pp in (gate_work_dir() / "known").glob("*.json")}
+    for nm, pp in known.items():                      # the lists' stored events come from this install
+        ev = json.loads(pp.read_text())
+        if ev.get("model_sha256") != pair[1] or ev.get("settings") != BP_SETTINGS:
+            raise SystemExit(f"{pp.name}: the stored events come from another model or other settings")
     todo = []
     for w in usable_windows(listing):
         di, _, _, truth = ta.window(w)
@@ -2101,7 +2116,7 @@ def cmd_versions(_args):
             if timed == 3:
                 rate_s = (time.perf_counter() - t0) / (3 * sum(len(v) for v in d.values()))
         rec = {"set": st, "cluster": cluster, "key": key, "group": group, "d": d, "beside": side,
-               "turned_down": {str(g): NV.turned_down_share(est, truth, g) for g in NR.LOUD_GAMMA}}
+               "turned_down": {str(g): NV.turned_down_counts(est, truth, g) for g in NR.LOUD_GAMMA}}
         windows.append(rec)
         for v in NV.ROUND_TRIP:
             if v in audio:
@@ -2130,8 +2145,8 @@ def cmd_versions(_args):
     shares = {}
     for grp in ("P1", "P2", "goat"):
         for g in NR.LOUD_GAMMA:
-            v = [w["turned_down"][str(g)] for w in windows if w["group"] == grp and w["turned_down"][str(g)] is not None]
-            shares.setdefault(grp, {})[str(g)] = statistics.mean(v) if v else None
+            v = [w["turned_down"][str(g)] for w in windows if w["group"] == grp]
+            shares.setdefault(grp, {})[str(g)] = NV.pooled_share(v)      # pooled over the set's paired notes
     body = {"windows": windows, "read": read, "turned_down_shares": shares, "build_seconds": rate_s if timed >= 3
             else None, "real_reported_only": ladder["real_reported_only"],
             "ladder_sha256": NR.file_sha(ladder_path()), "truth_sha256": NR.file_sha(truth_path()),

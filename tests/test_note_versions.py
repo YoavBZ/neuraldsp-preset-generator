@@ -65,7 +65,8 @@ def test_the_readings():
     assert NV.set_reading(C, _iv(0.5, 0.2, 1.01)) == "undecided"        # the upper end over half of C's mean
     assert NV.set_reading(C, _iv(0.51, 0.2, 0.9)) == "undecided"        # the mean over a quarter
     assert NV.set_reading(C, _iv(1.5, 1.01, 2.0)) == "short"
-    assert NV.set_reading(_iv(-2.0, -3.0, -1.0), _iv(0.0, -0.1, 0.1)) != "near"            # extras cheaper: not near
+    assert NV.set_reading(_iv(-2.0, -3.0, -1.0), _iv(0.0, -0.1, 0.1)) == "cost not shown"   # extras bring it closer
+    assert NV.set_reading(_iv(-2.0, -3.0, -1.0), _iv(5.0, 4.0, 6.0)) == "cost not shown"   # never "short" (R1)
 
 
 def test_the_guard():
@@ -83,6 +84,8 @@ def test_turned_down_share_and_soft_notes():
     assert NV.soft_indices(est, truth, 1.0) == [1]                     # half the amplitude: -6 dB
     assert NV.turned_down_share(est, truth, 1.0) == pytest.approx(1 / 3)
     assert NV.turned_down_share([], truth, 1.0) is None
+    assert NV.turned_down_counts(est, truth, 1.0) == (1, 3)
+    assert NV.pooled_share([(1, 3), (0, 1)]) == 0.25 and NV.pooled_share([(0, 0)]) is None   # pooled, not a mean
 
 
 def _read(lists, real, goat_ok=True, guard=True, lists2=None, real2=None):
@@ -157,6 +160,11 @@ def test_summarise_read_on_made_up_numbers():
     assert got["numbers"]["ring-soft"]["lists"]["C"]["clusters"] == 10
     assert got["other_gap"]                                              # E clear of zero and larger than C
     assert NV.summarise_read(lists + real + goat, True)["readings"][1.0]["real"] == "reported only"
+    for w in real:                                                        # the real set fails the guard badly ...
+        w["guard"] = {1.0: {"chord": (9, 0, 9), "soft": (2, 2, 2)}, 2.0: {"chord": (9, 0, 9), "soft": (2, 2, 2)}}
+    assert not NV.summarise_read(lists + real + goat, False)["guard"][1.0]["holds"]
+    only = NV.summarise_read(lists + real + goat, True)                  # ... but reported only, it enters no reading
+    assert only["guard"][1.0]["holds"] and only["code"]["code"] == "NV-loud" and only["other_gap"] is None
 
 
 # --- the distance (numpy) -------------------------------------------------------------------------------------------------

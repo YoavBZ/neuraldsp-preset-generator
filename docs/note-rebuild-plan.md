@@ -934,7 +934,8 @@ the `song_bank.measure` finish), and compared with the DI.
 - **The numbers per set** (cluster means, 90% intervals): the extras' cost C = `nv-asis` − `nv-hand`; what loudness
   leaves, G = `nv-loud` − `nv-hand`; the other gap, E = `nv-hand` − `nv-true`. "Near": C clear of zero, G's mean at most
   a quarter of C's mean and G's upper end at most half of it. "Short": G's lower end above half of C's mean. "Cost not
-  shown": C's interval reaches zero; it never counts as a pass.
+  shown": C's interval is not clear above zero, whether it reaches zero or lies wholly below it (extras that bring the
+  rebuild closer to the DI show no cost); it never counts as a pass and never reads "short".
 
 | Code (the first that holds) | When | What follows |
 |---|---|---|
@@ -945,7 +946,9 @@ the `song_bank.measure` finish), and compared with the DI.
 
 - **The chord guard:** on windows with five or more notes in groups of three or more, Basic Pitch run again on
   `nv-loud` finds chord notes no more than 0.05 less often than on `nv-asis`; the same for soft notes (truth-paired
-  notes that loudness turns down by more than 3 dB). The share of such notes is reported on P1, P2 and GOAT.
+  notes that loudness turns down by more than 3 dB). The share of such notes is reported on P1, P2 and GOAT, pooled
+  over each set's paired notes. When the real set is reported only, its windows stay out of the guard too: a
+  reported-only set enters no reading.
 - **The `other-gap` flag:** on the real DIs, E clear of zero and larger than C. Reported, and the work goes on.
 - **Expected:** gamma 1 will probably read "short" on the lists and gamma 2 is borderline; `NV-undecided` or gamma 2
   is more likely than a clean pass. The made-up lists carry the read; the real DIs will mostly say "cost not shown".
@@ -955,7 +958,8 @@ the `song_bank.measure` finish), and compared with the DI.
 part, the share of the DI's attacks with a note within 50 ms (after the detector's offset, measured on P1), flagged
 under 0.90; flagged parts are listed and the row is also read beside without them. Its report carries the detector's
 recall of true onset groups, overall and on ringing onsets (one that starts while another note has sounded 100 ms and
-goes on 100 ms more); should it ever gate again, it needs 0.90 on both. `playing-covered` stays blocking, so the
+goes on 100 ms more); should it ever gate again, it needs 0.90 on both. Chords and scales are reported apart, and on
+chord windows the recall is also reported on 150-ms groups, since a strum spreads 120 to 200 ms. `playing-covered` stays blocking, so the
 calibration's 25-of-27 rate is `playing-covered`'s; the old rise levels and their precision bar are retired.
 - **Two triggers:** P2's chord recall in the truth report under 0.85 goes to the user before any of the 47 parts is
   transcribed; `onsets-found` flags on 3 or more of the 40 deciding parts, counted straight after transcription, go to
@@ -968,8 +972,13 @@ calibration's 25-of-27 rate is `playing-covered`'s; the old rise levels and thei
   amendment.
 
 **3. The truth report (`truth-precision`), reported, never a gate.** Basic Pitch's notes against the cleaned MIDI,
-precision and recall, chords and scales apart, P1 and P2 apart; a mains-hum guard (over 5% of a window's notes on a
-mains harmonic stops the report); P2's rest level. The MIDI trails the DI by 25 to 35 ms on P1 and 18 to 22 ms on P2 on
+precision and recall, chords and scales apart, P1 and P2 apart; a mains-hum guard; P2's rest level.
+- **The hum guard, corrected before anything runs:** a window stops the report when over 5% of its found notes sit on
+  a mains harmonic (50 or 60 Hz times 1 to 6, within 50 cents) and pair with no truth note (same pitch, onsets within
+  50 ms). **The plan's first rule was wrong:** it counted every found note on a mains pitch, and those pitches include
+  MIDI 43, 47, 50, 54, 55, 59, 62 and 66 (G, B, D and F-sharp). The review, treating the cleaned truth itself as the
+  found notes, found 228 of 238 windows over 5% (median 0.25): a perfect transcriber would have stopped the report. Only
+  a mains-pitch note that no played note explains now counts. The MIDI trails the DI by 25 to 35 ms on P1 and 18 to 22 ms on P2 on
 scales; one offset per window leaves about ±10 ms by pitch, acceptable at 50 ms. GuitarSet is in Basic Pitch's training
 data, so its published guitar score is not used as a yardstick.
 
@@ -993,8 +1002,11 @@ measured 1.24 s a window; about 3,100 dry-guitar builds at the review's measured
 `_go_versions`), named here because the plan left them unnamed; `build` reads loudness from main's
 `phase_nr_1_redo_versions` (its gamma on `NV-loud`, else the user's recorded decision); the made-up lists' "DI" goes
 through the same `song_bank.measure` finish as the versions, as the development windows' DI does; `ring-on` beside is
-built for every version; the soft-note turndown counts weight and trim together; the six ladder windows are the first
-usable window of the first two chord files and of the first scale file that have one, by name.
+built for every version (it enters no reading); the soft-note turndown counts weight and trim together; the six ladder
+windows are the first usable window of the first two chord files and of the first scale file that have one, by name;
+the ladder records how many of its ghosts the bank could play (a ghost above its range is not played); every truth
+window is checked against its listing's note count and offset when read, and the lists' stored events against the
+install's model and settings.
 
 **What it can't say:** how the plugin reacts to an extra note (nothing is rendered); much about real guitars (the
 lists carry the read); how many extras Basic Pitch makes on full songs (GOAT has no usable truth); anything about stems.

@@ -317,7 +317,7 @@ def test_a_half_amplitude_note_sits_six_db_under_its_partner():
     assert w[0] ** 2 + w[1] ** 2 == pytest.approx(1.0)
 
 
-def test_rebuild_redo_loud_turns_ghosts_down_and_keeps_every_note():
+def test_rebuild_redo_loud_changes_the_audio_and_keeps_every_note():
     from learn import note_versions as NV
 
     rng = np.random.default_rng(9)
@@ -361,10 +361,45 @@ def test_the_option_off_reproduces_the_stored_audio():
     def h(x, dt):
         return hashlib.sha256(np.ascontiguousarray(x, dt).tobytes()).hexdigest()
     bank = N.Bank(N.load_notes_doc())
+    import soundfile as sf
+
+    stored = {pp.stem.split("-", 1)[1]: pp for pp in (T.gate_work_dir() / "known").glob("*.wav")}
     for name, want in OLD_KNOWN_INPUT_SHA.items():
         assert h(T.transcriber_input(T.known_audio(name, bank)), np.float32) == want, name
+        if name in stored:                                               # the rerun's own evidence, read now
+            assert h(sf.read(str(stored[name]), dtype="float32")[0], np.float32) == want, name
     di = np.asarray(T.known_audio("triads-and-singles", bank), np.float64)
     notes = [dict(n, amp=0.5 + 0.05 * (i % 7)) for i, n in enumerate(T.KNOWN_NOTES["triads-and-singles"])]
     for arm, want in OLD_TR_SHA.items():
         y, _ = N.rebuild_redo(arm, notes, len(di), bank, di, "ring-soft", finish=SB.measure)
         assert h(y, np.float64) == want, arm
+
+
+def test_trims_reach_the_last_pass_only(monkeypatch):
+    calls = []
+    real = N.synthesise_redo
+
+    def spy(*a, **k):
+        calls.append((k.get("note_weights") is not None, k.get("group_trim") is not None))
+        return real(*a, **k)
+    monkeypatch.setattr(N, "synthesise_redo", spy)
+    notes = [dict(_n(0.5, 60, off=3.0), amp=0.9), dict(_n(1.0, 72, off=1.5), amp=0.3)]
+    di, _ = real(notes, int(4 * SR), _Bank(), 0.0, "ring-soft")
+    N.rebuild_redo("tr-di", notes, len(di), _Bank(), di, "ring-soft", loud=1.0)
+    assert calls == [(True, False), (True, False), (True, True)]        # weights everywhere, trims last
+    calls.clear()
+    N.rebuild_redo("tr-plain", notes, len(di), _Bank(), di, "ring-soft", loud=1.0)
+    assert calls[-1] == (True, True) and all(c == (True, False) for c in calls[:-1])
+    calls.clear()
+    N.rebuild_redo("tr-di", notes, len(di), _Bank(), di, "ring-soft")
+    assert calls == [(False, False)] * 3                                 # off: today's three passes
+
+
+def test_the_ladder_records_its_ghosts():
+    from learn import note_versions as NV
+
+    notes = [_n(0.5 + 0.6 * k, 55 + k, off=0.5 + 0.6 * k + 0.5) for k in range(8)] + [_n(5.5, 80, off=6.0)]
+    di, _ = N.synthesise_redo(notes, int(10.25 * SR), _Bank(), 0.0, "ring-soft")
+    got = NV.ghost_ladder(di, notes, _Bank(), None)
+    assert got["ghosts"] == 9 and got["ghosts_played"] == 8              # 92 is above the bank: recorded, not played
+    assert len(got["steps"]) == 4
