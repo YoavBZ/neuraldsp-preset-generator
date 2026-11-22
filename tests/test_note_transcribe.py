@@ -410,6 +410,18 @@ def test_every_command_refuses_without_the_declaration_on_main(monkeypatch, cmd)
         T.COMMANDS[cmd](None)
 
 
+def test_the_gate_never_overwrites_a_runs_raw_events(monkeypatch, tmp_path):
+    monkeypatch.setattr(T, "redo_on_main", lambda: ({"note-rebuild": {T.PHASE: "declared"}}, None))
+    monkeypatch.setattr(T, "REDO", tmp_path)
+    assert T.gate_work_dir() == tmp_path / "work" / "install-gate"
+    T.gate_work_dir().mkdir(parents=True)                     # the failed run's folder still in place
+    with pytest.raises(SystemExit, match="install-gate exists: never overwritten"):
+        T.cmd_install_gate(None)
+    (tmp_path / "install-gate.json").write_text("{}")
+    with pytest.raises(SystemExit, match="install-gate.json exists"):
+        T.cmd_install_gate(None)
+
+
 def test_calibrate_needs_the_old_ear_table(monkeypatch, tmp_path):
     monkeypatch.setattr(T, "redo_on_main", lambda: ({"note-rebuild": {T.PHASE: "declared"}}, None))
     with pytest.raises(SystemExit, match=T.PHASE_EAR_OLD):

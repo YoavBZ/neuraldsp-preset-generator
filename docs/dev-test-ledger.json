@@ -3979,6 +3979,45 @@
     "expected_failures_rule": "written from the user's words above before any check runs on these clips; a clip is a dry guitar (item and arm; the preset does not change it), and each must fail at least one of its listed checks (note_transcribe.expected_failure_refusal); missing notes -> onsets-found or playing-covered (the plan's default); notes cut short -> ring-kept or playing-covered; chords played as single notes: not testable here (chords_not_testable). item_57 (cards 7-8) is unanswered and has no words (card 6, item_46 crunch, is unanswered too) and is not in the table. The plan's 'four clips' did not match the stored answers (5 cards on 3 items, both rebuilt guitars on each): the table holds every dry guitar the words describe, 6",
     "chords_not_testable": "'chords played as single notes' (card 5, item_46) is not testable by any of the six checks in this control: negative_control measures chords-kept against the old clip's own notes, not the DI, so notes the old tab lacked leave it nothing to recall; the transcriber's chord recall is covered only by the install gate's known notes. chords-kept is reported for item_46, not counted",
     "control_stop_rule": "the negative control holds only when all 6 clips fail one of their listed checks; any clip that passes them all is a blind spot (to the orchestrator; one declared amendment that keeps avg+mild passing)"
+   },
+   "phase_nr_1_redo_known_amend": {
+    "date": "2026-11-22",
+    "plan": "docs/note-rebuild-plan.md section 12l",
+    "failed_gate": {
+     "file": "PF/note-rebuild/redo/install-gate.json",
+     "sha256": "0cb7b257c4cd0c9f813636300c979af94e8dca84a9fa81bb39736b81bbd5890e",
+     "raw_events": {
+      "folder": "PF/note-rebuild/redo/work/install-gate/",
+      "files": 44,
+      "listing_sha256": "24e7850fa16287b094fb1a0cb0dc7db08861d3669f6e5eb7b8b00ebe35e42329",
+      "listing": "note_transcribe.listing_sha: shasum -a 256 lines sorted by path"
+     },
+     "code": "cda93caf (main), /usr/bin/python3 3.9.6, ONNX CPU",
+     "lock_sha256": "ea700e7edc927e7a58a35b1152df5f314546807b1de1efeb2c2f17d543961de1",
+     "model_sha256": "2c3c1d144bfa61ad236e92e169c13535c880469a12a047d4e73451f2c059a0ec",
+     "repeat": "passed (4 windows, 3 runs each)",
+     "seconds_per_window": 1.64,
+     "known_notes": {
+      "pooled_f": 0.535,
+      "recall": 0.95,
+      "precision": 0.37,
+      "matched": 246,
+      "true_notes": 259,
+      "found_notes": 660,
+      "bar": 0.9
+     }
+    },
+    "cause": "the test's audio did not match its truth: known_audio played the lists ring-on, so each note rang to its 5-s sample past its declared note-off and the transcriber re-found the ringing pitches at later plucks; faint octave and twelfth notes also counted as extra; re-finding pitches still legitimately ringing (let-ring-arpeggio) is partly the transcriber's own behaviour",
+    "users_choice": "2026-11-22 (relayed by the orchestrator): fix the test and rerun the gate once; no Basic Pitch setting and no clean-up rule changes; if the faint octave/twelfth notes still fail precision, back to the user with a reviewed clean-up rule",
+    "change": "known_audio: synthesise_redo(..., cut=True), each known note ending at its note-off (10-ms fade); note_end's cut candidate; tr-di and tr-plain never pass it; the default call reproduces the failed gate's stored scale-c-major input sample for sample (tested)",
+    "rerun": "once, after this key is on main: install-gate.json and the whole work/install-gate/ folder moved aside together first (never deleted); install-gate refuses while either exists",
+    "known_before_rerun": {
+     "chords_six": "the first A chord leaves no string for its 69: 35 of 36 notes sound; F effect at most about 0.002",
+     "bend": "the bend tracks (about 1.14 s) end about 0.36 s before the 1.5-s note-offs; the base pitch is re-found there (about 3 extras cut does not remove)",
+     "projection": "about 146 of the failed run's 414 extras survive the cut (82 harmonics inside a note's sound, 48 pitches re-found while declared sounding, 16 others): pooled F about 0.75-0.78, a projection from the stored events, not a measurement",
+     "rise_precision": "pooled over the known lists, old/amended audio: 6 dB 0.193/0.258, 9 dB 0.544/0.664, 12 dB 0.907/0.937; no level reaches 0.95, so calibration_pick returns None and the calibration needs its declared amendment either way; the amended audio makes the figure easier to pass"
+    },
+    "bars_and_settings": "none changed"
    }
   }
  ],

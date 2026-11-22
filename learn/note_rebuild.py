@@ -1511,14 +1511,18 @@ def mute_times(di, rate=SR):
     return out
 
 
-def note_end(on, off, ring, mutes, sample_s, repluck=None):
+def note_end(on, off, ring, mutes, sample_s, repluck=None, cut=False):
     """(Pure.) When a redo note stops sounding and how: the first of its string's next pluck ("repluck", a 10-ms fade),
     a mute in the DI after its onset ("mute", 30 ms), the transcriber's note-off under `ring-soft` ("release": the
     note-off starts a 150-ms release; under `ring-on` the note-off never cuts), or its sample's end ("sample", the
-    sample's last 150 ms). Every fade ends at the returned time. -> (end, kind, fade seconds)."""
+    sample's last 150 ms). With `cut` (the install gate's known lists only, amendment `phase_nr_1_redo_known_amend`)
+    the note also ends at its own note-off ("cut", the 10-ms fade ending there), so no note sounds past its declared
+    end. Every fade ends at the returned time. -> (end, kind, fade seconds)."""
     if ring not in RING_VARIANTS:
         raise ValueError(ring)
     cands = [(on + sample_s, 1, "sample", TAIL_FADE_S)]
+    if cut:
+        cands.append((max(on, off), 0, "cut", REPLUCK_FADE_S))
     if repluck is not None and repluck > on:
         cands.append((repluck, 0, "repluck", REPLUCK_FADE_S))
     m = next((t for t in sorted(mutes) if t > on), None)
@@ -1620,7 +1624,7 @@ def apply_bend(y, steps, lead_s, rate=SR):
 
 
 def synthesise_redo(notes, length, bank, tuning_cents=0.0, ring="ring-soft", mutes=(), tilt_db_s=0.0,
-                    group_gain_db=None, rate=SR):
+                    group_gain_db=None, rate=SR, cut=False):
     """The redo's dry guitar for a transcribed note list (`on`, `off`, `pitch`, `bends`) on `length` samples. Strings
     by `placed_free` in onset order (each group's notes low to high); a pitch struck again within VARIETY_S whose
     placed source is the sample it last played takes `next_source` in `variety_sources`' order (a re-struck pitch never
@@ -1660,7 +1664,7 @@ def synthesise_redo(notes, length, bank, tuning_cents=0.0, ring="ring-soft", mut
                 continue
             y = bank.note(s, f, 100.0 * semis + tuning_cents - bank.own_cents(s, f))
             src[k] = (s, f, y)
-            end, _, _ = note_end(n["on"], n["off"], ring, mutes, len(y) / rate - PRE_ATTACK_S)
+            end, _, _ = note_end(n["on"], n["off"], ring, mutes, len(y) / rate - PRE_ATTACK_S, cut=cut)
             busy[s] = max(busy.get(s, -math.inf), end)
             taken.add(s)
             last[p] = (n["on"], (s, f))
@@ -1681,7 +1685,7 @@ def synthesise_redo(notes, length, bank, tuning_cents=0.0, ring="ring-soft", mut
         if any(steps):
             bent += 1
             y = apply_bend(y, steps, PRE_ATTACK_S, rate)
-        end, kind, fade_s = note_end(n["on"], n["off"], ring, mutes, len(y) / rate - PRE_ATTACK_S, nxt.get(k))
+        end, kind, fade_s = note_end(n["on"], n["off"], ring, mutes, len(y) / rate - PRE_ATTACK_S, nxt.get(k), cut=cut)
         start = int(round((n["on"] - PRE_ATTACK_S) * rate))
         dur = min(len(y), int(round((end - n["on"] + PRE_ATTACK_S) * rate)))
         if dur <= 0:
