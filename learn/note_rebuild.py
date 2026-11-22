@@ -1420,6 +1420,352 @@ def rebuild_dry(arm, notes, length, bank, reference, di=None, finish=None, rate=
     return y, {**rep, **cleaned, "tuning_cents": round(tune, 2), "lufs": ASSUMED_LUFS}
 
 
+# --- the redo's dry guitars, `tr-di` and `tr-plain` (plan section 12; every rule frozen here) ----------------------------
+# Added for the redo. Nothing above this block changed: the stage-1 arms (`ARMS`, `synthesise`, `rebuild_dry` and every
+# helper they call) are byte-for-byte as they were, and the functions below never call `synthesise` or `rebuild_dry`.
+
+REDO_ARMS = ("tr-di", "tr-plain")       # tr-di decides (levels from the DI); tr-plain is the zero-render side figure
+RING_VARIANTS = ("ring-on", "ring-soft")   # the transcriber's note-off: never cuts / starts a 150-ms release
+RING_SOFT_S = 0.150
+MUTE_FRAME_S = 0.020                    # a mute in the DI: its 20-ms level ...
+MUTE_HOP_S = 0.005
+MUTE_DROP_DB = 12.0                     # ... falls 12 dB or more ...
+MUTE_WITHIN_S = 0.060                   # ... inside 60 ms, from a frame where the DI plays (within MUTE_FLOOR_DB of
+MUTE_FLOOR_DB = 40.0                    # its loudest 20-ms frame, J0's playing floor)
+MUTE_FADE_S = 0.030                     # every note sounding then ends with a 30-ms fade
+TILT_ISOLATED_S = 0.600                 # the sustain tilt: onset groups with no other onset for 600 ms after them ...
+TILT_EARLY = (0.000, 0.050)             # ... the level at 300-500 ms against 0-50 ms from the onset ...
+TILT_LATE = (0.300, 0.500)              # ... DI less the plain rebuild; the median, as dB per second
+TILT_MAX_DB_S = 12.0                    # within +-12 dB/s ...
+TILT_MAX_GAIN_DB = 12.0                 # ... and at most +12 dB in all on any note
+TILT_MIN_GROUPS = 3                     # under 3 isolated groups: no tilt (reported)
+BEND_FRAME_S = 256 / 22050              # Basic Pitch's frames (11.6 ms); a bend step is a third of a semitone
+BEND_STEPS_PER_SEMITONE = 3
+BEND_MEDIAN = 3                         # 3-frame median
+BEND_MIN_FRAMES = 5                     # applied where a bend of one step or more lasts five frames
+BEND_MAX_SEMITONES = 3.0
+BEND_CLEAR_SEMITONES = 2                # not while another note sounds within 2 semitones
+VARIETY_S = 2.0                         # a pitch struck again within 2 s takes the next source
+SNAP_S = 0.020                          # the redo's onset snap: +-20 ms (rise of REFINE_MIN_RISE_DB)
+
+
+def snap_onsets(notes, di, window=SNAP_S, rate=SR):
+    """`refine_onsets` with the snap window as a parameter (the redo's +-20 ms; `refine_onsets` itself, stage 1's
+    +-50 ms, is unchanged). Each onset group moves to the DI's steepest rise within +-window when that rise is at least
+    REFINE_MIN_RISE_DB, else stays; offsets move with their onsets. -> (notes, shifts per group)."""
+    import numpy as np
+
+    rise, hop = rise_curve(di, rate)
+    out = [dict(n) for n in notes]
+    shifts = []
+    for g in onset_groups(notes):
+        t = notes[g[0]]["on"]
+        lo = max(0, int((t - window) * rate) // hop)
+        hi = min(len(rise), int((t + window) * rate) // hop + 1)
+        if hi <= lo:
+            shifts.append(0.0)
+            continue
+        j = lo + int(np.argmax(rise[lo:hi]))
+        if rise[j] < REFINE_MIN_RISE_DB:
+            shifts.append(0.0)
+            continue
+        d = (j * hop + REFINE_FRAME / 2) / rate - t
+        shifts.append(d)
+        for k in g:
+            out[k]["on"] = notes[k]["on"] + d
+            out[k]["off"] = max(out[k]["on"], notes[k]["off"] + d)
+    return out, shifts
+
+
+def frame_levels_db(x, frame, hop):
+    """(Pure.) RMS levels in dB of `frame`-sample frames at `hop`. -> numpy array (empty for a short signal)."""
+    import numpy as np
+
+    x = np.asarray(x, np.float64)
+    k = max(0, (len(x) - frame) // hop + 1)
+    if k == 0:
+        return np.zeros(0)
+    idx = np.arange(frame)[None, :] + hop * np.arange(k)[:, None]
+    return 10 * np.log10(np.mean(x[idx] ** 2, axis=1) + 1e-20)
+
+
+def mute_times(di, rate=SR):
+    """(Pure.) The DI's mutes, in seconds: from a 20-ms frame where the DI plays (within MUTE_FLOOR_DB of its loudest),
+    the first later frame within MUTE_WITHIN_S whose level is MUTE_DROP_DB or more under it; the mute is that frame's
+    end. The search goes on after it."""
+    n, hop = int(round(MUTE_FRAME_S * rate)), int(round(MUTE_HOP_S * rate))
+    L = frame_levels_db(di, n, hop)
+    if not len(L):
+        return []
+    top = float(L.max())
+    w = int(round(MUTE_WITHIN_S / MUTE_HOP_S))
+    out, i = [], 0
+    while i < len(L):
+        if L[i] >= top - MUTE_FLOOR_DB:
+            j = next((j for j in range(i + 1, min(len(L), i + w + 1)) if L[j] <= L[i] - MUTE_DROP_DB), None)
+            if j is not None:
+                out.append((j * hop + n) / rate)
+                i = j + 1
+                continue
+        i += 1
+    return out
+
+
+def note_end(on, off, ring, mutes, sample_s, repluck=None):
+    """(Pure.) When a redo note stops sounding and how: the first of its string's next pluck ("repluck", a 10-ms fade),
+    a mute in the DI after its onset ("mute", 30 ms), the transcriber's note-off under `ring-soft` ("release": the
+    note-off starts a 150-ms release; under `ring-on` the note-off never cuts), or its sample's end ("sample", the
+    sample's last 150 ms). Every fade ends at the returned time. -> (end, kind, fade seconds)."""
+    if ring not in RING_VARIANTS:
+        raise ValueError(ring)
+    cands = [(on + sample_s, 1, "sample", TAIL_FADE_S)]
+    if repluck is not None and repluck > on:
+        cands.append((repluck, 0, "repluck", REPLUCK_FADE_S))
+    m = next((t for t in sorted(mutes) if t > on), None)
+    if m is not None:
+        cands.append((m, 0, "mute", MUTE_FADE_S))
+    if ring == "ring-soft":
+        cands.append((max(on, off) + RING_SOFT_S, 0, "release", RING_SOFT_S))
+    end, _, kind, fade = min(cands)
+    return end, kind, fade
+
+
+def placed_free(pitch, taken, ringing, notes_ok=None):
+    """(Pure.) The redo's placing rule (no tab): a free string (not `taken` in this onset group) that plays the pitch
+    and is not still ringing, lowest fret first; when every free string that plays it is still ringing, the lowest
+    fret among them. -> (string, fret) or None."""
+    def best(strings):
+        out = None
+        for s in strings:
+            f = pitch - OPEN_STRINGS[s]
+            if s in taken or f not in FRETS or (notes_ok is not None and not notes_ok(s, f)):
+                continue
+            if out is None or f < out[1]:
+                out = (s, f)
+        return out
+    return best([s for s in OPEN_STRINGS if s not in ringing]) or best(list(OPEN_STRINGS))
+
+
+def variety_sources(pitch, placed_sf, taken, notes_ok=None):
+    """(Pure.) The fixed order of sources for a re-struck pitch: the placed string and fret; the same pitch on another
+    free string (lowest fret first); the placed string's neighbours one semitone either side (fret - 1, then fret + 1),
+    retuned to the pitch. No randomness. -> [(string, fret)]."""
+    s0, f0 = placed_sf
+    out = [(s0, f0)]
+    others = sorted(((s, pitch - o) for s, o in OPEN_STRINGS.items() if s != s0 and s not in taken
+                     and pitch - o in FRETS), key=lambda sf: (sf[1], sf[0]))
+    out += [sf for sf in others if notes_ok is None or notes_ok(*sf)]
+    for f in (f0 - 1, f0 + 1):
+        if f in FRETS and (notes_ok is None or notes_ok(s0, f)):
+            out.append((s0, f))
+    return out
+
+
+def next_source(sources, last):
+    """(Pure.) The source after `last` in the fixed order (cycling); the first when `last` is not among them. A re-struck
+    pitch so never reuses its last sample while another source exists."""
+    if last in sources:
+        return sources[(sources.index(last) + 1) % len(sources)]
+    return sources[0]
+
+
+def bend_curve(note, others=()):
+    """(Pure.) A redo note's bend in steps (thirds of a semitone) per Basic Pitch frame: its bend track, a 3-frame
+    median, zero on frames where another note within BEND_CLEAR_SEMITONES sounds (transcriber's times), held within
+    +-BEND_MAX_SEMITONES, and kept only on runs of BEND_MIN_FRAMES or more frames at one step or more. -> [steps]."""
+    b = [float(v) for v in (note.get("bends") or [])]
+    if not b:
+        return []
+    h = BEND_MEDIAN // 2
+    med = []
+    for j in range(len(b)):
+        w = sorted(b[max(0, j - h):j + h + 1])
+        med.append(w[len(w) // 2] if len(w) % 2 else (w[len(w) // 2 - 1] + w[len(w) // 2]) / 2)
+    for j in range(len(med)):
+        t = note["on"] + j * BEND_FRAME_S
+        if any(m is not note and abs(m["pitch"] - note["pitch"]) <= BEND_CLEAR_SEMITONES and m["on"] <= t < m["off"]
+               for m in others):
+            med[j] = 0.0
+    lim = BEND_MAX_SEMITONES * BEND_STEPS_PER_SEMITONE
+    med = [max(-lim, min(lim, v)) for v in med]
+    out, j = [0.0] * len(med), 0
+    while j < len(med):
+        if abs(med[j]) >= 1:
+            k = j
+            while k < len(med) and abs(med[k]) >= 1:
+                k += 1
+            if k - j >= BEND_MIN_FRAMES:
+                out[j:k] = med[j:k]
+            j = k
+        else:
+            j += 1
+    return out
+
+
+def apply_bend(y, steps, lead_s, rate=SR):
+    """`y` (a sample whose attack sits `lead_s` in) re-read at a variable rate so its pitch follows `steps` (thirds of
+    a semitone per BEND_FRAME_S frame from the attack, linear between frame centres, 0 outside). -> audio, no longer
+    than `y`."""
+    import numpy as np
+
+    if not any(steps):
+        return y
+    n = len(y)
+    t = (np.arange(n) / rate) - lead_s
+    centres = (np.arange(len(steps)) + 0.5) * BEND_FRAME_S
+    cents = np.interp(t, centres, 100.0 / BEND_STEPS_PER_SEMITONE * np.asarray(steps, np.float64), left=0.0, right=0.0)
+    pos = np.concatenate([[0.0], np.cumsum(2 ** (cents[:-1] / 1200))])
+    keep = pos <= n - 1
+    return np.interp(pos[keep], np.arange(n), y)
+
+
+def synthesise_redo(notes, length, bank, tuning_cents=0.0, ring="ring-soft", mutes=(), tilt_db_s=0.0,
+                    group_gain_db=None, rate=SR):
+    """The redo's dry guitar for a transcribed note list (`on`, `off`, `pitch`, `bends`) on `length` samples. Strings
+    by `placed_free` in onset order (each group's notes low to high); a pitch struck again within VARIETY_S whose
+    placed source is the sample it last played takes `next_source` in `variety_sources`' order (a re-struck pitch never
+    reuses its last sample); each note ends by `note_end` (repluck, a mute in the DI, the `ring` variant's note-off, the
+    sample's end); its bend by `bend_curve`; the sustain tilt `tilt_db_s` on every note (capped at +TILT_MAX_GAIN_DB);
+    a group of k notes struck together at 1/sqrt(k); `group_gain_db` (one per onset group) adds the levels. The
+    edge fade as stage 1's. Deterministic. -> (audio, report)."""
+    import numpy as np
+
+    if ring not in RING_VARIANTS:
+        raise ValueError(ring)
+    out = np.zeros(length)
+    groups = onset_groups(notes)
+    gain_of = {}
+    for gi, g in enumerate(groups):
+        extra = 0.0 if group_gain_db is None else group_gain_db[gi]
+        for k in g:
+            gain_of[k] = 10 ** (extra / 20) / math.sqrt(len(g))
+    src, busy, last = {}, {}, {}
+    swaps = 0
+    for g in groups:
+        taken = set()
+        for k in sorted(g, key=lambda q: (notes[q]["pitch"], q)):
+            n = notes[k]
+            p = n["pitch"]
+            ringing = {s for s, e in busy.items() if e > n["on"]}
+            sp = placed_free(p, taken, ringing, bank.ok)
+            if sp is None:
+                continue
+            prev = last.get(p)
+            if prev is not None and n["on"] - prev[0] <= VARIETY_S and sp == prev[1]:
+                sp = next_source(variety_sources(p, sp, taken, bank.ok), prev[1])
+                swaps += sp != prev[1]
+            s, f = sp
+            semis = p - nominal_midi(s, f)
+            if abs(semis) > MAX_SHIFT_SEMITONES:
+                continue
+            y = bank.note(s, f, 100.0 * semis + tuning_cents - bank.own_cents(s, f))
+            src[k] = (s, f, y)
+            end, _, _ = note_end(n["on"], n["off"], ring, mutes, len(y) / rate - PRE_ATTACK_S)
+            busy[s] = max(busy.get(s, -math.inf), end)
+            taken.add(s)
+            last[p] = (n["on"], (s, f))
+    by_string = {}
+    for k in sorted(src, key=lambda q: (notes[q]["on"], q)):
+        by_string.setdefault(src[k][0], []).append(k)
+    nxt = {}
+    for ks in by_string.values():
+        for a, b in zip(ks, ks[1:]):
+            nxt[a] = notes[b]["on"]
+    skipped, ends, bent = [], {}, 0
+    for k, n in enumerate(notes):
+        if k not in src:
+            skipped.append(k)
+            continue
+        y = src[k][2]
+        steps = bend_curve(n, notes)
+        if any(steps):
+            bent += 1
+            y = apply_bend(y, steps, PRE_ATTACK_S, rate)
+        end, kind, fade_s = note_end(n["on"], n["off"], ring, mutes, len(y) / rate - PRE_ATTACK_S, nxt.get(k))
+        start = int(round((n["on"] - PRE_ATTACK_S) * rate))
+        dur = min(len(y), int(round((end - n["on"] + PRE_ATTACK_S) * rate)))
+        if dur <= 0:
+            skipped.append(k)
+            continue
+        ends[kind] = ends.get(kind, 0) + 1
+        seg = y[:dur].copy()
+        if tilt_db_s:
+            tau = np.clip(np.arange(dur) / rate - PRE_ATTACK_S, 0.0, None)
+            seg *= 10 ** (np.minimum(tilt_db_s * tau, TILT_MAX_GAIN_DB) / 20)
+        fade = min(dur, int(round(fade_s * rate)))
+        if fade:
+            seg[dur - fade:] *= np.linspace(1.0, 0.0, fade)
+        if start < 0:
+            seg, start = seg[-start:], 0
+        e = min(length, start + len(seg))
+        if e > start:
+            out[start:e] += gain_of[k] * seg[:e - start]
+    edge = min(length // 2, int(EDGE_FADE_S * rate))
+    if edge:
+        out[:edge] *= np.linspace(0.0, 1.0, edge)
+        out[length - edge:] *= np.linspace(1.0, 0.0, edge)
+    return out, {"notes": len(notes), "played": len(notes) - len(skipped), "skipped": len(skipped),
+                 "groups": len(groups), "bent": bent, "variety_swaps": swaps, "ends": ends}
+
+
+def sustain_tilt(notes, plain, di, rate=SR):
+    """(Pure.) The window's one sustain tilt, in dB per second: over onset groups with no other onset for
+    TILT_ISOLATED_S after them (onset inside the window, its late span too), the level at TILT_LATE against TILT_EARLY
+    from the onset, the DI's less the plain rebuild's (`plain`: `synthesise_redo` with no tilt and no levels), over
+    the spans' centres' distance; the median, held within +-TILT_MAX_DB_S. Under TILT_MIN_GROUPS such groups: 0
+    (reported). -> (tilt, report)."""
+    import statistics
+
+    groups = onset_groups(notes)
+    starts = [notes[g[0]]["on"] for g in groups]
+    n = min(len(plain), len(di))
+    span = (sum(TILT_LATE) - sum(TILT_EARLY)) / 2
+
+    def lvl(x, t, ab):
+        return 20 * math.log10(span_rms(x, int(round((t + ab[0]) * rate)), int(round((t + ab[1]) * rate))) + 1e-12)
+    slopes = []
+    for gi, t in enumerate(starts):
+        nxt = starts[gi + 1] if gi + 1 < len(starts) else math.inf
+        if t < 0 or nxt - t < TILT_ISOLATED_S or (t + TILT_LATE[1]) * rate > n:
+            continue
+        d = (lvl(di, t, TILT_LATE) - lvl(di, t, TILT_EARLY)) - (lvl(plain, t, TILT_LATE) - lvl(plain, t, TILT_EARLY))
+        slopes.append(d / span)
+    if len(slopes) < TILT_MIN_GROUPS:
+        return 0.0, {"isolated_groups": len(slopes), "tilt_db_s": None, "applied": False}
+    raw = statistics.median(slopes)
+    tilt = max(-TILT_MAX_DB_S, min(TILT_MAX_DB_S, raw))
+    return tilt, {"isolated_groups": len(slopes), "tilt_db_s": tilt, "raw_db_s": raw, "applied": True,
+                  "clamped": tilt != raw}
+
+
+def rebuild_redo(arm, notes, length, bank, di, ring, finish=None, rate=SR):
+    """One redo dry guitar. `notes`: the window's transcribed notes after the clean-up and the onset steps
+    (`note_transcribe.timed_notes`); `di`: the true DI as the row renders it (its tuning, mutes, sustain tilt and, for
+    `tr-di`, levels by `oracle_gains`); `ring`: the variant frozen at the install gate; `finish`: the row's chain
+    (`song_bank.measure`, then `average_balance` with the part's others) or None. `tr-plain` is `tr-di` without the
+    per-group levels. Both end at ASSUMED_LUFS; the hiss removal runs again after `tr-di`'s level gain, as stage 1's
+    level arms. -> (audio, report)."""
+    if arm not in REDO_ARMS:
+        raise ValueError(arm)
+    tune = global_tuning_cents(di, rate)
+    mutes = mute_times(di, rate)
+    padded = length + int(round(END_PAD_S * rate))
+    plain0, _ = synthesise_redo(notes, padded, bank, tune, ring, mutes, 0.0, None, rate)
+    tilt, trep = sustain_tilt(notes, plain0[:length], di, rate)
+    plain, rep = synthesise_redo(notes, padded, bank, tune, ring, mutes, tilt, None, rate)
+    if arm == "tr-plain":
+        y = plain
+    else:
+        y, rep = synthesise_redo(notes, padded, bank, tune, ring, mutes, tilt,
+                                 oracle_gains(notes, plain[:length], di, rate), rate)
+        y = denoise_above(y, rate)
+    if finish is not None:
+        y = finish(y)
+    y = at_lufs(y[:length], ASSUMED_LUFS, rate)
+    return y, {**rep, "tuning_cents": round(tune, 2), "mutes": len(mutes), "tilt": trep, "ring": ring,
+               "lufs": ASSUMED_LUFS}
+
+
 # --- the stage-1 figures (reports only; zero render cost) ---------------------------------------------------------------
 
 def crest_db(x):

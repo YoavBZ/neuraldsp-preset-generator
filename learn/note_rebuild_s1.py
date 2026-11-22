@@ -14,6 +14,11 @@ replay's own pick and score read them against Cen and a blind pick on the GOAT-a
 `subset` and `build` read no held-half value and render nothing; they may run before the replay's gate. `clips`,
 `render`, `pick` and `score` refuse unless the gate reads go (`gate_refusal`, from the replay's own report and main's
 ledger), and every command refuses unless this checkout runs main's code and main's ledger holds the phases it needs.
+
+**Retired unissued (2026-11-22, the user's answer 1; `docs/note-rebuild-plan.md` section 12, ledger `phase_nr_1_redo`):**
+stage 1's 60-part read is dropped and the redo's 47-part `fs-notes` row decides. Once `phase_nr_1_redo` is in the
+ledger every command but `gate` refuses for good (`retired_refusal`): `render`, `pick` and `score` never run, and
+`subset`, `build` and `clips` cannot rebuild what was set aside. N1_TABLE is never issued.
 """
 
 from __future__ import annotations
@@ -56,6 +61,22 @@ PEAK_CONFOUND = ("A declared confound: the rebuilt guitars' attacks are sharper 
                  "full row with its without_peak_flag row; a row that reads differently without the flagged parts "
                  "is said so before any route decision.")
 CODE_FILES = ("learn/note_rebuild.py", "learn/note_rebuild_s1.py")
+PHASE_REDO = "phase_nr_1_redo"          # the redo's declaration: stage 1 retired unissued, its commands refuse for good
+
+
+def retired_refusal(entry):
+    """(Pure.) Why a stage-1 command refuses for good, or None: the `note-rebuild` entry holds the redo's declaration
+    (stage 1 retired unissued on the user's answer of 2026-11-22; its renders set aside unread)."""
+    if PHASE_REDO in (entry or {}):
+        return (f"stage 1 is retired unissued ({PHASE_REDO}, the user's answer of 2026-11-22): the redo's fs-notes row "
+                "decides; no stage-1 command runs again")
+    return None
+
+
+def require_not_retired():
+    why = retired_refusal(NR.ledger_entry())
+    if why:
+        raise SystemExit(why)
 
 
 def out_dir():
@@ -541,6 +562,7 @@ def cmd_subset(_args):
     """The carrying subset (zero renders, no held-half value): the replay's drawn GOAT parts that carry true notes, from
     the replay's hashed draw and stage P's true-notes.json. -> stage1/subset.json; its sha256 goes into the ledger as
     phase_nr_1_subset before `build` or any render."""
+    require_not_retired()
     require(PHASE_1)
     require_main(PHASE_1)
     NR.refuse_existing(subset_path())
@@ -596,6 +618,7 @@ def cmd_build(_args):
     blurred row's chain as `finish` (`song_bank.measure`, then `di_robustness.average_balance` with the part's
     `others`, the replay's `others_for`); every arm at -22.9 LUFS. The figures against the true DI as rendered beside.
     -> stage1/di/<arm>/<part>.npy, stage1/build.json."""
+    require_not_retired()
     require(PHASE_1, PHASE_SUBSET)
     nr, _ = require_main(PHASE_1, PHASE_SUBSET)
     NR.refuse_existing(build_path())
@@ -703,6 +726,7 @@ def cmd_clips(_args):
     crunch render against the true DI's) go into the index. -> ~/ndsp-presets/listening/note-rebuild-ear/
     <item>-<dry>-<cls>.wav, index.json. The user's verdict goes into the ledger as phase_nr_1_ear ("ok", or "fault"
     with what was heard); `pick` and `score` refuse without "ok"."""
+    require_not_retired()
     require(PHASE_1, PHASE_SUBSET)
     require_main(PHASE_1, PHASE_SUBSET)
     dest = clips_dir()
@@ -784,6 +808,7 @@ def cmd_render(args):
     audio kept. Refused unless every pre-check passes (`precheck_refusal`: the build's and the clips'). The ear check
     gates `pick`, not `render`: renders read nothing, and a heard fault discards them under a declared revision before
     any read. -> stage1/dist/<arm>/<part>.json."""
+    require_not_retired()
     require(PHASE_1, PHASE_SUBSET)
     nr, rp = require_main(PHASE_1, PHASE_SUBSET)
     require_gate(nr, rp)
@@ -859,6 +884,7 @@ def cmd_pick(_args):
     """The picks (zero renders; distances only): per arm and subset part the menu position with the smallest
     search-half distance (`note_replay.pick_index`). -> stage1/picks.json; its sha256 goes into the ledger as
     phase_nr_1_picks before `score`."""
+    require_not_retired()
     require(PHASE_1, PHASE_SUBSET, PHASE_EAR)
     nr, rp = require_main(PHASE_1, PHASE_SUBSET, PHASE_EAR)
     require_gate(nr, rp)
@@ -964,6 +990,7 @@ def cmd_score(_args):
     share of the Blurred row's I, the breakdowns, the label-free numbers, the Spearman with the true DI's distances,
     the beside rows without the alignment-F 0.0 part and without the reader-check failures. The rows are saved before
     N1_TABLE's code is read. -> stage1/report-rows.json, then stage1/report.json."""
+    require_not_retired()
     require(PHASE_1, PHASE_SUBSET, PHASE_EAR, PHASE_PICKS)
     nr, rp = require_main(PHASE_1, PHASE_SUBSET, PHASE_EAR, PHASE_PICKS)
     outcome = require_gate(nr, rp)

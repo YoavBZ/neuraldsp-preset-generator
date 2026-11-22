@@ -248,3 +248,32 @@ def test_gate_asks_the_user_when_any_both_row_fails():
                "readings": {"avg-both-full": {"reading": "fails"}, "mild-both-full": {"reading": "passes"}}}
     assert S.failed_both_rows(TRIGGERED, singles) == ["avg-both-full"]
     assert "avg-both-full" in S.gate_refusal(TRIGGERED, _main("R-alone", "s1"), {}, singles)
+
+
+@pytest.mark.parametrize("cmd", ["cmd_subset", "cmd_build", "cmd_clips", "cmd_render", "cmd_pick", "cmd_score"])
+def test_every_command_refuses_for_good_once_the_redo_is_declared(monkeypatch, cmd):
+    from learn import note_rebuild as NR
+
+    full = {"test_id": NR.LEDGER_ID, NR.PHASE_P: "d", S.PHASE_1: "d", S.PHASE_SUBSET: {"sha256": "x"},
+            S.PHASE_EAR: {"verdict": "ok"}, S.PHASE_PICKS: {"sha256": "y"}, S.PHASE_REDO: {"declared": "2026-11-22"}}
+    monkeypatch.setattr(NR, "ledger_entry", lambda: full)
+    monkeypatch.setattr(S, "main_entries", lambda: pytest.fail("a retired command went on to main's ledger"))
+    with pytest.raises(SystemExit, match="retired unissued"):
+        getattr(S, cmd)(type("A", (), {"shard": (0, 1)})())
+
+
+def test_retired_refusal_and_the_ledger():
+    import json
+    import pathlib
+
+    from learn import note_transcribe as T
+
+    assert S.retired_refusal({}) is None and S.retired_refusal(None) is None
+    assert "fs-notes" in S.retired_refusal({S.PHASE_REDO: {}})
+    assert S.PHASE_REDO == T.PHASE
+    led = json.loads((pathlib.Path(__file__).resolve().parents[1] / "docs/dev-test-ledger.json").read_text())
+    e = next(t for t in led["tests"] if t["test_id"] == "note-rebuild")
+    assert S.retired_refusal(e) and S.PHASE_EAR not in e            # this checkout's stage 1 refuses for good
+    rec = e[S.PHASE_REDO]
+    assert set(rec["users_answers"]) >= {"1", "2", "3"} and "retired unissued" in rec["n1_table"]
+    assert rec["note_route_reads_so_far"].startswith("none")
