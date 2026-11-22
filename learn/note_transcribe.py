@@ -645,6 +645,11 @@ def gate_path():
     return REDO / "install-gate.json"
 
 
+def gate_work_dir():
+    """The install gate's raw events and inputs (one-process/, fresh/, known/): moved aside with install-gate.json."""
+    return REDO / "work" / "install-gate"
+
+
 def calibration_path():
     return REDO / "calibration.json"
 
@@ -1049,7 +1054,7 @@ def _chords(chords, t0, step, dur):
 
 
 KNOWN_NOTES = {         # ten made-up note lists, each inside 10 s: scales, chords of 3 to 6 notes, a let-ring arpeggio,
-    # and a bend; played from the bank by `synthesise_redo` (ring-on, no mutes, no tilt)
+    # and a bend; played from the bank by `synthesise_redo`, each note cut at its note-off (`known_audio`)
     "scale-c-major": _seq([48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72], 0.5, 0.5, 0.45),
     "scale-e-minor-fast": _seq([52, 55, 57, 59, 62, 64, 67, 69, 71, 74, 76, 74, 71, 69, 67, 64, 62, 59, 57, 55, 52] * 2,
                                0.5, 0.18, 0.16),
@@ -1072,11 +1077,15 @@ KNOWN_NOTES = {         # ten made-up note lists, each inside 10 s: scales, chor
 
 
 def known_audio(name, bank, rate=NR.SR):
-    """A known list played from the bank (ring-on, no mutes or tilt), at -22.9 LUFS, 10.25 s."""
+    """A known list played from the bank, each note cut at its declared note-off (`cut`: no note sounds past its
+    declared end; amended 2026-11-22, `phase_nr_1_redo_known_amend`, after the first gate's lists rang on past their
+    note-offs under ring-on), no mutes or tilt, at -22.9 LUFS, 10.25 s. Two known gaps (plan section 12l): the first A
+    chord of `chords-six` leaves no string for its 69, and the bend list's bends end about 0.36 s before its
+    note-offs."""
     from learn import pretrain_set as PS
 
     n = int(round((PS.SEC_S + PS.TRIM_S) * rate))
-    y, _ = NR.synthesise_redo(KNOWN_NOTES[name], n, bank, 0.0, "ring-on", (), 0.0, None, rate)
+    y, _ = NR.synthesise_redo(KNOWN_NOTES[name], n, bank, 0.0, "ring-on", (), 0.0, None, rate, cut=True)
     return NR.at_lufs(y, NR.ASSUMED_LUFS, rate)
 
 
@@ -1195,14 +1204,17 @@ def _dev_context():
 def cmd_install_gate(_args):
     """Step 3, the install gate (zero renders): repeatable (REPEAT_WINDOWS development windows, three runs each: two
     in one process, one in a fresh one, identical events), the known notes (the ten KNOWN_NOTES lists played from the
-    bank and transcribed: pooled note F at least KNOWN_F, each list reported), the seconds per 10-s window.
-    -> redo/install-gate.json (its facts go into phase_nr_1_redo_install)."""
+    bank and transcribed: pooled note F at least KNOWN_F, each list reported), the seconds per 10-s window. Refuses
+    when install-gate.json or its raw-event folder (`gate_work_dir`) exists: a rerun never overwrites a run's evidence
+    (both are moved aside first, never deleted; amendment `phase_nr_1_redo_known_amend`).
+    -> redo/install-gate.json (its facts go into phase_nr_1_redo_install), redo/work/install-gate/."""
     require_redo()
     never_overwrite(gate_path())
+    never_overwrite(gate_work_dir())
     excl, tn, z, _ = _dev_context()
     wins = dev_windows(z, excl, tn["items"])[:REPEAT_WINDOWS]
     bank = NR.Bank(NR.load_notes_doc(), excl=excl)
-    work = REDO / "work" / "install-gate"
+    work = gate_work_dir()
     ins = []
     for w in wins:
         x = goat_audio(z, w["item"])

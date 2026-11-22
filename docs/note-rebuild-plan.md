@@ -831,3 +831,50 @@ nothing to recall (the transcriber's chord recall is covered only by the install
 `chords-kept` is reported for item_46, not counted. item_57 (cards 7 and 8) is unanswered and carries no words, so it is not in the table. The plan spoke of "the four
 clips the user rejected"; the stored answers hold words on 5 cards over 3 items, each about both rebuilt guitars, so
 the table holds the 6 dry guitars the words describe.
+
+### 12l. The known-notes test amended (2026-11-22, the user's choice; ledger `phase_nr_1_redo_known_amend`)
+
+**The first install gate failed on its known notes.** It ran once from main at `cda93caf` on `/usr/bin/python3` 3.9.6.
+ONNX on the CPU loaded, so the fallback was not needed.
+- Repeatable: passed (4 windows, 3 runs each, identical).
+- Timing: 1.64 s of transcription per 10-s window.
+- Known notes: **pooled note F 0.535** against the 0.90 bar. Recall was 0.95 (246 of 259 true notes) and precision
+  0.37 (246 of 660 found).
+- `install-gate.json` sha256 `0cb7b257c4cd0c9f813636300c979af94e8dca84a9fa81bb39736b81bbd5890e` (lock
+  `ea700e7e…1de1`, model `2c3c1d14…a0ec`). Its raw events and inputs, `work/install-gate/` (44 files in
+  `one-process/`, `fresh/` and `known/`), have the listing sha256 `24e7850fa16287b094fb1a0cb0dc7db08861d3669f6e5eb7b8b00ebe35e42329` (`listing_sha`, the
+  `shasum -a 256` lines sorted by path).
+
+**The cause, read from the raw events (nothing tuned):** the test's audio did not match its truth. `known_audio`
+played the lists with `ring-on`, so every note rang on to its 5-s sample while the truth ended it at its note-off.
+The transcriber then found those still-ringing pitches again at each later pluck. Faint notes an octave or a twelfth
+above a played note (about 0.3 in amplitude against 0.7) also count as extra notes. Re-finding a pitch is also partly
+the transcriber's own behaviour: in `let-ring-arpeggio` it re-finds pitches that are legitimately still ringing inside
+their declared span, and real let-ring DIs will show the same.
+
+**The user's choice (2026-11-22):** fix the test and run the gate once more.
+- Each known note is now cut at its declared note-off (`synthesise_redo(..., cut=True)`, a 10-ms fade ending there).
+  `tr-di` and `tr-plain` never pass it, so their synthesis is unchanged. A test holds that the default call reproduces
+  the failed gate's stored `scale-c-major` input sample for sample.
+- No Basic Pitch setting, bar or threshold changes, and no clean-up rule is added. If the faint octave and twelfth
+  notes still fail precision, that goes back to the user with a reviewed clean-up rule; it is not decided here.
+- **Before the one rerun, `install-gate.json` and the whole `work/install-gate/` folder move aside together, never
+  deleted.** `install-gate` now refuses while either exists, so a rerun cannot overwrite a run's evidence. The rerun
+  waits for this amendment on main.
+
+**Known before the rerun (from the review; no bar or setting changed):**
+- **One truth note is never played.** The first A chord of `chords-six` holds six notes, but the placing rule fills
+  strings 1 to 5 low to high and leaves no string for its 69. So 35 of 36 notes sound, with or without `cut`. The effect
+  on pooled F is at most about 0.002 either way; changing the voicing would change the truth list.
+- **The bend list releases its bends early.** Its notes last 1.5 s, but their bend tracks last about 1.14 s, so each
+  note drops back to its base pitch about 0.36 s before its note-off. In the failed run the transcriber re-found the base
+  pitch there (about 3 extra notes that `cut` does not remove). Splitting a bend into separate notes is the
+  transcriber's own behaviour, and real DIs will show it too.
+- **The rerun will probably still fail on precision.** The reviewer sorted the failed run's 414 extra notes: 268 come
+  from notes ringing past their declared off (removed by `cut`), and about 146 would remain (82 harmonics inside a note's
+  sound, 48 pitches re-found while still declared sounding, 16 others). With recall about the same, that projects a
+  pooled F of about 0.75 to 0.78. **This is a projection from the stored events, not a measurement.**
+- **The calibration's rise precision misses its 0.95 bar with either audio.** On the real bank, pooled over the ten
+  lists: 6 dB 0.193 (old audio) and 0.258 (amended), 9 dB 0.544 and 0.664, 12 dB 0.907 and 0.937. Using the amended
+  audio makes the figure easier to pass, but no level reaches 0.95, so `calibration_pick` will return None and the
+  calibration will need its declared amendment whatever this change does.

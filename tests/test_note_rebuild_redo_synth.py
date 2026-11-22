@@ -201,6 +201,36 @@ def test_transcriber_input():
     assert 20 * np.log10(np.abs(y).max()) == pytest.approx(-1.0, abs=1e-4)
 
 
+def test_the_known_audio_stops_each_note_at_its_note_off():
+    """After the amendment each known note stops at its declared note-off: the scale's audio is silent between one
+    note's off and the next attack (the first gate's lists rang on under ring-on, so the transcriber heard notes the
+    truth did not list)."""
+    y = T.known_audio("scale-c-major", _Bank())
+    for n in T.KNOWN_NOTES["scale-c-major"][:-1]:
+        assert np.abs(y[int((n["off"] + 0.001) * SR):int((n["on"] + 0.497) * SR)]).max() == 0
+
+
+# the failed gate's transcriber input for `scale-c-major` (sha256 of its float32 samples, read from the stored
+# work/install-gate/known/007-scale-c-major.wav that the pre-amendment `known_audio` wrote, 2026-11-22)
+OLD_SCALE_INPUT_SHA = "ffe4297ecb01f1788bc6213e8d68c69c3ab438faea6dd6cd6843b9d30956e8a7"
+
+
+def test_the_default_synthesis_reproduces_the_pre_amendment_audio():
+    """Without `cut`, the real bank's `scale-c-major` through the old path (ring-on, no mutes or tilt, -22.9 LUFS, the
+    transcriber's input) is sample for sample the input the failed gate stored: the amendment changes nothing else."""
+    import hashlib
+
+    if not N.EGFX.exists() or not (N.OUT / "notes.json").exists():
+        pytest.skip("no stored note bank")
+    bank = N.Bank(N.load_notes_doc())
+    y, _ = N.synthesise_redo(T.KNOWN_NOTES["scale-c-major"], int(round(10.25 * SR)), bank, 0.0, "ring-on", (), 0.0,
+                             None)
+    x = T.transcriber_input(N.at_lufs(y, N.ASSUMED_LUFS))
+    assert hashlib.sha256(np.ascontiguousarray(x, np.float32).tobytes()).hexdigest() == OLD_SCALE_INPUT_SHA
+    z = T.transcriber_input(T.known_audio("scale-c-major", bank))
+    assert hashlib.sha256(np.ascontiguousarray(z, np.float32).tobytes()).hexdigest() != OLD_SCALE_INPUT_SHA
+
+
 def test_known_lists_play():
     for name in ("chords-six", "bend", "let-ring-arpeggio"):
         y = T.known_audio(name, _Bank())

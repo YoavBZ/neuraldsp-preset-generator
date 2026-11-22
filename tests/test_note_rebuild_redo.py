@@ -44,6 +44,15 @@ def test_a_mute_in_the_di_ends_every_note_sounding():
         N.note_end(1.0, 2.0, "ring", [], 4.0)
 
 
+def test_the_known_lists_cut_each_note_at_its_note_off():
+    """The known-notes amendment (`phase_nr_1_redo_known_amend`): `cut` ends a note at its own note-off with the 10-ms
+    fade; without it nothing changes (tr-di and tr-plain never pass it)."""
+    assert N.note_end(1.0, 1.2, "ring-on", [], 4.0, cut=True) == (1.2, "cut", N.REPLUCK_FADE_S)
+    assert N.note_end(1.0, 1.2, "ring-on", [], 4.0) == (5.0, "sample", N.TAIL_FADE_S)
+    assert N.note_end(1.0, 3.0, "ring-on", [2.0], 4.0, cut=True)[1] == "mute"        # an earlier end still wins
+    assert N.note_end(1.0, 1.2, "ring-on", [], 4.0, repluck=1.1, cut=True)[1] == "repluck"
+
+
 # --- the placing rule and the variety --------------------------------------------------------------------------------------
 
 def test_placing_prefers_a_string_not_still_ringing():
