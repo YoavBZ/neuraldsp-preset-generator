@@ -114,7 +114,11 @@ NOTE_KINDS = {"list": MS_SETTINGS, "list-free": MS_FREE_SETTINGS, "truth": MS_SE
 DEVICE_DTYPE = {"mps": "float16", "cpu": "float32"}
 REPEAT_WINDOWS = T.REPEAT_WINDOWS        # the gate's four development windows, three runs each per device
 DEV_RUNS = 2 * T.DEV_COUNT               # stage b's 27 development windows, masked and with no mask (tx-ms-free)
-SIZE_SWITCH_S = 2 * 3600.0               # over this projected for stage b: every MuScriptor arm moves to small
+SIZE_SWITCH_S = 2 * 3600.0               # reported only (`over_two_hours`): speed never decides a MuScriptor size
+                                         # (the user's stance, phase_tx_go_read; the switch to small and the slow
+                                         # refusal are retired)
+USER_STANCE = "I don't see any justification to give up on accuracy for speed in this scale."   # the user, 2026-11-23
+LATER_STAGE_SIZE = "large"               # every later MuScriptor stage on this track, unless large is measured worse
 
 # --- the comparison (plan sections 4 and B0) ----------------------------------------------------------------------------
 PAIR_ONSET_S = 0.050                     # same MIDI pitch, onsets within 50 ms, one to one, closest first
@@ -844,8 +848,8 @@ def size_pick(by_size, arm=PICK_ARM, field=PICK_FIELD, limit=SIZE_SWITCH_S):
     (or "large decided worse, medium kept"), and large stays open for the user at the stage-b go (`picked_size`).
     The orchestrator's technical call on the review of PR #573, declared after medium's raw counts were seen: the
     pick and the screen read the same ten lists, so a point-estimate pick would inflate the screen. With no large rows
-    (its gate stopped) medium is kept. Speed never picks: the projections are reported beside, and a stage-b size over
-    two hours goes to the user (`slow_refusal`); no switch to small. -> {size, label, diff, over_two_hours, ...}."""
+    (its gate stopped) medium is kept. Speed never picks: the projections are reported beside (`speed_note`), and
+    nothing switches to small. -> {size, label, diff, over_two_hours, ...}."""
     rows, proj = by_size["rows"], by_size.get("projections") or {}
     if not rows.get("large"):
         size, iv, label = "medium", None, "large gate stopped, medium kept"
@@ -869,15 +873,24 @@ def size_pick(by_size, arm=PICK_ARM, field=PICK_FIELD, limit=SIZE_SWITCH_S):
             "large_open_for_user": label == PICK_UNDECIDED}
 
 
-def slow_refusal(lists_body, go_read, limit=SIZE_SWITCH_S):
-    """(Pure.) Why stage b may not run, or None: the stage-b size's (`picked_size`) projection is over two hours and
-    the user's go (`phase_tx_go_read`) does not say `slow_ok` (a slower, more accurate reader is the user's call)."""
+def speed_note(lists_body, go_read, limit=SIZE_SWITCH_S):
+    """(Pure.) A report of the stage-b size's projected time, or None: never a refusal. Speed is reported and never
+    decides a MuScriptor size (the user's stance, 2026-11-23, `USER_STANCE`; this replaces the slow-pick refusal)."""
     size = picked_size(lists_body, go_read)
     p = ((lists_body or {}).get("size_pick") or {}).get("projections", {}).get(size)
-    if p is not None and p > limit and not (go_read or {}).get("slow_ok"):
-        return (f"{size}'s stage b projects over two hours: to the user first (phase_tx_go_read with "
-                "slow_ok)")
-    return None
+    if p is None:
+        return None
+    return f"{size}'s stage b projects {p / 3600:.2f} h" + (" (over two hours, reported only)" if p > limit else "")
+
+
+def later_stage_size(lists_body):
+    """(Pure.) The MuScriptor size for every later stage on this track (the reserved stems read among them): large,
+    by the user's stance, unless large was measured worse (the size pick decided it worse) or could not run (its gate
+    stopped)."""
+    label = ((lists_body or {}).get("size_pick") or {}).get("label")
+    if label in ("large decided worse, medium kept", "large gate stopped, medium kept"):
+        return "medium"
+    return LATER_STAGE_SIZE
 
 
 def picked_size(lists_body, go_read=None):
@@ -892,10 +905,10 @@ def picked_size(lists_body, go_read=None):
     return (lists_body or {}).get("size", "medium")
 
 
-def size_choice(projected, limit=SIZE_SWITCH_S):
-    """(Pure.) The size rule: over two hours projected switches every MuScriptor arm (tx-ms-free included) to small,
-    decided before any list is transcribed."""
-    return "small" if projected is not None and projected > limit else "medium"
+def gate_rule(size, projected):
+    """(Pure.) The size the gate keeps: always its own. The two-hour switch to small is retired by the user's stance
+    (2026-11-23): speed is reported (`over_two_hours`) and never downgrades a MuScriptor size."""
+    return size
 
 
 def gate_list_refusal(stored, recomputed):
@@ -1253,15 +1266,13 @@ def cmd_gate(args):
     """Phase 2 (zero renders): per device, REPEAT_WINDOWS development windows, three runs each (two in one process, one
     fresh), identical notes; seconds per window, transcription only (tx_run's per-input seconds; the load apart);
     the device by `device_choice`; stage b's projection on each device for its real run count (`stage_b_runs`: the
-    listing's consistent windows plus 2 x 27), the chosen device's read by `size_choice`. If the size stays (medium,
-    or small after a switch), the ten lists are transcribed with it (the guitar groups, and no mask for tx-ms-free),
-    each note file written once, their listing sha256 printed. If the rule calls for small, it stops with no list
-    notes written; after the user installs the small weights, `gate --size small` runs the repeat and speed tests
-    again on small, then the lists. Refuses while another MPS user or a render runs.
+    listing's consistent windows plus 2 x 27), reported (`over_two_hours`); the size is kept whatever the projection
+    (`gate_rule`: the two-hour switch to small is retired by the user's stance, 2026-11-23). The ten lists are then
+    transcribed with it (the guitar groups, and no mask for tx-ms-free), each note file written once, their listing
+    sha256 printed. `gate --size small` refuses unless a medium gate called for small, which no gate can now do.
+    Refuses while another MPS user or a render runs.
     `gate --size large` (the amendment, `phase_tx_size_amend`): large's own gate, the same venv, the same repeat and
-    speed tests, then the ten lists under their own kinds (`list-large`, `list-large-free`) whatever its projection:
-    no size rule, no switch to small; the projection is reported (`over_two_hours`) and a pick over two hours goes to
-    the user. Refuses without the amendment and medium's `phase_tx_install` on main.
+    speed tests, then the ten lists under their own kinds (`list-large`, `list-large-free`) whatever its projection. Refuses without the amendment and medium's `phase_tx_install` on main.
     -> tx/gate-<size>.json (its sha256 goes into phase_tx_install, or phase_tx_install_large)."""
     size = getattr(args, "size", None) or "medium"
     m = require_tx(PHASE_GO, *((PHASE_SIZE_AMEND, PHASE_INSTALL) if size == "large" else ()), nr=(T.PHASE_TRUTH,))
@@ -1299,7 +1310,7 @@ def cmd_gate(args):
     device = device_choice(repeat)
     projections = projections_s(secs, runs)
     proj = projection_s(projections, device)
-    rule = size_choice(proj) if size == "medium" else size           # large and small: no size rule
+    rule = gate_rule(size, proj)                         # speed never downgrades (the user's stance)
     body = {"size": size, "weights_sha256": wsha, "repeat": repeat, "seconds_per_window": secs, "load_s": loads,
             "dtype": dtypes, "device": device, "stage_b_runs": runs, "projections_s": projections,
             "projection_s": proj, "size_rule": rule, "lists_written": False,
@@ -1444,8 +1455,7 @@ def cmd_lists(_args):
         rec["text"] += ("; the size pick reads undecided, medium kept: large stays open for the user at the stage-b "
                         "go (phase_tx_go_read with size large), both sizes' figures beside")
     if pick["over_two_hours"]:
-        rec["text"] += ("; the picked size's stage b projects over two hours: a slower, more accurate reader is the "
-                        "user's call (phase_tx_go_read with slow_ok)")
+        rec["text"] += "; the picked size's stage b projects over two hours (reported only: speed never decides)"
     body = {"sizes": by, "size_pick": pick, "size": pick["size"], "rows": chosen["rows"],
             "numbers": chosen["numbers"], "readings": chosen["readings"], "screen": chosen["screen"],
             "recommendation": rec, "input_check": "tx-bp equals install-gate.json on every list",
@@ -1487,9 +1497,7 @@ def cmd_transcribe(_args):
     if why:
         raise SystemExit(why)
     lists = T.require_file_hash(m.get(LEDGER_ID), PHASE_LISTS, lists_path())["body"]
-    why = slow_refusal(lists, (m.get(LEDGER_ID) or {}).get(PHASE_GO_READ))
-    if why:
-        raise SystemExit(why)
+    speed = speed_note(lists, (m.get(LEDGER_ID) or {}).get(PHASE_GO_READ))       # reported, never a refusal
     inst = require_install(m, picked_size(lists, (m.get(LEDGER_ID) or {}).get(PHASE_GO_READ)))
     never_overwrite(transcribe_path())
     listing, report, z, dev, items = stage_b_context(m)
@@ -1520,7 +1528,7 @@ def cmd_transcribe(_args):
                                       "made": time.strftime("%Y-%m-%d %H:%M:%S"),
                                       "body": {"truth_windows": len(jobs), "goat_windows": len(goat),
                                                "note_files": len(rows), "listing_sha256": sha,
-                                               "device": inst["device"], "size": inst["size"],
+                                               "device": inst["device"], "size": inst["size"], "speed_note": speed,
                                                "truth_report_sha256": NR.file_sha(T.truth_report_path())}})
     print(f"TRANSCRIBE: {len(jobs)} truth windows, {len(goat)} development windows (+ {len(goat)} with no mask); "
           f"note files listing sha256 {sha} (into the ledger as {PHASE_NOTES} before any scoring)")
