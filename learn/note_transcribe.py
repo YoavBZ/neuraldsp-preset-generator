@@ -68,10 +68,17 @@ PHASE_GO_CLIPS = "phase_nr_1_redo_go_clips"     # ... when a rejected clip is ca
 PHASE_GO_VERSIONS = "phase_nr_1_redo_go_versions"   # ... the user's decision after a code other than NV-loud
 PHASE_GO_LADDER = "phase_nr_1_redo_go_ladder"     # ... the user's go after the instrument check failed a list
                                                 #     (2026-11-23; bound to that ghost-ladder.json by its sha256)
+PHASE_CALIB_FIX = "phase_nr_1_redo_calib_fix"     # the calibration's fix (2026-11-23): chords-kept on one timeline,
+                                                #     annotated-found a report, the positive control's rule, the rerun
+PHASE_GO_CALIB = "phase_nr_1_redo_go_calib"       # the user's go after the first calibration stopped (2026-11-23;
+                                                #     playing-covered reported for this run; bound to its sha256)
+PHASE_GO_GUARD = "phase_nr_1_redo_go_guard"       # the user's go that the checks the positive control fails become
+                                                #     reports, the listening page the guard (2026-11-23; names them)
 PHASE_GO_HUM = "phase_nr_1_redo_go_hum"           # ... the user's go after the hum guard stopped the truth report
                                                 #     (2026-11-23; bound to that truth-report.json by its sha256)
 
 REDO = NR.OUT / "redo"                   # PF/note-rebuild/redo/
+CALIB_ASIDE = REDO / "calibration.failed-20261123"   # the first calibration.json and its work folder, set aside unread
 STAGE1 = NR.OUT / "stage1"
 SET_ASIDE = NR.OUT / "stage1.set-aside-20261122"
 SET_ASIDE_NOTE = "unread: no pick, no score"
@@ -120,7 +127,8 @@ OCTAVE_UP_BELOW = 38                     # notes below MIDI 38 are played an oct
 # what it gates, and whether it blocks a row part. `onsets-found` is a report since 12m: librosa's flux detector
 # (`note_attacks`), a flag under 0.90; `annotated-found` admits its windows by `note_truth.consistent`.
 CONTENT = {
-    "annotated-found": {"gates": "the transcriber's settings", "blocking": False,
+    "annotated-found": {"gates": "a report (12m fix, 2026-11-23: no fair admission test admits GOAT's windows)",
+                        "blocking": False,
                         "onset_s": 0.050, "median": 0.85, "floor": 0.75, "admission": "consistent", "tertile": "top"},
     "onsets-found": {"gates": "a report (flag under 0.90)", "blocking": False, "within_s": 0.050, "share": 0.90,
                      "detector": "librosa onset_detect, hop 256, delta 0.07, after the P1 offset"},
@@ -361,11 +369,49 @@ PASS_RULES = {"onsets-found": onsets_found_pass, "playing-covered": playing_cove
               "judge-accepts": judge_accepts_pass, "ring-kept": ring_kept_pass, "chords-kept": chords_kept_pass}
 
 
-def check_verdict(figs, which=NOTE_CHECKS + AUDIO_CHECKS):
+def declared_blocking():
+    """(Pure.) The checks `CONTENT` declares blocking."""
+    return {k for k, c in CONTENT.items() if c["blocking"]}
+
+
+def check_verdict(figs, which=NOTE_CHECKS + AUDIO_CHECKS, blocking=None):
     """(Pure.) {check: True | False | None} for `which`, and the blocking failures (a None, not measured, never
-    blocks). figs: {check: figure}."""
+    blocks). figs: {check: figure}; `blocking`: the checks that block (default: as `CONTENT` declares; after the
+    calibration's fix, `effective_blocking`)."""
+    block = declared_blocking() if blocking is None else set(blocking)
     res = {k: PASS_RULES[k](figs.get(k)) for k in which}
-    return {"passes": res, "failed": sorted(k for k, v in res.items() if v is False and CONTENT[k]["blocking"])}
+    return {"passes": res, "failed": sorted(k for k, v in res.items() if v is False and k in block)}
+
+
+def positive_failing(checks, controls=("avg+mild", "true")):
+    """(Pure.) The declared blocking checks the positive control (avg+mild or the true DI) fails on any window.
+    checks: {control: {window: {passes: {check: bool | None}}}}. -> sorted checks."""
+    return sorted({k for d in controls for r in (checks.get(d) or {}).values()
+                   for k, v in (r.get("passes") or {}).items() if v is False and k in declared_blocking()})
+
+
+def positive_report_only(failing, nr_main, first_sha):
+    """(Pure.) The calibration fix's rule (12m, 2026-11-23): a check the positive control fails becomes report-only
+    for the row only when main holds the user's go on that effect (`PHASE_GO_GUARD`, its `go` true, its
+    `calibration_sha256` the first record's, `first_sha`, and naming the check in `report_only_checks`); otherwise it
+    stays blocking (and its failure stops the calibration). -> (report-only checks, checks the positive control fails
+    that stay blocking)."""
+    go = (nr_main or {}).get(PHASE_GO_GUARD)
+    valid = (isinstance(go, dict) and go.get("go") is True and bool(first_sha)
+             and go.get("calibration_sha256") == first_sha)
+    named = set(go.get("report_only_checks") or []) if valid else set()
+    return sorted(k for k in failing if k in named), sorted(k for k in failing if k not in named)
+
+
+def effective_blocking(cal_body, nr_main):
+    """(Pure.) The checks that block a row part after the calibration's fix: the declared blocking checks less
+    `playing-covered` under the user's go (`PHASE_GO_CALIB`, its `go` true: reported for this run) and less every check
+    the calibration made report-only (`report_only_checks`)."""
+    block = declared_blocking()
+    go = (nr_main or {}).get(PHASE_GO_CALIB)
+    if isinstance(go, dict) and go.get("go") is True:
+        block.discard("playing-covered")
+    return block - set((cal_body or {}).get("report_only_checks") or [])
 
 
 def annotated_found_pass(rows, c=CONTENT["annotated-found"]):
@@ -393,16 +439,17 @@ def gate_passes(body):
     return (body or {}).get("repeat_ok") is True
 
 
-def clip_case(expected, results):
+def clip_case(expected, results, blocking=None):
     """(Pure.) Each rejected clip's case (12m): "caught by a blocking check" (a blocking check its line names fails),
     "caught by a report only" (only a report-only check it names fails: recorded, the page's "missing notes" button is
     the guard, the user is told, the work goes on) or "caught by no check" (to the user, recommended: go on with the
-    listening page as the guard). -> {clip: case}."""
+    listening page as the guard). `blocking`: the checks that block (default: as `CONTENT` declares). -> {clip: case}."""
+    block = declared_blocking() if blocking is None else set(blocking)
     out = {}
     for e in expected:
         got = results.get(e["clip"]) or {}
         failed = [k for k in (e.get("must_fail_any") or list(NOTE_CHECKS)) if got.get(k) is False]
-        if any(CONTENT[k]["blocking"] for k in failed):
+        if any(k in block for k in failed):
             out[e["clip"]] = "caught by a blocking check"
         elif failed:
             out[e["clip"]] = "caught by a report only"
@@ -411,13 +458,40 @@ def clip_case(expected, results):
     return out
 
 
-def calibration_ok(covered_windows, annotated, positive, cases, clips_go=False, need=CALIBRATION_PASS):
-    """(Pure.) The calibration passes (12m): `playing-covered` holds on at least `need` of the 27 windows;
-    `annotated-found` passes on its windows (it gates the transcriber's settings: a failure, or no window to read it
-    on, stops before step 5); avg+mild and the true DI pass every audio check; and every rejected clip is caught by a
-    check (a clip caught by no check needs the user's go, `PHASE_GO_CLIPS`)."""
-    return (covered_windows >= need and (annotated or {}).get("passes") is True and not positive.get("avg+mild")
-            and not positive.get("true") and (clips_go or "caught by no check" not in cases.values()))
+def calibration_ok(covered_windows, cases, clips_go=False, need=CALIBRATION_PASS, covered_reported=False,
+                   positive_blocking=()):
+    """(Pure.) The calibration passes (12m, as fixed 2026-11-23, `PHASE_CALIB_FIX`): `playing-covered` holds on at
+    least `need` of the 27 windows, unless the user's go makes it a report for this run (`covered_reported`); every
+    rejected clip is caught by a check (a clip caught by no check needs the user's go, `PHASE_GO_CLIPS`).
+    `annotated-found` is a report (no fair admission test admits GOAT's windows); a check the positive control
+    fails becomes report-only under the user's go (`positive_report_only`), and one it fails that stays blocking
+    (`positive_blocking`) stops the calibration, as declared before the fix."""
+    return ((covered_reported or covered_windows >= need) and not positive_blocking
+            and (clips_go or "caught by no check" not in cases.values()))
+
+
+def calib_rerun_refusal(nr_main, aside_sha, aside_work):
+    """(Pure.) Why `calibrate` may not run, or None. The first run stopped (2026-11-23); the only way to run it again:
+    main holds the fix (`PHASE_CALIB_FIX`) and the user's go (`PHASE_GO_CALIB`, its `go` true, naming the first
+    record's sha256), and that record and its work folder are set aside in `CALIB_ASIDE` (`aside_sha`: the set-aside
+    calibration.json's sha256 or None; `aside_work`: whether its work folder is there)."""
+    if PHASE_CALIB_FIX not in (nr_main or {}):
+        return f"main's {LEDGER_ID} entry has no {PHASE_CALIB_FIX}: the calibration's fix first"
+    go = (nr_main or {}).get(PHASE_GO_CALIB)
+    if not isinstance(go, dict) or go.get("go") is not True or not go.get("calibration_sha256"):
+        return f"main holds no go of the user's for the calibration's rerun ({PHASE_GO_CALIB})"
+    if aside_sha is None or not aside_work:
+        return f"the first calibration.json and its work folder are not set aside in {CALIB_ASIDE.name}/"
+    if aside_sha != go["calibration_sha256"]:
+        return f"the set-aside calibration.json's sha256 {aside_sha[:12]} is not the one the user's go names"
+    return None
+
+
+def round_trip_notes(events, audio, rate=NR.SR):
+    """A round trip's notes on the DI notes' timeline (12m fix, 2026-11-23): the same steps `timed_notes` gives the
+    DI's notes (the clean-up, the notes inside the audio, `coarse_offset`, the +-SNAP_S snap), against the audio that
+    was transcribed."""
+    return timed_notes({"events": events, "pre_s": 0.0}, audio, rate)[0]
 
 
 def chords_go_refusal(p2_chord_recall, nr_main, trigger=P2_CHORD_TRIGGER):
@@ -1409,9 +1483,19 @@ def cmd_calibrate(_args):
     consistency test admits; the ring variant (`ring_choice` on tr-di's `envelope_corr`); and the checks' test: avg+mild
     and the true DI must pass every audio check, and each clip the user rejected is placed by `clip_case` (caught by a
     blocking check; caught by a report only: recorded, the user told, the work goes on; caught by no check: the user's
-    go first, `PHASE_GO_CLIPS`). -> redo/calibration.json (its facts go into phase_nr_1_redo_install)."""
-    m = require_redo(PHASE_EAR_OLD, PHASE_CALIB, PHASE_TRUTH)
+    go first, `PHASE_GO_CLIPS`). As fixed (`PHASE_CALIB_FIX`, 2026-11-23): the round trips on the DI notes' timeline
+    (`round_trip_notes`), `annotated-found` a report, a check the positive control fails made report-only
+    (`positive_report_only`, only under the user's go `PHASE_GO_GUARD`), `playing-covered` reported under the
+    user's go; runs only as the one rerun
+    (`calib_rerun_refusal`). -> redo/calibration.json (its facts go into phase_nr_1_redo_install)."""
+    m = require_redo(PHASE_EAR_OLD, PHASE_CALIB, PHASE_TRUTH, PHASE_CALIB_FIX, PHASE_GO_CALIB, PHASE_GO_GUARD)
+    aside = CALIB_ASIDE / "calibration.json"
+    why = calib_rerun_refusal(m.get(LEDGER_ID), NR.file_sha(aside) if aside.exists() else None,
+                              (CALIB_ASIDE / "work-calibrate").is_dir())
+    if why:
+        raise SystemExit(why)
     never_overwrite(calibration_path())
+    never_overwrite(REDO / "work" / "calibrate")
     gate = json.loads(gate_path().read_text())["body"] if gate_path().exists() else None
     if not gate_passes(gate):
         raise SystemExit("the install gate has not passed (repeatability)")
@@ -1473,25 +1557,33 @@ def cmd_calibrate(_args):
     for w in wins:
         it, di = w["item"], dis[w["item"]]
         for d, y in audio[it].items():
-            got = clean_transcribed(notes_from_events(rt[j]["events"]))[0]
+            got = round_trip_notes(rt[j]["events"], y)
             j += 1
             figs = {"judge-accepts": judge_accepts(y, di, 0, "A"), "ring-kept": ring_kept(y, di, [n["on"] for n in
                                                                                              notes_of[it]]),
                     "chords-kept": chords_kept(got, notes_of[it])}
             checks.setdefault(d, {})[it] = {"figures": figs, **check_verdict(figs, AUDIO_CHECKS)}
     positive = {d: sorted(it for it, r in checks[d].items() if r["failed"]) for d in ("avg+mild", "true")}
+    report_only, still_blocking = positive_report_only(positive_failing(checks), m.get(LEDGER_ID), NR.file_sha(aside))
+    blocking = effective_blocking({"report_only_checks": report_only}, m.get(LEDGER_ID))
     neg = negative_control(expected, bank, z, meta, excl, offset, work)
     results = {c: r["passes"] for c, r in neg.items()}
-    cases = clip_case(expected, results)
+    cases = clip_case(expected, results, blocking)
     body = {"windows": [w["item"] for w in wins], "rows": rows, "playing_covered_windows": covered,
             "onsets_found_flagged": flagged, "detector_offset_s": offset, "annotated_found": af,
             "ring_corr": corr, "ring_variant": ring, "loud_gamma": loud, "checks": checks, "positive_failures": positive,
             "negative": neg, "clip_cases": cases, "blind_spots": expected_failure_refusal(expected, results),
+            "report_only_checks": report_only, "positive_still_blocking": still_blocking,
+            "blocking_checks": sorted(blocking),
+            "playing_covered_reported": "playing-covered" not in blocking,
+            "first_run_sha256": NR.file_sha(aside),
             "gate_sha256": NR.file_sha(gate_path()), "attacks_sha256": NR.file_sha(attacks_path())}
-    body["ok"] = calibration_ok(covered, af, positive, cases, PHASE_GO_CLIPS in (m.get(LEDGER_ID) or {}))
+    body["ok"] = calibration_ok(covered, cases, PHASE_GO_CLIPS in (m.get(LEDGER_ID) or {}),
+                                covered_reported=body["playing_covered_reported"], positive_blocking=still_blocking)
     NR.write_once(calibration_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_CALIB}",
                                        "made": time.strftime("%Y-%m-%d %H:%M:%S"), "body": body})
-    print(f"CALIBRATE {'PASS' if body['ok'] else 'STOP'}: playing-covered {covered} of {len(wins)}; onsets-found "
+    print(f"CALIBRATE {'PASS' if body['ok'] else 'STOP'}: blocking {sorted(blocking)}, report-only {report_only}; "
+          f"playing-covered {covered} of {len(wins)}; onsets-found "
           f"flags {flagged}; annotated-found {af}; ring {ring}; positive failures {positive}; clips {cases}; "
           f"sha256 {NR.file_sha(calibration_path())}")
 
@@ -1523,7 +1615,7 @@ def negative_control(expected, bank, z, meta, excl, offset, work):
     rt = run_bp(jobs, work / "rejected") if jobs else []
     att = NA.run_attacks(ajobs, work / "rejected-attacks") if ajobs else []
     for (clip, (di, notes, y)), r, a in zip(built.items(), rt, att):
-        got = clean_transcribed(notes_from_events(r["events"]))[0]
+        got = round_trip_notes(r["events"], y)
         figs = {"onsets-found": attacks_found(a, notes, di, offset), "playing-covered": playing_covered(notes, di),
                 "judge-accepts": judge_accepts(y, di, 0, "A"), "ring-kept": ring_kept(y, di, [n["on"] for n in notes]),
                 "chords-kept": chords_kept(got, [dict(n, bends=[]) for n in notes])}
@@ -1641,7 +1733,7 @@ def cmd_transcribe(_args):
         notes, rep = timed_notes(rec, di)
         figs = {"onsets-found": attacks_found(a, notes, di, offset), "playing-covered": playing_covered(notes, di)}
         row = {"note_file_sha256": NR.file_sha(note_path(kind, key)), "timing": rep, "figures": figs,
-               **check_verdict(figs, NOTE_CHECKS)}
+               **check_verdict(figs, NOTE_CHECKS, effective_blocking(cal, m.get(LEDGER_ID)))}
         if kind == "part" and info["set"] == "goat":
             it = p["unit"].split("/", 1)[1].split("@", 1)[0]
             tp = NR.OUT / "true-notes" / f"{it}.json"
@@ -1751,7 +1843,7 @@ def cmd_build(_args):
            "loud_gamma": loud,
            "transcribe_sha256": NR.file_sha(transcribe_path()), "parts": {}, "ear": {}}
     for (kind, key, info, arm, notes, rep, yrep, di, y32, sha), r in zip(built, rt):
-        got = clean_transcribed(notes_from_events(r["events"]))[0]
+        got = round_trip_notes(r["events"], np.asarray(y32, np.float64))
         if kind == "part":
             ref_blank = S.load_ref_blank(sd, info, "xlnoG")
             ja = judge_accepts(y32, di, info["lag"], info["search"], ref_blank)
@@ -1766,7 +1858,8 @@ def cmd_build(_args):
                 "mask": NR.mask_agreement(di, np.asarray(y32, np.float64))}
         row = (out["parts"] if kind == "part" else out["ear"]).setdefault(key, {"timing": rep, "arms": {},
                                                                                **content_shares(notes)})
-        row["arms"][arm] = {"sha256": sha, "report": yrep, "figures": figs, "beside": side, **check_verdict(figs)}
+        row["arms"][arm] = {"sha256": sha, "report": yrep, "figures": figs, "beside": side,
+                            **check_verdict(figs, blocking=effective_blocking(cal, m.get(LEDGER_ID)))}
     for rows in (out["parts"], out["ear"]):
         for key, row in rows.items():
             row["failed"] = row["arms"]["tr-di"]["failed"]
