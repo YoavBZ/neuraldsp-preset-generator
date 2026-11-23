@@ -839,3 +839,29 @@ sound, and stage b reads that file for the same windows.
   every arm's extras alike. This is the hum go's own finding.
 
 **A guard.** `later_stage_size` returns large only when large's own screen read `lists-go`, as `picked_size` does.
+
+## 19. Stage b's notes (2026-11-24; ledger `phase_tx_notes`)
+
+`transcribe` ran once from main at `bf12feea`, in a frozen detached worktree: zero renders, one MPS job. It ran
+MuScriptor large, per the user's go (`phase_tx_go_read`), on:
+- the 79 consistent Guitar-TECHS P1 and P2 truth windows;
+- the 27 GOAT development windows, masked;
+- the same 27 windows with no mask.
+
+It read the truth report with the user's hum go (`phase_tx_inside_amend`).
+
+**What it made.** 133 note files, in float16 on MPS, with listing sha256 `fd40b61b…3a53`; `transcribe.json` has sha256
+`0036e806…6666`. They are hashed before any scoring: nothing of stage b has been read.
+
+**Speed.** Transcription took 15.2 minutes in all, 6.86 s per run on average. The projection had said 0.18 h; the
+measured time is about 0.25 h. The gate's 4.91 s per input was read on its four development windows.
+
+**`item_5`.** This is the GOAT DI behind the listening page's cards c2 and c11, which the user marked "Bad DI, don't use
+it".
+- It is the first of stage b's 27 GOAT development windows. It is in no Guitar-TECHS truth window.
+- Its two note files (`goat`, `goat-free`) are kept as made and stay in this listing.
+- The redo's exclusion amendment 12p, a separate PR that also covers this track's `read` and `bridge`, drops it at
+  read.
+- The gates' repeat runs on `item_5` stay as recorded: they tested repeatability, not accuracy.
+
+`read` waits for 12p on main.

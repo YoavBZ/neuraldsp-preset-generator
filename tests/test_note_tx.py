@@ -566,13 +566,45 @@ def test_the_side_figure_counts_only_notes_starting_inside_and_decides_nothing()
     assert row["side"]["inside"]["tx-bp"]["precision"] == 1.0 and row["side"]["inside_lead"]["tx-bp"]["est"] == 3
     rep = X.side_report([row])
     assert rep["real"]["inside"]["tx-bp"]["precision"] == 1.0 and rep["P1|chords"]["inside_lead"]["tx-vote"]["est"] == 2
-    figs = lambda: _row("l0", {"tx-bp": _fig(10, 10, 16), "tx-vote": _fig(10, 10, 11), "tx-ms": _fig(10, 10, 11),
-                               "tx-veto": _fig(10, 10, 11)})
-    real = dict(figs(), set="real", group="P1", kind="chords", cluster="P1|chords|x")
-    tweaked = dict(real, side={"inside": {"tx-bp": _fig(10, 10, 10)}, "inside_lead": {"tx-bp": _fig(10, 10, 10)}})
-    a, b = X.summarise_read([figs()], [real], []), X.summarise_read([figs()], [tweaked], [])
-    assert a["readings"] == b["readings"] and a["code"] == b["code"]   # it never decides
-    assert "side_inside" in b and b["side_inside"]["real"]["inside"]["tx-bp"]["precision"] == 1.0
+
+
+def _decided_rows():
+    """Ten list rows and six real rows (six files, P1 and P2), with decided readings: tx-vote and tx-veto raise precision
+    clear of zero, hold recall and F; tx-ms loses recall."""
+    def figs(k, bp_est):
+        return {"tx-bp": _fig(10, 10, bp_est + k % 3), "tx-vote": _fig(10, 10, 11), "tx-veto": _fig(10, 10, 12),
+                "tx-ms": _fig(8, 10, 9), "tx-ms-free": _fig(8, 10, 9)}
+    lists = [_row(f"l{k}", figs(k, 16)) for k in range(10)]
+    real = [_row(f"P{1 + k % 2}|chords|f{k % 3}", figs(k, 15), "real", f"P{1 + k % 2}", "chords") for k in range(6)]
+    for r in lists + real:
+        r["borrow"] = {"tx-ms": {"notes": 9, "unpaired": 1}}
+    return lists, real
+
+
+def _side(r, scale):
+    """Very different side values: every arm's inside figures replaced by made-up ones."""
+    return {k: {a: _fig(10 - scale, 10, 10 + 7 * scale) for a in r["figures"]} for k in X.INSIDE_LEADS}
+
+
+def test_the_side_figure_never_changes_the_read():
+    """PR #577's review: on multi-cluster rows with decided readings, the whole read, less side_inside, is identical
+    with and without very different side values."""
+    ck = {c: True for c in X.GUARDED_CHECKS}
+    goat = [{"checks": {a: {"notes": {"playing-covered": True, "onsets-found": True}, "ring-soft": ck}
+                        for a in X.BUILT_ARMS}} for _ in range(27)]
+    lists, real = _decided_rows()
+    base = X.summarise_read(lists, real, goat)
+    v = base["readings"]["tx-vote"]
+    assert v["lists"]["precision_raised"] and v["real"]["precision_raised"] and v["real"]["recall_held"]
+    assert base["numbers"]["real"]["clusters"] == 6 and base["code"] == "TXR-vote"     # decided readings
+    for scale in (0, 3, 9):
+        lists2, real2 = _decided_rows()
+        for r in lists2 + real2:
+            r["side"] = _side(r, scale)
+        got = X.summarise_read(lists2, real2, goat)
+        assert got["side_inside"] != base["side_inside"]
+        assert {k: v for k, v in got.items() if k != "side_inside"} == \
+            {k: v for k, v in base.items() if k != "side_inside"}
 
 
 def test_stage_b_reads_the_truth_report_with_the_users_hum_go(monkeypatch):
@@ -700,7 +732,7 @@ def test_the_ledger_holds_the_declaration_and_the_go():
     e = X.tx_entries(LEDGER.read_text())["note-transcriber"]
     assert e["plan"] == X.PLAN and (REPO / X.PLAN).exists()
     assert X.PHASE in e and X.PHASE_GO in e
-    for later in (X.PHASE_NOTES, X.PHASE_READ, X.PHASE_BRIDGE) + X.RESERVED_PHASES:
+    for later in (X.PHASE_READ, X.PHASE_BRIDGE) + X.RESERVED_PHASES:
         assert later not in e                                     # each comes with its own PR
     inst = e[X.PHASE_INSTALL]                                     # the hash PR: the shape `require_install` reads
     assert inst["size"] == "medium" and inst["device"] == "mps"
@@ -723,6 +755,9 @@ def test_the_ledger_holds_the_declaration_and_the_go():
     assert X.lists_go_refusal(lists) is None and lists["size"] == X.picked_size(lists) == "medium"
     assert re.fullmatch(r"[0-9a-f]{64}", lists["sha256"]) and lists["size_pick"]["label"] == X.PICK_UNDECIDED
     assert lists["size_pick"]["large_open_for_user"] and set(lists["screens"]) == set(X.SCREENED_SIZES)
+    notes = e[X.PHASE_NOTES]                                      # stage b's hash PR: the shape `read` reads
+    assert re.fullmatch(r"[0-9a-f]{64}", notes["listing_sha256"]) and notes["note_files"] == 79 + 2 * 27
+    assert notes["size"] == "large" and "item_5" in notes["item_5"] and "12p" in notes["item_5"]
     go_read = e[X.PHASE_GO_READ]                                  # the user's stage-b go and stance
     assert go_read["size"] == "large" and go_read["stance"] == X.USER_STANCE and go_read["date"] == "2026-11-23"
     assert "slow_ok" not in go_read and X.private_keys(go_read) == []
