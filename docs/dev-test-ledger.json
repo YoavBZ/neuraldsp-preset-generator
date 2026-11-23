@@ -4437,7 +4437,7 @@
    "phase_nr_1_redo_go_versions": {
     "date": "2026-11-23",
     "by": "the user",
-    "asked_key_terms": "(the question's key terms, as relayed; not verbatim) The note-versions read is NV-none: the extra notes' cost is not shown on the 10 lists (an underpowered test, the distance's own check passed only on the user's go); loudness moves the rebuild closer but fails the soft-note guard; the audit names held notes cut short by re-finds and spurious bends as the dry-domain bottleneck. Run as is, adopt loudness, or fix the held notes and bends first?",
+    "asked": "Rebuild redo, audited: the extra notes DO cost (about 1.2 on the test lists once the hand-cleaned version is built fairly), but playing notes at their detected loudness recovers only about a quarter of that and fails the quiet-note check. The audit found the real bottleneck is elsewhere: held notes cut short (the detector ends them early, then 're-finds' them) and pitch bends applied to notes that don't bend. These are dry-sound measures, not the preset score. What next?",
     "how": "AskUserQuestion",
     "answer": "Run as is (Recommended)",
     "option_description": "Rebuild with the tool's notes unchanged and no loudness, then the decisive 47-recording preset-search row (~13,450 renders, ~2 h). The fix for held notes and bends is recorded as the next step, taken up if the row shows the rebuild limits the search.",

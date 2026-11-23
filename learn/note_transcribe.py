@@ -441,14 +441,18 @@ def flags_go_refusal(flagged_deciding, nr_main, trigger=FLAG_TRIGGER):
 
 def versions_loud(nr_main):
     """(Pure.) The loudness `build` uses, from main's note-versions read: its gamma when it reads NV-loud; otherwise
-    the user's decision recorded under `PHASE_GO_VERSIONS` ({"loud": gamma or None}). -> (gamma or None, refusal)."""
+    the user's decision recorded under `PHASE_GO_VERSIONS` ({"go": true, "versions_sha256": the read's sha256, "loud":
+    None, 1.0 or 2.0}), refused unless all three hold. -> (gamma or None, refusal)."""
     rec = (nr_main or {}).get(PHASE_VERSIONS)
     if not isinstance(rec, dict) or "code" not in rec:
         return None, f"main's {PHASE_VERSIONS} holds no code: the read first"
     if rec["code"] == "NV-loud":
         return rec.get("gamma"), None
     go = (nr_main or {}).get(PHASE_GO_VERSIONS)
-    if not isinstance(go, dict) or "loud" not in go:
+    if (not isinstance(go, dict) or go.get("go") is not True or not rec.get("sha256")
+            or go.get("versions_sha256") != rec["sha256"]
+            or "loud" not in go or isinstance(go["loud"], bool)
+            or go["loud"] not in (None,) + tuple(NR.LOUD_GAMMA)):
         return None, f"the read is {rec['code']}: to the user first ({PHASE_GO_VERSIONS})"
     return go["loud"], None
 

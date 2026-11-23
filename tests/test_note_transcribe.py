@@ -283,7 +283,18 @@ def test_the_two_triggers_and_the_versions_loudness():
     assert T.versions_loud({T.PHASE_VERSIONS: {"code": "NV-loud", "gamma": 2.0}}) == (2.0, None)
     assert "holds no code" in T.versions_loud({})[1]
     assert "to the user first" in T.versions_loud({T.PHASE_VERSIONS: {"code": "NV-short"}})[1]
-    assert T.versions_loud({T.PHASE_VERSIONS: {"code": "NV-none"}, T.PHASE_GO_VERSIONS: {"loud": None}}) == (None, None)
+    read = {"code": "NV-none", "sha256": "s"}
+    ok = {"go": True, "versions_sha256": "s", "loud": None}
+    assert T.versions_loud({T.PHASE_VERSIONS: read, T.PHASE_GO_VERSIONS: ok}) == (None, None)
+    for g in (1.0, 2.0):
+        assert T.versions_loud({T.PHASE_VERSIONS: read, T.PHASE_GO_VERSIONS: {**ok, "loud": g}}) == (g, None)
+    for bad in ({"loud": None}, {**ok, "go": False}, {k: v for k, v in ok.items() if k != "go"},
+                {**ok, "versions_sha256": "other"}, {k: v for k, v in ok.items() if k != "versions_sha256"},
+                {**ok, "loud": 3.0}, {**ok, "loud": "1"}, {**ok, "loud": True}, {k: v for k, v in ok.items() if k != "loud"}, "yes"):
+        loud, why = T.versions_loud({T.PHASE_VERSIONS: read, T.PHASE_GO_VERSIONS: bad})
+        assert loud is None and T.PHASE_GO_VERSIONS in why, bad
+    unhashed = {T.PHASE_VERSIONS: {"code": "NV-none"}, T.PHASE_GO_VERSIONS: {"go": True, "loud": None}}
+    assert T.PHASE_GO_VERSIONS in T.versions_loud(unhashed)[1]          # no sha on either side binds nothing
 
 
 def test_the_ladder_windows_and_usable_windows():
