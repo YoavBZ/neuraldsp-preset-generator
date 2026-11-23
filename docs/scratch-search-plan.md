@@ -670,6 +670,24 @@ already stored in this split (row (c)'s answer and row (b)'s answer); its other 
 
 **Coded with the first row that needs it,** under this key and before that row is read.
 
+> **Departure (2026-11-23; ledger `phase_scratch_tone_beside_departure`):** `fs-codec`'s short-row read runs before
+> 11g is coded, against 11g's "before that row is read". Decided by the delegated decision agent under the user's
+> standing instruction of 2026-11-23 (not the user's own answer). Reason: 11g decides nothing and its design is fully
+> declared here and in the ledger, so the read can't shape it. To keep the later run blind to the read, these hold:
+> 1. **Frozen now.** 11g's paired figure for `fs-codec` uses the row's own summary: `pool_summariser` on the full pool
+>    (BKS, GOAT and the panel weighted equally), the same paired interval method as 12b's `D_true`, BKS+GOAT beside,
+>    and for `rt-dac` the pool with the Phantom part left out beside. The control parts are the first BKS and first
+>    GOAT part in draw order. Nothing else is chosen at coding time.
+> 2. **Inputs only.** 11g's code reads only the hashed answers (`phase_scratch_codec_answers_m2l` and `_dac`), row
+>    (b)'s stored answers, the split's stored `true-noclip` values and fit v1's built files. It never reads the codec
+>    read's report, `D_true`, `D_blur` or the FK codes. A test asserts this.
+> 3. **Any change to 11g's declared design** made after this read needs its own declaration. That declaration says it
+>    was written after the `fs-codec` read and is reported as post hoc.
+> 4. **The reviewer** of the 11g code PR checks it against this section and the ledger only, and confirms points 1
+>    to 3.
+> 5. **11g reads once**, after the row's read, as declared. If a full row runs (on `FK-shut`), 11g's full-row arm keeps
+>    the same frozen summary.
+
 ## 12. The `fs-codec` row
 
 Declared 2026-11-23, before anything in it runs (research track 2, "the codec ceiling"), on the user's go of

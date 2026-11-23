@@ -4198,6 +4198,20 @@
     "rates": "the search's 2,397 renders took 6,620 process-seconds (2.76 a render; the re-timing's first 6 parts 4.05), 39 minutes of wall on 3 processes, against the plan's 1.51 from rows (b) and (c): a short search pays each part's start-up over 51 renders (the plan's caveat). The start reads: 94 renders in 223 to 227 s a process",
     "manifest_history": "review-551's nit on PR #557: tools/codec-models/manifest.json was rewritten after the round trips (lock notes only; every file entry unchanged): the round trips and build.json name b99578dc5b6443febcd047c1d4f6474bc34e13d169d867eaa416638ce0164fc9, the file is now 65f746244b6c5f4ec3d7cb3db71ecb43c64de6ae2d1977e8eaa24adbc6e86f7d (tools/codec-models/MANIFEST-HISTORY.md)",
     "next": "score --name rt-m2l (3 shards, 188 renders) and read --name rt-m2l once this hash is on main; rt-dac's search runs meanwhile"
+   },
+   "phase_scratch_tone_beside_departure": {
+    "declared": "2026-11-23, before the fs-codec short-row read (rt-m2l and rt-dac scored, nothing read)",
+    "decided_by": "the delegated decision agent under the user's standing instruction of 2026-11-23 (classed technical; option (a), about 75% confidence); not the user's own answer",
+    "plan": "docs/scratch-search-plan.md section 11g (the dated departure note under 'Coded with the first row that needs it')",
+    "departure": "fs-codec's short-row read runs before 11g (phase_scratch_tone_beside) is coded, against 11g's 'before that row is read'. Reason: 11g decides nothing and its design is fully declared in 11g and in phase_scratch_tone_beside, so the read can't shape it",
+    "held_to_keep_11g_blind": {
+     "1_frozen_now": "11g's paired figure for fs-codec uses the row's own summary: pool_summariser on the full pool (BKS, GOAT and the panel weighted equally), the same paired interval method as 12b's D_true, BKS+GOAT beside, and for rt-dac the pool with the Phantom part left out beside. The control parts are the first BKS and first GOAT part in draw order. Nothing else is chosen at coding time",
+     "2_inputs_only": "11g's code reads only the hashed answers (phase_scratch_codec_answers_m2l and _dac), row (b)'s stored answers, the split's stored true-noclip values and fit v1's built files; it never reads the codec read's report, D_true, D_blur or the FK codes; a test asserts this",
+     "3_later_changes": "any change to 11g's declared design made after this read needs its own declaration, which says it was written after the fs-codec read and is reported as post hoc",
+     "4_review": "the reviewer of the 11g code PR checks it against 11g and the ledger only, and confirms points 1 to 3",
+     "5_reads_once": "11g reads once, after the row's read, as declared; if a full row runs (on FK-shut), 11g's full-row arm keeps the same frozen summary"
+    },
+    "phase_scratch_tone_beside": "unchanged (append-only); this key adds the departure beside it"
    }
   },
   {
