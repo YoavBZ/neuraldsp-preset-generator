@@ -63,6 +63,7 @@ GATE_TOL_DB = 1.0                 # reproduction and length: within 1.0 dB (mean
 GATE_SETTING_TIE_DB = 0.1         # within this the released setting is kept
 GATE_DIRECTION_MIN = 5            # our output closer to the original than the input on at least 5 of 6
 COST_STOP_H = 8.0                 # wall hours at 4 threads: the gate's 18 runs and the 23 deciding clips
+CHECK_RUNS = {"full": 1, "cut": 3}  # the timed whole and cut clip, the seeded rerun, the zeros-reference run
 DECIDING_CLIPS = 23
 GOAT_CLIPS = 24
 ENV = {"TORCH_FORCE_WEIGHTS_ONLY_LOAD": "1", "WANDB_MODE": "disabled", "ENABLE_TORCH_COMPILE": "0",
@@ -141,10 +142,18 @@ def globals_refusal(found):
     return allow, (f"the checkpoint pickles {other}: not a torch or config class; stop and ask" if other else None)
 
 
+def gate_seconds(full_s, cut_s):
+    """(Pure.) The gate's projected seconds: its 18 runs (6 examples x 2 settings whole, 6 cut) and the 4 timing and
+    check runs (the timed whole and cut clip, the seeded rerun, the zeros-reference run), counted in full even where a
+    run is reused."""
+    return (2 * GATE_EXAMPLES + CHECK_RUNS["full"]) * full_s + (GATE_EXAMPLES + CHECK_RUNS["cut"]) * cut_s
+
+
 def cost_fit(gate_s, clip_s, budget_h=COST_STOP_H):
-    """(Pure.) The cost stop, in wall hours at 4 threads. gate_s: the gate's 18 runs' seconds (measured or projected
-    from the timed clip); clip_s: seconds a 4.5-s clip. The gate and the 23 deciding clips must fit, or stop and ask;
-    GOAT's 24 clips, then `ld-stem-b`'s 23, are added in that order only while the total stays under the budget."""
+    """(Pure.) The cost stop, in wall hours at 4 threads. gate_s: the gate's seconds (`gate_seconds`: its 18 runs and
+    the 4 timing and check runs); clip_s: seconds a 4.5-s clip. The gate and the 23 deciding clips must fit, or stop
+    and ask; GOAT's 24 clips, then `ld-stem-b`'s 23, are added in that order only while the total stays under the
+    budget."""
     total = gate_s + DECIDING_CLIPS * clip_s
     out = {"fits": total <= budget_h * 3600, "goat": False, "ld_stem_b": False}
     if out["fits"] and total + GOAT_CLIPS * clip_s <= budget_h * 3600:
@@ -493,7 +502,7 @@ def cmd_gate(a):
     t0 = time.time()
     y_cut0, _ = run_clip(m, x0[:CLIP], seeds(0, 0))
     cut_s = time.time() - t0
-    cost = cost_fit(2 * GATE_EXAMPLES * full_s + GATE_EXAMPLES * cut_s, cut_s)
+    cost = cost_fit(gate_seconds(full_s, cut_s), cut_s)
     res["timing"] = {"full_s": full_s, "cut_s": cut_s, "full_n": len(x0), "cost": cost}
     if not cost["fits"]:
         stop(res, "the cost stop: the gate and the 23 deciding clips do not fit 8 wall hours at 4 threads")

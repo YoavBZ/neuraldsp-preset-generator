@@ -1,4 +1,4 @@
-"""The from-scratch search's `fs-loudar` row, LOUDAR's second test (`learn/scratch_loudar.py`, `docs/scratch-search-plan.md`
+"""The from-scratch search's `fs-loudar` row, LOUDAR's second test (`learn/scratch_loudar.py`, plan doc
 section 13): `FL_TABLE` and `fl_code` (every case ends in exactly one code; FL-above and FL-reach never hold with
 FL-short; the deciding number switches to D_bar exactly when D_cut's upper end is above +0.05; FL-above needs G50's
 upper end below zero; FL-reach says when the bar is itself level with Cen), the bottleneck rule, the slot rule
@@ -103,14 +103,16 @@ def test_the_bottleneck_rule():
 
 
 def test_the_slot_rule():
-    # waiting: no report while fs-notes may still run (the verdict missing, unreadable, or "ok")
-    for ear in (None, {}, "ok", {"verdict": None}, {"verdict": "ok"}):
+    # waiting: no report while fs-notes may still run (the verdict missing, unreadable, "ok", or one that goes to the
+    # user: "ask" and "incomplete" are not a fault, fs-notes may still run after them)
+    for ear in (None, {}, "ok", {"verdict": None}, {"verdict": "ok"}, {"verdict": "ask"}, {"verdict": "incomplete"}):
         assert "renders wait" in SL.slots_refusal(False, ear)
     # path 1: fs-notes' report exists, whatever the verdict
-    for ear in (None, {"verdict": "ok"}, {"verdict": "fault-content"}):
+    for ear in (None, {"verdict": "ok"}, {"verdict": "ask"}, {"verdict": "fault-content"}):
         assert SL.slots_refusal(True, ear) is None
-    # path 2: no report, but the verdict is recorded as anything but "ok": fs-notes will not run
-    for v in ("fault-content", "fault-signal", "ask", "incomplete"):
+    # path 2: no report, but a fault verdict is recorded: fs-notes will not run
+    assert SL.OPEN_VERDICTS == ("fault-content", "fault-signal")
+    for v in SL.OPEN_VERDICTS:
         assert SL.slots_refusal(False, {"verdict": v}) is None
     assert SL.rec_refusal(None) and SL.rec_refusal({"fl": {"code": "FL-reach"}})
     assert SL.rec_refusal({"fl": {"code": "FL-short"}}) is None and SL.rec_refusal({"fl": {"code": "FL-null"}}) is None
@@ -141,6 +143,16 @@ def test_the_timing_check_counts_deciding_parts():
     assert SL.timing_stop(off, sets_of) == ({"ld-stem": ["b1", "p1"]}, False)       # GOAT never stops it
     off["ld-stem"]["b2"] = None
     assert SL.timing_stop(off, sets_of)[1]
+
+
+def test_the_timing_check_stops_on_ld_names_only_and_reports_stem_in_beside():
+    sets_of = {"b1": "bks", "b2": "bks", "p1": "panel"}
+    late = {"b1": 3.0, "b2": -2.0, "p1": 4.0}
+    beyond, stop = SL.timing_stop({"stem-in": dict(late), "ld-stem": {"b1": 0.0, "b2": 0.0, "p1": 0.0}}, sets_of)
+    assert not stop and beyond == {"stem-in": ["b1", "b2", "p1"], "ld-stem": []}     # reported, never a stop
+    for name in ("ld-stem", "ld-stem-b", "ld-rec"):
+        assert SL.timing_stop({name: dict(late)}, sets_of)[1]
+    assert SL.TIMING_NAMES_PREFIX == "ld-" and "di-cut" not in SL.PLACED
 
 
 def test_the_pool_rule_and_the_refusal_stop():
@@ -259,14 +271,15 @@ def _built(monkeypatch, tmp_path, report_ok=True, ear="ok", control=None):
 
 @pytest.mark.parametrize("cmd", SL.RENDER_COMMANDS)
 def test_every_render_command_waits_for_fs_notes(monkeypatch, tmp_path, cmd):
-    for ear in ("ok", None):                          # no report, fs-notes may still run: wait
+    for ear in ("ok", None, "ask", "incomplete"):     # no report, fs-notes may still run: wait
         _built(monkeypatch, tmp_path, report_ok=False, ear=ear)
         with pytest.raises(SystemExit, match="fs-notes may still run"):
             SL.COMMANDS[cmd](_args())
 
 
 @pytest.mark.parametrize("cmd", SL.RENDER_COMMANDS)
-@pytest.mark.parametrize("report_ok, ear", [(True, "ok"), (False, "ask"), (False, "fault-content")])
+@pytest.mark.parametrize("report_ok, ear", [(True, "ok"), (True, "ask"), (False, "fault-content"),
+                                            (False, "fault-signal")])
 def test_every_render_command_passes_the_slot_gate_on_either_path(monkeypatch, tmp_path, cmd, report_ok, ear):
     _built(monkeypatch, tmp_path, report_ok=report_ok, ear=ear)
     with pytest.raises(SystemExit) as e:    # past the gate, a later guard stops it (the draw's hash is a stand-in)

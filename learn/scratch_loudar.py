@@ -75,6 +75,8 @@ HALVES = {"A": (1.0, 5.5), "B": (5.5, 10.0)}       # pretrain_set.HALVES (= knob
 SMALL, BIG = S.SMALL, S.BIG
 CUT_SWITCH = 0.05                                  # D_cut's upper end above this: the table reads D_bar
 TIMING_MS, TIMING_STOP = 1.0, 3                    # the codec row's rule, as a check: 3 or more deciding parts stop
+TIMING_NAMES_PREFIX = "ld-"                        # only LOUDAR's dry guitars stop it; stem-in is reported beside
+OPEN_VERDICTS = ("fault-content", "fault-signal")  # a recorded ear verdict that rules fs-notes out (not "ask")
 CHECK_SHA256 = SC.CHECK_SHA256
 COMPRESSION_NOTE = SC.COMPRESSION_NOTE
 
@@ -134,6 +136,7 @@ FL_TABLE = (    # (code, when, reading, what follows); the first that holds, on 
 )
 FL_CODES = tuple(c for c, *_ in FL_TABLE)
 REC_CODES = ("FL-short", "FL-null")                # ld-rec runs after these
+REC_NULL_NOTE = "in ld-rec's read D_null is G50(ld-rec) - G50(stem-in): LOUDAR on the clean record against the stem"
 
 
 def _iv_ok(iv):
@@ -231,12 +234,13 @@ def bottleneck(rec_code, goat):
 def slots_refusal(report_exists, ear_record):
     """(Pure.) Why a render command waits for `fs-notes`, or None. The gate keeps the render slots free while
     `fs-notes` might still run; it is not a dependency on `fs-notes` passing. Renders may go once `fs-notes`' report
-    exists, or once main's phase_nr_1_redo_ear verdict is recorded as anything but "ok" (then `fs-notes` will not
-    run). They wait while there is no report and the verdict is missing or "ok"."""
+    exists, or once main's phase_nr_1_redo_ear verdict is recorded as a fault (OPEN_VERDICTS: "fault-content",
+    "fault-signal"; then `fs-notes` will not run). They wait otherwise: no report, and the verdict missing, "ok", or
+    one that goes to the user ("ask", "incomplete"), since `fs-notes` may still run after it."""
     if report_exists:
         return None
     verdict = ear_record.get("verdict") if isinstance(ear_record, dict) else None
-    if verdict is not None and verdict != "ok":
+    if verdict in OPEN_VERDICTS:
         return None
     return (f"fs-notes may still run (no PF/fs/notes/report.json; main's phase_nr_1_redo_ear verdict "
             f"{verdict!r}): renders wait for its row")
@@ -566,10 +570,12 @@ def build_names(draw, sd, names, rec=False):
 
 def timing_stop(offsets, sets_of, tol=TIMING_MS, stop=TIMING_STOP):
     """(Pure.) The codec row's rule as a check, never a correction: {name: {pkey: lag ms}} -> ({name: [deciding pkeys
-    beyond tol]}, stopped when any name has `stop` or more deciding parts beyond)."""
+    beyond tol]}, stopped when any of LOUDAR's dry guitars (`ld-*`) has `stop` or more deciding parts beyond).
+    `stem-in` is reported beside and never stops the build: it is an amped signal, whose envelope's lag against the DI
+    can differ for reasons other than timing."""
     beyond = {n: sorted(k for k, v in d.items() if sets_of.get(k) in DECIDING and (v is None or abs(v) > tol))
               for n, d in offsets.items()}
-    return beyond, any(len(v) >= stop for v in beyond.values())
+    return beyond, any(len(v) >= stop for n, v in beyond.items() if n.startswith(TIMING_NAMES_PREFIX))
 
 
 def write_build(draw, rec, held, recs, figs, offsets, lufs, names):
@@ -585,6 +591,7 @@ def write_build(draw, rec, held, recs, figs, offsets, lufs, names):
            "in_json_sha256": S.file_sha(in_json()), "run_records": runs,
            "settings": sorted({r["setting"] for v in runs.values() for r in v.values()}),
            "lufs_beyond": off_level, "timing_beyond_1ms": beyond, "timing_stopped": tstop,
+           "timing_beside_only": sorted(n for n in beyond if not n.startswith(TIMING_NAMES_PREFIX)),
            "goat_built": any(sets_of[k] == "goat" for k in recs.get("ld-stem", {})),
            "time": time.strftime("%Y-%m-%d %H:%M:%S"), "names": recs}
     if len(out["settings"]) > 1:
@@ -593,7 +600,8 @@ def write_build(draw, rec, held, recs, figs, offsets, lufs, names):
     if off_level:
         why.append(f"{len(off_level)} measured clips more than {SC.LUFS_TOL} LU off {SC.LUFS}")
     if tstop:
-        why.append(f"the timing check: {beyond} (3 or more deciding parts beyond 1 ms): stop and ask before renders")
+        why.append(f"the timing check: {beyond} (an ld-* dry guitar with 3 or more deciding parts beyond 1 ms): stop "
+                   "and ask before renders")
     if why:
         P.save(loudar_dir() / f"build{'-rec' if rec else ''}-stopped-{time.strftime('%Y%m%d-%H%M%S')}.json",
                dict(out, stopped=why))
@@ -938,13 +946,13 @@ def cmd_read_rec(_args):
     main_rep = json.loads(report_path().read_text())
     rows, head, _ = read_body(sd, draw, m, REC)
     out = {"plan": PLAN, "row": ROW + " (ld-rec)", **head, "answers_sha256": S.file_sha(answers_path(REC)),
-           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+           "d_null_is": REC_NULL_NOTE, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     P.save(rows_path(True), dict(out, rows=rows))
     fl = fl_code(rows["D_null"]["bp"], rows["D_blur"]["bp"], rows["D_cut"]["bp"], rows["D_bar"]["bp"],
                  rows["G50"]["bp"], rows["G50_rows_b_c"]["fs-both"]["bp"])
     bn = bottleneck(fl["code"], main_rep.get("goat"))
     P.save(report_path(True), dict(out, rows=rows, fl=fl, bottleneck=bn))
-    print(f"ld-rec: {fl['code']}; bottleneck: {bn['bottleneck']}")
+    print(f"ld-rec: {fl['code']} ({REC_NULL_NOTE}); bottleneck: {bn['bottleneck']}")
 
 
 def cmd_versus_notes(_args):

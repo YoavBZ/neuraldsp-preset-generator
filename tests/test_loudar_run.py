@@ -41,7 +41,8 @@ def test_the_two_settings_differ_in_exactly_the_operators_fit():
     diff = {k for k in rel if rel[k] != pap[k]}
     assert diff == {"opt_latent_params.operator_updates_per_step", "opt_latent_params.optimizer_operator.lr",
                     "opt_latent_params.optimizer_operator.weight_decay"}
-    assert rel["opt_latent_params.operator_updates_per_step"] == 1 and pap["opt_latent_params.optimizer_operator.lr"] == 1e-4
+    assert rel["opt_latent_params.operator_updates_per_step"] == 1
+    assert pap["opt_latent_params.optimizer_operator.lr"] == 1e-4
     assert rel["sampling_params.T"] == pap["sampling_params.T"] == 300 and rel["dps_params.zeta"] == 0.3
     assert rel["wandb.use"] is False and rel["dps_params.normalize_std_from_reference"] is False
     with pytest.raises(SystemExit):
@@ -83,6 +84,12 @@ def test_pickle_globals_lists_without_unpickling(tmp_path, protocol):
     got = LR.pickle_globals(p)
     assert "collections.OrderedDict" in got and "collections.Counter" in got
     assert "collections.Counter" in LR.globals_refusal(got)[1]
+
+
+def test_the_gates_projected_seconds_count_the_four_timing_and_check_runs():
+    assert LR.CHECK_RUNS == {"full": 1, "cut": 3}
+    assert LR.gate_seconds(100, 10) == (12 + 1) * 100 + (6 + 3) * 10      # 18 runs + the timed whole and cut clip,
+    assert LR.gate_seconds(0, 1) == 9 and LR.gate_seconds(1, 0) == 13      # the seeded rerun, the zeros reference
 
 
 def test_the_cost_stop():

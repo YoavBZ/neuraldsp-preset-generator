@@ -989,8 +989,10 @@ it is the first dry guitar from the song alone to do so. If it does not, `ld-rec
   section's 0.25 s before), cut at the section's ends, zeros elsewhere. The stored lag was estimated against the true
   DI, which a song would not have; it is used as every row uses it. No timing is read from the true DI.
 - **The timing check** (the codec row's rule, as a check, never as a correction): the 1-ms envelope's lag of each placed
-  dry guitar against the true DI inside its span. Over 1 ms on 3 or more deciding parts for any name: the build stops,
-  and the question goes to the user before any render.
+  dry guitar against the true DI inside its span. Over 1 ms on 3 or more deciding parts for any of LOUDAR's dry
+  guitars (`ld-stem`, `ld-stem-b`, `ld-rec`): the build stops, and the question goes to the user before any render.
+  `stem-in`'s lag is reported beside and never stops the build: it is an amped signal, whose envelope's lag against
+  the DI can differ for reasons other than timing.
 - **The deciding sets: BKS and the panel** (23 parts, 11 DI files), weighted equally. LOUDAR's prior trained on GOAT's
   DI, so GOAT is read beside, marked in-sample, and never decides.
 
@@ -1028,8 +1030,9 @@ table reads `D_bar` and says so.
 gate reads `FL-reach` and says the gate failed.
 
 **Naming the bottleneck** (after `FL-short` or `FL-null`; coded now, `bottleneck`):
-- `ld-rec`'s row (its null against `stem-in`; `di-cut` reused) is read by the same table. At or above the
-  bar (`FL-above` or `FL-reach`): **the stem**, and LOUDAR becomes a yardstick for separator work.
+- `ld-rec`'s row is read by the same table, with `di-cut` reused. In that read `D_null` is G50(`ld-rec`) −
+  G50(`stem-in`): LOUDAR on the clean record against the stem. At or above the bar (`FL-above` or `FL-reach`):
+  **the stem**, and LOUDAR becomes a yardstick for separator work.
 - Otherwise GOAT's beside read splits the rest. GOAT at the bar while BKS and the panel are short: **the prior's
   coverage, or memorisation**. GOAT short as well: **the generator or its operator**. GOAT not run (outside the cost
   stop): **generator against prior: not split**.
@@ -1055,8 +1058,9 @@ beside `ld-stem`'s), descriptive, never deciding.
   blob and `fs-notes`' two checks as the codec row; main holds `phase_fs`, `phase_fs_draw`,
   `phase_scratch_both_outcome`, `phase_scratch_codec_outcome` and `phase_scratch_loudar`. **Every render command**
   (`start`, `control`, `search`, `score`) also **waits while `fs-notes` might still run**: it refuses until
-  `fs-notes`' report exists, **or** main's `phase_nr_1_redo_ear` verdict is recorded as anything other than "ok" (then
-  `fs-notes` will not run). The gate keeps the render slots free for `fs-notes`; it is not a dependency on `fs-notes`
+  `fs-notes`' report exists, **or** main's `phase_nr_1_redo_ear` verdict is recorded as a fault ("fault-content" or
+  "fault-signal"; then `fs-notes` will not run). An "ask" or "incomplete" verdict goes to the user, and `fs-notes` may
+  still run after it, so renders keep waiting. The gate keeps the render slots free for `fs-notes`; it is not a dependency on `fs-notes`
   passing. Then the render-slot cap, the disk guard before every part, C3r's state, no separation beside,
   `never_overwrite`. `search` needs the control passed; `score` and `read` the answers' keys;
   `ld-rec`'s commands an `FL-short` or `FL-null` report and their own build hash (`phase_scratch_loudar_dry_rec`).
@@ -1065,15 +1069,15 @@ beside `ld-stem`'s), descriptive, never deciding.
 - **Steps:** unit 0 (13d) → `prep` (the search halves LOUDAR hears; each equal to the blanked reference's span) →
   LOUDAR's runs (the 23 `ld-stem` clips, then GOAT's 24, then `ld-stem-b`'s 23, while under the cost stop; never beside
   a render job) → `build` (every check before anything is written) → hash PR `phase_scratch_loudar_dry` → once
-  `fs-notes`' row is read (or its ear verdict is not "ok"): `start` → `control` → `search --name ld-stem` (`--first 2` first) → `answers` → hash PR → `di-cut`'s
+  `fs-notes`' row is read (or its ear verdict on main is a fault): `start` → `control` → `search --name ld-stem` (`--first 2` first) → `answers` → hash PR → `di-cut`'s
   and `stem-in`'s searches and hash PRs → each `score` → `read` → on `FL-short` or `FL-null`: `ld-rec`'s runs →
   `build-rec` → its hash PR → its short row → `read-rec` → hand-back, audit, results PR `phase_scratch_loudar_outcome`.
 - **Cost (renders, measured rates):** start reads 186, control 22, short searches 4,743 (`ld-stem` 47, `di-cut` 23,
   `stem-in` 23, at 51 a part), scores 372: **5,323**, about 53 minutes, up to about 1.5 hours under load; 3,955
   without GOAT. `ld-rec`, only after a fail: 1,311.
 - **The cost stop** (CPU; the delegated decision agent's choice under the user's standing rule: yes, confidence 0.8):
-  everything that runs without asking must fit **8 wall hours at 4 threads**: the gate's 18 runs and the 23 deciding
-  clips. GOAT's 24 clips, then `ld-stem-b`'s 23, are added in that order only while the total stays under 8 hours (GOAT
+  everything that runs without asking must fit **8 wall hours at 4 threads**: the gate's 18 runs, its 4 timing and
+  check runs (the timed whole and cut clip, the seeded rerun, the zeros-reference run), and the 23 deciding clips. GOAT's 24 clips, then `ld-stem-b`'s 23, are added in that order only while the total stays under 8 hours (GOAT
   placed before `ld-stem-b`). If the gate and the 23 do not fit: stop and ask. Fewer steps would be another method and
   is not offered. The time for one 10-s window is reported either way.
 - **`stem-in` always, `ld-rec` only after a fail** (the delegated decision agent's choice: yes, confidence 0.75).
