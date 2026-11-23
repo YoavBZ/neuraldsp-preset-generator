@@ -91,6 +91,9 @@ WEIGHTS = {
 SCREENED_SIZES = ("medium", "large")     # the amendment: both screened on the ten lists, the size picked by accuracy
 LIST_KINDS = {"medium": ("list", "list-free"), "large": ("list-large", "list-large-free")}
 PICK_ARM, PICK_FIELD = "tx-ms", "f"      # the size pick: MuScriptor's own note F on the lists, paired per list
+INSIDE_LEADS = {"inside": 0.0, "inside_lead": 0.050}   # the side figure: found notes starting at or after -lead s
+                                         # (the redo's own definition, phase_nr_1_redo_go_hum: on >= 0, and the guard's
+                                         # 50-ms lead beside); report only, never a gate or a code
 PICK_UNDECIDED = "undecided, medium kept"   # large not decided better: medium kept, large open for the user
 PICK_NO_SHARED = "fewer than two shared lists, medium kept"   # no interval to read
 REQUIREMENTS = ("torch>=2.3", "numpy>=2", "einops>=0.4", "mido>=1.3", "packaging>=20.0", "safetensors>=0.4",
@@ -375,6 +378,12 @@ def window_figures(truth, est):
             "extras": extras_sorted(truth, est, {j for _, j in pairs})}
 
 
+def inside_notes(est, lead=0.0):
+    """(Pure.) The side figure's found notes: those starting inside the window (on >= -lead, the window's own
+    timeline). The truth is unchanged: its notes start inside the window by construction."""
+    return [n for n in est if n["on"] >= -lead]
+
+
 def window_row(st, cluster, key, group, kind, truth, notes, reps=None, timing=None):
     """(Pure.) A window's stored row: its set, cluster (the list, or the Guitar-TECHS file), key, group ("lists", "P1",
     "P2", "goat"), kind, and per arm the figures against the truth (none on GOAT: no usable truth) and the note
@@ -383,6 +392,8 @@ def window_row(st, cluster, key, group, kind, truth, notes, reps=None, timing=No
            "notes": {a: len(n) for a, n in notes.items()}, "borrow": reps or {}, "timing": timing or {}}
     if truth is not None:
         row["figures"] = {a: window_figures(truth, n) for a, n in notes.items()}
+        row["side"] = {k: {a: window_figures(truth, inside_notes(n, lead)) for a, n in notes.items()}
+                       for k, lead in INSIDE_LEADS.items()}           # report only (`side_report`)
         row["bends"] = {a: bend_figures(truth, n, notes["tx-bp"]) for a, n in notes.items()}
     else:
         row["bends"] = {a: bend_figures(None, n, notes["tx-bp"]) for a, n in notes.items()}
@@ -613,7 +624,22 @@ def summarise_read(list_rows, real_rows, goat_rows):
     code = txr_code(readings)
     un = unpaired_share(rows, "tx-ms")
     return {"numbers": numbers, "checks": checks, "readings": readings, **code,
-            "unpaired_share": un, "recommendation": recommendation(code["code"], code["flags"], un)}
+            "unpaired_share": un, "recommendation": recommendation(code["code"], code["flags"], un),
+            "side_inside": side_report(real_rows)}                    # report only: never read above
+
+
+def side_report(rows):
+    """(Pure.) The declared side figure, report only: per group (`report_groups`) and arm, the pooled figures
+    (precision and the extras among them) counting only found notes that start inside the window (`inside_notes`;
+    "inside": on >= 0, "inside_lead": on >= -0.05 s), beside the deciding figures. It never enters a reading, a guard
+    or a code. Rows without it (the lists' rows, made before it was declared) are left out."""
+    rs = [r for r in rows if "side" in r]
+    out = {}
+    for g in report_groups(rs):
+        sub = [r for r in rs if in_group(r, g)]
+        out[g] = {k: {a: pooled([r["side"][k][a] for r in sub if a in r["side"][k]])
+                      for a in sorted({a for r in sub for a in r["side"][k]})} for k in INSIDE_LEADS}
+    return out
 
 
 def unpaired_share(rows, arm="tx-ms"):
@@ -886,10 +912,13 @@ def speed_note(lists_body, go_read, limit=SIZE_SWITCH_S):
 def later_stage_size(lists_body):
     """(Pure.) The MuScriptor size for every later stage on this track (the reserved stems read among them): large,
     by the user's stance, unless large was measured worse (the size pick decided it worse) or could not run (its gate
-    stopped)."""
-    label = ((lists_body or {}).get("size_pick") or {}).get("label")
+    stopped), and only when large's own screen read lists-go (`picked_size`'s guard)."""
+    body = lists_body or {}
+    label = (body.get("size_pick") or {}).get("label")
     if label in ("large decided worse, medium kept", "large gate stopped, medium kept"):
         return "medium"
+    if ((body.get("sizes") or {}).get("large") or {}).get("screen") != "lists-go":
+        return "medium"                                  # as picked_size: never large on medium's screen
     return LATER_STAGE_SIZE
 
 
@@ -1478,9 +1507,11 @@ def bp_note(kind, key, want_sha, pair):
 
 
 def stage_b_context(m):
-    """The truth listing (main's `phase_nr_1_redo_truth`), the truth report, the 27 windows and their items."""
+    """The truth listing (main's `phase_nr_1_redo_truth`), the truth report (refused when its hum guard stopped it,
+    unless main's `note-rebuild` entry holds the user's go naming this file's sha256, `phase_nr_1_redo_go_hum`, as
+    the redo reads it), the 27 windows and their items."""
     listing = T.require_truth(m)
-    report = T.require_truth_report()
+    report = T.require_truth_report(m.get(NR_ID))
     excl, tn, z, _ = T._dev_context()
     dev = T.dev_windows(z, excl, tn["items"])
     return listing, report, z, dev, [w["item"] for w in dev]

@@ -5103,6 +5103,13 @@
     "beside": "shown before the go: Basic Pitch's real-DI precision P1 0.454 (chords 0.228, scales 0.616), P2 0.610 (chords 0.431, scales 0.677); the list screen lists-go on both sizes; the size pick undecided, medium kept, large open (tx-ms note F large - medium +0.010 [-0.019, +0.040]; end accuracy +0.183 [+0.040, +0.326]); stage b 0.18 h on large",
     "consequences": "large runs stage b (picked_size honours the go: the pick is undecided and large's screen read lists-go). By the stance, large is the size for every later MuScriptor stage on this track, the reserved stems read among them, unless large is measured worse (later_stage_size). Every MuScriptor rule that downgraded by speed alone is retired: the gate's two-hour switch to small (gate_rule keeps the size) and the stage-b slow refusal (speed_note reports, never refuses). Speed is still reported and never decides. No scoring rule changes",
     "expected": "stage b can only end TXR-undecided, with or without veto-holds: TXR-vote and TXR-ms need recall held on the lists, which failed on both sizes, and TXR-ends needs ends better on the lists, which failed (the audit's reading; the vote and the veto keep Basic Pitch's note-offs)"
+   },
+   "phase_tx_inside_amend": {
+    "declared": "2026-11-23, before any stage-b note exists (transcribe refused at the hum guard and wrote nothing)",
+    "hum_go": "the orchestrator's technical call, not a new user go: the user's go on the hum guard's stop (note-rebuild phase_nr_1_redo_go_hum) attests that this exact file, truth-report.json sha256 425f3fd11515b364ab1e70cb3f68132d4ae21818834cda0528ef6197a7f2f16f, is sound, and stage b reads that file for the same windows. stage_b_context now reads it as the redo does (note_transcribe.require_truth_report with main's note-rebuild entry). Nothing in the hum rule or any threshold changes",
+    "side_figure": "declared report-only addition: read reports, beside every arm's precision and extras, the same figures counting only found notes that start inside the window, by the redo's own definition (phase_nr_1_redo_go_hum's precision_starting_inside: on >= 0; and beside it the guard's 50-ms lead, on >= -0.05 s), per window and pooled per group (note_tx.side_report, read.json's side_inside). The truth is unchanged. It never gates, never enters a reading and never decides a code",
+    "why": "the hum go's own finding: chords ringing in from before each window and notes in the transcriber's 1-s lead-in inflate every arm's extras alike",
+    "guard": "later_stage_size returns large only when large's own screen read lists-go (picked_size's guard)"
    }
   }
  ],

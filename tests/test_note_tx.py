@@ -530,11 +530,14 @@ def test_speed_never_decides_a_muscriptor_size():
 
 def test_later_stages_run_large_unless_large_is_measured_worse():
     assert X.LATER_STAGE_SIZE == "large"
+    go = {"large": {"screen": "lists-go"}}
     for label in ("undecided, medium kept", "large decided better", "fewer than two shared lists, medium kept"):
-        assert X.later_stage_size({"size_pick": {"label": label}}) == "large"
-    assert X.later_stage_size({"size_pick": {"label": "large decided worse, medium kept"}}) == "medium"
-    assert X.later_stage_size({"size_pick": {"label": "large gate stopped, medium kept"}}) == "medium"
-    assert X.later_stage_size({}) == "large"
+        assert X.later_stage_size({"size_pick": {"label": label}, "sizes": go}) == "large"
+        assert X.later_stage_size({"size_pick": {"label": label},
+                                   "sizes": {"large": {"screen": "TXR-none"}}}) == "medium"   # never on medium's screen
+    assert X.later_stage_size({"size_pick": {"label": "large decided worse, medium kept"}, "sizes": go}) == "medium"
+    assert X.later_stage_size({"size_pick": {"label": "large gate stopped, medium kept"}, "sizes": go}) == "medium"
+    assert X.later_stage_size({}) == "medium"                    # no large screen at all
     slow = {"size": "large", "size_pick": {"over_two_hours": True, "projections": {"large": 9000.0}}}
     assert X.picked_size(slow) == "large" and X.picked_size({}) == "medium"   # a screen before the amendment
     open_ = {"size": "medium", "size_pick": {"large_open_for_user": True, "projections": {"large": 9000.0}},
@@ -550,6 +553,42 @@ def test_later_stages_run_large_unless_large_is_measured_worse():
     assert "no gate_sha256" in X.large_stop_refusal({"stopped": "no repeat"}, "g", {"size": "large", "device": None})
     assert "not the file" in X.large_stop_refusal(stop, "h", {"size": "large", "device": None})
     assert "device null" in X.large_stop_refusal(stop, "g", {"size": "large", "device": "mps"})
+
+
+def test_the_side_figure_counts_only_notes_starting_inside_and_decides_nothing():
+    truth = [_n(0.5, 60), _n(1.0, 64)]
+    est = [_n(-0.30, 55), _n(-0.03, 67), _n(0.5, 60), _n(1.0, 64)]   # a chord ringing in, a note 30 ms early
+    assert X.INSIDE_LEADS == {"inside": 0.0, "inside_lead": 0.050}
+    assert [n["pitch"] for n in X.inside_notes(est)] == [60, 64]
+    assert [n["pitch"] for n in X.inside_notes(est, 0.05)] == [67, 60, 64]
+    row = X.window_row("real", "P1|chords|a", "k", "P1", "chords", truth, {"tx-bp": est, "tx-vote": est[2:]})
+    assert row["figures"]["tx-bp"]["precision"] == 0.5                 # the deciding figure is unchanged
+    assert row["side"]["inside"]["tx-bp"]["precision"] == 1.0 and row["side"]["inside_lead"]["tx-bp"]["est"] == 3
+    rep = X.side_report([row])
+    assert rep["real"]["inside"]["tx-bp"]["precision"] == 1.0 and rep["P1|chords"]["inside_lead"]["tx-vote"]["est"] == 2
+    figs = lambda: _row("l0", {"tx-bp": _fig(10, 10, 16), "tx-vote": _fig(10, 10, 11), "tx-ms": _fig(10, 10, 11),
+                               "tx-veto": _fig(10, 10, 11)})
+    real = dict(figs(), set="real", group="P1", kind="chords", cluster="P1|chords|x")
+    tweaked = dict(real, side={"inside": {"tx-bp": _fig(10, 10, 10)}, "inside_lead": {"tx-bp": _fig(10, 10, 10)}})
+    a, b = X.summarise_read([figs()], [real], []), X.summarise_read([figs()], [tweaked], [])
+    assert a["readings"] == b["readings"] and a["code"] == b["code"]   # it never decides
+    assert "side_inside" in b and b["side_inside"]["real"]["inside"]["tx-bp"]["precision"] == 1.0
+
+
+def test_stage_b_reads_the_truth_report_with_the_users_hum_go(monkeypatch):
+    """The truth report stopped on its hum guard; stage b reads it only as the redo does, with main's
+    `phase_nr_1_redo_go_hum` naming the file's sha256 (note_transcribe.truth_report_refusal)."""
+    seen = []
+    monkeypatch.setattr(T, "require_truth", lambda m: {"windows": []})
+    monkeypatch.setattr(T, "require_truth_report", lambda nr=None: seen.append(nr) or {"windows": []})
+    monkeypatch.setattr(T, "_dev_context", lambda: (None, {"items": {}}, None, None))
+    monkeypatch.setattr(T, "dev_windows", lambda z, e, i: [{"item": "item_1"}])
+    nr = {T.PHASE_GO_HUM: {"go": True, "truth_report_sha256": "s"}}
+    X.stage_b_context({"note-rebuild": nr, "note-transcriber": {}})
+    assert seen == [nr]                                          # main's note-rebuild entry, so the go is read
+    body = {"stopped": [["w", 0.06]]}
+    assert "to the user" in T.truth_report_refusal(body, {}, "s")
+    assert T.truth_report_refusal(body, nr, "s") is None and "to the user" in T.truth_report_refusal(body, nr, "t")
 
 
 def test_a_stop_needs_its_gate_file(monkeypatch, tmp_path):
