@@ -101,11 +101,16 @@ def test_every_report_carries_the_no_prior_improvement_caveat():
 
 
 def test_the_bottleneck_rule():
-    assert SL.bottleneck("FL-reach", "short")["bottleneck"] == "the stem"
-    assert SL.bottleneck("FL-above", None)["bottleneck"] == "the stem"
-    assert SL.bottleneck("FL-short", "at the bar")["bottleneck"] == "the prior's coverage, or memorisation"
-    assert SL.bottleneck("FL-short", "short")["bottleneck"] == "the generator or its operator"
-    assert SL.bottleneck("FL-null", None)["bottleneck"] == "generator against prior: not split"
+    ns = " (timing and timbre not separated)"
+    assert SL.NOT_SEPARATED == ns
+    assert SL.bottleneck("FL-reach", "short")["bottleneck"] == "the stem" + ns
+    assert SL.bottleneck("FL-above", None)["bottleneck"] == "the stem" + ns
+    assert SL.bottleneck("FL-short", "at the bar")["bottleneck"] == "the prior's coverage, or memorisation" + ns
+    assert SL.bottleneck("FL-short", "short")["bottleneck"] == "the generator or its operator" + ns
+    assert SL.bottleneck("FL-null", None)["bottleneck"] == "generator against prior: not split" + ns
+    src = (REPO / "learn" / "scratch_loudar.py").read_text()
+    body = src[src.index("def cmd_read_rec("):src.index("def cmd_versus_notes(")]
+    assert "endswith(NOT_SEPARATED)" in body and "bottleneck: {bn['bottleneck']}" in body
     with pytest.raises(SystemExit):
         SL.bottleneck("F-both", None)
     assert SL.goat_reading(None) is None
@@ -179,13 +184,57 @@ def test_the_timing_caveat_and_the_lags_beside_g50():
     assert src.count("timing_caveat=TIMING_CAVEAT") == 2                    # the read and ld-rec's read
     figs = {"a": {"ld-stem": {"lag_ms": -11.0}, "stem-in": {"lag_ms": 0.0}}, "b": {"ld-stem": {"lag_ms": 1.0}}}
     got = SL.lags_beside_g50({"b": -0.2, "a": 0.1}, figs, ["ld-stem", "stem-in"])
-    assert list(got) == ["a", "b"] and got["a"] == {"G50": 0.1, "lag_ms": {"ld-stem": -11.0, "stem-in": 0.0}}
+    assert list(got) == ["a", "b"] and got["a"]["G50"] == 0.1
+    assert got["a"]["lag_ms"] == {"ld-stem": -11.0, "stem-in": 0.0}
     assert got["b"]["lag_ms"] == {"ld-stem": 1.0, "stem-in": None}
+    assert got["a"]["sub_within_1ms"] == {"ld-stem": None, "stem-in": None}       # no diagnostic: blank, not 0
     assert len(SL.TIMING_DIAGNOSTIC_SHA256) == len(SL.TIMING_DECISION_SHA256) == 64
     d = json.loads((REPO / "docs/dev-test-ledger.json").read_text())
     e = next(t for t in d["tests"] if t.get("test_id") == S.LEDGER_ID)["phase_scratch_loudar_timing_amend"]
     assert e["diagnostic"]["sha256"] == SL.TIMING_DIAGNOSTIC_SHA256
     assert e["decision_record"]["sha256"] == SL.TIMING_DECISION_SHA256 and "not the user's" in e["decided_by"]
+
+
+def test_the_subwindow_fraction_beside_g50_and_its_spearman():
+    sub = {"a": {"set": "bks", "ld-stem": {"sub_frac_within1": 0.25}, "stem-in": {"sub_frac_within1": 0.9}},
+           "b": {"set": "panel", "ld-stem": {"sub_frac_within1": 0.5}},
+           "c": {"set": "bks", "ld-stem": {"sub_frac_within1": 0.75}},
+           "g": {"set": "goat", "ld-stem": {"sub_frac_within1": 0.0}}}
+    got = SL.lags_beside_g50({"a": 0.1, "b": 0.0}, {}, ["ld-stem", "stem-in"], sub)
+    assert got["a"]["sub_within_1ms"] == {"ld-stem": 0.25, "stem-in": 0.9}
+    assert got["b"]["sub_within_1ms"] == {"ld-stem": 0.5, "stem-in": None}
+    sets_of = {"a": "bks", "b": "panel", "c": "bks", "g": "goat"}
+    d_true = {"a": 0.3, "b": 0.2, "c": 0.1, "g": 9.0}                            # GOAT never counted
+    r = SL.d_true_vs_subwin(d_true, sub, sets_of, "ld-stem")
+    assert r == {"name": "ld-stem", "n": 3, "rho": pytest.approx(-1.0), "reported_only": True}
+    assert SL.d_true_vs_subwin(d_true, sub, sets_of, "ld-rec") == {"name": "ld-rec", "n": 0, "rho": None,
+                                                                   "reported_only": True}
+    assert SL.spearman([1, 2, 3, 4], [10, 20, 30, 40]) == pytest.approx(1.0)
+    assert SL.spearman([1, 2, 2, 3], [1, 3, 2, 4]) == pytest.approx(0.9486832980505138)   # scipy's, with ties
+    assert SL.spearman([1, 2], [2, 1]) is None and SL.spearman([1, 1, 1], [1, 2, 3]) is None
+    assert SL.ranks([3.0, 1.0, 3.0, 2.0]) == [3.5, 1.0, 3.5, 2.0]
+
+
+def test_the_timing_diagnostic_is_read_by_its_sha256(monkeypatch, tmp_path):
+    monkeypatch.setattr(SL, "loudar_dir", lambda: tmp_path)
+    with pytest.raises(SystemExit, match="copy it there first"):
+        SL.subwin_of()
+    (tmp_path / SL.TIMING_DIAGNOSTIC).write_text(json.dumps({"a": {"set": "bks"}}))
+    with pytest.raises(SystemExit, match="not TIMING_DIAGNOSTIC_SHA256"):
+        SL.subwin_of()
+    monkeypatch.setattr(SL, "TIMING_DIAGNOSTIC_SHA256", S.file_sha(tmp_path / SL.TIMING_DIAGNOSTIC))
+    assert SL.subwin_of() == {"a": {"set": "bks"}}
+    src = (REPO / "learn" / "scratch_loudar.py").read_text()
+    assert src.count("D_true against the sub-window fraction (descriptive, never decides)") == 2
+
+
+def test_the_dry_key_binds_the_build_and_names_the_placement_evidence():
+    d = json.loads((REPO / "docs/dev-test-ledger.json").read_text())
+    e = next(t for t in d["tests"] if t.get("test_id") == S.LEDGER_ID)[SL.PHASE_DRY]
+    assert len(e["sha256"]) == 64 and e["files_sha256"]["figures.json"] and e["files_sha256"]["timing-subwin.json"] \
+        == SL.TIMING_DIAGNOSTIC_SHA256
+    assert "stem-in" in e["placement_evidence"] and "21 of 23" in e["placement_evidence"]
+    assert "never decide" in e["reported_only_additions"]
 
 
 def test_the_pool_rule_and_the_refusal_stop():

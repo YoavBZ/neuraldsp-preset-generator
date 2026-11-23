@@ -1011,6 +1011,13 @@ it is the first dry guitar from the song alone to do so. If it does not, `ld-rec
     G50 and never decide. J0 renders each answer through the true DI, so timing can only bias the row against a
     pass, never toward one.
   - Shifting each clip by its measured lag was rejected: it reads timing from the true DI, which a song does not have.
+  - *The placement evidence* (added by `phase_scratch_loudar_dry`): every placed name goes through the same placement
+    code, and `stem-in`'s tight lags (21 of 23 deciding parts within 1 ms, median 0 ms) are today's evidence that this
+    code is right. The `ld-*` medians of 0 ms are not that evidence on their own, because LOUDAR's lags scatter.
+  - *Beside G50, report only* (also added by `phase_scratch_loudar_dry`, from the review of #569): each part's
+    sub-window fraction within 1 ms, from `timing-subwin.json` read by its sha256, next to the whole-clip lags; a
+    descriptive Spearman of `D_true` against that fraction over the deciding parts; and every bottleneck string ends
+    "(timing and timbre not separated)". None of them decides.
 - **The deciding sets: BKS and the panel** (23 parts, 11 DI files), weighted equally. LOUDAR's prior trained on GOAT's
   DI, so GOAT is read beside, marked in-sample, and never decides.
 
@@ -1168,6 +1175,15 @@ beside `ld-stem`'s), descriptive, never deciding.
    `FL-null` is the first test of that.
 7. Its facts (the setting, the gate's figures, the measured seconds a clip and the projected build time) go into
    `phase_scratch_loudar_dry`.
+
+   **Recorded 2026-11-23 (ledger `phase_scratch_loudar_dry`).** The build ran from main `7d6d2c9d` with zero renders:
+   - the setting is `released` for every run; every measured clip is within 0.25 LU;
+   - the runs took 59.07, 58.82 and 58.91 s a clip (ld-stem on BKS and the panel, ld-stem on GOAT, ld-stem-b), about
+     69 wall minutes in all against the 1.70 hours projected; GOAT and `ld-stem-b` both fit the cost stop;
+   - the placement stop did not fire: the median whole-clip lag is 0 ms for every placed name; the 1-ms check,
+     report-only, reads 9, 10 and 2 of 23 beyond for `ld-stem`, `ld-stem-b` and `stem-in`.
+
+   Renders still wait for `fs-notes` (`slots_refusal`, in code).
 
 ### 13e. What it can't say
 
