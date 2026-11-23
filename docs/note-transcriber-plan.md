@@ -871,3 +871,34 @@ ruled GOAT `item_5` out on the redo's ear page: "Bad DI, don't use it". Stage b'
 `phase_tx_notes` with all 27 windows (`DEV_RUNS` stays 54). `read` drops `item_5`'s GOAT rows for every arm, so the checks
 count over 26 windows, and `CHECK_SLACK` stays one window. The bridge drops `item_5` from versions.json's GOAT windows on
 both the stored and the built side. `read` and the bridge refuse until 12p's key is on main; `read` runs once.
+
+## 20. The made-up bars converted (2026-11-24; ledger `phase_tx_bars_amend`)
+
+These are the delegated decision agent's calls T1 and T2, made under the user's no-made-up-bars rule; they are not the
+user's own go. The full record is `handover/2026-11-24/decisions/bar-conversion.md`. Everything here is declared
+before the real-DI read.
+
+| Was | Now |
+|---|---|
+| `RECALL_GUARD` 0.05 (borrowed from PR #547) | `recall_held` is a direction: the paired recall difference against `tx-bp` is not decided worse, and the paired chord-note recall difference is not decided worse. Both intervals are printed with the code (`sizes_text`). |
+| `CHECK_SLACK` 1 | The development windows' checks are reported per window, paired against `tx-bp` (`check_window_report`): windows lost, windows gained, and gained − lost. They gate nothing. |
+| `arm_wins` | Precision raised (clear of zero above), with recall, chord-note recall and F each not decided worse, on the lists and the real DIs. The bridge then decides on the measured distance to the DI. |
+| `UNPAIRED_LOOKUP` 5% | The unpaired share is reported. On `TXR-ms` the lookup is always built, and kept only if it brings `tr-di` closer to the DI on the development windows. |
+| `size_pick` keeps medium unless large is decided better | Large is the default (T2). Medium is picked only when large is decided worse; undecided reads "undecided, large kept". |
+
+`TXR-ms` cannot occur on this track (below), so the lookup's build is not coded now. It would come with the bridge.
+
+**The list screen was read under the old bars.** Re-deriving it from the stored rows under T1, with no re-run:
+- Every reading is unchanged on both sizes, and the screen stays `lists-go`.
+- `tx-vote` and `tx-ms` still do not hold recall. Their recall difference is decided worse: medium −0.067 [−0.115,
+  −0.020], large −0.055 [−0.103, −0.006].
+- `tx-veto` still holds recall:
+  - medium: recall −0.009 [−0.020, +0.002], chord-note recall −0.018 [−0.042, +0.007];
+  - large: recall −0.006 [−0.016, +0.005], chord-note recall −0.011 [−0.035, +0.013].
+- So stage b can still only end `TXR-undecided`, with or without `veto-holds`.
+- Under T2 the stored size pick (+0.010 [−0.019, +0.040]) would read "undecided, large kept". That is the size the
+  user's go already runs.
+
+No measure, pairing, clean-up or threshold of the figures changes; only what the readings compare to.
+
+**12p's "`CHECK_SLACK` stays one window" is superseded.** The paragraph above (and #580's bar table, `phase_nr_1_redo_item5_out`) predate T1. The checks now count over the read's 26 windows as a per-window report (`check_window_report`), and no slack gates anything.

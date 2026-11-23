@@ -56,7 +56,8 @@ def test_the_declared_settings():
     assert X.DEVICE_DTYPE == {"mps": "float16", "cpu": "float32"} and R.THREADS == 4
     assert X.REPEAT_WINDOWS == 4 and X.DEV_RUNS == 54 == 2 * 27 and X.SIZE_SWITCH_S == 7200.0
     assert (X.PAIR_ONSET_S, X.END_SHARE, X.END_MIN_S) == (0.050, 0.20, 0.050) and X.VETO_INTERVALS == (12, 19, 24)
-    assert X.RECALL_GUARD == 0.05 and X.CHECK_SLACK == 1 and X.UNPAIRED_LOOKUP == 0.05
+    assert X.RETIRED_BARS == {"RECALL_GUARD": 0.05, "CHECK_SLACK": 1, "UNPAIRED_LOOKUP": 0.05}   # T1: the record only
+    assert not any(hasattr(X, k) for k in X.RETIRED_BARS)          # no bar left in code
     assert X.GUARDED_CHECKS == ("playing-covered", "judge-accepts", "ring-kept", "chords-kept")
     assert set(X.NOTE_KINDS) == {"list", "list-free", "truth", "goat", "goat-free", "list-large", "list-large-free"}
     assert all(X.NOTE_KINDS[k] == R.FREE for k in ("list-free", "goat-free", "list-large-free"))
@@ -273,15 +274,11 @@ def test_the_reading_rules():
     assert not X.precision_not_better({"mean": None, "lo90": None, "hi90": None})
     assert X.f_not_worse(FLAT) and X.f_not_worse(UP) and not X.f_not_worse(DOWN) and X.f_not_worse(None)
     assert X.ends_better(UP) and X.ends_better(UP, FLAT) and not X.ends_better(UP, DOWN) and not X.ends_better(FLAT)
-    bp = {"recall": 1.0, "chord_recall": 0.9}
-    assert X.recall_held({"recall": 0.95, "chord_recall": 0.85}, bp)
-    assert not X.recall_held({"recall": 0.94, "chord_recall": 0.9}, bp)
-    assert not X.recall_held({"recall": 1.0, "chord_recall": 0.84}, bp)
-    assert X.recall_held({"recall": 1.0, "chord_recall": None}, {"recall": 1.0, "chord_recall": None})
-    ck = {c: 20 for c in X.GUARDED_CHECKS}
-    assert X.recall_held(bp, bp, checks={**ck, "ring-kept": 19}, checks_bp=ck)        # one window fewer: held
-    assert not X.recall_held(bp, bp, checks={**ck, "chords-kept": 18}, checks_bp=ck)  # two fewer: not
-    assert X.recall_held(bp, bp, checks={**ck, "onsets-found": 0}, checks_bp={**ck, "onsets-found": 27})   # a report
+    # T1: recall held is a direction on the paired intervals, no 0.05 bar
+    assert X.recall_held(FLAT, FLAT) and X.recall_held(UP, None) and X.recall_held(None, None)
+    small_loss = _iv(-0.04, -0.06, -0.02)                         # recall down 0.04, interval clear of zero below
+    assert not X.recall_held(small_loss, FLAT) and not X.recall_held(FLAT, small_loss)   # reads "worse"
+    assert X.recall_held(_iv(-0.20, -0.45, +0.05), FLAT)          # a big but undecided loss: not decided worse
 
 
 def _reading(p_l, f_l, e_l, held_l=True, p_r=None, f_r=None, e_r=None, held_r=True):
@@ -341,8 +338,10 @@ def test_every_code_and_flag_is_reachable():
     assert X.recommendation(got["code"], got["flags"])["veto_candidate"]
     assert X.txr_code({"tx-vote": _reading(UP, FLAT, UP, True, UP, FLAT, FLAT, True), "tx-ms": lose,
                        "tx-veto": lose})["flags"]["ends_better"]
-    assert X.recommendation("TXR-ms", {}, 0.06)["lookup_first"] and not X.recommendation("TXR-ms", {}, 0.05)[
-        "lookup_first"]
+    for share in (0.01, 0.06, None):                              # T1: on TXR-ms the lookup is always built
+        r = X.recommendation("TXR-ms", {}, share)
+        assert r["build_lookup"] and r["unpaired_share"] == share and "always built" in r["text"]
+    assert not X.recommendation("TXR-vote", {}, 0.5)["build_lookup"]
     assert not X.recommendation("TXR-vote", {"veto-holds": True})["veto_candidate"]   # a flag, never the code
 
 
@@ -386,8 +385,12 @@ def test_summarise_screen_and_read_on_made_up_rows():
     assert set(rd["numbers"]) == {"lists", "real", "P1", "P1|chords"} and rd["unpaired_share"] == 0.0
     goat[0]["checks"]["tx-vote"]["ring-soft"] = dict(ck, **{"ring-kept": False})
     goat[1]["checks"]["tx-vote"]["ring-soft"] = dict(ck, **{"ring-kept": False})
-    rd = X.summarise_read(rows, real, goat)                                    # two windows fewer: the guard breaks
-    assert rd["code"] != "TXR-vote" and not rd["readings"]["tx-vote"]["real"]["recall_held"]
+    rd = X.summarise_read(rows, real, goat)                    # T1: two windows fewer is reported, gates nothing
+    assert rd["code"] == "TXR-vote" and rd["readings"]["tx-vote"]["real"]["recall_held"]
+    assert rd["check_windows"]["tx-vote"]["ring-kept"] == {"windows": 27, "lost": 2, "gained": 0,
+                                                           "gained_less_lost": -2}
+    assert rd["check_windows"]["tx-veto"]["ring-kept"]["gained_less_lost"] == 0
+    assert "sizes: tx-vote lists: recall" in rd["recommendation"]["text"] and rd["sizes"].startswith("tx-vote lists")
 
 
 # --- the bridge -----------------------------------------------------------------------------------------------------------------
@@ -501,15 +504,16 @@ def test_the_size_pick_reads_accuracy_and_reports_speed_beside():
     mixed = _size_rows([0.80 + (0.03 if k % 2 else -0.02) for k in range(10)])   # mean above zero, interval not
     u = X.size_pick({"rows": {"medium": med, "large": mixed}, "projections": {"medium": 262.0, "large": 300.0}})
     assert u["diff_large_less_medium"]["mean"] > 0 and u["diff_large_less_medium"]["lo90"] <= 0
-    assert u["size"] == "medium" and u["label"] == "undecided, medium kept" and u["large_open_for_user"]
+    assert u["size"] == "large" and u["label"] == "undecided, large kept" and not u["large_open_for_user"]   # T2
     assert p["over_two_hours"] and p["projections"] == {"medium": 262.0, "large": 9000.0}   # speed never picks
     worse = X.size_pick({"rows": {"medium": med, "large": down}, "projections": {}})
     assert worse["size"] == "medium" and worse["label"] == "large decided worse, medium kept"
     tie = X.size_pick({"rows": {"medium": med, "large": _size_rows([0.80] * 10)}, "projections": {"large": 100.0}})
-    assert tie["size"] == "medium" and not tie["over_two_hours"]      # a tie keeps medium
+    assert tie["size"] == "large" and not tie["over_two_hours"]       # T2: a tie keeps the default, large
     apart = [dict(r, cluster=f"x{k}") for k, r in enumerate(up)]     # no list in common
     nos = X.size_pick({"rows": {"medium": med, "large": apart}, "projections": {}})
-    assert nos["size"] == "medium" and nos["label"] == "fewer than two shared lists, medium kept" and not nos["large_open_for_user"]
+    assert nos["size"] == "large" and nos["label"] == "fewer than two shared lists, large kept"
+    assert not nos["large_open_for_user"]
     alone = X.size_pick({"rows": {"medium": med}, "projections": {"medium": 262.0}})
     assert alone["size"] == "medium" and alone["diff_large_less_medium"] is None   # large's gate stopped
     assert X.SCREENED_SIZES == ("medium", "large") and (X.PICK_ARM, X.PICK_FIELD) == ("tx-ms", "f")
@@ -531,7 +535,8 @@ def test_speed_never_decides_a_muscriptor_size():
 def test_later_stages_run_large_unless_large_is_measured_worse():
     assert X.LATER_STAGE_SIZE == "large"
     go = {"large": {"screen": "lists-go"}}
-    for label in ("undecided, medium kept", "large decided better", "fewer than two shared lists, medium kept"):
+    for label in ("undecided, medium kept", "undecided, large kept", "large decided better",
+                  "fewer than two shared lists, large kept"):
         assert X.later_stage_size({"size_pick": {"label": label}, "sizes": go}) == "large"
         assert X.later_stage_size({"size_pick": {"label": label},
                                    "sizes": {"large": {"screen": "TXR-none"}}}) == "medium"   # never on medium's screen
@@ -753,8 +758,10 @@ def test_the_ledger_holds_the_declaration_and_the_go():
     assert "changes only the weights" in amend["frozen"]
     lists = e[X.PHASE_LISTS]                                      # the screen's result: the shape stage b reads
     assert X.lists_go_refusal(lists) is None and lists["size"] == X.picked_size(lists) == "medium"
-    assert re.fullmatch(r"[0-9a-f]{64}", lists["sha256"]) and lists["size_pick"]["label"] == X.PICK_UNDECIDED
+    assert re.fullmatch(r"[0-9a-f]{64}", lists["sha256"]) and lists["size_pick"]["label"] == "undecided, medium kept"
     assert lists["size_pick"]["large_open_for_user"] and set(lists["screens"]) == set(X.SCREENED_SIZES)
+    bars = e["phase_tx_bars_amend"]                                # T1/T2: the decision agent's calls, not the user's
+    assert "not the user's own go" in bars["by"] and "unchanged" in bars["lists_rederived"]
     notes = e[X.PHASE_NOTES]                                      # stage b's hash PR: the shape `read` reads
     assert re.fullmatch(r"[0-9a-f]{64}", notes["listing_sha256"]) and notes["note_files"] == 79 + 2 * 27
     assert notes["size"] == "large" and "item_5" in notes["item_5"] and "12p" in notes["item_5"]
@@ -874,10 +881,10 @@ def test_the_stored_list_events_give_the_plans_counts():
 
 
 def test_the_read_and_the_bridge_drop_the_ruled_out_di(monkeypatch, tmp_path):
-    """12p, behavioural: stage b's note files keep all 27 windows (DEV_RUNS 54, the slack one window); `read` reads
+    """12p, behavioural: stage b's note files keep all 27 windows (DEV_RUNS 54; the checks reported per window since T1); `read` reads
     GOAT's audio first for item_10, never item_5; the bridge builds versions.json's GOAT windows without item_5."""
     pytest.importorskip("numpy")
-    assert X.DEV_RUNS == 54 and X.CHECK_SLACK == 1
+    assert X.DEV_RUNS == 54 and not hasattr(X, "CHECK_SLACK")    # T1: the slack is retired
     wins = [{"item": f"item_{k}", "start_s": 1.0} for k in [5] + list(range(10, 36))]
 
     class First(Exception):
@@ -920,3 +927,20 @@ def test_the_read_and_the_bridge_drop_the_ruled_out_di(monkeypatch, tmp_path):
     with pytest.raises(First) as got:
         X.cmd_bridge(None)
     assert str(got.value) == "item_14"
+
+
+def test_the_stored_list_screen_rederives_unchanged_under_t1():
+    """T1: the list screen was read under the old bars; re-derived from the stored rows under the new rules (no
+    re-run), every reading and the screen are unchanged (skipped without the stored lists.json)."""
+    p = X.lists_path()
+    if not p.exists():
+        pytest.skip("the stored lists.json is not on this machine")
+    body = json.loads(p.read_text())["body"]
+    for size, v in body["sizes"].items():
+        new = X.summarise_screen(v["rows"])
+        assert new["screen"] == v["screen"] == "lists-go", size
+        for arm, r in new["readings"].items():
+            old = v["readings"][arm]
+            assert r["ends_better"] == old["ends_better"]
+            for k in ("precision_raised", "precision_not_better", "f_not_worse", "recall_held"):
+                assert r["lists"][k] == old["lists"][k], (size, arm, k)
