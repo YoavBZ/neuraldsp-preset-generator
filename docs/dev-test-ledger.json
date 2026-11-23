@@ -4174,6 +4174,96 @@
     "go": true,
     "given": "before transcription, from attacks-report (attacks.json sha256 d58ab25660f42e91b3c137a842d9541b5bcd4de1f2b28273dcc734c0eae66121)",
     "effect": "`build` reads this key and does not refuse on the flagged-parts count (flags_go_refusal, unchanged); the flagged parts are still listed and the row is still read beside without them; the listening page's \"missing notes\" button is the guard"
+   },
+   "phase_nr_1_redo_go_hum": {
+    "date": "2026-11-23",
+    "by": "the user",
+    "asked": "Measure-first stopped again on a declared guard, the mains-hum check (18 of 79 clips over its 5% line). It isn't hum: the true-note list only keeps notes that start inside a clip, while the detector also reports a chord still ringing in from before the clip starts, and those ringing G, B, D and F# notes sit on mains-hum pitches. 31 of the 34 notes it flagged at clip starts are exactly that. Tightening the rule afterwards would still leave 4 clips over the line from stray notes, so it wouldn't clear the stop on its own. How do we proceed?",
+    "how": "AskUserQuestion",
+    "answer": "Continue, record why",
+    "option_description": "Record your go as for the sanity check: the flagged notes are chords ringing in from before each clip, not hum (real hum sits 60-71 dB down). No rule changed after the fact; the precision figures also get a side number counting only notes that start inside the clip, since the same edge effect inflates the extras.",
+    "relayed_by": "the coordinating session, 2026-11-23",
+    "go": true,
+    "why": "the counted notes are chords ringing in from before each window, not hum: 34 of the 42 counted notes start in the transcriber's 1-s lead-in and 31 of those match a same-pitch MIDI note sounding at the window's start; the other 8 are scattered pitches beside played notes; real hum sits 60-71 dB down; no rule is changed after the fact",
+    "stopping_windows": [
+     "P1|chords|Set1_m7@70",
+     "P1|chords|Set1_m7b5@10",
+     "P1|chords|Set1_min@130",
+     "P1|chords|Set2_Maj7@10",
+     "P1|chords|Set2_m7@130",
+     "P1|chords|Set3_min@130",
+     "P1|chords|Set4_maj@70",
+     "P1|chords|Set4_min@70",
+     "P1|scales|G@70",
+     "P2|chords|Set2_Maj7@70",
+     "P2|chords|Set2_maj@130",
+     "P2|chords|Set3_aug@10",
+     "P2|chords|Set3_dim@10",
+     "P2|chords|Set3_min@130",
+     "P2|chords|Set4_dim@130",
+     "P2|chords|Set4_maj@10",
+     "P2|chords|Set4_maj@70",
+     "P2|scales|Ab@130"
+    ],
+    "counted_notes": 42,
+    "truth_report_sha256": "425f3fd11515b364ab1e70cb3f68132d4ae21818834cda0528ef6197a7f2f16f",
+    "truth_report_file": "PF/note-rebuild/redo/truth-report.json",
+    "truth_report_run": "2026-11-23, from main at 474fa4ee in a frozen worktree, 51 s, zero renders, 106 Basic Pitch windows",
+    "precision_starting_inside": {
+     "note": "side figure, never a gate: found notes limited to those starting inside the window (on >= 0), re-matched from the stored note files, no Basic Pitch rerun; 135 lead-in notes dropped. The strict cut also drops 18 true pairs whose found note starts up to 50 ms before the window, hence the lower recall on scales; with the guard's 50-ms lead (on >= -0.05; 100 dropped) no pair is lost and precision reads P1 chords 0.261, P1 scales 0.618, P1 0.480, P2 chords 0.509, P2 scales 0.681, P2 0.640",
+     "P1|chords": [
+      0.261,
+      0.712
+     ],
+     "P1|scales": [
+      0.622,
+      0.968
+     ],
+     "P1": [
+      0.48,
+      0.899
+     ],
+     "P2|chords": [
+      0.509,
+      0.955
+     ],
+     "P2|scales": [
+      0.686,
+      0.983
+     ],
+     "P2": [
+      0.642,
+      0.977
+     ],
+     "columns": "precision, recall",
+     "stored": {
+      "P1|chords": [
+       0.228,
+       0.712
+      ],
+      "P1|scales": [
+       0.616,
+       0.995
+      ],
+      "P1": [
+       0.454,
+       0.918
+      ],
+      "P2|chords": [
+       0.431,
+       0.955
+      ],
+      "P2|scales": [
+       0.677,
+       1.0
+      ],
+      "P2": [
+       0.61,
+       0.991
+      ]
+     }
+    },
+    "code": "`versions` and `transcribe` read a stopped truth report only with this key, its go true and naming that file's sha256 (note_transcribe.truth_report_refusal); `ladder_refusal` now also checks its go's `go` field; the guard's rule and every threshold unchanged. Plan 12m, dated note"
    }
   }
  ],

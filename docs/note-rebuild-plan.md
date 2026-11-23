@@ -1031,3 +1031,28 @@ below the plain rebuild (1.7235), so the check stopped the work; 3 of 6 real win
 | The 3-of-40 flagged-parts trigger, when even the true notes fail `onsets-found` on every real window | "Report it, don't stop" | The trigger becomes a reported figure: `build` reads the go and does not refuse on the count; flagged parts are still listed and read beside; the listening page stays the guard for missed notes |
 
 The ladder rule and every threshold are unchanged.
+
+**Step 4 run, and the user's answer on the hum guard (2026-11-23; ledger `phase_nr_1_redo_go_hum`).** Run once from
+main at 474fa4ee, zero renders, 51 s (Basic Pitch on the 79 usable truth windows and GOAT's 27). P2's chord recall
+0.955 (85 of 89; file-clustered 90% interval 0.910 to 0.990): the 0.85 trigger did not fire. P1's chords 0.712 (116 of
+163), half the misses in 4 of 15 windows.
+
+| Set | Precision | Recall | Precision, found notes starting inside the window (beside only) | The same with the guard's 50-ms lead (beside only) |
+|---|---|---|---|---|
+| P1 chords | 0.228 | 0.712 | 0.261 | 0.261 |
+| P1 scales | 0.616 | 0.995 | 0.622 | 0.618 |
+| P2 chords | 0.431 | 0.955 | 0.509 | 0.509 |
+| P2 scales | 0.677 | 1.000 | 0.686 | 0.681 |
+
+The hum guard stopped the report on 18 of 79 windows. It was not hum. The truth keeps the notes that start inside a
+window, but Basic Pitch's notes include a chord still ringing in from before it, and ringing G, B, D and F-sharp sit on
+mains pitches: 34 of the 42 counted notes start in the transcriber's 1-s lead-in, and 31 of those match a same-pitch
+MIDI note sounding at the window's start. Tightening the rule afterwards would still leave 4 windows over the line. The
+same edge inflates the extras, hence the side precision column (re-matched from the stored note files, no rerun; the
+strict cut also drops 18 true pairs that start up to 50 ms early, so its recall on scales reads 0.968 and 0.983; with the 50-ms lead no pair is lost and every recall is as stored).
+
+| Asked (AskUserQuestion) | The user's answer | What follows |
+|---|---|---|
+| The guard stopped 18 of 79 clips on chords ringing in from before each clip, not hum | "Continue, record why" | The counted notes are ringing chords, not hum (real hum sits 60 to 71 dB down); no rule is changed after the fact. `versions` and `transcribe` read the stopped report only with this go, its `go` true and naming that `truth-report.json` by its sha256 (`truth_report_refusal`); `ladder_refusal` now checks its go's `go` field too |
+
+The guard's rule and every threshold are unchanged.

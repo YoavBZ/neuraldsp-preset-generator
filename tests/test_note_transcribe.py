@@ -430,7 +430,9 @@ def test_the_ladder_refusal_and_the_users_go():
     assert T.PHASE_GO_LADDER in why and real_only is None
     assert T.ladder_refusal(failed, {T.PHASE_GO_LADDER: {"ladder_sha256": "other"}}, "s")[0]   # another run's go
     assert T.ladder_refusal(failed, {T.PHASE_GO_LADDER: "yes"}, "s")[0]
-    assert T.ladder_refusal(failed, {T.PHASE_GO_LADDER: {"ladder_sha256": "s"}}, "s") == (None, True)
+    assert T.ladder_refusal(failed, {T.PHASE_GO_LADDER: {"ladder_sha256": "s"}}, "s")[0]        # no go field
+    assert T.ladder_refusal(failed, {T.PHASE_GO_LADDER: {"go": False, "ladder_sha256": "s"}}, "s")[0]
+    assert T.ladder_refusal(failed, {T.PHASE_GO_LADDER: {"go": True, "ladder_sha256": "s"}}, "s") == (None, True)
 
 
 def test_the_users_two_goes_of_2026_11_23():
@@ -444,6 +446,31 @@ def test_the_users_two_goes_of_2026_11_23():
     failed = {"go": False, "real_reported_only": None}
     assert T.ladder_refusal(failed, e, lad["ladder_sha256"]) == (None, True)
     assert T.flags_go_refusal([f"p{i}" for i in range(40)], e) is None
+
+
+def test_the_truth_report_refusal_and_the_users_go():
+    """12m step 4: a truth report its hum guard stopped is refused unless main holds the user's go, its `go` true and
+    naming that truth-report.json's sha256. The guard's rule itself is unchanged."""
+    ok = {"stopped": None}
+    assert T.truth_report_refusal(ok, {}, "s") is None
+    stopped = {"stopped": [["P1|chords|x@10", 0.2]]}
+    why = T.truth_report_refusal(stopped, {}, "s")
+    assert T.PHASE_GO_HUM in why and "hum guard" in why
+    assert T.truth_report_refusal(stopped, {T.PHASE_GO_HUM: {"go": True, "truth_report_sha256": "other"}}, "s")
+    assert T.truth_report_refusal(stopped, {T.PHASE_GO_HUM: {"truth_report_sha256": "s"}}, "s")       # no go field
+    assert T.truth_report_refusal(stopped, {T.PHASE_GO_HUM: {"go": False, "truth_report_sha256": "s"}}, "s")
+    assert T.truth_report_refusal(stopped, {T.PHASE_GO_HUM: "yes"}, "s")
+    assert T.truth_report_refusal(stopped, {T.PHASE_GO_HUM: {"go": True, "truth_report_sha256": "s"}}, "s") is None
+
+
+def test_the_users_hum_go_of_2026_11_23():
+    """The user's answer after step 4 (AskUserQuestion, 2026-11-23): the hum guard's stop goes on, bound to the
+    stored truth-report.json; the rule unchanged."""
+    e = T.entries((REPO / "docs" / "dev-test-ledger.json").read_text())["note-rebuild"]
+    hum = e[T.PHASE_GO_HUM]
+    assert hum["answer"] == "Continue, record why" and hum["go"] is True
+    assert hum["truth_report_sha256"].startswith("425f3fd1") and len(hum["stopping_windows"]) == 18
+    assert T.truth_report_refusal({"stopped": [["k", 0.2]]}, e, hum["truth_report_sha256"]) is None
 
 
 def test_the_old_pages_expected_failure_table():
