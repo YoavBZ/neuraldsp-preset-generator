@@ -92,6 +92,7 @@ SCREENED_SIZES = ("medium", "large")     # the amendment: both screened on the t
 LIST_KINDS = {"medium": ("list", "list-free"), "large": ("list-large", "list-large-free")}
 PICK_ARM, PICK_FIELD = "tx-ms", "f"      # the size pick: MuScriptor's own note F on the lists, paired per list
 PICK_UNDECIDED = "undecided, medium kept"   # large not decided better: medium kept, large open for the user
+PICK_NO_SHARED = "no shared list, medium kept"   # the two sizes share fewer than two lists: no interval to read
 REQUIREMENTS = ("torch>=2.3", "numpy>=2", "einops>=0.4", "mido>=1.3", "packaging>=20.0", "safetensors>=0.4",
                 "huggingface_hub>=0.13", "soundfile>=0.14.0")   # what `transcribe()` needs; no server, no beat tracker
 NOT_NEEDED = ("beat-this", "fastapi", "typer", "uvicorn")   # the server and beat-tracking parts: never in the lock
@@ -854,7 +855,9 @@ def size_pick(by_size, arm=PICK_ARM, field=PICK_FIELD, limit=SIZE_SWITCH_S):
              for r in rows["large"] if r["cluster"] in med and r["figures"][arm][field] is not None
              and med[r["cluster"]]["figures"][arm][field] is not None]
         iv = NV.set_numbers(d, "d")
-        if NV.clear_of_zero(iv) and iv["lo90"] > 0:
+        if iv["mean"] is None or iv["lo90"] is None:
+            size, label = "medium", PICK_NO_SHARED     # no comparison at all: not "undecided"
+        elif NV.clear_of_zero(iv) and iv["lo90"] > 0:
             size, label = "large", "large decided better"
         elif NV.clear_of_zero(iv):
             size, label = "medium", "large decided worse, medium kept"
@@ -879,9 +882,12 @@ def slow_refusal(lists_body, go_read, limit=SIZE_SWITCH_S):
 
 def picked_size(lists_body, go_read=None):
     """(Pure.) The size stage b runs: the list screen's pick (medium for a screen made before the amendment); on an
-    undecided pick (large open for the user) the user's go may name large (`phase_tx_go_read` "size": "large")."""
-    pick = (lists_body or {}).get("size_pick") or {}
-    if pick.get("large_open_for_user") and (go_read or {}).get("size") == "large":
+    undecided pick (large open for the user) the user's go may name large (`phase_tx_go_read` "size": "large"), but
+    only when large's own screen read lists-go, so stage b never runs large on medium's screen."""
+    body = lists_body or {}
+    pick = body.get("size_pick") or {}
+    large_go = ((body.get("sizes") or {}).get("large") or {}).get("screen") == "lists-go"
+    if pick.get("large_open_for_user") and large_go and (go_read or {}).get("size") == "large":
         return "large"
     return (lists_body or {}).get("size", "medium")
 

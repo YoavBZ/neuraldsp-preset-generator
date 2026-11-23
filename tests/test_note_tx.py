@@ -507,6 +507,9 @@ def test_the_size_pick_reads_accuracy_and_reports_speed_beside():
     assert worse["size"] == "medium" and worse["label"] == "large decided worse, medium kept"
     tie = X.size_pick({"rows": {"medium": med, "large": _size_rows([0.80] * 10)}, "projections": {"large": 100.0}})
     assert tie["size"] == "medium" and not tie["over_two_hours"]      # a tie keeps medium
+    apart = [dict(r, cluster=f"x{k}") for k, r in enumerate(up)]     # no list in common
+    nos = X.size_pick({"rows": {"medium": med, "large": apart}, "projections": {}})
+    assert nos["size"] == "medium" and nos["label"] == "no shared list, medium kept" and not nos["large_open_for_user"]
     alone = X.size_pick({"rows": {"medium": med}, "projections": {"medium": 262.0}})
     assert alone["size"] == "medium" and alone["diff_large_less_medium"] is None   # large's gate stopped
     assert X.SCREENED_SIZES == ("medium", "large") and (X.PICK_ARM, X.PICK_FIELD) == ("tx-ms", "f")
@@ -519,7 +522,10 @@ def test_a_slow_pick_goes_to_the_user_and_never_to_small():
     assert X.slow_refusal(slow, {"go": "yes", "slow_ok": True}) is None
     assert X.slow_refusal({"size": "medium", "size_pick": {"over_two_hours": False}}, None) is None
     assert X.picked_size(slow) == "large" and X.picked_size({}) == "medium"   # a screen before the amendment
-    open_ = {"size": "medium", "size_pick": {"large_open_for_user": True, "projections": {"large": 9000.0}}}
+    open_ = {"size": "medium", "size_pick": {"large_open_for_user": True, "projections": {"large": 9000.0}},
+             "sizes": {"medium": {"screen": "lists-go"}, "large": {"screen": "lists-go"}}}
+    none_large = dict(open_, sizes={"medium": {"screen": "lists-go"}, "large": {"screen": "TXR-none"}})
+    assert X.picked_size(none_large, {"size": "large"}) == "medium"   # never large on medium's screen
     assert X.picked_size(open_, {"size": "large"}) == "large"     # the user may take large on an undecided pick
     assert X.picked_size({"size": "medium", "size_pick": {"large_open_for_user": False}}, {"size": "large"}) == "medium"
     assert "large's stage b" in X.slow_refusal(open_, {"size": "large"})
@@ -652,7 +658,13 @@ def test_the_ledger_holds_the_declaration_and_the_go():
     assert "labels" not in inst and "frozen" in inst["note"]      # no counts before both sizes are scored
     assert "No list has been scored" in inst["note"] and X.private_keys(inst) == []
     amend = e[X.PHASE_SIZE_AMEND]                                 # declared before large is gated or a list scored
-    assert X.PHASE_INSTALL_LARGE not in e and "no switch to small" in amend["gate"].lower()
+    assert "no switch to small" in amend["gate"].lower()
+    big = e[X.PHASE_INSTALL_LARGE]                                # large's hash PR: the shape require_install reads
+    assert big["size"] == "large" and big["device"] == "mps" and big["weights_sha256"] == X.WEIGHTS["large"]["sha256"]
+    assert big["lock_sha256"] == inst["lock_sha256"] and "stopped" not in big
+    assert all(re.fullmatch(r"[0-9a-f]{64}", big[k]) for k in ("lock_sha256", "weights_sha256", "gate_sha256",
+                                                                "list_notes_listing_sha256"))
+    assert "No list of either size has been scored" in big["note"] and X.private_keys(big) == []
     assert "tx-ms's note F" in amend["pick"] and "slow_ok" in amend["slow"] and X.private_keys(amend) == []
     assert "changes only the weights" in amend["frozen"]
     go = e[X.PHASE_GO]

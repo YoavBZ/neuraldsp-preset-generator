@@ -5057,6 +5057,21 @@
     "order": "this PR -> `gate --size large` from merged code -> hash PR phase_tx_install_large -> lists (both sizes, once) -> results PR phase_tx_lists",
     "status": "declared; not run",
     "frozen": "Medium's raw note counts were seen before this amendment was declared, so it changes only the weights: the measure (note F, onset and pitch, 50 ms), the mask, the clean-up and the pairing stay frozen exactly as declared. The size pick reads that declared measure, and no note count, total or label tally is published before both sizes are scored."
+   },
+   "phase_tx_install_large": {
+    "lock_sha256": "156304cfde6b5476c81fde20a14fcb1200488576891075d02f02680e796e9091",
+    "weights_sha256": "ac4eb6ea87dfc26b6ca6b954c6b967ab87ad4c7d08e078b25214f13ed051f397",
+    "gate_sha256": "2526cda8bc5d32b59148de3cb68091307fd310896d3946112fc2206f5e565b9d",
+    "size": "large",
+    "device": "mps",
+    "list_notes_listing_sha256": "512d9bf7d0fad1235b326b4d512586a33b718cf440572acbe23eb15f3f24651f",
+    "files": {
+     "gate": "PF/note-rebuild/tx/gate-large.json",
+     "list_notes": "PF/note-rebuild/tx/notes/{list-large, list-large-free}/ (20 files)",
+     "config_json_sha256": "16bedd02b18770e43740419b0d5777f231047e96e8987f498e8a1123c39c9852",
+     "manifest_sha256": "5de9ae94dab335dde4022820ee69f19e299fbfd02d526636b16ddc310e60d2b5"
+    },
+    "note": "2026-11-23, `gate --size large` run once from main at 2c5d748c (PR #573's squash) in a frozen detached worktree, zero renders, the same venv and lock as medium. The user's large weights (revision 8809fdfbed2affa7ade94a7059e746e3880720e7) and config.json matched their declared size and sha256. The three runs repeated exactly on all four development windows on MPS and on the CPU. Transcription per gate input (the 10.25-s window with up to 1 s either side, up to 12.25 s): large 4.91 s on MPS and 33.56 s on the CPU (medium 1.97 s and 10.51 s); model load 2.3 to 3.1 s on MPS, 4.1 s on the CPU. Stage b's 133 runs project to 0.18 h on MPS and 1.24 h on the CPU (medium 0.07 h and 0.39 h): under two hours on both. The device rule picked MPS; there is no size rule for large. As declared, the gate then transcribed the ten lists under list-large and list-large-free (20 note files on MPS). Medium's list notes are untouched (their listing is still phase_tx_install's). No list of either size has been scored: lists scores both together, once, after this PR merges. dtype: the fixed probe reads the transformer, float16 on MPS and float32 on the CPU"
    }
   }
  ],
