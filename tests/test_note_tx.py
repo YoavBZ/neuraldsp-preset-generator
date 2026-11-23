@@ -907,6 +907,7 @@ def test_the_read_and_the_bridge_drop_the_ruled_out_di(monkeypatch, tmp_path):
         monkeypatch.setattr(T, name, val)
     monkeypatch.setattr(X.NR, "Bank", lambda *a, **k: None)
     monkeypatch.setattr(X.NR, "load_notes_doc", lambda: None)
+    monkeypatch.setattr(X.NR, "load_exclusion", lambda: {"keys": {}, "sha256": []})   # hermetic: no local data
     monkeypatch.setattr(X.NR, "rebuild_redo", lambda *a, **k: ([0.0], {}))
     monkeypatch.setattr(X.NV, "floored_logmel", lambda *a: 0.0)
     from learn import note_attacks as NA

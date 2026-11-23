@@ -708,10 +708,15 @@ def _patch_dev(monkeypatch, tmp_path):
         monkeypatch.setattr(T, name, val)
     monkeypatch.setattr(T.NR, "Bank", lambda *a, **k: None)
     monkeypatch.setattr(T.NR, "load_notes_doc", lambda: None)
+    monkeypatch.setattr(T.NR, "load_exclusion", lambda: {"keys": {}, "sha256": []})    # hermetic: no local data
     (tmp_path / "known").mkdir()
     lad = tmp_path / "ghost-ladder.json"
     lad.write_text(json.dumps({"body": {"go": True, "real_reported_only": True}}))
     monkeypatch.setattr(T, "ladder_path", lambda: lad)
+    gate = tmp_path / "install-gate.json"
+    gate.write_text(json.dumps({"body": {"repeat_ok": True}}))
+    monkeypatch.setattr(T, "gate_path", lambda: gate)
+    monkeypatch.setattr(T, "CALIB_ASIDE", tmp_path / "aside")
 
 
 @pytest.mark.parametrize("cmd", ["cmd_install_gate", "cmd_calibrate", "cmd_truth_report", "cmd_versions"])
