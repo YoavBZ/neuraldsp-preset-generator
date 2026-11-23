@@ -75,6 +75,7 @@ PHASE_GO_CALIB = "phase_nr_1_redo_go_calib"       # the user's go after the firs
 PHASE_GO_GUARD = "phase_nr_1_redo_go_guard"       # the user's go that the checks the positive control fails become
                                                 #     reports, the listening page the guard (2026-11-23; names them)
 PHASE_EAR_KINDS = "phase_nr_1_ear_kinds"          # the ear items' kinds, amended 2026-11-23 (the delegated decision)
+PHASE_ITEM5_OUT = "phase_nr_1_redo_item5_out"     # 12p's exclusion of the DI the user ruled out (the code on main)
 PHASE_GO_HUM = "phase_nr_1_redo_go_hum"           # ... the user's go after the hum guard stopped the truth report
                                                 #     (2026-11-23; bound to that truth-report.json by its sha256)
 
@@ -162,6 +163,10 @@ RING_TIE = 0.02                          # ring-soft unless ring-on's median env
 # --- the development windows and the ear page's items (plan sections 12c, 12d) ------------------------------------------
 DEV_COUNT = 27                           # every GOAT item clear of the exclusion list with fine-aligned MIDI and a full
                                          # window at the probe's start (30 s into items over 45 s, else 1 s)
+RULED_OUT = ("item_5",)                  # the user's "Bad DI, don't use it" (2026-11-23; 12p, phase_nr_1_redo_item5_out):
+                                         # out of fs-notes and every later read; the records made keep it
+DEV_READ_COUNT = DEV_COUNT - len(RULED_OUT)   # the development windows a later read uses (26); made records keep 27
+CALIBRATION_FAIL_ALLOWED = DEV_COUNT - CALIBRATION_PASS   # 2: a later read keeps the count of windows allowed to fail
 EAR_SEED = 20261401                      # the 4 new ear items' order
 CONTROL_SEED = 20261402                  # the hidden control card's item and the cards' order
 DEV_BLUR_SEED = 20261403                 # avg+mild on the development windows (the checks' positive control)
@@ -1496,7 +1501,7 @@ def cmd_install_gate(_args):
     never_overwrite(gate_path())
     never_overwrite(gate_work_dir())
     excl, tn, z, _ = _dev_context()
-    wins = dev_windows(z, excl, tn["items"])[:REPEAT_WINDOWS]
+    wins = read_dev_windows(dev_windows(z, excl, tn["items"]))[:REPEAT_WINDOWS]   # 12p: item_5 out
     bank = NR.Bank(NR.load_notes_doc(), excl=excl)
     work = gate_work_dir()
     ins = []
@@ -1597,7 +1602,7 @@ def cmd_calibrate(_args):
 
     excl, tn, z, meta = _dev_context()
     bank = NR.Bank(NR.load_notes_doc(), excl=excl)
-    wins = dev_windows(z, excl, tn["items"])
+    wins = read_dev_windows(dev_windows(z, excl, tn["items"]))   # 12p: item_5 out, 26 windows
     work = REDO / "work" / "calibrate"
     dis, ins = {}, []
     for w in wins:
@@ -1665,6 +1670,7 @@ def cmd_calibrate(_args):
             "first_run_sha256": NR.file_sha(aside),
             "gate_sha256": NR.file_sha(gate_path()), "attacks_sha256": NR.file_sha(attacks_path())}
     body["ok"] = calibration_ok(covered, cases, PHASE_GO_CLIPS in (m.get(LEDGER_ID) or {}),
+                                need=DEV_READ_COUNT - CALIBRATION_FAIL_ALLOWED,       # 24 of 26 (12p)
                                 covered_reported=body["playing_covered_reported"], positive_blocking=still_blocking)
     NR.write_once(calibration_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_CALIB}",
                                        "made": time.strftime("%Y-%m-%d %H:%M:%S"), "body": body})
@@ -1723,6 +1729,40 @@ def require_install_facts():
     return g, c
 
 
+def ruled_out_items(units):
+    """(Pure.) The ruled-out GOAT items among unit ids or items ("goat/item_5@10.0#amp_3", "item_5"). -> sorted."""
+    out = set()
+    for u in units:
+        it = str(u).split("/", 1)[1] if str(u).startswith("goat/") else str(u)
+        it = it.split("@", 1)[0].split("#", 1)[0]
+        if it in RULED_OUT:
+            out.add(it)
+    return sorted(out)
+
+
+def ruled_out_refusal(units, what):
+    """(Pure.) Why `what` may not be read, or None: it holds a DI the user ruled out (`RULED_OUT`)."""
+    bad = ruled_out_items(units)
+    return f"{what} holds {bad}, which the user ruled out (\"Bad DI, don't use it\"; 12p)" if bad else None
+
+
+def read_dev_windows(windows, count=DEV_READ_COUNT):
+    """(Pure.) The development windows a later read uses (12p): `dev_windows`' 27 less the ruled-out items, refused
+    unless `count` remain. Made records (the gates, both calibrations, the truth report, the versions read, stage b's
+    note files) keep their 27."""
+    out = [w for w in windows if w["item"] not in RULED_OUT]
+    if len(out) != count:
+        raise SystemExit(f"{len(out)} development windows to read, not the declared {count}")
+    return out
+
+
+def read_version_windows(vwindows):
+    """(Pure.) versions.json's stored windows a later read uses (12p): GOAT's windows less the ruled-out items, on
+    both sides of every comparison (the stored and the newly built distances alike); the lists and the real set as
+    stored."""
+    return [w for w in vwindows if not (w.get("set") == "goat" and w.get("key") in RULED_OUT)]
+
+
 def row_parts():
     """The row's 47 parts from the from-scratch search's hashed draw, with each part's replay record and stored C3r
     unit. -> (draw, replay parts by key, Stored)."""
@@ -1730,6 +1770,9 @@ def row_parts():
     from learn import scratch_search as S
 
     draw = S.require_draw()
+    why = ruled_out_refusal([p["unit"] for p in draw["parts"]], "the row's draw")
+    if why:
+        raise SystemExit(why)
     sd = R.Stored()
     if sd.st["sha256"] != draw["c3r_sha256"]:
         raise SystemExit("C3r's state changed since the draw")
@@ -1774,7 +1817,8 @@ def cmd_transcribe(_args):
                                                 .read_text())["clips"]})
     if len(old) != OLD_EAR_ITEMS:
         raise SystemExit(f"the old page has {len(old)} items, not {OLD_EAR_ITEMS}")
-    pool = sorted((it for it in meta if not NR.clear_of({"goat_item": it}, excl) and it not in old),
+    pool = sorted((it for it in meta if not NR.clear_of({"goat_item": it}, excl) and it not in old
+                   and it not in RULED_OUT),                       # 12p: a ruled-out DI is never an ear candidate
                   key=lambda s: int(s.split("_")[1]))
     NR.assert_clear([{"goat_item": it} for it in pool + old], excl)
     order = list(pool)
@@ -2250,7 +2294,7 @@ def cmd_truth_report(_args):
         di, inp, pre, truth = ta.window(w)
         jobs.append((inp, w["player"]))
         meta.append(("truth", w["key"], pre, w, di, truth))
-    for w in dev_windows(z, excl, tn["items"]):
+    for w in read_dev_windows(dev_windows(z, excl, tn["items"])):   # 12p: item_5 out
         never_overwrite(note_path("goat", w["item"]))
         sec, inp, pre = window_audio(goat_audio(z, w["item"]), w["start_s"])
         jobs.append((inp, "goat"))
@@ -2327,7 +2371,7 @@ def cmd_versions(_args):
         di = SB.measure(known_audio(nm, bank))
         est, _ = timed_notes({"events": json.loads(known[nm].read_text())["events"], "pre_s": 0.0}, di)
         todo.append(("lists", nm, nm, di, KNOWN_NOTES[nm], est, "lists"))
-    for w in dev_windows(z, excl, tn["items"]):
+    for w in read_dev_windows(dev_windows(z, excl, tn["items"])):   # 12p: item_5 out
         di = SB.measure(window_audio(goat_audio(z, w["item"]), w["start_s"])[0])
         est, _ = timed_notes(load_note("goat", w["item"], pair), di)
         todo.append(("goat", w["item"], w["item"], di, dev_true_notes(w["item"], w["start_s"], di), est, "goat"))

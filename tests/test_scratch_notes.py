@@ -523,3 +523,13 @@ def test_rows_b_and_c_are_read_and_refuse_a_rerun():
     got = S.read_so_far()
     assert got == {"fs-stem": "passes", "fs-both": "passes"} and S.next_row(got) is None
     assert S.outcome(got)["code"] == "F-both"
+
+
+def test_fs_notes_refuses_a_draw_holding_a_ruled_out_di(monkeypatch):
+    """12p: fs-notes's draw is refused when it holds the DI the user ruled out; today's draw holds none."""
+    monkeypatch.setattr(SN.S, "require_draw", lambda: {"parts": [{"unit": "goat/item_5@10.0#amp_3"}]})
+    with pytest.raises(SystemExit, match="ruled out"):
+        SN.notes_draw()
+    ok = {"parts": [{"unit": "goat/item_0@140.0#amp_3"}, {"unit": "set5/a.wav@15.0#b.wav"}]}
+    monkeypatch.setattr(SN.S, "require_draw", lambda: ok)
+    assert SN.notes_draw() is ok

@@ -664,6 +664,86 @@ def test_the_kind_figures():
     assert T.kind_figures([]) == {}
 
 
+def test_the_ruled_out_di_leaves_every_later_read():
+    """12p (2026-11-24): the user's "Bad DI, don't use it" takes item_5 out of fs-notes and every later read; the
+    made records keep their 27 development windows; the count of windows allowed to fail stays a count."""
+    assert T.RULED_OUT == ("item_5",) and T.DEV_READ_COUNT == 26 and T.DEV_COUNT == 27
+    assert T.CALIBRATION_FAIL_ALLOWED == 2 and T.DEV_READ_COUNT - T.CALIBRATION_FAIL_ALLOWED == 24
+    assert T.ruled_out_items(["goat/item_5@10.0#amp_3", "goat/item_50@5.0#amp_1", "item_5", "set5/x.wav@1"]) == \
+        ["item_5"]
+    assert T.ruled_out_items(["goat/item_50@5.0#amp_1", "item_55", "goat/item_15@1"]) == []
+    assert "ruled out" in T.ruled_out_refusal(["goat/item_5@10.0#amp_3"], "a draw")
+    assert T.ruled_out_refusal(["goat/item_0@140.0#amp_3"], "a draw") is None
+    wins = [{"item": f"item_{k}", "start_s": 1.0} for k in [5] + list(range(10, 36))]
+    assert len(wins) == 27
+    got = T.read_dev_windows(wins)
+    assert len(got) == 26 and all(w["item"] != "item_5" for w in got)
+    with pytest.raises(SystemExit, match="not the declared 26"):
+        T.read_dev_windows(wins[:-1])                           # a window short: 25 left after item_5, refused
+    vw = [{"set": "goat", "key": "item_5"}, {"set": "goat", "key": "item_14"}, {"set": "lists", "key": "item_5"},
+          {"set": "real", "key": "P1|chords|x@10"}]
+    assert T.read_version_windows(vw) == vw[1:]                  # only GOAT's item_5, on both sides of a read
+
+
+class _FirstGoat(Exception):
+    """Raised by the patched `goat_audio`: the first development window a command reads."""
+
+
+def _patch_dev(monkeypatch, tmp_path):
+    """27 made-up development windows (item_5 first) through every command's own path, stopping at the first GOAT
+    audio read; the heavy prerequisites stubbed."""
+    wins = [{"item": f"item_{k}", "start_s": 1.0} for k in [5] + list(range(10, 36))]
+
+    def first(z, item):
+        raise _FirstGoat(item)
+    for name, val in (("require_redo", lambda *a, **k: {}), ("never_overwrite", lambda *a: None),
+                      ("_dev_context", lambda: ({}, {"items": {}}, None, {})), ("dev_windows", lambda *a: list(wins)),
+                      ("goat_audio", first), ("install_pair", lambda *a: ("L", "M")), ("load_manifest", lambda: {}),
+                      ("require_truth", lambda m: {}), ("usable_windows", lambda *a: []),
+                      ("TruthAudio", lambda listing: None), ("gate_work_dir", lambda: tmp_path),
+                      ("KNOWN_NOTES", {}), ("require_truth_report", lambda *a: {}),
+                      ("ladder_refusal", lambda *a: (None, True)), ("calib_rerun_refusal", lambda *a: None),
+                      ("gate_passes", lambda g: True), ("versions_loud", lambda m: (None, None)),
+                      ("require_attacks", lambda: {"offset_s": 0.0}), ("ear_old_table", lambda m: [])):
+        monkeypatch.setattr(T, name, val)
+    monkeypatch.setattr(T.NR, "Bank", lambda *a, **k: None)
+    monkeypatch.setattr(T.NR, "load_notes_doc", lambda: None)
+    monkeypatch.setattr(T.NR, "load_exclusion", lambda: {"keys": {}, "sha256": []})    # hermetic: no local data
+    (tmp_path / "known").mkdir()
+    lad = tmp_path / "ghost-ladder.json"
+    lad.write_text(json.dumps({"body": {"go": True, "real_reported_only": True}}))
+    monkeypatch.setattr(T, "ladder_path", lambda: lad)
+    gate = tmp_path / "install-gate.json"
+    gate.write_text(json.dumps({"body": {"repeat_ok": True}}))
+    monkeypatch.setattr(T, "gate_path", lambda: gate)
+    monkeypatch.setattr(T, "CALIB_ASIDE", tmp_path / "aside")
+
+
+@pytest.mark.parametrize("cmd", ["cmd_install_gate", "cmd_calibrate", "cmd_truth_report", "cmd_versions"])
+def test_every_redo_command_on_the_development_windows_skips_the_ruled_out_di(monkeypatch, tmp_path, cmd):
+    """12p, behavioural: each of the four commands that reads the development windows reaches GOAT's audio first
+    for item_10, never item_5 (a rerun would otherwise include it quietly)."""
+    pytest.importorskip("numpy")
+    _patch_dev(monkeypatch, tmp_path)
+    with pytest.raises(_FirstGoat) as got:
+        getattr(T, cmd)(None)
+    assert str(got.value) == "item_10"
+
+
+def test_calibration_needs_24_of_26_on_a_later_read():
+    caught = {"a|nr-plain": "caught by a blocking check"}
+    need = T.DEV_READ_COUNT - T.CALIBRATION_FAIL_ALLOWED
+    assert need == 24 and T.calibration_ok(24, caught, need=need) and not T.calibration_ok(23, caught, need=need)
+
+
+def test_the_exclusion_on_main():
+    e = T.entries((REPO / "docs" / "dev-test-ledger.json").read_text())["note-rebuild"]
+    rec = e[T.PHASE_ITEM5_OUT]
+    assert rec["instruction"] == "Bad DI, don't use it" and rec["ruled_out"] == list(T.RULED_OUT)
+    assert "transcribe.json and build.json" in rec["records_with_it"]
+    assert {"note_tx.CHECK_SLACK = 1", "note_tx.DEV_RUNS = 54"} <= set(rec["bars"])
+
+
 def test_the_old_pages_expected_failure_table():
     """`phase_nr_1_ear_old` (step 2): the stored read, the user's words, and which check must fail which rejected
     clip, ledgered before any check runs on them; the table is the shape `calibrate` reads."""
