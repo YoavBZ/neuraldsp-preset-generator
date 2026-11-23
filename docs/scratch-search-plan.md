@@ -12,6 +12,11 @@ zero closer; 90% cluster t intervals; the deciding pool is BKS, GOAT and the pan
 **2026-11-22:** a new row, `fs-notes`, the note rebuild's `tr-di` against the same stem, is declared in
 [section 10](#10-the-fs-notes-row-2026-11-22-ledger-phase_scratch_notes) (ledger `phase_scratch_notes`), with BKS+GOAT
 deciding on the user's exception for that row only. It does not touch rows (b) and (c) or `OUTCOME_TABLE`. Not run.
+**2026-11-23:** the tone split, which prices the measure step's clip fault on rows (b) and (c)'s stored answers and
+asks where row (c)'s loss is made, is declared in
+[section 11](#11-the-tone-split-2026-11-23-ledger-phase_scratch_tone) (ledger `phase_scratch_tone`) on the user's go.
+It re-scores stored answers only (846 renders) and touches no shared code. The search row `fs-tone` is held, not
+declared. Not run.
 
 **The user's rule.** No action rests on a gap under 0.05. "Passes" means decided better with the mean at −0.10 or
 beyond. An interval inside ±0.05 reads "not readable by the score". Undecided is not failed.
@@ -342,3 +347,189 @@ each part's stem, search half only, against the DI's notes; it sizes the stem-no
   with the install and notes hashes), `phase_scratch_notes_answers` (before `score`), `phase_scratch_notes_outcome`
   (after the audit). `phase_fs*` keys are untouched.
 - **Public repo:** no settings values, audio, note files or song paths in git; answers stay under `PF/fs/notes/`.
+
+## 11. The tone split (2026-11-23; ledger `phase_scratch_tone`)
+
+Declared 2026-11-23, before anything in it renders, on the user's go ("Run the quick check", asked by AskUserQuestion
+on 2026-11-23): price the clipping fault now, at about 846 renders; the tone-search row stays held unless a real
+rebuild shows a fixed tone error; whether to fix the clip itself stays the user's decision after the result. Track 4 of
+the 2026-11-22 research report, after an independent review (changes needed) and its re-review (approve with changes
+A to D, all taken). Code: `learn/scratch_tone.py`; tests: `tests/test_scratch_tone.py`. Data: `PF/fs/tone/`.
+
+### 11a. The question
+
+1. **What does the measure step's fault cost, by the score?** The scoring DI is meant to carry an average guitar's
+   balance. `song_bank.measure` asks for the gain `avg − (own − own.mean())` and `direc_check.eq_to` clips it at
+   ±15 dB. The gain is centred over 0 to 24 kHz, not in band, so its mean from 80 Hz to 8 kHz is −7.5 dB on the 40
+   (−17 to −1) and 13% of in-band bins clip on average (up to 65%). The coded DI so sits 2.7 dB from the average
+   balance on the 40 (max 7.1); without the clip, 1.3 dB (max 2.0). How far do rows (b) and (c) move when their stored
+   answers are scored through a correctly balanced DI? Would a fix need those rows redone (about 26,000 renders),
+   re-scored only, or nothing? The decision on the fix is the user's, afterwards.
+2. **Where is row (c)'s loss made?** How much of it is the dry guitar's static tone carried to the true DI (the average
+   balance, the planted tilt), and how much is everything else. `fs-notes` and the codec row need this beside their
+   own reads.
+
+**How it differs from what came before.** Nothing priced the measure step: `docs/ml-deep-review-2026-11.md` noted the
+clip with "its effect on renders is unmeasured". Nothing separated row (c)'s loss: row (c) and its audit give one
+number for the blur. The split is not a search. It makes no new dry guitar for a search and no new answer; it re-reads
+answers that are already hashed.
+
+**Why the search row `fs-tone` is held.** By the user's average-guitar yardstick the scoring DI is the take's DI
+re-equalised to an average guitar's balance, and a rebuilt DI is finished the same way (`note_rebuild.rebuild_redo`:
+the measure step, then `average_balance`). So a real rebuild has no static tilt for a search to find. On avg+mild the
+target would be the planted ±3 dB a decade tilt plus the measure step's fault. `fs-tone` is reconsidered only if all
+three hold: the user has decided on the measure step; a real rebuild shows a static tone error against a correctly
+balanced scoring DI (`tr-di`'s long-term spectrum against `true-noclip`, CPU only, once its builds exist); and the
+split's `C_planted` shows the planted tilt is not the whole of `C_tilt`. No `fs-tone` code, hook or search record
+exists; `phase_scratch_tone_hook`, `_answers` and `_outcome` are held with it.
+
+### 11b. What is rendered
+
+Rows (b) and (c)'s stored, hashed answers on all 47 parts (the user's pool: BKS, GOAT and the panel), each through the
+dry guitars below, primed alone, judged on the held half against the clean record. 18 renders a part, 846 in all.
+
+| Dry guitar | What it is | Rendered through it |
+|---|---|---|
+| `true`, the coded true DI | as rows (b) and (c) were scored | Cen: the control, which must repeat both rows' stored value and render sha256 exactly |
+| `true-noclip` | the raw section through the measure step with the clip removed in every bin, at −22.9 LUFS: the candidate fix | Cen, answer (c), answer (b) |
+| `avg` | stored: the true DI with the average balance as the blur and `tr-di` carry it; no bleed | answer (c) |
+| `true+planted` | the coded true DI with exactly the seeded ±3 dB a decade tilt, its sign from the blur's seed | answer (c) |
+| `true+tilt` | the coded true DI with avg+mild's truth-fitted tilt, clipped to ±8 dB a decade | answer (c) |
+| avg+mild | stored: the search's own dry guitar | Cen, answer (c) |
+
+- **The judge's DI is the coded true DI every time,** so the scored frames never change and only the render differs
+  between readings. This is a declared deviation from a fixed yardstick: a real fix would also hand the judge the fixed
+  DI, which moves its frame floor slightly.
+- **The tilt form:** gain in dB = s × clip(log10(f / 1 kHz), −1, +1), applied with `di_robustness.apply_gain_db` and
+  brought back to the input's RMS (at s = 3 times the sign it is `degrade`'s tilt exactly). Fitted by least squares on
+  81 geometric points from 80 Hz to 8 kHz, on spectra by `smoothed_spectrum` over the whole section.
+- **`true-noclip`** is a new function, `scratch_tone.no_clip_measure`: `song_bank.measure`'s gain, interpolated and
+  applied as `eq_to` does, without the clip, then `to_lufs`. `song_bank.measure` and `direc_check.eq_to` are unchanged:
+  every stored value depends on them.
+- **It is not a mild change.** On the 47 parts the in-band ask, centred in band, reaches +37 and −30 dB and goes beyond
+  the EQ's ±12 dB reach on 38 of them. The boost above 8 kHz is +21 dB on average (up to +33), below 80 Hz up to
+  +26 dB. Energy above 8 kHz rises 3.1 dB on average against the coded DI (up to 13.4), the peak at the same loudness
+  1.6 dB (up to 9.8). These change what a driven amp sees and may lift hiss and hum. Another fix (a wider clip, a
+  second pass) is not measured here and would need its own read.
+- With the `mild` arm dropped, the blur's non-tone parts (smear, soft clip, bleed) are **not priced on their own**.
+  They show only inside `C_blur`, with the tone.
+
+**The fit (zero renders, run before this declaration).** `learn.scratch_tone fit` builds `true-noclip`, `true+tilt`
+and `true+planted` per part (`PF/fs/tone/dry/v1/`, 3 × 47 files, about 280 MB) and hashes them with the coded DI and
+the two stored guitars in `PF/fs/tone/fit-v1.json`. The declaration names its version and sha256; a changed fit writes
+the next version and never overwrites. It took 62 s of CPU and reproduces the planning and review numbers (a test
+holds each):
+
+| Fact | Number |
+|---|---|
+| avg+mild's error against the coded true DI, RMS over parts and grid, before and after the fitted tilt | GOAT 3.69 → 2.10 dB (about two thirds of the variance); the 40 3.34 → 2.06 |
+| Fitted slopes inside ±8 dB a decade | 38 of 40 |
+| The planted sign against the stored `mild` file's fitted slope | the same on 40 of 40 |
+| Distance from the average balance: raw, coded, without the clip (the 40) | 7.7, 2.7 (max 7.1), 1.3 dB (max 2.0) |
+| The clip residual (the coded DI against `true-noclip`) | 2.1 dB on average, max 7.0 (the 40) |
+| The stored `avg` against `true-noclip` and against the coded DI | 1.15 and 2.43 dB on the 40; 0.84 and 3.07 on the panel |
+| The `avg` a fixed pipeline would build, against the stored `avg` and against `true-noclip` (47 parts) | 1.03 dB (max 1.53), and 0.65 dB |
+| Beyond the EQ's ±12 dB reach | 38 of 47 |
+| φ from the stored EQ answers (the review's regression, octave bands assumed) | 0.29 GOAT clean, 0.44 the clean 20, 0.00 crunch |
+
+### 11c. The numbers
+
+**The fault's price** (in each dry guitar's own terms: the answer against Cen, both through that guitar):
+- `P_c` = G of row (c)'s answer through `true-noclip`, less its stored G. Below zero: row (c) reads better under a
+  correctly balanced DI, so the stored number carries the fault.
+- `P_b` = the same for row (b)'s answer. Above zero is expected if row (b)'s answers are tied to the coded DI.
+- **The share restated on one yardstick:** row (c)'s G over row (b)'s G, both through `true-noclip`, beside the stored
+  47%. Row (c) re-scored over row (b) stored is shown only as a figure labelled **mixed**.
+- Beside: Cen's own shift between the two DIs; `P_c` and `P_b` against each part's clip residual (Spearman's rho, and
+  the two halves at its median), which checks the mechanism by render; `P_c` and `P_b` on the parts beyond the EQ's
+  reach and on the rest, with each group's rise in energy above 8 kHz and in peak.
+
+`P_c` needs no assumption about φ, but as a stand-in for a redo of row (c) it is **approximate and conservative**: a
+fixed pipeline's `avg` differs from the stored one by 1.03 dB (max 1.53) and sits 0.65 dB from the clip-free DI, so a
+redo's dry guitar would sit nearer the scoring DI than the stored one does. `P_c` understates the change a redo would
+show, with the redo's search noise on top.
+
+**Where the loss is** (answer (c) through the other guitar, against the same answer's stored value through the coded
+true DI):
+- `C_fix` and `C_avg`: the average balance, by the fix and by the stored `avg`; −`C_avg` is the average balance's cost,
+  and the two should agree. **The average balance's cost gets its own line to the user and the ML session, whatever
+  the codes.**
+- `C_planted`: the planted tilt alone, the synthetic share. `C_tilt`: the truth-fitted tilt; `C_tilt` less
+  `C_planted` is what the tilt holds beyond the planted one.
+- `C_blur`: everything, through avg+mild. Beside it, row (c) in its own terms (through avg+mild against Cen through
+  avg+mild).
+
+**The C numbers depend on φ,** the share of a blur component the answer inverted: 1 when the answer cancels it exactly,
+0 when the answer did not move, below 0 when it moved the wrong way. For a component of size e, the answer is off by
+φ·e through the true DI and by (1 − φ)·e through the blurred one. Under a quadratic loss row (c)'s realised cost is
+about φ²·e², while C reads about (1 − 2φ)·e² (below zero: better through the blurred guitar). At φ = 1 C is exactly
+minus the realised cost; under φ = 0.5 C reads zero or above although a correction before the search would help. So
+the C numbers are conservative bounds, and every stop they suggest is worded **"not shown by the split"**. φ is
+reported beside every code: by render per part (the long-term response of answer (c) less answer (b), both through
+`true-noclip`, projected on avg+mild's error, inverted; no extra render), and from the stored EQ answers.
+
+**Read on:** the pool; BKS+GOAT; each set; clean and crunch; the parts whose answer has no drive or compressor active
+(12 of the 40 in row (c), the panel adds 3; only this group is called the exact case); and the reach groups. A
+non-finite render takes the declared B3 rule inside its dry guitar (`nonfinite_rule`; a dry guitar without a Cen render
+takes the coded Cen); none occurred in rows (b) and (c).
+
+### 11d. The codes (coded and tested before any render)
+
+**The measure step: two independent readings, one per row, on the pool.** `P_c` reads row (c) and `P_b` row (b);
+neither changes the other's code. Each reads **level** (its interval inside ±0.05), **moves** (its interval clear of
+zero with the mean at 0.05 or beyond, either way) or **undecided** (anything else; undecided is not failed).
+
+| Code | When | What it tells the user |
+|---|---|---|
+| `MC-c-level` | `P_c` level | Row (c)'s stored number stands under the fix, as far as re-scoring can show (it is conservative) |
+| `MC-c-moves` | `P_c` moves | Row (c) carries the fault. Its restated number comes from this split; a redo of its search would show at least this change |
+| `MC-c-undecided` | `P_c` undecided | The size and interval go to the user |
+| `MC-b-level` | `P_b` level | Row (b)'s stored number stands under the fix; its search needs no redo |
+| `MC-b-moves` | `P_b` moves | Row (b)'s stored answers are tied to the coded DI. The re-scored number is where a redo starts: a redo should match it up to search noise. Nothing is claimed above it, and the stored G is not a ceiling: the fix moves the DI further from the raw guitar that made the record, on some parts beyond the EQ's reach, so the task may be harder. An exact row (b) needs its search redone under the fixed DI: 12,351 + 940 renders, about 1 h 59 min at the measured rates |
+| `MC-b-undecided` | `P_b` undecided | The size and interval go to the user |
+
+Read together: both level, rows (b) and (c) stand, no redo for their sake, and fixing the measure step is a
+forward-only choice; (c) moves and (b) level, row (c) and the share are restated from the split and no search is
+redone; (b) moves, the share on one yardstick is given from the split and an exact one waits on row (b)'s redo.
+Otherwise each code goes to the user on its own line. A formal redo of both rows under a new measure step is about
+26,000 renders; whether the numbers justify it is the user's call. A panel DI file lost stops the pool's MC codes
+(`pool_refusal`).
+
+**Where the loss is** (on BKS+GOAT; descriptive, it licenses no run):
+
+| Code | When | Wording |
+|---|---|---|
+| `TN-reach` | `C_tilt` decided better, its mean at −0.10 or beyond | "By the split, a static tone error of avg+mild's size is worth a heard size." `C_planted` says how much of it is our own tilt |
+| `TN-short` | Not the above, and one of the C numbers has its interval below zero | "The tone costs" only when that number is `C_tilt`, `C_planted`, `C_avg` or `C_fix`. When it is only `C_blur`: "the blur costs" (smear, soft clip and bleed included) |
+| `TN-search` | No C number has its interval below zero | "Not shown by the split that row (c)'s loss is carried by the dry guitar." With φ under 0.5 this is expected even if it is |
+
+### 11e. Guards, cost, who needs it
+
+- **Guards.** `split` and `split-read` refuse unless this checkout's `learn/scratch_search.py` and
+  `learn/scratch_tone.py` and its `phase_scratch_tone*` keys are main's (`scratch_tone.on_main`), and main holds
+  `phase_scratch_tone` with the fit's version and sha256 and the user's go, and `phase_scratch_both_outcome`. Both
+  rows' answers are refused unless their sha256 is main's (`require_hash`), with the draw's hash and C3r's state. Every
+  dry guitar's sha256 is checked before the part's first render (the stored two also against `blur.json`), and every
+  record carries them. The Cen control is exact; a part that misses it refuses; 3 refused of 47 stop the read. Every
+  output is written once; the rows are saved before any code is read; the read happens once. At most 3 render
+  processes, the 31 GB disk guard before every part, never beside a separation.
+- **Shared code.** None is changed: `learn/scratch_search.py`, `learn/scratch_notes.py`, `learn/note_transcribe.py`,
+  `song_bank.measure` and `direc_check.eq_to` are as on main. `phase_scratch_tone*` sits outside the guarded prefixes
+  (`phase_fs`, `phase_scratch_notes`, `phase_nr`), so the redo's `redo_on_main` and `scratch_search.on_main` read
+  nothing new (a test holds this).
+- **Repeat use.** No search runs, so no search half is used and no answer is formed. The held halves of all 47 parts,
+  read by rows (b) and (c) and later by `fs-notes`, are read again: a declared repeat use.
+- **Cost (measured rates only).** 846 renders, about 13 minutes on 3 processes at row (c)'s score rate (940 renders in
+  840 s). The fit: 0 renders, 62 s of CPU. Disk about 280 MB. No training, separation, MPS job or download.
+- **Stop rule.** The split runs once and is read once; an independent audit recomputes every number from the per-part
+  files before the results PR (`phase_scratch_tone_split`). Nothing else in this track runs without a new declaration.
+- **Who needs the result.** The user: fix the measure step or not; restate, redo or leave rows (b) and (c).
+  `fs-notes`: `tr-di` is average-balanced, so its own G against Cen carries the fault, though `D_notes` (paired with
+  row (c)) cancels it to first order; the split's size goes beside that read, and `fs-notes` is never compared with row
+  (b) without it. The codec row: its `D_blur` is biased in the codec's favour by the same size. The product: the
+  measure step is also how a rebuilt DI enters it.
+- **Public repo.** No part keys, settings values, audio or song paths in git; everything per part stays under
+  `PF/fs/tone/`.
+
+    $MAIN -m learn.scratch_tone split --shard 0/3    # and 1/3, 2/3: 846 renders in all
+    $MAIN -m learn.scratch_tone split-read           # zero renders, once -> raw hand-back, audit, results PR
