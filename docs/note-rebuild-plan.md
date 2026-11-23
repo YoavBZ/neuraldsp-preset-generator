@@ -1016,3 +1016,18 @@ install's model and settings.
 
 **What it can't say:** how the plugin reacts to an extra note (nothing is rendered); much about real guitars (the
 lists carry the read); how many extras Basic Pitch makes on full songs (GOAT has no usable truth); anything about stems.
+
+**Step 3 run, and the user's two answers (2026-11-23; ledger `phase_nr_1_redo_go_ladder`, `phase_nr_1_redo_go_flags`).**
+Run once from main at 7697c48e, zero renders. `attacks-report` (1.30 s a window, timed on 3 real windows first):
+the detector's P1 offset −14.1 ms; recall of true onset groups P1 0.943 (chords 0.766, 0.985 on 150-ms groups),
+P2 0.989 (chords 0.952), the lists 0.987. Scored with the true notes, `onsets-found` reads under 0.90 on all 79 real
+windows (median 0.42 and 0.45 on P1 and P2 scales): the detector fires about 2.4 times per real note. `ghost-ladder`:
+9 of 10 lists pass; `chords-four` falls at every step (3.215, 2.320, 1.787, 1.713) but its −20 dB version is 0.6%
+below the plain rebuild (1.7235), so the check stopped the work; 3 of 6 real windows fail.
+
+| Asked (AskUserQuestion) | The user's answer | What follows |
+|---|---|---|
+| The ladder: one list 0.6% below the plain rebuild at −20 dB, where the rule allowed no tolerance | "Continue, record why" | `chords-four` still falls at every step and its 0.6% is within noise; no rule is changed after the fact; the real set is reported only. `versions` reads past the failed check only with this go naming that `ghost-ladder.json` by its sha256 (`ladder_refusal`) |
+| The 3-of-40 flagged-parts trigger, when even the true notes fail `onsets-found` on every real window | "Report it, don't stop" | The trigger becomes a reported figure: `build` reads the go and does not refuse on the count; flagged parts are still listed and read beside; the listening page stays the guard for missed notes |
+
+The ladder rule and every threshold are unchanged.

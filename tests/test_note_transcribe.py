@@ -413,11 +413,37 @@ def test_the_ledger_holds_the_declarations():
     assert T.PHASE_CALIB in e["note-rebuild"] and "Measure first" in str(e["note-rebuild"][T.PHASE_CALIB])
     truth = e["note-rebuild"][T.PHASE_TRUTH]                   # step 2's listing, ledgered before any run reads it
     assert truth["sha256"].startswith("3056dcbc") and truth["file"] == "PF/note-rebuild/redo/truth.json"
-    for later in (T.PHASE_VERSIONS, T.PHASE_GO_CHORDS, T.PHASE_GO_FLAGS, T.PHASE_GO_CLIPS, T.PHASE_GO_VERSIONS):
+    for later in (T.PHASE_VERSIONS, T.PHASE_GO_CHORDS, T.PHASE_GO_CLIPS, T.PHASE_GO_VERSIONS):
         assert later not in e["note-rebuild"]
     for later in (T.PHASE_INSTALL, T.PHASE_NOTES, T.PHASE_EAR):
         assert later not in e["note-rebuild"]                  # each comes with its own PR
     assert T.PHASE_DRY not in e["preset-ladder"]
+
+
+def test_the_ladder_refusal_and_the_users_go():
+    """12m step 3: a list failing the instrument check stops `versions` unless main holds the user's go naming that
+    ghost-ladder.json's sha256; under the go the real set is reported only. The ladder rule itself is unchanged."""
+    assert T.ladder_refusal({"go": True, "real_reported_only": False}, {}, "s") == (None, False)
+    assert T.ladder_refusal({"go": True, "real_reported_only": True}, {}, "s") == (None, True)
+    failed = {"go": False, "real_reported_only": None}
+    why, real_only = T.ladder_refusal(failed, {}, "s")
+    assert T.PHASE_GO_LADDER in why and real_only is None
+    assert T.ladder_refusal(failed, {T.PHASE_GO_LADDER: {"ladder_sha256": "other"}}, "s")[0]   # another run's go
+    assert T.ladder_refusal(failed, {T.PHASE_GO_LADDER: "yes"}, "s")[0]
+    assert T.ladder_refusal(failed, {T.PHASE_GO_LADDER: {"ladder_sha256": "s"}}, "s") == (None, True)
+
+
+def test_the_users_two_goes_of_2026_11_23():
+    """The user's answers after step 3 (AskUserQuestion, 2026-11-23): the ladder's go bound to the stored
+    ghost-ladder.json, and the flagged-parts trigger reported, not stopping `build`."""
+    e = T.entries((REPO / "docs" / "dev-test-ledger.json").read_text())["note-rebuild"]
+    lad, fl = e[T.PHASE_GO_LADDER], e[T.PHASE_GO_FLAGS]
+    assert lad["answer"] == "Continue, record why" and lad["go"] is True and lad["real_reported_only"] is True
+    assert lad["ladder_sha256"].startswith("15894262") and lad["failing_lists"] == ["chords-four"]
+    assert fl["answer"] == "Report it, don't stop" and fl["go"] is True
+    failed = {"go": False, "real_reported_only": None}
+    assert T.ladder_refusal(failed, e, lad["ladder_sha256"]) == (None, True)
+    assert T.flags_go_refusal([f"p{i}" for i in range(40)], e) is None
 
 
 def test_the_old_pages_expected_failure_table():
