@@ -1098,6 +1098,17 @@ beside `ld-stem`'s), descriptive, never deciding.
 2. **The checkpoint loads weights-only.** Its pickle's globals are listed by `pickletools` (nothing is executed); it
    loads with `weights_only=True` inside `torch.serialization.safe_globals([...])` naming only the omegaconf classes it
    holds, and `state["ema"]` is taken. Any other global stops, to the user.
+   **Amended 2026-11-23 (ledger `phase_scratch_loudar_globals`), after that stop fired:** the listing found
+   `__builtin__.dict`, `__builtin__.list`, `__builtin__.long`, `collections.defaultdict` and `typing.Any` beside torch's
+   three and the 5 omegaconf classes. An isolated decision agent, under the user's standing rule for technical calls
+   (not the user's own answer), chose option (a′), about 90% confident it is safe:
+   - names are resolved with `_compat_pickle` as torch resolves them, against one frozen allowlist of these 13; any
+     other name still stops;
+   - `collections.defaultdict` is served by `_defaultdict_as_dict`, which returns a plain `{}`, never the real class
+     (torch's SETITEM check accepts only a dict, `OrderedDict` or `Counter`);
+   - `typing.Any` is OmegaConf's inert type marker, and `Any()` raises;
+   - torch 2.10.0 and omegaconf 2.3.1 are pinned and checked at load, as are the checkpoint's sha256 and revision;
+   - only `state["ema"]` is kept, asserted a dict of tensors, and the config is never resolved.
 3. **The gate's reference figures, zero runs:** the floored log-mel distance from the original (the mean of the 256-
    and 2,048-sample frames) for the authors' own LOUDAR outputs and for the distorted inputs, and the authors' gain
    (their difference). The 1.0-dB tolerance is reported as a fraction of that gain.

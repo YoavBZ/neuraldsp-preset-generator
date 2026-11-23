@@ -4271,6 +4271,33 @@
     "eleven_g": "the clip-free re-score beside new rows (11g) is declared, not coded; when it is, this row's answers join it under 11g's own amendment, reported only; this row does not wait for it",
     "names_grepped": "fs-loudar, ld-stem, ld-stem-b, ld-rec, di-cut, stem-in, di-whole, FL-null, FL-above, FL-reach, FL-short, FL-undecided, D_cut, D_bar, D_null, phase_scratch_loudar*, scratch_loudar, loudar_run, loudar-venv, 20261701: no hits in docs/, learn/, tests/, research/, scripts/ or the ledger on main 23baab3e before this declaration",
     "later_keys": "phase_scratch_loudar_dry, phase_scratch_loudar_answers_stem, _cut, _in; only after FL-short or FL-null phase_scratch_loudar_dry_rec and phase_scratch_loudar_answers_rec; phase_scratch_loudar_outcome"
+   },
+   "phase_scratch_loudar_globals": {
+    "declared": "2026-11-23, after unit 0's declared stop at the checkpoint's globals listing (before any load or run)",
+    "decided_by": "an isolated decision agent under the user's standing rule for technical calls (classed technical, not critical): option (a') with one required change, about 90% confidence that (a') is safe; not the user's own answer",
+    "why": "the listing of GuitarFx-175000.pt found, beside torch's three and the 5 omegaconf classes, __builtin__.dict, __builtin__.list, __builtin__.long, collections.defaultdict and typing.Any, refused by the first allowlist; torch 2.10's weights-only unpickler allows none of the last five by default, and plain (a) would fail closed: at opcode 27551 the pickle does a SETITEM on the defaultdict, and _check_set_item_target accepts only dict, OrderedDict or Counter",
+    "allowlist": {
+     "torch._utils._rebuild_tensor_v2": "torch's own (weights_only default): rebuilds the tensors",
+     "torch.FloatStorage": "torch's own (weights_only default): the tensors' storage",
+     "collections.OrderedDict": "torch's own (weights_only default): the state dicts",
+     "omegaconf.base.ContainerMetadata": "the saved training config's metadata (a config class)",
+     "omegaconf.base.Metadata": "the saved training config's metadata (a config class)",
+     "omegaconf.dictconfig.DictConfig": "the saved training config (a config class)",
+     "omegaconf.listconfig.ListConfig": "the saved training config's lists (a config class)",
+     "omegaconf.nodes.AnyNode": "the saved training config's untyped values (a config class)",
+     "builtins.dict": "pickled as __builtin__.dict (a plain container type; also the defaultdict's factory)",
+     "builtins.list": "pickled as __builtin__.list (a plain container type)",
+     "builtins.int": "pickled as __builtin__.long, which _compat_pickle maps to int (a plain number type)",
+     "collections.defaultdict": "served by _defaultdict_as_dict, a module function that ignores its arguments and returns {}; the real class is never allowed",
+     "typing.Any": "OmegaConf's metadata type marker: inert, and Any() raises TypeError, so a REDUCE on it runs nothing (a test)"
+    },
+    "rules": "the listing resolves names with _compat_pickle exactly as torch's _read_global_instruction does, and any name outside these 13 stops the load (to the user); the load is torch.load(weights_only=True) inside the torch.serialization.safe_globals([...]) context manager only (no global add_safe_globals, nothing of torch patched); only state['ema'] is kept, asserted a dict of tensors, and the rest (the config) is dropped, never resolved or converted",
+    "pins": "the checkpoint by sha256 d86e08bbb94bb12cef0b907dd7f3fd67ba112cc463c8ee0e964855155985c297 and revision 6de0a99b0e0e88598842d5a05e5488369d857dbc; torch 2.10.0 and omegaconf 2.3.1, checked at load time (any other version stops and asks for a re-review)",
+    "revision": "6de0a99b0e0e88598842d5a05e5488369d857dbc",
+    "torch": "2.10.0",
+    "omegaconf": "2.3.1",
+    "code": "learn/loudar_run.py: ALLOWED_GLOBALS, compat_name, globals_refusal, _defaultdict_as_dict, safe_global_objects, guarded_load, safe_load, version_refusal, ema_only, load_checkpoint; tests/test_loudar_run.py on small hand-built pickles, never the checkpoint",
+    "next": "after this merges, unit 0's gate runs from the new main (docs/scratch-search-plan.md section 13d)"
    }
   },
   {

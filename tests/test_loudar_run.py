@@ -5,6 +5,7 @@ row's; the pickle globals are listed without unpickling. The module imports noth
 imports LOUDAR."""
 import ast
 import collections
+import json
 import pathlib
 import pickle
 import zipfile
@@ -60,15 +61,44 @@ def test_the_input_refusal_and_the_sets():
     assert LR.keys_for(keys, ["goat"]) == ["goat__b"]
 
 
-def test_the_checkpoints_globals():
-    allow, why = LR.globals_refusal(["torch._utils._rebuild_tensor_v2", "collections.OrderedDict",
-                                     "torch.FloatStorage", "omegaconf.dictconfig.DictConfig",
-                                     "omegaconf.base.ContainerMetadata", "builtins.dict"])
-    assert why is None and allow == ["omegaconf.base.ContainerMetadata", "omegaconf.dictconfig.DictConfig"]
-    _, why = LR.globals_refusal(["torch.FloatStorage", "typing.Any"])
-    assert "typing.Any" in why and "stop and ask" in why
-    _, why = LR.globals_refusal(["os.system"])
-    assert why
+THIRTEEN = {"torch._utils._rebuild_tensor_v2", "torch.FloatStorage", "collections.OrderedDict",
+            "omegaconf.base.ContainerMetadata", "omegaconf.base.Metadata", "omegaconf.dictconfig.DictConfig",
+            "omegaconf.listconfig.ListConfig", "omegaconf.nodes.AnyNode", "builtins.dict", "builtins.list",
+            "builtins.int", "collections.defaultdict", "typing.Any"}
+
+
+def test_the_allowlist_is_the_pinned_thirteen():
+    assert isinstance(LR.ALLOWED_GLOBALS, frozenset) and LR.ALLOWED_GLOBALS == THIRTEEN and len(THIRTEEN) == 13
+    assert LR.globals_refusal(sorted(THIRTEEN)) is None
+    assert LR.globals_refusal(["torch.FloatStorage", "typing.Any"]) is None
+    for extra in ("posix.system", "builtins.eval", "collections.Counter", "builtins.str", "torch.load"):
+        why = LR.globals_refusal(sorted(THIRTEEN) + [extra])
+        assert extra in why and "stop and ask" in why
+    d = json.loads((REPO / "docs/dev-test-ledger.json").read_text())
+    e = next(t for t in d["tests"] if t.get("test_id") == "preset-ladder")
+    assert set(e["phase_scratch_loudar_globals"]["allowlist"]) == set(LR.ALLOWED_GLOBALS)   # the ledger's pin
+    assert e["phase_scratch_loudar_globals"]["torch"] == LR.TORCH_PIN == "2.10.0"
+    assert e["phase_scratch_loudar_globals"]["omegaconf"] == LR.OMEGACONF_PIN == "2.3.1"
+    assert e["phase_scratch_loudar_globals"]["revision"] == LR.LOUDAR_REVISION
+
+
+def test_names_resolve_as_torch_resolves_them():
+    assert LR.compat_name("__builtin__", "long") == "builtins.int"
+    assert LR.compat_name("__builtin__", "dict") == "builtins.dict"
+    assert LR.compat_name("__builtin__", "eval") == "builtins.eval"
+    assert LR.compat_name("copy_reg", "_reconstructor") == "copyreg._reconstructor"
+    assert LR.compat_name("omegaconf.nodes", "AnyNode") == "omegaconf.nodes.AnyNode"
+
+
+def test_the_version_pins():
+    assert LR.version_refusal("2.10.0", "2.3.1") is None and LR.version_refusal("2.10.0+cpu", "2.3.1") is None
+    for t, o in (("2.11.0", "2.3.1"), ("2.10.0", "2.3.0"), ("2.9.1", "2.4.0")):
+        assert "re-review" in LR.version_refusal(t, o)
+
+
+def test_the_stand_in_for_defaultdict_returns_a_plain_dict():
+    got = LR._defaultdict_as_dict(dict, extra=1)
+    assert got == {} and type(got) is dict
 
 
 def _zip(tmp_path, obj, protocol):
@@ -83,7 +113,14 @@ def test_pickle_globals_lists_without_unpickling(tmp_path, protocol):
     p = _zip(tmp_path, {"ema": collections.OrderedDict(a=1), "c": collections.Counter()}, protocol)
     got = LR.pickle_globals(p)
     assert "collections.OrderedDict" in got and "collections.Counter" in got
-    assert "collections.Counter" in LR.globals_refusal(got)[1]
+    assert "collections.Counter" in LR.globals_refusal(got)
+
+
+def test_the_listing_maps_python_2_names(tmp_path):
+    p = tmp_path / "long.pt"
+    with zipfile.ZipFile(p, "w") as z:
+        z.writestr("archive/data.pkl", b"\x80\x02c__builtin__\nlong\nq\x00.")
+    assert LR.pickle_globals(p) == ["builtins.int"] and LR.globals_refusal(LR.pickle_globals(p)) is None
 
 
 def test_the_gates_projected_seconds_count_the_four_timing_and_check_runs():
@@ -172,9 +209,88 @@ def test_loudar_gain_logmel_and_floored_equal_the_codec_rows():
     assert LR.gate_d(x, np.concatenate([y, np.zeros(10)])) == LR.gate_d(x, y)    # cut to the shorter
 
 
-def test_pickle_globals_of_a_real_torch_style_save(tmp_path):
+# --- with torch and omegaconf: hand-built pickles, never the checkpoint -----------------------------------------------------
+
+def _torch():
     torch = pytest.importorskip("torch")
+    pytest.importorskip("omegaconf")
+    return torch
+
+
+def _swap_pickle(tmp_path, torch, name, data):
+    """A torch zip with its data.pkl replaced by hand-built bytes."""
+    a = tmp_path / f"{name}-base.pt"
+    torch.save({"x": 0}, a)
+    with zipfile.ZipFile(a) as z:
+        blobs = {n: z.read(n) for n in z.namelist()}
+    out = tmp_path / f"{name}.pt"
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_STORED) as z:
+        for n, b in blobs.items():
+            z.writestr(n, data if n.endswith("data.pkl") else b)
+    return out
+
+
+def test_an_extra_global_is_refused_at_the_listing_and_at_the_load(tmp_path):
+    torch = _torch()
+    import os
+
+    for name, obj in (("system", os.system), ("eval", eval)):
+        p = tmp_path / f"{name}.pt"
+        torch.save({"ema": {"w": torch.zeros(1)}, "f": obj}, p)
+        found = LR.pickle_globals(p)
+        assert LR.globals_refusal(found)                                   # the listing stops it
+        with pytest.raises(SystemExit, match="outside the pinned allowlist"):
+            LR.safe_load(p)
+        with pytest.raises(Exception, match="(?i)unsupported global|not an allowed global|weights only"):
+            LR.guarded_load(p)                                             # and the load alone refuses it too
+
+
+def test_a_defaultdict_of_dict_loads_as_a_plain_dict(tmp_path):
+    torch = _torch()
+    p = tmp_path / "dd.pt"
+    torch.save({"ema": collections.OrderedDict(w=torch.ones(2)),
+                "cfg": collections.defaultdict(dict, {"a": {"x": 1}, "b": {}})}, p)
+    assert "collections.defaultdict" in LR.pickle_globals(p)
+    state, _ = LR.safe_load(p)
+    assert type(state["cfg"]) is dict and state["cfg"] == {"a": {"x": 1}, "b": {}}
+    ema = LR.ema_only(state)
+    assert list(ema) == ["w"] and torch.equal(ema["w"], torch.ones(2))
+
+
+def test_a_defaultdict_whose_factory_is_not_allowed_is_refused(tmp_path):
+    torch = _torch()
+    p = tmp_path / "dd-str.pt"
+    torch.save({"cfg": collections.defaultdict(str, {"a": "x"})}, p)
+    assert "builtins.str" in LR.globals_refusal(LR.pickle_globals(p))
+    with pytest.raises(Exception, match="(?i)unsupported global|not an allowed global|weights only"):
+        LR.guarded_load(p)
+
+
+def test_builtin_long_loads_as_int(tmp_path):
+    torch = _torch()
+    p = _swap_pickle(tmp_path, torch, "long", b"\x80\x02c__builtin__\nlong\nq\x00.")
+    assert LR.pickle_globals(p) == ["builtins.int"]
+    assert LR.safe_load(p)[0] is int
+
+
+def test_a_reduce_on_typing_any_raises_and_runs_nothing(tmp_path):
+    torch = _torch()
+    p = _swap_pickle(tmp_path, torch, "any", b"\x80\x02ctyping\nAny\nq\x00)Rq\x01.")
+    assert LR.pickle_globals(p) == ["typing.Any"]
+    with pytest.raises(TypeError, match="Any cannot be instantiated"):
+        LR.safe_load(p)
+
+
+def test_only_a_dict_of_tensors_is_kept_as_ema():
+    torch = _torch()
+    assert LR.ema_only({"ema": {"w": torch.zeros(1)}, "cfg": {"x": 1}}) == {"w": torch.zeros(1)}
+    for bad in ({"ema": {"w": 1.0}}, {"ema": []}, {"ema": {}}, {"cfg": {}}, []):
+        with pytest.raises(SystemExit, match="dict of tensors"):
+            LR.ema_only(bad)
+
+
+def test_pickle_globals_of_a_real_torch_style_save(tmp_path):
+    torch = _torch()
     p = tmp_path / "ck.pt"
     torch.save({"ema": collections.OrderedDict(w=torch.zeros(2))}, p)
-    allow, why = LR.globals_refusal(LR.pickle_globals(p))
-    assert why is None and allow == []
+    assert LR.globals_refusal(LR.pickle_globals(p)) is None
