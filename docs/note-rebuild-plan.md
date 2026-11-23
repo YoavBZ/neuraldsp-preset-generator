@@ -1153,7 +1153,7 @@ all caught by a blocking check.
 - `single-note` needs no bent note, and Basic Pitch marks nearly every note bent: `item_14` 14 of 14, `item_143` 69 of
   75. No item qualifies, even with every group a single note.
 - `let-ring` needs half or more of the groups to ring 100 ms into the next onset. The highest share is 0.16
-  (`item_5`), and on GOAT's annotated notes every item reads 0.00.
+  (`item_5`). On GOAT's annotated notes, 21 of 23 annotated items read 0.00, and two read 0.037 and 0.061.
 - Both are the faults the versions read's independent audit found (its section 4, summarised in the step-5 note
   above): spurious pitch bends, and held notes cut short.
 
@@ -1170,7 +1170,7 @@ all caught by a blocking check.
 - **Measured on the stored scans** (the branch's code): `chord-led` `item_77`, `bends` `item_39`, `single-note`
   `item_49` (from the annotation), and `let-ring` filled by nothing, so its nearest is `item_5` (figure 0.16 against
   the bar 0.50). All four are clear of the exclusion list and are in neither the row's draw nor the replay's.
-- **Statement:** No development item meets the declared let-ring bar. The figure reads note-offs, which the transcription is known to cut short and the annotation does not carry. This is a limit of the figure, not evidence that the pool has no let-ring playing.
+- **Statement:** No development item meets the declared let-ring bar. The figure reads note-offs, which the transcription is known to cut short, and the annotation shows almost no let-ring by this figure. This is a limit of the figure, not evidence that the pool has no let-ring playing.
 - **Caveats.** The transcriber's bends are mostly spurious, so the `bends` slot is labelled by the transcriber and is
   not verified; how it is picked is unchanged. Picking `let-ring` by the transcriber's note-ends leans toward the item
   where its cutting is mildest.

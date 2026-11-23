@@ -4730,7 +4730,7 @@
     "date": "2026-11-23",
     "decided_by": "the delegated decision agent, under the user's standing instruction of 2026-11-23 (technical decisions go to an isolated decision agent; higher-level ones to the user); about 80% confidence. Not a go of the user's",
     "relayed_by": "the coordinating session, 2026-11-23",
-    "why": "transcribe stopped before any part: \"no item of kind ['let-ring', 'single-note'] among the development items\". Diagnosed from the stored scans, no runs: single-note needs no bent note and Basic Pitch marks nearly every note bent (item_14 14 of 14, item_143 69 of 75); let-ring's highest share is 0.16 (item_5) and every annotated item reads 0.00. The audit's spurious-bends and held-notes-cut-short findings (versions audit, section 4)",
+    "why": "transcribe stopped before any part: \"no item of kind ['let-ring', 'single-note'] among the development items\". Diagnosed from the stored scans, no runs: single-note needs no bent note and Basic Pitch marks nearly every note bent (item_14 14 of 14, item_143 69 of 75); let-ring's highest share is 0.16 (item_5); 21 of 23 annotated items read 0.00, and two read 0.037 and 0.061. The audit's spurious-bends and held-notes-cut-short findings (versions audit, section 4)",
     "single_note": "from GOAT's annotated notes: the same window (the 10 s with the most notes on the 5-s grid), the same grouping, the same bar (80% or more single-note groups); no bend holds as the annotation carries none; its ear window is that window",
     "other_kinds": "chord-led, bends and let-ring on the transcription, as declared",
     "fallback": "an unfilled kind takes the not-yet-picked item with the highest value of its own figure, ties by the seeded order",
@@ -4742,7 +4742,7 @@
      "bar": 0.5,
      "label": "let-ring (nearest; none met 0.50)"
     },
-    "statement": "No development item meets the declared let-ring bar. The figure reads note-offs, which the transcription is known to cut short and the annotation does not carry. This is a limit of the figure, not evidence that the pool has no let-ring playing.",
+    "statement": "No development item meets the declared let-ring bar. The figure reads note-offs, which the transcription is known to cut short, and the annotation shows almost no let-ring by this figure. This is a limit of the figure, not evidence that the pool has no let-ring playing.",
     "caveats": "the transcriber's bends are mostly spurious, so the bends slot is labelled by the transcriber and not verified (its pick unchanged); picking let-ring on the transcriber's note-ends leans toward the item where its cutting is mildest",
     "measured": "on the stored scans with the amended code: chord-led item_77, bends item_39, single-note item_49 (annotation), let-ring nearest item_5 (0.158 against 0.50); all four clear of the exclusion list and in neither the row's draw nor the replay's",
     "rejected": "a bend threshold set after the fact (A); dropping cards (D)",
