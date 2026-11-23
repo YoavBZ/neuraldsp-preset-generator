@@ -555,6 +555,8 @@ they are Basic Pitch's own bent notes, by `bend_curve`. Per arm the figures are:
 
 **The bridge's readings.**
 - They are given per set (lists, real, GOAT) and are not pooled across sets.
+- When "Measure first"'s own read holds its real set reported only (`real_reported_only` in `versions.json`, set by
+  its instrument check), the bridge's real-set reading is reported only too, since it uses the same distance.
 - Every built version less every stored version is reported on both rings. So `bv-asis − nv-hand` is reported
   whatever the code (GOAT has no `nv-hand`).
 - The one stored distance rebuilt first is `bend`'s `nv-asis` on `ring-soft` (the first list by name). A test shows

@@ -409,7 +409,16 @@ def test_bridge_body_on_made_up_distances():
     n = body["numbers"]["ring-soft"]["lists"]
     assert n["bv-asis-nv-hand"]["mean"] == pytest.approx(0.2) and n["C"]["mean"] == pytest.approx(1.0)
     assert "bv-asis-nv-hand" not in body["numbers"]["ring-soft"]["goat"]       # GOAT: no nv-hand
-    assert body["readings"]["real"] is None
+    assert body["readings"]["real"] is None and not body["real_reported_only"]
+    vw.append({"set": "real", "cluster": "P1|chords|x", "key": "r1", "d": {"ring-soft": {"nv-hand": 3.0, "nv-asis": 4.0,
+                                                                                          "nv-loud": 3.5}}})
+    vw.append({"set": "real", "cluster": "P1|chords|y", "key": "r2", "d": {"ring-soft": {"nv-hand": 3.0, "nv-asis": 4.0,
+                                                                                          "nv-loud": 3.6}}})
+    built.update(r1={"ring-soft": {"bv-asis": 3.2, "bv-loud": 3.0}}, r2={"ring-soft": {"bv-asis": 3.2, "bv-loud": 3.0}})
+    assert X.bridge_body(vw, built, "NV-loud", 1.0, "TXR-vote")["readings"]["real"] == "the winner adds"
+    held = X.bridge_body(vw, built, "NV-loud", 1.0, "TXR-vote", real_reported_only=True)
+    assert held["readings"]["real"] == "reported only (the instrument check)"   # as "Measure first"'s own read
+    assert held["readings"]["lists"] == "the winner adds"
     assert X.reproduce_refusal(3.0, 3.0 + 1e-10) is None and "nothing is read" in X.reproduce_refusal(3.0, 3.0001)
 
 

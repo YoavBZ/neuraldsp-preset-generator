@@ -645,13 +645,15 @@ def bridge_reading(diff, iv, stored_c=None):
     return "reported only"
 
 
-def bridge_body(vwindows, built, nv_code, loud_adopted, txr):
+def bridge_body(vwindows, built, nv_code, loud_adopted, txr, real_reported_only=False):
     """(Pure.) The bridge's read from versions.json's stored windows ([{set, cluster, key, d: {ring: {version: dB}}}])
     and the built versions' distances ({key: {ring: {bv: dB}}}): per ring and set every built version less every
     stored version there is, with 90% cluster intervals, and on the deciding ring the declared difference and its
-    reading per set (GOAT: no nv-hand)."""
+    reading per set (GOAT: no nv-hand). When "Measure first"'s own read holds its real set reported only (its
+    instrument check, `real_reported_only` in versions.json), the bridge's real set is reported only too: the same
+    distance, so the same trust."""
     diff = bridge_difference(nv_code, loud_adopted, txr)
-    out = {"difference": diff, "numbers": {}, "readings": {}}
+    out = {"difference": diff, "numbers": {}, "readings": {}, "real_reported_only": bool(real_reported_only)}
     for ring in (DECIDING_RING, BESIDE_RING):
         out["numbers"][ring] = {}
         for st in ("lists", "real", "goat"):
@@ -672,6 +674,8 @@ def bridge_body(vwindows, built, nv_code, loud_adopted, txr):
             nums = out["numbers"][DECIDING_RING][st]
             iv = nums.get(f"{diff['built']}-{diff['stored']}")
             out["readings"][st] = None if iv is None else bridge_reading(diff, iv, nums.get("C"))
+        if real_reported_only and out["readings"].get("real") is not None:
+            out["readings"]["real"] = "reported only (the instrument check)"
     return out
 
 
@@ -1545,7 +1549,8 @@ def cmd_bridge(_args):
     built = bridge_builds(txr, loud, todo, bank, SB.measure)
     nv = vrec.get("code")
     body = {"txr": txr, "nv_code": nv, "loud_gamma": loud, "reproduced": {"window": first, "stored": stored0},
-            "built": built, **bridge_body(versions["windows"], built, nv, loud, txr),
+            "built": built, **bridge_body(versions["windows"], built, nv, loud, txr,
+                                          versions.get("real_reported_only")),
             "versions_sha256": NR.file_sha(T.versions_path()), "read_sha256": NR.file_sha(read_path())}
     NR.write_once(bridge_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}",
                                   "made": time.strftime("%Y-%m-%d %H:%M:%S"), "body": body})
