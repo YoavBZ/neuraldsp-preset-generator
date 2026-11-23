@@ -182,7 +182,8 @@ def test_the_phases_are_new_and_outside_the_other_rows_guards():
         SL.phase_answers("ld-stem-b")
     d = json.loads((REPO / "docs/dev-test-ledger.json").read_text())
     e = next(t for t in d["tests"] if t.get("test_id") == S.LEDGER_ID)
-    assert set(SL.loudar_keys(e)) <= set(keys) and SL.PHASE in e
+    pinned = {"phase_scratch_loudar_globals"}        # the checkpoint's allowlist (learn/loudar_run.py's pin)
+    assert set(SL.loudar_keys(e)) <= set(keys) | pinned and SL.PHASE in e
 
 
 def test_the_module_edits_no_shared_file_and_imports_no_numpy_at_its_top():

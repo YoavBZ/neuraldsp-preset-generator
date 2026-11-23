@@ -18,8 +18,11 @@ Per clip (a search half of 216,000 samples at 48 kHz): LOUDAR's level rule in (`
 `torch.manual_seed(decode seed)` and `diff_params.transform_bwd(x_est)`; cut to the clip; the gain undone.
 
 No file is loaded with `weights_only=False`: the checkpoint's pickle globals are listed by `pickletools` (nothing is
-executed), it loads with `weights_only=True` inside `torch.serialization.safe_globals` naming only the omegaconf
-classes it holds, and any other global stops the run (to the user). `TORCH_FORCE_WEIGHTS_ONLY_LOAD=1`,
+executed; names resolved as torch resolves them) and must lie inside the frozen ALLOWED_GLOBALS (13 names, pinned in
+the ledger's `phase_scratch_loudar_globals`); it loads with `weights_only=True` inside the
+`torch.serialization.safe_globals([...])` context manager (`safe_global_objects`; `collections.defaultdict` is served
+by `_defaultdict_as_dict`, which returns a plain dict, never the real class); torch and omegaconf must be at their
+pins; only `state["ema"]` is kept. Any other global stops the run (to the user). `TORCH_FORCE_WEIGHTS_ONLY_LOAD=1`,
 `WANDB_MODE=disabled`, `ENABLE_TORCH_COMPILE=0`, `HF_HOME=<--models>/hf` and `HF_HUB_OFFLINE=1` are set before
 anything is imported.
 """
@@ -42,7 +45,7 @@ LOUDAR_RMS_DB, LOUDAR_SEG_S, LOUDAR_HOP_S, LOUDAR_FLOOR = -18.0, 0.4, 0.1, 1e-8
 THREADS = 4
 LOUDAR_COMMIT = "9f3bd1659991b584afcfa7a3ac395c0512f24237"
 LOUDAR_REPO = "msvento/loudar"    # Hugging Face, MIT tag, not gated
-LOUDAR_REVISION = "6de0a99b"      # the plan's; unit 0 fetches "main", checks it is this, records the full sha
+LOUDAR_REVISION = "6de0a99b0e0e88598842d5a05e5488369d857dbc"   # the plan's 6de0a99b, in full (unit 0's fetch)
 CHECKPOINT = "GuitarFx-175000.pt"
 CHECKPOINT_SHA256 = "d86e08bbb94bb12cef0b907dd7f3fd67ba112cc463c8ee0e964855155985c297"
 CHECKPOINT_SIZE = 1083089737
@@ -53,8 +56,12 @@ SETTINGS = ("released", "paper")
 RELEASED_FIT = {"operator_updates_per_step": 1, "lr": 1e-3, "weight_decay": 0.1}
 PAPER_FIT = {"operator_updates_per_step": 10, "lr": 1e-4, "weight_decay": 1.0}   # arXiv 2608.01972, section 3.1
 SHARED = {"T": 300, "order": 1, "Schurn": 20, "zeta": 0.3}                       # the YAML's and the paper's
-CONFIG_MODULES = ("omegaconf",)    # the only globals added to weights_only's allowlist
-TORCH_SAFE = ("torch.", "collections.OrderedDict", "builtins.", "_codecs.encode")   # weights_only's own allowlist
+TORCH_GLOBALS = ("torch._utils._rebuild_tensor_v2", "torch.FloatStorage", "collections.OrderedDict")  # torch's own
+OMEGACONF_GLOBALS = ("omegaconf.base.ContainerMetadata", "omegaconf.base.Metadata", "omegaconf.dictconfig.DictConfig",
+                     "omegaconf.listconfig.ListConfig", "omegaconf.nodes.AnyNode")
+ALLOWED_GLOBALS = frozenset(TORCH_GLOBALS + OMEGACONF_GLOBALS + (    # the 13, pinned in phase_scratch_loudar_globals
+    "builtins.dict", "builtins.list", "builtins.int", "collections.defaultdict", "typing.Any"))
+TORCH_PIN, OMEGACONF_PIN = "2.10.0", "2.3.1"   # the versions the allowlist was reviewed on; else stop and ask
 STRING_OPS = ("SHORT_BINUNICODE", "BINUNICODE", "UNICODE", "BINUNICODE8", "SHORT_BINSTRING", "BINSTRING", "STRING")
 GATE_EXAMPLES = 6
 GATE_KINDS = ("distorted", "original", "LOUDAR")
@@ -127,19 +134,59 @@ def keys_for(keys, sets):
     return sorted(k for k in keys if k.split("__", 1)[0] in sets)
 
 
+def compat_name(module, name):
+    """(Pure.) A pickle global's name as torch's weights-only unpickler resolves it (`_read_global_instruction`):
+    `_compat_pickle.NAME_MAPPING` first, else `IMPORT_MAPPING` on the module (so `__builtin__.long` is
+    `builtins.int`). -> "module.name"."""
+    import _compat_pickle as CP
+
+    if (module, name) in CP.NAME_MAPPING:
+        module, name = CP.NAME_MAPPING[(module, name)]
+    elif module in CP.IMPORT_MAPPING:
+        module = CP.IMPORT_MAPPING[module]
+    return f"{module}.{name}"
+
+
 def globals_refusal(found):
-    """(Pure.) The checkpoint's pickle globals ["module.name"] -> (the config classes to allow, why it refuses or
-    None). Torch's tensor globals and builtins are weights_only's own; the omegaconf classes are added to
-    `safe_globals`; any other global stops (to the user)."""
-    allow, other = [], []
-    for g in sorted(set(found)):
-        if g.startswith(TORCH_SAFE):
-            continue
-        if g.split(".", 1)[0] in CONFIG_MODULES:
-            allow.append(g)
-        else:
-            other.append(g)
-    return allow, (f"the checkpoint pickles {other}: not a torch or config class; stop and ask" if other else None)
+    """(Pure.) Why the checkpoint may not load, or None: every pickle global (resolved by `compat_name`) must be in
+    the frozen ALLOWED_GLOBALS (13 names, pinned in the ledger's phase_scratch_loudar_globals); any other name stops
+    the load (to the user)."""
+    other = sorted(set(found) - ALLOWED_GLOBALS)
+    return f"the checkpoint pickles {other}: outside the pinned allowlist; stop and ask" if other else None
+
+
+def _defaultdict_as_dict(*_args, **_kwargs):
+    """Stands in for `collections.defaultdict` at the load: ignores its arguments (the factory) and returns a plain
+    `{}`, which torch's SETITEM check accepts. The real class is never allowed."""
+    return {}
+
+
+def safe_global_objects():
+    """The objects for `torch.serialization.safe_globals([...])`, and only these (torch's own three need no entry):
+    the 5 omegaconf classes, `builtins.dict`, `builtins.list`, `builtins.int`, `typing.Any`, and
+    `(_defaultdict_as_dict, "collections.defaultdict")`. -> (list, the names they cover)."""
+    import importlib
+    import typing
+
+    objs, names = [], []
+    for g in OMEGACONF_GLOBALS:
+        mod, nm = g.rsplit(".", 1)
+        objs.append(getattr(importlib.import_module(mod), nm))
+        names.append(g)
+    objs += [dict, list, int, typing.Any, (_defaultdict_as_dict, "collections.defaultdict")]
+    names += ["builtins.dict", "builtins.list", "builtins.int", "typing.Any", "collections.defaultdict"]
+    return objs, names
+
+
+def ema_only(state):
+    """`state["ema"]` alone, refused unless a dict whose values are all tensors; the rest of the state (the config) is
+    dropped, never resolved or converted."""
+    import torch
+
+    ema = state.get("ema") if isinstance(state, dict) else None
+    if not isinstance(ema, dict) or not ema or not all(isinstance(v, torch.Tensor) for v in ema.values()):
+        raise SystemExit("the checkpoint's state['ema'] is not a dict of tensors: stop and ask")
+    return ema
 
 
 def gate_seconds(full_s, cut_s):
@@ -304,44 +351,70 @@ def pickle_globals(path):
         elif op.name in ("BINPUT", "LONG_BINPUT", "PUT"):
             memo[int(arg)] = pushed[-1] if pushed else None
         elif op.name == "GLOBAL":
-            found.add(arg.replace(" ", ".", 1))
+            found.add(compat_name(*arg.split(" ", 1)))
             pushed.append(None)
         elif op.name == "STACK_GLOBAL":
             mod, name = (pushed[-2], pushed[-1]) if len(pushed) >= 2 else (None, None)
             if not isinstance(mod, str) or not isinstance(name, str):
                 raise SystemExit(f"{path}: a STACK_GLOBAL whose names cannot be read: stop and ask")
-            found.add(f"{mod}.{name}")
+            found.add(compat_name(mod, name))
             pushed.append(None)
         else:
             pushed.append(None)
     return sorted(found)
 
 
-def load_checkpoint(path, manifest):
-    """The checkpoint's EMA weights: its size and sha256 the declared (and the manifest's), its pickle globals listed
-    first, then `torch.load(weights_only=True)` inside `safe_globals` of only its omegaconf classes."""
-    import importlib
+def guarded_load(path):
+    """`torch.load(weights_only=True)` inside the `safe_globals([...])` context manager with `safe_global_objects()`
+    only (no global `add_safe_globals`, nothing of torch's patched)."""
+    import torch
 
+    objs, _ = safe_global_objects()
+    with torch.serialization.safe_globals(objs):
+        return torch.load(str(path), map_location="cpu", weights_only=True)
+
+
+def safe_load(path):
+    """The listing (`pickle_globals`, `globals_refusal`) before the guarded load; refuses before loading anything."""
+    found = pickle_globals(path)
+    why = globals_refusal(found)
+    if why:
+        raise SystemExit(why)
+    return guarded_load(path), found
+
+
+def version_refusal(torch_version, omegaconf_version):
+    """(Pure.) The load's pins: torch 2.10.0 and omegaconf 2.3.1 (the versions the allowlist was reviewed on)."""
+    if torch_version.split("+", 1)[0] != TORCH_PIN or omegaconf_version != OMEGACONF_PIN:
+        return (f"torch {torch_version} / omegaconf {omegaconf_version}, not {TORCH_PIN} / {OMEGACONF_PIN}: the "
+                "allowlist needs a re-review; stop and ask")
+    return None
+
+
+def load_checkpoint(path, manifest):
+    """The checkpoint's EMA weights: its size and sha256 the declared and the manifest's, its revision the pinned
+    one, torch and omegaconf at their pins, its pickle globals listed and inside the pinned allowlist, then the guarded
+    weights-only load; only `state["ema"]` is kept (`ema_only`)."""
+    import omegaconf
     import torch
 
     p = pathlib.Path(path)
     sha = file_sha(p)
     if sha != CHECKPOINT_SHA256 or p.stat().st_size != CHECKPOINT_SIZE:
         raise SystemExit(f"{p.name}: sha256 {sha[:12]} or size is not the declared")
+    if p.parent.name != LOUDAR_REVISION:
+        raise SystemExit(f"{p}: not from revision {LOUDAR_REVISION[:8]}")
     ent = ((manifest or {}).get("files") or {}).get(f"loudar/{CHECKPOINT}") or {}
     if ent.get("sha256") != sha:
         raise SystemExit(f"{p.name}: not the manifest's")
-    found = pickle_globals(p)
-    allow, why = globals_refusal(found)
+    why = version_refusal(torch.__version__, omegaconf.__version__)
     if why:
         raise SystemExit(why)
-    objs = []
-    for g in allow:
-        mod, name = g.rsplit(".", 1)
-        objs.append(getattr(importlib.import_module(mod), name))
-    with torch.serialization.safe_globals(objs):
-        state = torch.load(str(p), map_location="cpu", weights_only=True)
-    return state["ema"], {"sha256": sha, "globals": found, "allowed": allow}
+    state, found = safe_load(p)
+    ema = ema_only(state)
+    del state
+    return ema, {"sha256": sha, "revision": LOUDAR_REVISION, "globals": found, "torch": torch.__version__,
+                 "omegaconf": omegaconf.__version__}
 
 
 def build(code, models, setting, manifest):
