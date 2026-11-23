@@ -469,6 +469,11 @@ def test_the_ledger_declares_the_gentle_check_and_the_side_read():
     assert set(g["gv_table"]) == set(T.GV_CODES)
     b = e[T.PHASE_BESIDE]
     assert b["decides"] is False and "never decides" in b["status"] and b["coded"] is False
+    assert b["partner"]["fs-notes"].startswith("row (c)") and b["partner"]["fs-codec"].startswith("row (b)")
+    assert "+0.15" in b["partner"]["fs-codec"]                          # the bias against row (c), named
+    assert b["renders"]["fs-notes"].endswith(": 286") and b["renders"]["fs-codec_short"].endswith(": 286")
+    assert "true-noclip" in b["dry_guitar"] and "own declaration" in b["dry_guitar"]
+    assert "GV-pass against GV-caps" in g["gv_none_note"] and "quiet" in g["beside_report_only"]
 
 
 def test_no_part_key_and_no_module_level_numpy_in_these_files():
@@ -603,6 +608,33 @@ def test_gentle_part_against_itself_is_zero_change():
     assert not got["beyond_reach"] and got["dist_from_average"] > 0
     y = T.apply_tilt(np.asarray(x, np.float32), 6.0)
     assert T.gentle_part(y, x, np.zeros(2049))["hf_rise_db"] > 0.5      # a high tilt at the same RMS lifts the highs
+
+
+def test_the_hiss_figures_are_report_only():
+    assert T.HISS_FIGURES == ("quiet_hf_rise_db", "mid_rise_db") and T.MID == (2000.0, 8000.0)
+    assert not set(T.HISS_FIGURES) & {q for q, _, _ in T.GENTLE_BARS.values()}
+    row = {"dist_from_average": 1.0, "hf_rise_db": 0.0, "lf_rise_db": 0.0, "peak_rise_db": 0.0, "beyond_reach": False,
+           "quiet_hf_rise_db": 9.0, "mid_rise_db": 2.0}
+    got = T.gentle_stats({"a": {"v": row}}, "v")
+    assert got["quiet_hf_rise_db"] == {"mean": 9.0, "max": 9.0} and got["mid_rise_db"]["max"] == 2.0
+    assert all(T.bars_met(got).values())                  # a large quiet-frame rise fails no bar
+
+
+def test_the_quietest_frames_and_their_hiss():
+    np = pytest.importorskip("numpy")
+    sr, n = 48000, 2400
+    rng = np.random.default_rng(8)
+    loud = rng.standard_normal(n * 60) * 0.3
+    quiet = 0.003 * np.sin(2 * np.pi * 200 * np.arange(n * 20) / sr)  # a soft low note, 40 dB down: inside the floor
+    x = np.concatenate([np.zeros(n * 5), loud, quiet, loud])            # leading digital silence is left out
+    idx = T.quiet_frames(x, sr)
+    assert len(idx) == round(0.10 * 140) == 14 and all(65 <= i < 85 for i in idx)       # 140 non-silent frames
+    assert T.quiet_hf_rise(x, x) == 0.0
+    b, a = np.fft.rfftfreq(len(x), 1 / sr) > 9000, np.fft.rfft(rng.standard_normal(len(x)) * 0.001)
+    hiss = np.fft.irfft(a * b, len(x))
+    y = x + hiss                                                        # broadband hiss above 8 kHz, small overall
+    part = T.gentle_part(y, x, np.zeros(2049))
+    assert part["quiet_hf_rise_db"] > 3 and part["hf_rise_db"] < 0.5 and abs(part["mid_rise_db"]) < 0.01
 
 
 def test_band_distance_is_zero_for_a_constant_offset():

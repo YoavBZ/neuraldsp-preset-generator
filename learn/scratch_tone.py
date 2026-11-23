@@ -942,7 +942,9 @@ def gentle_measure(raw, variant):
 def gentle_part(y, coded, avg_target):
     """One variant's measures for a part against the coded DI: its distance from the average balance (in band), the
     rise in energy above 8 kHz and below 80 Hz, the rise in peak, and whether its applied in-band change from the coded
-    DI's spectrum goes past the EQ's +-12 dB anywhere in band (`beyond_reach` on the change, centred in band)."""
+    DI's spectrum goes past the EQ's +-12 dB anywhere in band (`beyond_reach` on the change, centred in band). Two
+    hiss figures beside, report only and never a bar (`HISS_FIGURES`): the rise above 8 kHz on the quietest frames
+    (`quiet_hf_rise`) and the rise from 2 to 8 kHz."""
     import numpy as np
 
     from learn.direc_check import SR
@@ -962,14 +964,60 @@ def gentle_part(y, coded, avg_target):
             "lf_rise_db": float(10 * np.log10(energy(y, lambda q: q < BAND[0]) / energy(coded, lambda q: q < BAND[0]))),
             "peak_rise_db": float(20 * np.log10(np.abs(y).max() / np.abs(coded).max())),
             "change_max_db": float(d.max()), "change_min_db": float(d.min()),
-            "beyond_reach": beyond_reach(float(d.max()), float(d.min()))}
+            "beyond_reach": beyond_reach(float(d.max()), float(d.min())),
+            "quiet_hf_rise_db": quiet_hf_rise(y, coded),
+            "mid_rise_db": float(10 * np.log10(energy(y, lambda q: (q >= MID[0]) & (q <= MID[1]))
+                                               / energy(coded, lambda q: (q >= MID[0]) & (q <= MID[1]))))}
+
+
+QUIET_FRAME_S = 0.05                     # the hiss figures' frames
+QUIET_SHARE = 0.10                       # the quietest 10% of the coded DI's frames ...
+QUIET_FLOOR_DB = 60.0                    # ... among those within 60 dB of its loudest (digital silence left out)
+MID = (2000.0, 8000.0)                   # the 2 to 8 kHz rise, where an in-band variant may boost most
+HISS_FIGURES = ("quiet_hf_rise_db", "mid_rise_db")    # report only: never in GENTLE_BARS
+
+
+def quiet_frames(coded, sr, frame_s=QUIET_FRAME_S, share=QUIET_SHARE, floor_db=QUIET_FLOOR_DB):
+    """The quietest frames of the coded DI, as frame indices: 50-ms frames whose level is within floor_db of the
+    loudest, the quietest share of them (at least one), sorted. The same frames are read in every variant."""
+    import numpy as np
+
+    x = np.asarray(coded, np.float64)
+    n = int(frame_s * sr)
+    k = len(x) // n
+    lv = 10 * np.log10((x[:k * n].reshape(k, n) ** 2).mean(1) + 1e-20)
+    ok = np.flatnonzero(lv >= lv.max() - floor_db)
+    q = max(1, int(round(share * len(ok))))
+    return np.sort(ok[np.argsort(lv[ok], kind="stable")[:q]])
+
+
+def quiet_hf_rise(y, coded, frame_s=QUIET_FRAME_S):
+    """The rise in energy above 8 kHz on the coded DI's quietest frames (`quiet_frames`), Hann-windowed, the variant
+    against the coded DI on the same frames (dB): where hiss would show, between notes."""
+    import numpy as np
+
+    from learn.direc_check import SR
+
+    y, coded = np.asarray(y, np.float64), np.asarray(coded, np.float64)
+    n = int(frame_s * SR)
+    idx = quiet_frames(coded, SR, frame_s)
+    w = np.hanning(n)
+    hi = np.fft.rfftfreq(n, 1 / SR) > BAND[1]
+
+    def e(x):
+        fr = np.stack([x[i * n:(i + 1) * n] * w for i in idx])
+        return float((np.abs(np.fft.rfft(fr, axis=1))[:, hi] ** 2).sum())
+    return float(10 * np.log10(e(y) / e(coded)))
 
 
 def gentle_stats(parts, name):
-    """(Pure.) A variant's measures pooled over the parts: mean and max of each, and the parts beyond reach."""
+    """(Pure.) A variant's measures pooled over the parts: mean and max of each (the hiss figures beside, where the
+    parts carry them), and the parts beyond reach."""
     rows = [p[name] for p in parts.values()]
     out = {"parts": len(rows), "beyond_reach": sum(bool(r["beyond_reach"]) for r in rows)}
-    for q in ("dist_from_average", "hf_rise_db", "lf_rise_db", "peak_rise_db"):
+    for q in ("dist_from_average", "hf_rise_db", "lf_rise_db", "peak_rise_db") + HISS_FIGURES:
+        if not all(q in r for r in rows):
+            continue
         v = [r[q] for r in rows]
         out[q] = {"mean": sum(v) / len(v), "max": max(v)}
     return out
@@ -1051,7 +1099,9 @@ def cmd_gentle(_args):
         print(f"{v}: distance {s['dist_from_average']['mean']:.2f} (max {s['dist_from_average']['max']:.2f}); "
               f"HF {s['hf_rise_db']['mean']:+.2f} (max {s['hf_rise_db']['max']:+.2f}); peak "
               f"{s['peak_rise_db']['mean']:+.2f} (max {s['peak_rise_db']['max']:+.2f}); LF max "
-              f"{s['lf_rise_db']['max']:+.2f}; beyond reach {s['beyond_reach']}")
+              f"{s['lf_rise_db']['max']:+.2f}; beyond reach {s['beyond_reach']}; beside (report only): quiet HF "
+              f"{s['quiet_hf_rise_db']['mean']:+.2f} (max {s['quiet_hf_rise_db']['max']:+.2f}), 2-8 kHz "
+              f"{s['mid_rise_db']['mean']:+.2f} (max {s['mid_rise_db']['max']:+.2f})")
     print(f"GENTLE {gv['code']}: passing {gv['passing']}; best {gv['best']}. {gv['tells']}")
 
 

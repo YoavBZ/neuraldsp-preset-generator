@@ -573,6 +573,12 @@ The coded DI and `true-noclip` are computed beside as references, in the same ru
 - the rise in peak;
 - reach: whether the variant's in-band change from the coded DI's spectrum, centred in band, goes past ±12 dB.
 
+**Beside, report only and never a bar** (`HISS_FIGURES`). The total energy above 8 kHz is dominated by played notes,
+while hiss shows between them, so two hiss figures go beside:
+- the rise above 8 kHz on the quietest frames (`quiet_hf_rise`): the quietest 10% of the coded DI's 50-ms frames among
+  those within 60 dB of its loudest, Hann-windowed, the same frames in every variant;
+- the rise from 2 to 8 kHz, where an in-band variant may boost by up to +24 dB.
+
 **Bars** (`GENTLE_BARS`, each inclusive). A variant passes only if every bar holds:
 
 | Bar | Bound | Clip-free | Coded |
@@ -600,6 +606,10 @@ The coded DI and `true-noclip` are computed beside as references, in the same ru
 | `GV-caps` | no variant meets every bar; at least one meets both distance bars | the balance can be fixed only with side effects past the caps at these settings: keep the measure step as coded, or a listen to the side effects first |
 | `GV-none` | no variant meets both distance bars | keep the measure step as coded; any other variant (a second pass, another target) needs its own declaration |
 
+`GV-none` can hardly happen: `band-open` applies the clip-free gain in band, so it should meet both distance bars
+nearly by construction (the clip-free DI's 1.26 and 2.05 dB). The real choice is `GV-pass` against `GV-caps`, that
+is, whether any variant keeps the side effects under the caps.
+
 **Guards:**
 - `learn.scratch_tone gentle` refuses unless this checkout runs main's split code and keys (`on_main`) and main holds
   `phase_scratch_tone_gentle`.
@@ -622,20 +632,33 @@ exactly.
 **Reported** per arm:
 - G through `true-noclip`, against Cen through `true-noclip`;
 - the decomposition this split's audit requires: the answer's own shift, with Cen's shift beside;
-- the row's number paired against row (c) through `true-noclip`, beside its coded one.
+- the row's number paired, arm by arm, against its partner row through `true-noclip`, beside its coded one.
 
-Against row (b) through `true-noclip` the pairing is biased by row (b) being off its search DI, and is said so.
+**The partner is the row measured the same way.** An answer searched on a coded-like DI loses when the DI becomes
+clip-free (row (b)'s answer: +0.161 [+0.072, +0.251]). An answer searched on an average-balanced DI does not (row
+(c)'s: `C_fix` −0.011).
+- **`fs-notes` pairs against row (c).** `tr-di` is finished with the measure step and then `average_balance`, so like
+  avg+mild it is average-balanced. Against row (b) through `true-noclip` its pairing would be biased by row (b) being
+  off its search DI, and is said so.
+- **`fs-codec` pairs against row (b).** Each round trip is put through `song_bank.measure` (section 12), so the codec's
+  dry guitar keeps the clip offset, like the coded true DI. Both are measured alike, as `D_true` is the clean one in the
+  coded read. **Against row (c) through `true-noclip` its pairing is biased against the codec by about +0.15** (row
+  (b)'s +0.161 off-DI loss less row (c)'s −0.011), and is said so wherever it is shown.
 
 **Reported only; it never decides.** It never changes a row's code, threshold or recommendation. It is read once,
 after the row's own read.
 
-**Renders** (about 1 a second on 3 processes, as this split measured):
+**It keeps `true-noclip`.** If the gentle-fix check (11f) reads `GV-pass`, this side read still re-scores through
+`true-noclip`; switching it to the passing variant would need its own declaration.
+
+**Renders** (about 1 a second on 3 processes, as this split measured). The partner's answer through `true-noclip` is
+already stored in this split (row (c)'s answer and row (b)'s answer); its other paired settings are rendered once:
 
 | Row | What is rendered again | Renders |
 |---|---|---|
-| `fs-notes` | the answer and the shrunk answer: 47 × 2 × 2, plus the control's 4 | 192 |
-| `fs-codec`, short row | each codec's `cp50`, 47 × 2 a codec (188 for both), row (c)'s `cp50` once (94) and the control's 4 | 286 |
-| `fs-codec`, full row | its answer and shrunk answer, as `fs-notes` | 188 a codec |
+| `fs-notes` | the answer and the shrunk answer (47 × 2 × 2 = 188), row (c)'s shrunk answer once (94), the control's 4 | 286 |
+| `fs-codec`, short row | each codec's `cp50` (47 × 2 a codec, 188 for both), row (b)'s `cp50` once (94), the control's 4 | 286 |
+| `fs-codec`, full row | its answer and shrunk answer (188 a codec), and row (b)'s shrunk answer once (94, shared by both codecs) | 188 a codec, plus 94 once |
 
 **Coded with the first row that needs it,** under this key and before that row is read.
 

@@ -4108,7 +4108,9 @@
     "gate": "cmd_gentle refuses unless this checkout runs main's learn/scratch_search.py and learn/scratch_tone.py and phase_scratch_tone* keys (on_main) and main holds this key; the coded DI checked against fit v1's sha256 on every part; every built DI finite and the section's length",
     "output": "PF/fs/tone/gentle-v1.json, written once; a changed check writes gentle-v2.json under a new key",
     "cost": "zero renders; CPU only (the fit's like work measured 62 s on the 47 parts); no training, separation, MPS job or download",
-    "stop_rule": "run once; the code and the stats go to the user with the audit; nothing in the product or the scoring DI changes on it"
+    "stop_rule": "run once; the code and the stats go to the user with the audit; nothing in the product or the scoring DI changes on it",
+    "beside_report_only": "two hiss figures, never a bar (HISS_FIGURES): the rise above 8 kHz on the quietest frames (quiet_hf_rise: the quietest 10% of the coded DI's 50-ms frames among those within 60 dB of its loudest, Hann-windowed, the same frames in every variant; the total above 8 kHz is dominated by played notes, hiss shows between them) and the rise from 2 to 8 kHz (where an in-band variant may boost by up to +24 dB)",
+    "gv_none_note": "GV-none can hardly happen: band-open applies the clip-free gain in band, so it should meet both distance bars nearly by construction (1.26 and 2.05 dB); the real choice is GV-pass against GV-caps"
    },
    "phase_scratch_tone_beside": {
     "declared": "2026-11-23",
@@ -4122,17 +4124,24 @@
     ],
     "what": "a row's stored, hashed settings re-rendered through true-noclip (fit v1's built file for the part, its sha256 checked), each primed alone, judged on the held half against the clean record with the coded true DI as the judge's DI, exactly as this split; Cen through true-noclip is taken from this split's stored per-part value (the same render), with a control: Cen re-rendered through true-noclip on the row's first BKS and first GOAT part must repeat the split's value and render sha256 exactly",
     "settings": {
-     "fs-notes": "the answer and the shrunk answer (its two arms)",
-     "fs-codec": "each codec's scored setting (cp50 in the short row; the answer and the shrunk answer in a full row); row (c)'s cp50 through true-noclip once, shared, for its pairing"
+     "fs-notes": "the answer and the shrunk answer; row (c)'s shrunk answer once (its answer is stored in this split)",
+     "fs-codec": "each codec's scored setting (cp50 in the short row; the answer and the shrunk answer in a full row); row (b)'s cp50 once for the short row, row (b)'s shrunk answer once for a full row, shared (its answer is stored in this split)"
     },
     "renders": {
-     "fs-notes": "47 x 2 settings x 2 = 188, plus the control's 4: 192",
-     "fs-codec_short": "47 x 2 = 94 a codec (188 for rt-m2l and rt-dac), plus row (c)'s cp50 once (94) and the control's 4: 286",
+     "fs-notes": "47 x 2 x 2 = 188, row (c)'s shrunk answer once 94, the control's 4: 286",
+     "fs-codec_short": "47 x 2 = 94 a codec (188 for rt-m2l and rt-dac), row (b)'s cp50 once 94, the control's 4: 286",
+     "fs-codec_full": "188 a codec, plus row (b)'s shrunk answer once (94, shared)",
      "rate": "about 1.0 a second on 3 processes, as measured by this split (846 renders in about 14 min)"
     },
-    "reported": "per arm: G through true-noclip against Cen through true-noclip, the answer's own shift (through true-noclip less through the coded DI) and Cen's shift beside (the decomposition this split's audit requires); the row's paired number against row (c) through true-noclip (D_noclip) beside its coded one, with the note that against row (b) through true-noclip it is biased by row (b) being off its search DI",
+    "reported": "per arm: G through true-noclip against Cen through true-noclip, the answer's own shift (through true-noclip less through the coded DI) and Cen's shift beside (the decomposition this split's audit requires); the row's number paired arm by arm against its partner row through true-noclip, beside its coded one",
     "never": "it never changes a row's code, threshold or recommendation; it is read after the row's own read, once",
-    "gate": "the row's answers hashed on main; this key and phase_scratch_tone on main; on_main; at most 3 render processes; the disk guard; never beside a separation"
+    "gate": "the row's answers hashed on main; this key and phase_scratch_tone on main; on_main; at most 3 render processes; the disk guard; never beside a separation",
+    "partner": {
+     "rule": "the partner is the row measured the same way: an answer searched on a coded-like DI loses when the DI becomes clip-free (row (b)'s answer +0.161 [+0.072, +0.251]); one searched on an average-balanced DI does not (row (c)'s C_fix -0.011)",
+     "fs-notes": "row (c): tr-di is finished with the measure step then average_balance, average-balanced like avg+mild; against row (b) through true-noclip the pairing is biased by row (b) being off its search DI, said so",
+     "fs-codec": "row (b): each round trip goes through song_bank.measure (section 12), so the codec's dry guitar keeps the clip offset like the coded true DI, measured alike (as D_true is the clean one in the coded read); against row (c) through true-noclip its pairing is biased against the codec by about +0.15 (row (b)'s +0.161 less row (c)'s -0.011), said so wherever shown"
+    },
+    "dry_guitar": "it keeps true-noclip: if the gentle-fix check reads GV-pass, this side read still re-scores through true-noclip; switching it to the passing variant needs its own declaration"
    }
   },
   {
