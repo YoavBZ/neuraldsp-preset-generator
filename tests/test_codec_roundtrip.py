@@ -159,3 +159,16 @@ def test_a_changed_input_is_refused(tmp_path):
     np.save(inp / "part0.npy", np.zeros(RT.IN_LEN, np.float32))
     with pytest.raises(SystemExit, match="not the file in.json names"):
         RT.main(["--inp", str(inp), "--out", str(tmp_path / "out"), "--codecs", "rt-id", "--models", str(models)])
+
+
+def test_hf_home_is_set_in_code(tmp_path):
+    models = tmp_path / "models"
+    env = {}
+    with pytest.raises(SystemExit, match="no Hugging Face cache"):
+        RT.set_hf_env(models, env)
+    (models / "hf").mkdir(parents=True)
+    assert RT.set_hf_env(models, env) == models / "hf"
+    assert env == {"HF_HOME": str(models / "hf"), "HF_HUB_OFFLINE": "1"}
+    assert RT.set_hf_env(models, dict(env))                                 # the same HF_HOME is accepted
+    with pytest.raises(SystemExit, match="unset it"):
+        RT.set_hf_env(models, {"HF_HOME": str(tmp_path / "elsewhere")})

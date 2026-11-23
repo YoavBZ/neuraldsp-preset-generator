@@ -578,6 +578,10 @@ it is final only after the full row (12b) confirms it.
   panel DI files are 10.25-s section files that end with the section, so theirs is zeros. BKS's files are 44.1 kHz,
   and a longer read moves the section's last 10 samples by the resampling edge (by up to 0.002), so the section is kept
   from its own read and the next second taken from the longer one (`with_next_second`; a test checks all 47).
+  **The lean this leaves:** the 11 GOAT and panel parts that search half B (8 + 3) see the file's real end inside the
+  last latent frame of their search half, where the 7 BKS parts that search half B see real audio. That leans slightly
+  against the codec on those 11 parts, so toward `FK-shut`, which gets its full row anyway. The held half's score goes
+  through the true DI and is unaffected.
 - **`rt-m2l`.** LOUDAR's level rule in (`loudar_gain`: the loudest 400-ms frame, hop 100 ms, `unfold` with the tail
   dropped, RMS floored at 1e-8, brought to −18 dB; one gain, read on the section only, undone after decoding); zero-padded
   to the least 4,096 k + 1,536 samples (542,208); `encode`, then `decode(z, full_length=542208)` with
@@ -660,7 +664,8 @@ codes: its paired interval was wider than the checkpoint's in rows (b) and (c).
 **The park, and its lift.** `FK-shut` compares with avg+mild, which itself needs the true DI; a song gives no such
 blur. So a confirmed `FK-shut` parks the route: nothing is downloaded or built for it now. **The park lifts, to the
 user,** when `fs-notes` is read and its best arm is 0.05 or more worse than the codec's best arm (paired on the pool,
-BKS+GOAT beside; zero renders; `park_lifts`).
+BKS+GOAT beside; zero renders; `park_lifts`, which requires the pool's summariser `pool_summariser` and has no
+plain-mean default).
 
 **The deciding set: the full pool** (BKS, GOAT and the panel weighted equally), for both codecs, with BKS+GOAT beside
 and the same table read there. A code that holds on one and not the other goes to the user.
@@ -707,8 +712,11 @@ log-mel distance ranks the per-part cost at +0.52 to +0.56, and a codec errs dif
   1. Unit 0, install and smoke (no repo change, CPU): both venvs, the weights, one part round-tripped twice per codec
      with the same seed (byte-equal), seconds a part recorded.
   2. `prep` → the round trips in each venv → `build`: `rt-id` equal to the true DI on 47 of 47; finite, 492,000
-     samples, −22.9 LUFS; the timing offset by the 1-ms envelope within 1 ms (3 or more parts beyond it stop the
-     build) → hash PR `phase_scratch_codec_dry`, with unit 0's measured seconds a part.
+     samples; −22.9 LUFS within 0.25 LU, every value recorded with the true DI's beside (the true DI itself reads up
+     to 0.121 LU off on 3 of 47 parts, pyloudnorm's gate after one gain; a missed measure step sits about 12 LU off);
+     the timing offset by the 1-ms envelope within 1 ms (3 or more parts beyond it stop the build). Every check runs
+     before anything under `rt/` is written; a refusal leaves only a `build-stopped-<time>.json` with every value →
+     hash PR `phase_scratch_codec_dry`, with unit 0's measured seconds a part.
   3. `start` (`rt-m2l`, `rt-m2l-b`, `rt-dac` on all 47; `rt-id` on the 2 check parts) → `control`: `rt-id` at a budget
      of 10 through this row's search path must equal row (b)'s stored curves, and its start values the draw's true-DI
      values within 0.005.
@@ -764,7 +772,8 @@ on; its own venv, so a clash cannot cost `codec-venv`):
 - `~/ndsp-presets/tools/codec-models/manifest.json` names every file as `{"files": {key: {url, size, sha256,
   licence}}}`, with keys `m2l/<file name>` and `dac/<file name>`. The round trips refuse a weight file whose sha256 is
   not both the manifest's and the declared one. `m2l`'s four files are fetched with `hf_hub_download` under
-  `HF_HOME=~/ndsp-presets/tools/codec-models/hf`, checked before any load, then used with `HF_HUB_OFFLINE=1`.
+  `HF_HOME=~/ndsp-presets/tools/codec-models/hf`, checked before any load, then used with `HF_HUB_OFFLINE=1`. The
+  round trips set `HF_HOME` to `<--models>/hf` themselves and refuse an `HF_HOME` set elsewhere or a missing cache.
 - Not in this plan: LOUDAR's `GuitarFx-175000.pt` (1,083,089,737 B), only after a go and under its own declaration;
   `music2latent` 0.1.8 and SonyCSL's weights (dropped).
 

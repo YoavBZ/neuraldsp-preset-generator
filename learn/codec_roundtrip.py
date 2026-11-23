@@ -24,7 +24,8 @@ at the input's level) and `<out>/roundtrip-<venv>.json` (package versions, each 
 - `rt-rs`: that resampling alone. `rt-id`: the first SECTION samples unchanged.
 
 No weight file is ever loaded with `weights_only=False`: `TORCH_FORCE_WEIGHTS_ONLY_LOAD=1` is set before torch is
-imported, and each weight file's sha256 is checked before any load.
+imported, and each weight file's sha256 is checked before any load. `HF_HOME` is set here to `<--models>/hf` with
+`HF_HUB_OFFLINE=1` (`set_hf_env`; an HF_HOME set elsewhere is refused), so the operator sets neither.
 """
 
 from __future__ import annotations
@@ -191,9 +192,29 @@ def safe_torch():
     return torch
 
 
-def load_m2l(manifest):
-    """`m2l` from the local Hugging Face cache only (HF_HUB_OFFLINE=1), every file's sha256 checked first."""
-    os.environ["HF_HUB_OFFLINE"] = "1"
+def hf_home(models):
+    """(Pure.) The Hugging Face cache the round trips read: `<--models>/hf` (unit 0 fetches m2l there)."""
+    return pathlib.Path(models) / "hf"
+
+
+def set_hf_env(models, env=None):
+    """HF_HOME set to `hf_home(models)` and HF_HUB_OFFLINE=1 before huggingface_hub is imported; refuses a missing
+    cache, or an HF_HOME already set elsewhere, rather than reaching another cache or the network."""
+    env = os.environ if env is None else env
+    want = hf_home(models)
+    if env.get("HF_HOME") and pathlib.Path(env["HF_HOME"]).expanduser().resolve() != want.expanduser().resolve():
+        raise SystemExit(f"HF_HOME is {env['HF_HOME']}, not {want}: unset it (the round trips set it themselves)")
+    if not want.is_dir():
+        raise SystemExit(f"no Hugging Face cache at {want}: fetch m2l there first (unit 0)")
+    env["HF_HOME"] = str(want)
+    env["HF_HUB_OFFLINE"] = "1"
+    return want
+
+
+def load_m2l(manifest, models):
+    """`m2l` from the local Hugging Face cache under `<--models>/hf` only (HF_HOME set here, HF_HUB_OFFLINE=1), every
+    file's sha256 checked first."""
+    set_hf_env(models)
     torch = safe_torch()
     from huggingface_hub import hf_hub_download
     from linear_cae import Autoencoder
@@ -300,7 +321,7 @@ def main(argv=None):
                 raise SystemExit(f"{out / name / k}.npy exists: never overwritten")
     torch, model, shas = None, None, {}
     if any(n in SEED_SLOT for n in a.codecs):
-        torch, model, shas = load_m2l(manifest)
+        torch, model, shas = load_m2l(manifest, models)
     elif "rt-dac" in a.codecs:
         torch, model, shas = load_dac(manifest)
     seconds = {n: [] for n in a.codecs}

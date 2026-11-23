@@ -106,11 +106,22 @@ def test_park_code():
 def test_park_lifts_and_best_arm():
     notes = {"a": 0.0, "b": 0.1, "c": None}
     codec = {"a": -0.05, "b": 0.05, "c": 0.0, "d": 0.0}
-    got = SC.park_lifts(notes, codec)
+    seen = []
+
+    def pool(d):
+        seen.append(dict(d))
+        return {"mean": sum(d.values()) / len(d)}
+    got = SC.park_lifts(notes, codec, pool)
     assert got["lifts"] and got["mean"] == pytest.approx(0.05) and got["parts"] == 2
-    assert not SC.park_lifts({"a": 0.0}, {"a": -0.049})["lifts"]
-    assert SC.park_lifts(notes, codec, summarise=lambda d: {"mean": 0.01})["lifts"] is False
-    assert SC.park_lifts({}, codec) == {"lifts": False, "mean": None, "row": None, "parts": 0}
+    assert seen == [{"a": pytest.approx(0.05), "b": pytest.approx(0.05)}]     # the pool gets the paired parts
+    assert not SC.park_lifts({"a": 0.0}, {"a": -0.049}, pool)["lifts"]
+    assert SC.park_lifts(notes, codec, lambda d: {"mean": 0.01})["lifts"] is False
+    assert SC.park_lifts({}, codec, pool) == {"lifts": False, "mean": None, "row": None, "parts": 0}
+    for no_pool in (None, "mean"):                                          # never a plain mean by default
+        with pytest.raises(SystemExit, match="pool's summariser"):
+            SC.park_lifts(notes, codec, no_pool)
+    with pytest.raises(TypeError):
+        SC.park_lifts(notes, codec)
     assert SC.best_arm({"answer": -0.1, "shrunk": -0.2}) == "shrunk" and SC.best_arm({"answer": None}) is None
 
 
@@ -211,6 +222,15 @@ def test_the_guards_pure_parts():
     assert "not the one declared" in SC.check_refusal(good, dict(SC.CHECK_SHA256, **{"check-search": "x"}))
     assert SC.timing_stop({"rt-m2l": {"a": 0.0, "b": 2.0, "c": -1.0}}) == ({"rt-m2l": ["b"]}, False)
     assert SC.timing_stop({"rt-dac": {"a": 1.5, "b": 2.0, "c": None}})[1]
+
+
+def test_the_level_check():
+    assert SC.LUFS == -22.9 and SC.LUFS_TOL == 0.25
+    ok = {"rt-id": {"a": -22.9, "b": -23.021, "c": -22.78}, "rt-m2l": {"a": -23.149}}
+    assert SC.lufs_beyond(ok) == []                                          # the true DI's own 0.121 LU passes
+    bad = {"rt-m2l": {"a": -23.16, "b": -35.0, "c": None, "d": float("nan"), "e": -22.9}}
+    assert [(n, k) for n, k, _ in SC.lufs_beyond(bad)] == [("rt-m2l", "a"), ("rt-m2l", "b"), ("rt-m2l", "c"),
+                                                            ("rt-m2l", "d")]
 
 
 def test_the_phases_are_new_and_outside_the_other_rows_guards():
@@ -598,3 +618,29 @@ def test_the_beside_readings_and_figure_summaries_run_on_the_stored_rows():
     summ = SC.figure_rows(sd, draw, figs["parts"], ["rt-dac"])
     assert summ["rt-dac"]["mel256_whole"]["less_avg_mild_pool"]["mean"] > 0
     assert summ["true"]["balance_offset"]["max"] == pytest.approx(1.0 + 0.01 * (len(keys) - 1))
+    lift = SC.park_lifts(comp["fs-both"][0], comp["fs-stem"][0], SC.pool_summariser(sd, draw))
+    assert lift["lifts"] and round(lift["mean"], 3) == 0.141 and lift["row"]["deciding_sets"] == S.DECIDING
+    assert round(lift["row"]["bks_goat"]["mean"], 3) == 0.157                 # the plan's pool, BKS+GOAT beside
+
+
+def test_the_level_check_passes_the_47_true_dis_as_the_build_measures_them():
+    """The build's exact path on `rt-id` (`song_bank.measure` of the raw section, float32), measured as the build
+    measures it: every part byte-equal to `note_replay.di_section` and inside the level check; 3 parts read about
+    0.1 LU off -22.9 (pyloudnorm's gate after one gain), which the old 0.05 tolerance refused."""
+    np = pytest.importorskip("numpy")
+    pyloudnorm = pytest.importorskip("pyloudnorm")
+    R, draw, sd = _stored()
+    from learn import direc_check as DC
+    from learn import pretrain_set as PS
+    from learn import song_bank as SB
+
+    meter = pyloudnorm.Meter(DC.SR)
+    got = {}
+    for p in draw["parts"]:
+        prt = sd.units[(p["set"], p["unit"], p["amp"])]["prt"]
+        y = SB.measure(np.asarray(PS.section_audio(prt["di_path"], prt["start_s"]), np.float64)).astype(np.float32)
+        assert S.npy_sha(y) == S.npy_sha(R.di_section(prt))
+        got[p["pkey"]] = float(meter.integrated_loudness(np.asarray(y, np.float64)))
+    assert len(got) == 47 and SC.lufs_beyond({"rt-id": got}) == []
+    off = sorted(abs(v - SC.LUFS) for v in got.values())
+    assert sum(d > 0.05 for d in off) == 3 and 0.09 < off[-1] < 0.13          # the three the review found

@@ -74,7 +74,7 @@ REFUSAL_STOP = S.REFUSAL_STOP            # 3 of 47
 SECTION, IN_LEN, NEXT = 492000, 540000, 48000
 TIMING_MS = 1.0                          # the timing check: the 1-ms envelope's lag within this
 TIMING_STOP = 3                          # this many parts beyond it stop the build
-LUFS, LUFS_TOL = -22.9, 0.05            # the measure step's level, checked on every measured DI
+LUFS, LUFS_TOL = -22.9, 0.25            # the measure step's level on every measured DI (lufs_beyond)
 MUSDB_TRAIN_PANEL = ("Big Troubles",)    # "BigTroubles - Phantom": MUSDB18 train (DAC trained on it, as a mix)
 COMPRESSION = {"d_50": 0.141, "d_answer": 0.167, "compression": 0.026, "b_after_50": -0.044, "c_after_50": -0.018}
 COMPRESSION_NOTE = ("the checkpoint compresses differences: (c) less (b) is +0.141 at 50 evaluations and +0.167 at the "
@@ -201,18 +201,31 @@ def best_arm(arm_means):
     return min(got, key=lambda a: (got[a], a)) if got else None
 
 
-def park_lifts(fs_notes_best, codec_best, summarise=None, small=SMALL):
+def park_lifts(fs_notes_best, codec_best, summarise, small=SMALL):
     """(Pure but for `summarise`.) The park's lift, at zero renders once `fs-notes` is read: per part `fs-notes`' best
     arm's G less the codec's best arm's G ({pkey: G} each, paired on the parts in both); the park lifts (to the user)
-    when the paired mean is at +0.05 or more (the note route 0.05 or more worse than the codec). summarise(values) ->
-    {"mean", ...} on the pool (default: the plain mean). -> {lifts, mean, row, parts}."""
+    when the paired mean on the pool is at +0.05 or more (the note route 0.05 or more worse than the codec).
+    summarise(values) -> {"mean", ...}: the plan's pool, required (`pool_summariser`, BKS+GOAT beside in its row; no
+    plain mean over parts). -> {lifts, mean, row, parts}."""
+    if not callable(summarise):
+        raise SystemExit("park_lifts needs the pool's summariser (pool_summariser(sd, draw)), not a plain mean")
     d = {k: fs_notes_best[k] - codec_best[k] for k in sorted(set(fs_notes_best) & set(codec_best))
          if fs_notes_best[k] is not None and codec_best[k] is not None}
     if not d:
         return {"lifts": False, "mean": None, "row": None, "parts": 0}
-    row = summarise(d) if summarise else {"mean": sum(d.values()) / len(d)}
+    row = summarise(d)
     m = (row or {}).get("mean")
     return {"lifts": m is not None and m >= small, "mean": m, "row": row, "parts": len(d)}
+
+
+def pool_summariser(sd, draw):
+    """The plan's pool for `park_lifts`: `scratch_notes.set_rows`' deciding pool (BKS, GOAT and the panel weighted
+    equally), with BKS+GOAT beside. -> summarise(values) -> {mean, lo90, hi90, ..., deciding_sets, bks_goat}."""
+    def summarise(values):
+        row = SN.set_rows(sd, draw, values) or {}
+        return dict(row.get("deciding_pool") or {"mean": None}, deciding_sets=row.get("deciding_sets"),
+                    bks_goat=(row.get("bks_goat") or {}).get("all"))
+    return summarise
 
 
 COVERS = {
@@ -739,12 +752,24 @@ def timing_stop(offsets, tol=TIMING_MS, stop=TIMING_STOP):
     return beyond, any(len(v) >= stop for v in beyond.values())
 
 
+def lufs_beyond(values, target=LUFS, tol=LUFS_TOL):
+    """(Pure.) The build's level check: {name: {pkey: integrated LUFS}} -> [(name, pkey, LUFS)] more than `tol` from
+    `target`. The tolerance is 0.25 LU, not 0.05: pyloudnorm's gating after `to_lufs`' single gain leaves the true DI
+    itself up to 0.121 LU off -22.9 on 3 of the 47 parts (byte-equal to `note_replay.di_section`), and a codec output's
+    low-level blocks fall across the gate on their own, so they need not shift with the true DI's; a missed measure step
+    sits about 12 LU off (the raw sections are near -35 LUFS)."""
+    return sorted((n, k, v) for n, d in values.items() for k, v in d.items()
+                  if v is None or not math.isfinite(v) or abs(v - target) > tol)
+
+
 def cmd_build(_args):
-    """Per name and part: `song_bank.measure` of the round trip as float32 to rt/<name>/<pkey>.npy. Checks: finite,
-    SECTION samples, LUFS; `rt-id`'s sha256 equal to the true DI's (`note_replay.di_section`) on all 47; the timing
-    offset (1-ms envelope; the waveform's peak beside) within 1 ms, 3 or more parts beyond it stop the build. Writes
-    figures.json (zero-render figures, descriptive) and build.json; prints build.json's sha256 for
-    phase_scratch_codec_dry. A venv whose roundtrip record is missing is reported as dropped."""
+    """Per name and part: `song_bank.measure` of the round trip as float32. Every check runs before anything is
+    written: finite, SECTION samples, the level (`lufs_beyond`, every value recorded with the true DI's beside),
+    `rt-id`'s sha256 equal to the true DI's (`note_replay.di_section`) on all 47, the timing offset (1-ms envelope; the
+    waveform's peak beside) within 1 ms with 3 or more parts beyond it stopping the build. A refusal writes only
+    build-stopped-<time>.json (every value) and no rt/ file. Otherwise rt/<name>/<pkey>.npy, figures.json (zero-render
+    figures, descriptive) and build.json; build.json's sha256 is printed for phase_scratch_codec_dry. A venv whose
+    roundtrip record is missing is reported as dropped."""
     require_codec()
     import numpy as np
 
@@ -772,6 +797,9 @@ def cmd_build(_args):
     dropped = [n for n in NAMES if n not in names]
     if "rt-m2l" not in names or "rt-id" not in names:
         raise SystemExit(f"the build needs rt-m2l and rt-id (got {names})")
+    for n in names:
+        for p in draw["parts"]:
+            S.never_overwrite(rt_path(n, p["pkey"]))
     blur = json.loads((NR.replay_dir() / "blur.json").read_text())
     if blur["draw_sha256"] != draw["replay_draw_sha256"]:
         raise SystemExit("blur.json was made from another replay draw")
@@ -781,6 +809,9 @@ def cmd_build(_args):
 
     meter = pyloudnorm.Meter(DC.SR)
     shas = {n: {} for n in names}
+    lufs = {n: {} for n in names}
+    true_lufs = {}
+    held = {}                                          # (name, pkey) -> the measured DI, written only after every check
     figs = {"parts": {}}
     offsets = {n: {} for n in names if n != "rt-id"}
     bad = []
@@ -789,9 +820,10 @@ def cmd_build(_args):
         prt = sd.units[(p["set"], p["unit"], p["amp"])]["prt"]
         di32 = NR.di_section(prt)
         di = np.asarray(di32, np.float64)
+        true_lufs[k] = float(meter.integrated_loudness(di))
         raw = np.load(in_dir() / f"{k}.npy").astype(np.float64)[:SECTION]
         am = np.asarray(NR.load_dry("avg+mild", rby[k], di32, blur), np.float64)
-        pf = {"true": {"balance_offset": balance_offset(di, avg)},
+        pf = {"true": {"balance_offset": balance_offset(di, avg), "lufs": true_lufs[k]},
               "avg+mild": {"vs_true": part_figures(di, am), "balance_offset": balance_offset(am, avg)}}
         meas = {}
         for n in names:
@@ -804,52 +836,60 @@ def cmd_build(_args):
             y = SB.measure(np.asarray(y_raw, np.float64)).astype(np.float32)
             if len(y) != SECTION or not np.isfinite(y).all():
                 raise SystemExit(f"{n} {k}: the measured DI is not finite or not {SECTION} samples")
-            out = rt_path(n, k)
-            S.never_overwrite(out)
-            out.parent.mkdir(parents=True, exist_ok=True)
-            np.save(out, y)
-            sha = S.file_sha(out)
-            if sha != S.npy_sha(y):
-                raise SystemExit(f"{out}: the file's sha256 is not npy_sha's")
-            lufs = float(meter.integrated_loudness(np.asarray(y, np.float64)))
-            if abs(lufs - LUFS) > LUFS_TOL:
-                raise SystemExit(f"{n} {k}: the measured DI reads {lufs:.2f} LUFS, not {LUFS}")
-            shas[n][k] = {"sha256": sha, "n": len(y), "lufs": lufs}
+            sha = S.npy_sha(y)
+            lufs[n][k] = float(meter.integrated_loudness(np.asarray(y, np.float64)))
+            shas[n][k] = {"sha256": sha, "n": len(y), "lufs": lufs[n][k], "true_lufs": true_lufs[k]}
+            held[(n, k)] = y
             meas[n] = np.asarray(y, np.float64)
             if n == "rt-id":
                 if sha != S.npy_sha(di32):
                     bad.append(k)
                 continue
             pf[n] = {"vs_true": part_figures(di, meas[n]), "before_measure": spectral_distance(raw, y_raw),
-                     "balance_offset": balance_offset(meas[n], avg),
+                     "balance_offset": balance_offset(meas[n], avg), "lufs": lufs[n][k],
                      "lag_ms": envelope_lag_ms(di, meas[n]), "lag_samples": waveform_lag(di, meas[n])}
             offsets[n][k] = pf[n]["lag_ms"]
         if "rt-m2l" in meas and "rt-m2l-b" in meas:
             pf["rt-m2l-b"]["vs_rt_m2l"] = part_figures(meas["rt-m2l"], meas["rt-m2l-b"])
         figs["parts"][k] = pf
-        print(f"{k[-50:]}: " + ", ".join(f"{n} {shas[n][k]['lufs']:.2f} LUFS" for n in names), flush=True)
-    if bad:
-        raise SystemExit(f"rt-id is not the true DI byte for byte on {len(bad)} parts: the build wraps more than the "
-                         "codec")
+        print(f"{k[-50:]}: true {true_lufs[k]:.3f}; " + ", ".join(f"{n} {lufs[n][k]:.3f} LUFS" for n in names),
+              flush=True)
     beyond, stop = timing_stop(offsets)
-    figs["summary"] = figure_rows(sd, draw, figs["parts"], [n for n in names if n != "rt-id"])
-    P.save(figures_path(), dict(figs, plan=PLAN, time=time.strftime("%Y-%m-%d %H:%M:%S"),
-                                anchors_avg_mild={"mel256": 2.49, "mel2048": 3.05, "env5": 2.00, "crest": -0.69}))
+    off_level = lufs_beyond(lufs)
     rec = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}", "draw_sha256": S.file_sha(S.draw_path()),
            "in_json_sha256": S.file_sha(in_json()),
            "roundtrip_sha256": {v: S.file_sha(roundtrip_path(v)) for v in rts},
            "manifest_sha256": {v: r["manifest_sha256"] for v, r in rts.items()},
            "seconds_a_part": {v: r["seconds_a_part"] for v, r in rts.items()},
-           "figures_sha256": S.file_sha(figures_path()), "dropped": dropped, "rt_id_equal": 47 - len(bad),
+           "dropped": dropped, "rt_id_equal": len(draw["parts"]) - len(bad), "rt_id_unequal": bad,
+           "lufs_target": LUFS, "lufs_tol": LUFS_TOL, "true_lufs": true_lufs, "lufs_beyond": off_level,
            "timing_beyond_1ms": beyond, "timing_stopped": stop, "time": time.strftime("%Y-%m-%d %H:%M:%S"),
            "names": shas}
+    why = []
+    if bad:
+        why.append(f"rt-id is not the true DI byte for byte on {len(bad)} parts: the build wraps more than the codec")
+    if off_level:
+        why.append(f"{len(off_level)} measured DIs more than {LUFS_TOL} LU off {LUFS}: {off_level[:3]}")
     if stop:
-        P.save(codec_dir() / "build-stopped.json", rec)
-        raise SystemExit(f"the timing check stops the build: {beyond} (3 or more parts beyond 1 ms)")
+        why.append(f"the timing check: {beyond} (3 or more parts beyond 1 ms)")
+    if why:                                            # nothing under rt/ is written: a rerun is not blocked
+        P.save(codec_dir() / f"build-stopped-{time.strftime('%Y%m%d-%H%M%S')}.json", dict(rec, stopped=why))
+        raise SystemExit("the build stops: " + "; ".join(why))
+    for (n, k), y in held.items():
+        out = rt_path(n, k)
+        S.never_overwrite(out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        np.save(out, y)
+        if S.file_sha(out) != shas[n][k]["sha256"]:
+            raise SystemExit(f"{out}: the file's sha256 is not npy_sha's")
+    figs["summary"] = figure_rows(sd, draw, figs["parts"], [n for n in names if n != "rt-id"])
+    P.save(figures_path(), dict(figs, plan=PLAN, time=time.strftime("%Y-%m-%d %H:%M:%S"),
+                                anchors_avg_mild={"mel256": 2.49, "mel2048": 3.05, "env5": 2.00, "crest": -0.69}))
+    rec["figures_sha256"] = S.file_sha(figures_path())
     P.save(build_path(), rec)
     print(f"CODEC BUILD: {', '.join(names)} on {len(draw['parts'])} parts (dropped {dropped}); rt-id equal on "
-          f"{rec['rt_id_equal']}; timing beyond 1 ms {beyond}; sha256 {S.file_sha(build_path())} (into the ledger as "
-          f"{PHASE_DRY} before any render)")
+          f"{rec['rt_id_equal']}; level within {LUFS_TOL} LU on all; timing beyond 1 ms {beyond}; sha256 "
+          f"{S.file_sha(build_path())} (into the ledger as {PHASE_DRY} before any render)")
 
 
 def figure_rows(sd, draw, parts, names):
