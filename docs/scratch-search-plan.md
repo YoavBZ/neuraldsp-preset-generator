@@ -1118,6 +1118,33 @@ beside `ld-stem`'s), descriptive, never deciding.
    released) is chosen; then the six cut to 4.5 s with it. Pass: our output closer to the original than the distorted
    input on at least 5 of 6; our mean within 1.0 dB of the authors' outputs' mean; the cut no more than 1.0 dB worse
    than the same 4.5 s of the full run. Otherwise stop and ask.
+
+   **Amended 2026-11-23 (ledger `phase_scratch_loudar_gate_amend`), after the gate's declared stop.** Decided by an
+   isolated decision agent under the user's standing rule of 2026-11-23, at about 0.8 confidence; not the user's own
+   answer.
+
+   *What the gate measured* (unit 0, from main `bf484311`, CPU):
+   - The distorted inputs read 4.03 mean from the original. The authors' own LOUDAR outputs read 6.07, farther on all
+     6 clips, so the authors' gain is −2.04 dB and the fraction-of-gain tolerance is undefined.
+   - Ours: released 6.12, paper 6.36, so the released setting is chosen by the declared rule.
+   - Reproduction: 0.05 dB from the authors' mean. Length: +0.72 dB.
+   - Timing: 116.8 s a whole 10.96-s clip and 58.3 s a 4.5-s clip, about 1.7 wall hours projected for everything.
+   - Both byte checks are equal.
+
+   *What changes:*
+   - **The direction check is removed from the pass rule**, because the authors' reference outputs fail it 6 of 6.
+     Floored log-mel cannot vouch for LOUDAR's quality here. Whether LOUDAR improves on its input is decided only by
+     J0, through `D_null` / `FL-null`, as already declared. The count is still reported.
+   - **Reproduction is stricter:** the mean within 1.0 dB of the authors', and each of the six clips within 1.0 dB of
+     the authors' output for that clip; any clip beyond stops and asks. Re-read on the stored record, no new runs, it
+     passes: ours less the authors' per clip is +0.16, −0.06, −0.10, +0.79, −0.20 and −0.27 dB.
+   - No new measure: Fx-Encoder++ is not downloaded, and any other distance appears only in the descriptive
+     `figures.json`, never in a gate or a reading.
+
+   Nothing else changes: the table, the codes, the thresholds, the sets, the checkpoint, the setting rule, the cost
+   stop, the timing check, the `stem-in` null, the `ld-rec` trigger and the `fs-notes` render wait stay as declared.
+   **With any result:** no measure we hold showed LOUDAR improving on its input before the J0 row; the row's
+   `FL-null` is the first test of that.
 7. Its facts (the setting, the gate's figures, the measured seconds a clip and the projected build time) go into
    `phase_scratch_loudar_dry`.
 
@@ -1127,3 +1154,5 @@ beside `ld-stem`'s), descriptive, never deciding.
 - LOUDAR hearing the whole window, as the product would.
 - The final answer after 262 renders, or long-term tone colour (the measure step removes it).
 - LOUDAR with a wider prior, more steps, or another operator.
+- That LOUDAR improves on its input by any measure other than J0: none we hold showed it before the row (13d's
+  amendment); `FL-null` is the first test.

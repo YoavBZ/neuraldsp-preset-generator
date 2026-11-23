@@ -68,7 +68,7 @@ GATE_KINDS = ("distorted", "original", "LOUDAR")
 DEMO_DIR = "docs/static/audio_examples/guitar_distortion_removal"   # the authors' published guitar examples
 GATE_TOL_DB = 1.0                 # reproduction and length: within 1.0 dB (mean floored log-mel distance)
 GATE_SETTING_TIE_DB = 0.1         # within this the released setting is kept
-GATE_DIRECTION_MIN = 5            # our output closer to the original than the input on at least 5 of 6
+# (the direction check, 5 of 6 closer than the input, was removed from the pass rule: phase_scratch_loudar_gate_amend)
 COST_STOP_H = 8.0                 # wall hours at 4 threads: the gate's 18 runs and the 23 deciding clips
 CHECK_RUNS = {"full": 1, "cut": 3}  # the timed whole and cut clip, the seeded rerun, the zeros-reference run
 DECIDING_CLIPS = 23
@@ -218,9 +218,13 @@ def gate_reading(d):
     """(Pure.) The reproduction gate from floored log-mel distances to the original, per example (6 each).
     d: {"distorted": [..], "authors": [..], "ours": {setting: [..]}, "cut": [..] (ours cut to 4.5 s, chosen setting),
     "from_full": [..] (the same 4.5 s taken from our full run)}. The setting is the lower mean (within 0.1 dB the
-    released); direction: ours closer than the distorted input on at least 5 of 6; reproduction: |mean ours - mean
-    authors| <= 1.0 dB; length: mean cut - mean from-full <= 1.0 dB. The tolerance is also given as a fraction of the
-    authors' own gain (mean distorted - mean authors). -> the reading."""
+    released). Pass: reproduction (|mean ours - mean authors| <= 1.0 dB **and** each of the six clips within 1.0 dB
+    of the authors' output for that clip) and length (mean cut - mean from-full <= 1.0 dB); otherwise stop and ask.
+    The direction count (ours closer than the distorted input) is reported only and no longer gates
+    (phase_scratch_loudar_gate_amend): the authors' own outputs fail it 6 of 6, so floored log-mel cannot vouch for
+    LOUDAR's quality here; whether LOUDAR improves on its input is decided only by J0, through D_null / FL-null. The
+    tolerance is also given as a fraction of the authors' own gain (mean distorted - mean authors), None when that
+    gain is not positive. -> the reading."""
     def mean(v):
         return sum(v) / len(v)
     ours = {s: v for s, v in d["ours"].items() if v}
@@ -233,16 +237,21 @@ def gate_reading(d):
     out = {"setting": setting, "mean_d": m, "mean_distorted": mean(d["distorted"]),
            "mean_authors": mean(d["authors"]), "authors_gain_db": gain,
            "tolerance_fraction_of_gain": (GATE_TOL_DB / gain) if gain > 0 else None,
-           "direction": sum(o < x for o, x in zip(ours[setting], d["distorted"])),
-           "reproduction_db": m[setting] - mean(d["authors"])}
-    out["direction_ok"] = out["direction"] >= GATE_DIRECTION_MIN
-    out["reproduction_ok"] = abs(out["reproduction_db"]) <= GATE_TOL_DB
+           "direction_reported_only": sum(o < x for o, x in zip(ours[setting], d["distorted"])),
+           "authors_direction_reported_only": sum(a < x for a, x in zip(d["authors"], d["distorted"])),
+           "reproduction_db": m[setting] - mean(d["authors"]),
+           "reproduction_per_clip_db": [o - a for o, a in zip(ours[setting], d["authors"])]}
+    if len(out["reproduction_per_clip_db"]) != len(d["authors"]):
+        raise SystemExit("gate_reading needs one distance a clip for ours and the authors'")
+    out["reproduction_clips_beyond"] = [i for i, g in enumerate(out["reproduction_per_clip_db"])
+                                        if abs(g) > GATE_TOL_DB]
+    out["reproduction_ok"] = abs(out["reproduction_db"]) <= GATE_TOL_DB and not out["reproduction_clips_beyond"]
     if d.get("cut") and d.get("from_full"):
         out["length_db"] = mean(d["cut"]) - mean(d["from_full"])
         out["length_ok"] = out["length_db"] <= GATE_TOL_DB
     else:
         out["length_db"], out["length_ok"] = None, None
-    out["passed"] = bool(out["direction_ok"] and out["reproduction_ok"] and out["length_ok"])
+    out["passed"] = bool(out["reproduction_ok"] and out["length_ok"])
     return out
 
 

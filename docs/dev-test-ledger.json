@@ -4298,6 +4298,48 @@
     "omegaconf": "2.3.1",
     "code": "learn/loudar_run.py: ALLOWED_GLOBALS, compat_name, globals_refusal, _defaultdict_as_dict, safe_global_objects, guarded_load, safe_load, version_refusal, ema_only, load_checkpoint; tests/test_loudar_run.py on small hand-built pickles, never the checkpoint",
     "next": "after this merges, unit 0's gate runs from the new main (docs/scratch-search-plan.md section 13d)"
+   },
+   "phase_scratch_loudar_gate_amend": {
+    "declared": "2026-11-23, after unit 0's gate stopped on its direction check (from main bf484311, CPU, zero renders; nothing of ours was run through LOUDAR)",
+    "decided_by": "an isolated decision agent under the user's standing rule of 2026-11-23 (technical), option (a), about 0.8 confidence; not the user's own answer",
+    "facts": {
+     "distorted_d": [
+      4.181,
+      3.609,
+      4.403,
+      3.95,
+      3.514,
+      4.503
+     ],
+     "authors_d": [
+      6.287,
+      5.727,
+      5.849,
+      6.135,
+      6.055,
+      6.351
+     ],
+     "authors_farther_on": "6 of 6 (the authors' own LOUDAR outputs farther from the original than the distorted inputs)",
+     "authors_gain_db": -2.041,
+     "fraction_of_gain_tolerance": "undefined (the gain is not positive)",
+     "ours_mean_d": {
+      "released": 6.122,
+      "paper": 6.363
+     },
+     "setting": "released, by the declared rule (the lower mean)",
+     "reproduction_db": 0.054,
+     "length_db": 0.724,
+     "timing": "116.8 s a whole 10.96-s clip, 58.3 s a 4.5-s clip; 1.70 wall hours projected at 4 threads for the gate, the 23, GOAT's 24 and ld-stem-b's 23 (under the 8-hour stop)",
+     "byte_checks": "a seeded rerun and a zeros-reference run byte-equal",
+     "gate_record": "handover 2026-11-23 loudar-unit0/loudar-gate.json"
+    },
+    "statement": "the direction check is removed because the authors' reference outputs fail it 6 of 6: floored log-mel cannot vouch for LOUDAR's quality here; whether LOUDAR improves on its input is decided only by J0, through D_null / FL-null, as already declared. The direction count is still reported, never gating",
+    "reproduction": "stricter: the mean within 1.0 dB of the authors' and each of the six clips within 1.0 dB of the authors' output for that clip; any clip beyond stops and asks. Re-read on the stored gate record with no new runs: ours less the authors' per clip +0.164, -0.058, -0.100, +0.791, -0.196, -0.275 dB (largest 0.791): passes, as does the length check",
+    "no_new_measure": "Fx-Encoder++ is not downloaded; any other distance appears only in the descriptive figures.json, never in a gate or a reading",
+    "unchanged": "the table, codes, thresholds, sets, checkpoint, setting rule, cost stop, timing check, stem-in null, ld-rec trigger and the fs-notes render wait stay as declared",
+    "caveat": "with any result: no measure we hold showed LOUDAR improving on its input before the J0 row; the row's FL-null is the first test of that (written into every report)",
+    "code": "learn/loudar_run.py gate_reading (direction reported only; reproduction per clip); learn/scratch_loudar.py NO_PRIOR_IMPROVEMENT_NOTE in each report; tests in tests/test_loudar_run.py and tests/test_scratch_loudar.py",
+    "next": "after this merges: prep, LOUDAR's runs (CPU), build, then the phase_scratch_loudar_dry hash PR"
    }
   },
   {

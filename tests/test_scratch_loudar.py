@@ -89,6 +89,17 @@ def test_fl_null_comes_first_and_the_rest():
         SL.fl_code(None, G_BELOW, CUT_FREE, G_BELOW, G_BELOW, G_LEVEL)
 
 
+def test_every_report_carries_the_no_prior_improvement_caveat():
+    note = SL.NO_PRIOR_IMPROVEMENT_NOTE
+    assert "no measure we hold showed LOUDAR improving on its input" in note and "FL-null" in note
+    src = (REPO / "learn" / "scratch_loudar.py").read_text()
+    assert src.count("caveat=NO_PRIOR_IMPROVEMENT_NOTE") == 2                   # the read and ld-rec's read
+    d = json.loads((REPO / "docs/dev-test-ledger.json").read_text())
+    e = next(t for t in d["tests"] if t.get("test_id") == S.LEDGER_ID)["phase_scratch_loudar_gate_amend"]
+    assert e["facts"]["authors_farther_on"].startswith("6 of 6") and "J0" in e["statement"]
+    assert "not the user's own answer" in e["decided_by"]
+
+
 def test_the_bottleneck_rule():
     assert SL.bottleneck("FL-reach", "short")["bottleneck"] == "the stem"
     assert SL.bottleneck("FL-above", None)["bottleneck"] == "the stem"
@@ -182,7 +193,8 @@ def test_the_phases_are_new_and_outside_the_other_rows_guards():
         SL.phase_answers("ld-stem-b")
     d = json.loads((REPO / "docs/dev-test-ledger.json").read_text())
     e = next(t for t in d["tests"] if t.get("test_id") == S.LEDGER_ID)
-    pinned = {"phase_scratch_loudar_globals"}        # the checkpoint's allowlist (learn/loudar_run.py's pin)
+    pinned = {"phase_scratch_loudar_globals",        # the checkpoint's allowlist (learn/loudar_run.py's pin)
+              "phase_scratch_loudar_gate_amend"}     # the gate's amendment (the direction check removed)
     assert set(SL.loudar_keys(e)) <= set(keys) | pinned and SL.PHASE in e
 
 

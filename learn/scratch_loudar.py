@@ -79,6 +79,9 @@ TIMING_NAMES_PREFIX = "ld-"                        # only LOUDAR's dry guitars s
 OPEN_VERDICTS = ("fault-content", "fault-signal")  # a recorded ear verdict that rules fs-notes out (not "ask")
 CHECK_SHA256 = SC.CHECK_SHA256
 COMPRESSION_NOTE = SC.COMPRESSION_NOTE
+NO_PRIOR_IMPROVEMENT_NOTE = ("no measure we hold showed LOUDAR improving on its input before this J0 row (the gate's "
+                             "floored log-mel ranks even the authors' outputs below their inputs, 6 of 6); the row's "
+                             "FL-null is the first test of that (phase_scratch_loudar_gate_amend)")
 
 
 def phase_answers(name):
@@ -923,7 +926,8 @@ def cmd_read(_args):
     fl = fl_code(rows["D_null"]["bp"], rows["D_blur"]["bp"], rows["D_cut"]["bp"], rows["D_bar"]["bp"],
                  rows["G50"]["bp"], rows["G50_rows_b_c"]["fs-both"]["bp"])
     goat = goat_reading((rows["D_blur"]["goat"] or None) if build.get("goat_built") else None)
-    rep = dict(out, rows=rows, fl=fl, goat=goat, next="ld-rec" if fl["code"] in REC_CODES else fl["next"],
+    rep = dict(out, rows=rows, fl=fl, goat=goat, caveat=NO_PRIOR_IMPROVEMENT_NOTE,
+               next="ld-rec" if fl["code"] in REC_CODES else fl["next"],
                bks_g50_below_zero=((rows["G50"]["bks"] or {}).get("hi90") or 0) < 0)
     if SN.report_path().exists():
         rep["versus_notes"] = "run `versus-notes` (zero renders, once)"
@@ -951,7 +955,7 @@ def cmd_read_rec(_args):
     fl = fl_code(rows["D_null"]["bp"], rows["D_blur"]["bp"], rows["D_cut"]["bp"], rows["D_bar"]["bp"],
                  rows["G50"]["bp"], rows["G50_rows_b_c"]["fs-both"]["bp"])
     bn = bottleneck(fl["code"], main_rep.get("goat"))
-    P.save(report_path(True), dict(out, rows=rows, fl=fl, bottleneck=bn))
+    P.save(report_path(True), dict(out, rows=rows, fl=fl, bottleneck=bn, caveat=NO_PRIOR_IMPROVEMENT_NOTE))
     print(f"ld-rec: {fl['code']} ({REC_NULL_NOTE}); bottleneck: {bn['bottleneck']}")
 
 
