@@ -5025,6 +5025,23 @@
     "download": "the user accepts the terms and downloads model.safetensors and config.json by browser into ~/ndsp-presets/tools/muscriptor-weights/medium/; the install checks their size and sha256. No token is created, typed or stored",
     "material": "only the declared material is transcribed: the ten lists, the Guitar-TECHS P1 and P2 truth windows and the 27 GOAT development windows. The Cambridge-MT and MedleyDB songs wait for a separate yes; commercial songs never",
     "privacy": "the account's name and email are never recorded in git, the ledger or the install manifest (the manifest's approval holds this date and key only)"
+   },
+   "phase_tx_install": {
+    "lock_sha256": "156304cfde6b5476c81fde20a14fcb1200488576891075d02f02680e796e9091",
+    "weights_sha256": "ac80adbdf85d87231735fd948af7013441c0afced316c4e9067fd5d8a7fb97ec",
+    "gate_sha256": "f2ebf5cbe7d5462e1fb82ddce619d5a27be02bee280c3c3416fef825c6a36ac4",
+    "size": "medium",
+    "device": "mps",
+    "list_notes_listing_sha256": "7af850560235cba22fa31d854076746ba21a3795bcc2c72707857a8c449ddebc",
+    "files": {
+     "gate": "PF/note-rebuild/tx/gate-medium.json",
+     "list_notes": "PF/note-rebuild/tx/notes/{list, list-free}/ (20 files)",
+     "manifest_sha256": "5de9ae94dab335dde4022820ee69f19e299fbfd02d526636b16ddc310e60d2b5",
+     "resolve_sha256": "b6ead6a033bd6d284de1e96c2e77a9506ce05aec8a0dbb8dc59b0fc4485b5139",
+     "config_json_sha256": "43e13a70fc9ae0af36b7447c06f3eac2282daeb69d79c1ff840ede7fdaa26a3b"
+    },
+    "note": "2026-11-23, install and gate run once from main at 1461bce1 in a frozen detached worktree. Install: pyenv's Python 3.14.6 (no fallback needed), muscriptor 0.4.0 at its declared hash, torch 2.15.0, 30 hashed pins, 657 MB; the user's medium weights (revision f32236969308476e01fd3aae67357de5feb05a2d) matched their declared size and sha256; config.json 126 bytes; the import passed; the approval is a date and a ledger key only. Gate: the three runs repeated exactly on all four development windows on MPS and on the CPU; transcription 1.97 s per gate input (the 10.25-s window with up to 1 s either side, up to 12.25 s) on MPS and 10.51 s on the CPU (the model load timed apart: 0.45 to 0.95 s); stage b's 133 runs project to 0.07 h on MPS and 0.39 h on the CPU; the device rule picked MPS and the size rule kept medium. As declared, the gate then transcribed the ten lists (masked and with no mask, 20 note files on MPS). No list has been scored: the screen waits for the large-model amendment, so medium and large are scored together by the same declared measure. The masked arm's guitar groups include acoustic_guitar; the list notes' counts and labels stay inside the hashed files until both sizes are scored. Medium's raw note counts were seen before the large-model amendment was declared, so that amendment changes only the weights: the measure, the mask, the clean-up and the pairing stay frozen exactly as declared.",
+    "dtype": "MPS runs the language model in float16 (304,948,224 parameters with its embeddings and output layers; the transformer layers alone 302,088,192) with the conditioners in float32 (1,555,456), read from the loaded model's parameters and from 0.4.0's load_model (dtype None -> float16 on MPS, model.to(float16), condition_provider.float()); the CPU is float32 throughout. The plan's float16 expectation was right. The note files' and the gate's 'dtype' field reads 'torch.float32' on MPS because tx_run's probe reads the first parameter, a conditioner's: a mislabel, not the run's precision. The probe is fixed in the next code PR; these files are not rewritten"
    }
   }
  ],

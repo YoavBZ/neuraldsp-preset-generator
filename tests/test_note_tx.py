@@ -555,9 +555,15 @@ def test_the_ledger_holds_the_declaration_and_the_go():
     e = X.tx_entries(LEDGER.read_text())["note-transcriber"]
     assert e["plan"] == X.PLAN and (REPO / X.PLAN).exists()
     assert X.PHASE in e and X.PHASE_GO in e
-    for later in (X.PHASE_INSTALL, X.PHASE_LISTS, X.PHASE_GO_READ, X.PHASE_NOTES, X.PHASE_READ, X.PHASE_BRIDGE) \
-            + X.RESERVED_PHASES:
+    for later in (X.PHASE_LISTS, X.PHASE_GO_READ, X.PHASE_NOTES, X.PHASE_READ, X.PHASE_BRIDGE) + X.RESERVED_PHASES:
         assert later not in e                                     # each comes with its own PR
+    inst = e[X.PHASE_INSTALL]                                     # the hash PR: the shape `require_install` reads
+    assert inst["size"] == "medium" and inst["device"] == "mps"
+    assert inst["weights_sha256"] == X.WEIGHTS["medium"]["sha256"]
+    assert all(re.fullmatch(r"[0-9a-f]{64}", inst[k]) for k in ("lock_sha256", "weights_sha256", "gate_sha256",
+                                                                 "list_notes_listing_sha256"))
+    assert "labels" not in inst and "frozen" in inst["note"]      # no counts before both sizes are scored
+    assert "No list has been scored" in inst["note"] and X.private_keys(inst) == []
     go = e[X.PHASE_GO]
     assert go["answer"] == "Go, I'll get access" and len(go["key_terms"]) == 4
     terms = " ".join(go["key_terms"])
