@@ -4305,6 +4305,148 @@
      }
     },
     "code": "`versions` and `transcribe` read a stopped truth report only with this key, its go true and naming that file's sha256 (note_transcribe.truth_report_refusal); `ladder_refusal` now also checks its go's `go` field; the guard's rule and every threshold unchanged. Plan 12m, dated note"
+   },
+   "phase_nr_1_redo_versions": {
+    "sha256": "8f77f5d7bd2b380b989f44c958fb2bacd2303d85379b9cd57996a399ae59386f",
+    "file": "PF/note-rebuild/redo/versions.json",
+    "code": "NV-none",
+    "gamma": null,
+    "readings": {
+     "1.0": {
+      "lists": "cost not shown",
+      "real": "reported only",
+      "goat_ok": true,
+      "guard": false
+     },
+     "2.0": {
+      "lists": "cost not shown",
+      "real": "reported only",
+      "goat_ok": true,
+      "guard": false
+     }
+    },
+    "recommendation": "run as is, with the listening page as the guard",
+    "real_reported_only": true,
+    "ladder_by_user_go": true,
+    "truth_report_by_user_go": true,
+    "other_gap": null,
+    "distance": "floored_logmel, the dry-domain distance to the DI (each side floored 60 dB under its own loudest bin); not the J0 judge",
+    "numbers": {
+     "note": "per set and ring: cluster mean [90% interval] k=clusters; C = nv-asis - nv-hand, G = nv-loud - nv-hand (G2 at gamma 2), E = nv-hand - nv-true; ring-soft decides, ring-on beside",
+     "ring-soft": {
+      "lists": {
+       "C": "+0.5635 [-0.1377, +1.2648] k=10",
+       "G": "+0.2380 [-0.3410, +0.8171] k=10",
+       "G2": "+0.1420 [-0.3794, +0.6634] k=10",
+       "E": "+1.8053 [+1.2015, +2.4092] k=10",
+       "loud_less_asis": "-0.3255 [-0.5327, -0.1182] k=10",
+       "loud2_less_asis": "-0.4215 [-0.8471, +0.0040] k=10"
+      },
+      "real": {
+       "C": "+0.0967 [-0.2813, +0.4747] k=43",
+       "G": "-0.0384 [-0.4013, +0.3246] k=43",
+       "G2": "-0.2046 [-0.5638, +0.1547] k=43",
+       "E": "+0.6836 [+0.3631, +1.0041] k=43",
+       "loud_less_asis": "-0.1351 [-0.1960, -0.0742] k=43",
+       "loud2_less_asis": "-0.3013 [-0.4146, -0.1880] k=43"
+      },
+      "goat": {
+       "loud_less_asis": "-0.0422 [-0.1039, +0.0194] k=27",
+       "loud2_less_asis": "+0.0450 [-0.0597, +0.1496] k=27"
+      }
+     },
+     "ring-on": {
+      "lists": {
+       "C": "+1.2206 [+0.5715, +1.8696] k=10",
+       "G": "+0.8379 [+0.3569, +1.3190] k=10",
+       "G2": "+0.6295 [+0.2963, +0.9627] k=10",
+       "E": "+1.2072 [+0.8724, +1.5419] k=10",
+       "loud_less_asis": "-0.3826 [-0.5916, -0.1736] k=10",
+       "loud2_less_asis": "-0.5910 [-0.9928, -0.1893] k=10"
+      },
+      "real": {
+       "C": "+0.9964 [+0.7058, +1.2869] k=43",
+       "G": "+0.6704 [+0.3883, +0.9525] k=43",
+       "G2": "+0.3407 [+0.0405, +0.6410] k=43",
+       "E": "+0.4134 [+0.1924, +0.6344] k=43",
+       "loud_less_asis": "-0.3260 [-0.4167, -0.2352] k=43",
+       "loud2_less_asis": "-0.6556 [-0.8310, -0.4802] k=43"
+      },
+      "goat": {
+       "loud_less_asis": "-0.0920 [-0.1996, +0.0156] k=27",
+       "loud2_less_asis": "-0.0106 [-0.1897, +0.1684] k=27"
+      }
+     }
+    },
+    "guard": {
+     "1.0": {
+      "chord": {
+       "asis": 0.9371,
+       "loud": 0.8881,
+       "notes": 143,
+       "holds": true
+      },
+      "soft": {
+       "asis": 0.7,
+       "loud": 0.0,
+       "notes": 10,
+       "holds": false
+      },
+      "holds": false
+     },
+     "2.0": {
+      "chord": {
+       "asis": 0.9371,
+       "loud": 0.8392,
+       "notes": 143,
+       "holds": false
+      },
+      "soft": {
+       "asis": 0.7826,
+       "loud": 0.2609,
+       "notes": 23,
+       "holds": false
+      },
+      "holds": false
+     }
+    },
+    "turned_down_shares": {
+     "P1": {
+      "1.0": 0.0036,
+      "2.0": 0.0181
+     },
+     "P2": {
+      "1.0": 0.0068,
+      "2.0": 0.0227
+     },
+     "goat": {
+      "1.0": 0.063,
+      "2.0": 0.1572
+     }
+    },
+    "windows": {
+     "lists": 10,
+     "real": 79,
+     "goat": 27
+    },
+    "build_seconds": 2.284,
+    "run": "2026-11-23, `versions` once from main at aaf97a2d in a frozen worktree, zero renders, 1,145 s wall (808 s CPU) beside other sessions' jobs; the build rate timed on 3 real windows first; 2.28 s a build is the first 3 windows' rate under load (load average about 20); the run's own mean is about 0.85 s (1,230 builds in 1,040 s, the independent audit)",
+    "recompute": "the implementer's recompute from the per-window records (plan 12m's text, scipy's t quantile): code, readings, guard, turned-down shares and every lists and GOAT interval agree; the real set's 28 interval ends differ by about 2% because `pipeline_fix.t95` falls back to 1.6449 past 30 degrees of freedom (43 clusters; t is 1.682); the real set is reported only, so no reading moves; the independent check is the audit (2026-11-23, CONFIRMED WITH CORRECTIONS): every stored number agrees to 5e-6 with the t95 fallback emulated",
+    "note": "NV-none under the declared table. 'Cost not shown' means the set is too quiet or too noisy to say, not 'no effect': the lists' test is underpowered (SE 0.38 with 10 clusters; C +0.56 [-0.14, +1.26], one-sided p 0.087). Premise caveat: the distance's own instrument check failed (ghost-ladder, chords-four) and the work went on by the user's go (phase_nr_1_redo_go_ladder). The mechanism (the audit): nv-hand drops same-pitch re-finds, and ring-soft then cuts the held note 150 ms after the kept piece's early end (bend: C -1.70, triads-and-singles -0.88); its 50-ms pairing also misses real chord notes in strums. Side figure only, entering no reading: hand-merge (each paired note extended over its re-finds) reads C +1.18 [+0.43, +1.92] on the lists. Loudness moves the rebuild closer than as is on the lists (nv-loud - nv-asis -0.33 [-0.53, -0.12]), about a quarter to a third of a fair C. The chord and soft-note guard fails at both gammas: at gamma 1 Basic Pitch no longer re-finds 10 of 10 soft notes (7 of 10 on nv-asis); in the audio they are 3-5 dB down on their own string. E is dominated by early note ends together with the re-finds (ring-soft truncation) and by spurious bends; loudness is not part of it (hand-loud - hand +0.06 on the lists, 0.00 on the real DIs). A code other than NV-loud goes to the user (phase_nr_1_redo_go_versions)."
+   },
+   "phase_nr_1_redo_go_versions": {
+    "date": "2026-11-23",
+    "by": "the user",
+    "asked": "Rebuild redo, audited: the extra notes DO cost (about 1.2 on the test lists once the hand-cleaned version is built fairly), but playing notes at their detected loudness recovers only about a quarter of that and fails the quiet-note check. The audit found the real bottleneck is elsewhere: held notes cut short (the detector ends them early, then 're-finds' them) and pitch bends applied to notes that don't bend. These are dry-sound measures, not the preset score. What next?",
+    "how": "AskUserQuestion",
+    "answer": "Run as is (Recommended)",
+    "option_description": "Rebuild with the tool's notes unchanged and no loudness, then the decisive 47-recording preset-search row (~13,450 renders, ~2 h). The fix for held notes and bends is recorded as the next step, taken up if the row shows the rebuild limits the search.",
+    "relayed_by": "the coordinating session, 2026-11-23",
+    "loud": null,
+    "go": true,
+    "versions_sha256": "8f77f5d7bd2b380b989f44c958fb2bacd2303d85379b9cd57996a399ae59386f",
+    "next_fix": "merge re-found held notes (a same-pitch merge over a held note's re-finds) and gate spurious bends, zero renders, under its own later declaration; taken up only if the fs-notes row shows the rebuild limits the search",
+    "effect": "`build` reads loud null (versions_loud): tr-di and tr-plain as declared, no loudness"
    }
   },
   {

@@ -283,7 +283,18 @@ def test_the_two_triggers_and_the_versions_loudness():
     assert T.versions_loud({T.PHASE_VERSIONS: {"code": "NV-loud", "gamma": 2.0}}) == (2.0, None)
     assert "holds no code" in T.versions_loud({})[1]
     assert "to the user first" in T.versions_loud({T.PHASE_VERSIONS: {"code": "NV-short"}})[1]
-    assert T.versions_loud({T.PHASE_VERSIONS: {"code": "NV-none"}, T.PHASE_GO_VERSIONS: {"loud": None}}) == (None, None)
+    read = {"code": "NV-none", "sha256": "s"}
+    ok = {"go": True, "versions_sha256": "s", "loud": None}
+    assert T.versions_loud({T.PHASE_VERSIONS: read, T.PHASE_GO_VERSIONS: ok}) == (None, None)
+    for g in (1.0, 2.0):
+        assert T.versions_loud({T.PHASE_VERSIONS: read, T.PHASE_GO_VERSIONS: {**ok, "loud": g}}) == (g, None)
+    for bad in ({"loud": None}, {**ok, "go": False}, {k: v for k, v in ok.items() if k != "go"},
+                {**ok, "versions_sha256": "other"}, {k: v for k, v in ok.items() if k != "versions_sha256"},
+                {**ok, "loud": 3.0}, {**ok, "loud": "1"}, {**ok, "loud": True}, {k: v for k, v in ok.items() if k != "loud"}, "yes"):
+        loud, why = T.versions_loud({T.PHASE_VERSIONS: read, T.PHASE_GO_VERSIONS: bad})
+        assert loud is None and T.PHASE_GO_VERSIONS in why, bad
+    unhashed = {T.PHASE_VERSIONS: {"code": "NV-none"}, T.PHASE_GO_VERSIONS: {"go": True, "loud": None}}
+    assert T.PHASE_GO_VERSIONS in T.versions_loud(unhashed)[1]          # no sha on either side binds nothing
 
 
 def test_the_ladder_windows_and_usable_windows():
@@ -413,7 +424,7 @@ def test_the_ledger_holds_the_declarations():
     assert T.PHASE_CALIB in e["note-rebuild"] and "Measure first" in str(e["note-rebuild"][T.PHASE_CALIB])
     truth = e["note-rebuild"][T.PHASE_TRUTH]                   # step 2's listing, ledgered before any run reads it
     assert truth["sha256"].startswith("3056dcbc") and truth["file"] == "PF/note-rebuild/redo/truth.json"
-    for later in (T.PHASE_VERSIONS, T.PHASE_GO_CHORDS, T.PHASE_GO_CLIPS, T.PHASE_GO_VERSIONS):
+    for later in (T.PHASE_GO_CHORDS, T.PHASE_GO_CLIPS):
         assert later not in e["note-rebuild"]
     for later in (T.PHASE_INSTALL, T.PHASE_NOTES, T.PHASE_EAR):
         assert later not in e["note-rebuild"]                  # each comes with its own PR
@@ -471,6 +482,22 @@ def test_the_users_hum_go_of_2026_11_23():
     assert hum["answer"] == "Continue, record why" and hum["go"] is True
     assert hum["truth_report_sha256"].startswith("425f3fd1") and len(hum["stopping_windows"]) == 18
     assert T.truth_report_refusal({"stopped": [["k", 0.2]]}, e, hum["truth_report_sha256"]) is None
+
+
+def test_the_note_versions_read_on_main():
+    """12m step 5: the read's sha256 and code, ledgered; NV-none is not NV-loud, so `build` refuses without the user's
+    decision (`versions_loud`), and with their recorded "Run as is" it runs with no loudness."""
+    e = T.entries((REPO / "docs" / "dev-test-ledger.json").read_text())["note-rebuild"]
+    rec = e[T.PHASE_VERSIONS]
+    assert rec["sha256"].startswith("8f77f5d7") and rec["file"] == "PF/note-rebuild/redo/versions.json"
+    assert rec["code"] == "NV-none" and rec["gamma"] is None and rec["real_reported_only"] is True
+    assert "not the J0 judge" in rec["distance"]
+    without_go = {k: v for k, v in e.items() if k != T.PHASE_GO_VERSIONS}
+    loud, why = T.versions_loud(without_go)
+    assert loud is None and T.PHASE_GO_VERSIONS in why
+    go = e[T.PHASE_GO_VERSIONS]                                # the user's "Run as is", 2026-11-23
+    assert go["answer"] == "Run as is (Recommended)" and go["go"] is True and go["versions_sha256"] == rec["sha256"]
+    assert T.versions_loud(e) == (None, None)                 # build runs with no loudness
 
 
 def test_the_old_pages_expected_failure_table():

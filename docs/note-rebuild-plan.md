@@ -1056,3 +1056,50 @@ strict cut also drops 18 true pairs that start up to 50 ms early, so its recall 
 | The guard stopped 18 of 79 clips on chords ringing in from before each clip, not hum | "Continue, record why" | The counted notes are ringing chords, not hum (real hum sits 60 to 71 dB down); no rule is changed after the fact. `versions` and `transcribe` read the stopped report only with this go, its `go` true and naming that `truth-report.json` by its sha256 (`truth_report_refusal`); `ladder_refusal` now checks its go's `go` field too |
 
 The guard's rule and every threshold are unchanged.
+
+**Step 5 run: the note-versions read reads `NV-none` (2026-11-23; ledger `phase_nr_1_redo_versions`).** Run once from
+main at aaf97a2d, zero renders, 1,145 s (10 lists, 79 real windows, GOAT's 27), beside other sessions' jobs; the build
+rate, timed on 3 real windows first under load, was 2.28 s a build; the run's own mean was about 0.85 s (1,230
+builds in 1,040 s), against the review's 0.14 to 0.48 s. Every number is by `floored_logmel`, a dry-domain distance to
+the DI, not the J0 judge. **Premise caveat:** the distance's own instrument check failed (the ghost-ladder on
+`chords-four`) and the work went on by the user's go; by that go the real set is reported only and the read rests on
+the 10 lists.
+
+| Set (ring-soft decides) | C = as is − hand | G = loud − hand (γ 1) | G2 (γ 2) | E = hand − true | loud − as is (γ 1) |
+|---|---|---|---|---|---|
+| Lists (10) | +0.56 [−0.14, +1.26] | +0.24 [−0.34, +0.82] | +0.14 [−0.38, +0.66] | +1.81 [+1.20, +2.41] | −0.33 [−0.53, −0.12] |
+| Real (43 files, reported only) | +0.10 [−0.28, +0.47] | −0.04 [−0.40, +0.32] | −0.20 [−0.56, +0.15] | +0.68 [+0.36, +1.00] | −0.14 [−0.20, −0.07] |
+| GOAT (27) | — | — | — | — | −0.04 [−0.10, +0.02] |
+
+- **The code: `NV-none`** at both gammas: C's interval on the lists reaches zero, so the extras' cost is not shown.
+  "Cost not shown" means the set is too quiet or too noisy to say, not "no effect": the test is underpowered (SE 0.38
+  with 10 clusters; one-sided p 0.087). Its declared recommendation: run as is, with the listening page as the guard. A
+  code other than `NV-loud` goes to the user (`phase_nr_1_redo_go_versions`).
+- **Why C reaches zero (the audit's mechanism):** `nv-hand` drops Basic Pitch's same-pitch re-finds of a held note, and
+  `ring-soft` then cuts the held note 150 ms after the kept piece's early end, so on `bend` (C −1.70) and
+  `triads-and-singles` (−0.88) it lands farther from the DI than `nv-asis`; its 50-ms pairing also misses real chord
+  notes in strums. The other 8 lists read +0.22 to +2.03, except `chords-six` (−0.14). Side figure only, entering no
+  reading: `hand-merge` (each paired note extended over its re-finds) reads C +1.18 [+0.43, +1.92] on the lists.
+- **Loudness** moves the rebuild closer than as is on the lists (−0.33, clear of zero) and on the real DIs, about a
+  quarter to a third of a fair C; GOAT is not decided worse.
+- **The chord and soft-note guard fails at both gammas** (lists only, the real set being reported only). Gamma 1:
+  chord notes 0.937 on `nv-asis` against 0.888 on `nv-loud` (holds), soft notes 7 of 10 against 0 of 10 (fails):
+  Basic Pitch no longer re-finds them; in the audio they are 3–5 dB down on their own string. Gamma 2: chords 0.839
+  (fails), soft notes 0.78 against 0.26 of 23 (fails).
+- **The turned-down share** (truth-paired notes turned down by more than 3 dB): P1 0.004 and 0.018, P2 0.007 and 0.023,
+  GOAT 0.063 and 0.157, at gamma 1 and 2.
+- **`other-gap`:** not read, the real set being reported only. Beside: on the real DIs E (+0.68) is clear of zero and
+  larger than C (+0.10), and on the lists E (+1.81) is larger than C too. E is dominated by early note ends together
+  with the re-finds (`ring-soft` truncation) and by spurious bends; loudness is not part of it (hand-loud − hand +0.06
+  on the lists, 0.00 on the real DIs).
+- **The implementer's recompute** (from the per-window records, by plan text, scipy's t): code, readings, guard, shares
+  and every list and GOAT interval agree. The real set's interval ends differ by about 2%: `pipeline_fix.t95` falls back
+  to 1.6449 past 30 degrees of freedom (t is 1.682 at 42); the set is reported only, so no reading moves. The
+  independent check is the audit (CONFIRMED WITH CORRECTIONS): every stored number agrees to 5e-6 with the fallback
+  emulated; its corrections are the wording above.
+
+**The user's decision (2026-11-23, by AskUserQuestion; ledger `phase_nr_1_redo_go_versions`): "Run as is
+(Recommended)".** Rebuild with the tool's notes unchanged and no loudness (`loud` null, the shape `build` reads), then the
+decisive 47-part row (about 13,450 renders). **The next fix target**, recorded now and under its own later declaration:
+a same-pitch merge of a held note's re-finds and a gate for spurious bends (zero renders), taken up only if the row
+shows the rebuild limits the search.
