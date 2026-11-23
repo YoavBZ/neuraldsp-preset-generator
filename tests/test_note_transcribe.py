@@ -248,6 +248,7 @@ def test_calibration_as_fixed():
     assert not T.calibration_ok(27, blind)                                     # caught by no check: the user's go first
     assert not T.calibration_ok(8, blind, covered_reported=True)
     assert T.calibration_ok(27, blind, clips_go=True)
+    assert not T.calibration_ok(27, caught, positive_blocking=["chords-kept"])  # a failing check that stays blocking
 
 
 def test_the_positive_controls_rule_and_the_blocking_set():
@@ -257,8 +258,17 @@ def test_the_positive_controls_rule_and_the_blocking_set():
                            "w2": {"passes": {"judge-accepts": None, "ring-kept": True, "chords-kept": True}}},
               "true": {"w1": {"passes": {"judge-accepts": True, "ring-kept": True, "chords-kept": False}}},
               "ring-soft": {"w1": {"passes": {"judge-accepts": False}}}}          # not a control: never counted
-    assert T.positive_report_only(checks) == ["chords-kept", "ring-kept"]
-    assert T.positive_report_only({"true": {"w": {"passes": {"onsets-found": False}}}}) == []   # already a report
+    assert T.positive_failing(checks) == ["chords-kept", "ring-kept"]
+    assert T.positive_failing({"true": {"w": {"passes": {"onsets-found": False}}}}) == []        # already a report
+    failing = ["chords-kept", "ring-kept"]
+    assert T.positive_report_only(failing, {}) == ([], failing)                  # no go: they stay blocking
+    named = {"go": True, "report_only_checks": ["chords-kept", "judge-accepts", "ring-kept"]}
+    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: named}) == (failing, [])
+    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: {**named, "go": False}}) == ([], failing)
+    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: {"go": True}}) == ([], failing)
+    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: "yes"}) == ([], failing)
+    part = {"go": True, "report_only_checks": ["ring-kept"]}                  # a check the go does not name
+    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: part}) == (["ring-kept"], ["chords-kept"])
     full = T.declared_blocking()
     assert full == {"playing-covered", "judge-accepts", "ring-kept", "chords-kept"}
     assert T.effective_blocking(None, {}) == full
@@ -274,6 +284,22 @@ def test_the_positive_controls_rule_and_the_blocking_set():
     res = {"a|nr-plain": {"onsets-found": False, "playing-covered": False}}
     assert T.clip_case(exp, res) == {"a|nr-plain": "caught by a blocking check"}
     assert T.clip_case(exp, res, T.effective_blocking(None, go)) == {"a|nr-plain": "caught by a report only"}
+
+
+def test_with_no_blocking_check_the_six_clips_are_caught_by_a_report_only():
+    """The rerun's expected case: under both goes no content check blocks, and each of the six declared clips,
+    failing what its line names (as on the first run), is caught by a report only (not by no check)."""
+    e = T.entries((REPO / "docs" / "dev-test-ledger.json").read_text())["note-rebuild"]
+    failing = ["chords-kept", "judge-accepts", "ring-kept"]                    # the first run's positive failures
+    report_only, still = T.positive_report_only(failing, e)
+    assert report_only == failing and still == []
+    blocking = T.effective_blocking({"report_only_checks": report_only}, e)
+    assert blocking == set()
+    table = T.ear_old_table(e)
+    assert len(table) == 6
+    res = {x["clip"]: {k: False for k in x["must_fail_any"]} for x in table}
+    assert set(T.clip_case(table, res, blocking).values()) == {"caught by a report only"}
+    assert T.calibration_ok(8, T.clip_case(table, res, blocking), covered_reported=True, positive_blocking=still)
 
 
 def test_the_calibrations_only_rerun_path():

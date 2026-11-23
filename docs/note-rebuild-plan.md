@@ -1105,7 +1105,7 @@ a same-pitch merge of a held note's re-finds and a gate for spurious bends (zero
 shows the rebuild limits the search.
 
 **Step 7's first `calibrate` stopped, and its fix (2026-11-23; ledger `phase_nr_1_redo_calib_fix`,
-`phase_nr_1_redo_go_calib`).** Run once from main at e0f053cd, zero renders, 246 s (`calibration.json` sha256
+`phase_nr_1_redo_go_calib`, `phase_nr_1_redo_go_guard`).** Run once from main at e0f053cd, zero renders, 246 s (`calibration.json` sha256
 `a18ec73c…3ab8`). It stopped on three counts. `playing-covered` held on 8 of 27 windows, against a declared 25: the
 rebuild is silent for about 10% of the time the DI plays, against a 5% bar, which is the held-note fault the versions
 audit found. `annotated-found` admitted no window. The positive control failed: the true DI failed `chords-kept` on 19
@@ -1115,23 +1115,28 @@ all caught by a blocking check.
 | Asked (AskUserQuestion) | The user's answer | What follows |
 |---|---|---|
 | Two checks are broken (mismatched timelines; no clip admitted); the third catches the deferred held-note fault | "Fix broken checks, go on (Recommended)" | The two checks are fixed below, no threshold changed; `playing-covered` is reported, not a stop, for this run; the listening page is the guard; the 47-part row decides |
+| Even fixed, three checks still fail on the real DI, so all become reported figures and the 13-card page is the only guard before the row | "Proceed, listening page guards (Recommended)" | `chords-kept`, `judge-accepts` and `ring-kept` become reports, named in the go; a check the go does not name stays blocking |
 
 - **`chords-kept` on one timeline.** As run, the DI's notes were moved by `coarse_offset` and the ±20 ms snap, and the
   round trip's were not (`item_102`: −101 ms, F 0.0). Now the round trip goes through the same steps against the audio
   that was transcribed (`round_trip_notes`), in `calibrate`, its negative control and `build`. Measured at zero cost
   from the stored inputs (every rebuilt input identical to the stored one): **the true DI passes on 11 of 27 windows**
-  (8 as run), avg+mild on 0 (1 as run). The true DI's round-trip F has a median of 0.82. The rest is Basic Pitch
-  itself: the DI's notes come from the window with its margins, the round trip from the section alone.
+  (8 as run), avg+mild on 0 (1 as run). The true DI's round-trip F has a median of 0.82. The timeline fix moves only 3
+  windows; the first question to the user put all 19 failures down to the timelines, but the other 16 are Basic
+  Pitch's own variability on the same audio: the DI's notes come from the window with its margins, the round trip from
+  the section alone.
 - **`annotated-found` becomes a report.** No fair test admits GOAT's windows. Measured at zero cost: the declared test
   admits **0 of 27**. Bounding each cluster's rise search halfway to its neighbours also admits 0 of 27. A ±40 ms search
   admits 8 of 25, but random onset times pass it 6 of 75 (median share 0.57), so it does not tell an annotation from
   chance. The ±150 ms search does separate them (0.45 against 0.24), but no window reaches 80%: in GOAT's dense playing
   the steepest rise near a note is often a neighbour's.
-- **The positive control's rule.** A declared blocking check that the true DI or avg+mild still fails on any window,
-  after these fixes, becomes report-only for the row (`report_only_checks`); the user is told; no further stop. From the
-  first run's figures this is expected to cover `chords-kept` (the true DI fails it on 16 of 27), `ring-kept` (avg+mild
-  7) and `judge-accepts` (avg+mild 1). With `playing-covered` reported, no content check would then block: the
-  listening page is the guard, as the user chose.
+- **The positive control's rule.** A declared blocking check that the true DI or avg+mild still fails on any window
+  (one window is enough), after these fixes, becomes report-only for the row only when the user's go names it
+  (`phase_nr_1_redo_go_guard`, `positive_report_only`); a failing check the go does not name stays blocking, and its
+  failure stops the calibration as declared before. From the first run's figures this covers `chords-kept` (the true
+  DI fails it on 16 of 27), `ring-kept` (avg+mild 7) and `judge-accepts` (avg+mild 1), all three named by the user's
+  go. With `playing-covered` reported, no content check then blocks, and each of the six rejected clips is caught by a
+  report only: the listening page is the guard, as the user chose.
 - **Blocking from here on** (`effective_blocking`): the declared blocking checks, less `playing-covered` under the go,
   less the report-only checks; used by the clip cases, `transcribe` and `build`. A rejected clip caught only by a
   report is case (a): recorded, the user told, the work goes on.

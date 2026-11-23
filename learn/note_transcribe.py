@@ -72,6 +72,8 @@ PHASE_CALIB_FIX = "phase_nr_1_redo_calib_fix"     # the calibration's fix (2026-
                                                 #     annotated-found a report, the positive control's rule, the rerun
 PHASE_GO_CALIB = "phase_nr_1_redo_go_calib"       # the user's go after the first calibration stopped (2026-11-23;
                                                 #     playing-covered reported for this run; bound to its sha256)
+PHASE_GO_GUARD = "phase_nr_1_redo_go_guard"       # the user's go that the checks the positive control fails become
+                                                #     reports, the listening page the guard (2026-11-23; names them)
 PHASE_GO_HUM = "phase_nr_1_redo_go_hum"           # ... the user's go after the hum guard stopped the truth report
                                                 #     (2026-11-23; bound to that truth-report.json by its sha256)
 
@@ -381,12 +383,21 @@ def check_verdict(figs, which=NOTE_CHECKS + AUDIO_CHECKS, blocking=None):
     return {"passes": res, "failed": sorted(k for k, v in res.items() if v is False and k in block)}
 
 
-def positive_report_only(checks, controls=("avg+mild", "true")):
-    """(Pure.) The calibration fix's rule (12m, 2026-11-23): a declared blocking check the positive control (avg+mild
-    or the true DI) fails on any window becomes report-only for the row, the user told; no further stop.
+def positive_failing(checks, controls=("avg+mild", "true")):
+    """(Pure.) The declared blocking checks the positive control (avg+mild or the true DI) fails on any window.
     checks: {control: {window: {passes: {check: bool | None}}}}. -> sorted checks."""
     return sorted({k for d in controls for r in (checks.get(d) or {}).values()
                    for k, v in (r.get("passes") or {}).items() if v is False and k in declared_blocking()})
+
+
+def positive_report_only(failing, nr_main):
+    """(Pure.) The calibration fix's rule (12m, 2026-11-23): a check the positive control fails becomes report-only
+    for the row only when main holds the user's go on that effect (`PHASE_GO_GUARD`, its `go` true, naming the check
+    in `report_only_checks`); otherwise it stays blocking (and its failure stops the calibration). -> (report-only
+    checks, checks the positive control fails that stay blocking)."""
+    go = (nr_main or {}).get(PHASE_GO_GUARD)
+    named = set(go.get("report_only_checks") or []) if isinstance(go, dict) and go.get("go") is True else set()
+    return sorted(k for k in failing if k in named), sorted(k for k in failing if k not in named)
 
 
 def effective_blocking(cal_body, nr_main):
@@ -444,13 +455,15 @@ def clip_case(expected, results, blocking=None):
     return out
 
 
-def calibration_ok(covered_windows, cases, clips_go=False, need=CALIBRATION_PASS, covered_reported=False):
+def calibration_ok(covered_windows, cases, clips_go=False, need=CALIBRATION_PASS, covered_reported=False,
+                   positive_blocking=()):
     """(Pure.) The calibration passes (12m, as fixed 2026-11-23, `PHASE_CALIB_FIX`): `playing-covered` holds on at
     least `need` of the 27 windows, unless the user's go makes it a report for this run (`covered_reported`); every
     rejected clip is caught by a check (a clip caught by no check needs the user's go, `PHASE_GO_CLIPS`).
-    `annotated-found` is a report (no fair admission test admits GOAT's windows), and a check the positive control
-    fails becomes report-only (`positive_report_only`): neither stops."""
-    return ((covered_reported or covered_windows >= need)
+    `annotated-found` is a report (no fair admission test admits GOAT's windows); a check the positive control
+    fails becomes report-only under the user's go (`positive_report_only`), and one it fails that stays blocking
+    (`positive_blocking`) stops the calibration, as declared before the fix."""
+    return ((covered_reported or covered_windows >= need) and not positive_blocking
             and (clips_go or "caught by no check" not in cases.values()))
 
 
@@ -1469,9 +1482,10 @@ def cmd_calibrate(_args):
     blocking check; caught by a report only: recorded, the user told, the work goes on; caught by no check: the user's
     go first, `PHASE_GO_CLIPS`). As fixed (`PHASE_CALIB_FIX`, 2026-11-23): the round trips on the DI notes' timeline
     (`round_trip_notes`), `annotated-found` a report, a check the positive control fails made report-only
-    (`positive_report_only`), `playing-covered` reported under the user's go; runs only as the one rerun
+    (`positive_report_only`, only under the user's go `PHASE_GO_GUARD`), `playing-covered` reported under the
+    user's go; runs only as the one rerun
     (`calib_rerun_refusal`). -> redo/calibration.json (its facts go into phase_nr_1_redo_install)."""
-    m = require_redo(PHASE_EAR_OLD, PHASE_CALIB, PHASE_TRUTH, PHASE_CALIB_FIX, PHASE_GO_CALIB)
+    m = require_redo(PHASE_EAR_OLD, PHASE_CALIB, PHASE_TRUTH, PHASE_CALIB_FIX, PHASE_GO_CALIB, PHASE_GO_GUARD)
     aside = CALIB_ASIDE / "calibration.json"
     why = calib_rerun_refusal(m.get(LEDGER_ID), NR.file_sha(aside) if aside.exists() else None,
                               (CALIB_ASIDE / "work-calibrate").is_dir())
@@ -1547,7 +1561,7 @@ def cmd_calibrate(_args):
                     "chords-kept": chords_kept(got, notes_of[it])}
             checks.setdefault(d, {})[it] = {"figures": figs, **check_verdict(figs, AUDIO_CHECKS)}
     positive = {d: sorted(it for it, r in checks[d].items() if r["failed"]) for d in ("avg+mild", "true")}
-    report_only = positive_report_only(checks)
+    report_only, still_blocking = positive_report_only(positive_failing(checks), m.get(LEDGER_ID))
     blocking = effective_blocking({"report_only_checks": report_only}, m.get(LEDGER_ID))
     neg = negative_control(expected, bank, z, meta, excl, offset, work)
     results = {c: r["passes"] for c, r in neg.items()}
@@ -1556,12 +1570,13 @@ def cmd_calibrate(_args):
             "onsets_found_flagged": flagged, "detector_offset_s": offset, "annotated_found": af,
             "ring_corr": corr, "ring_variant": ring, "loud_gamma": loud, "checks": checks, "positive_failures": positive,
             "negative": neg, "clip_cases": cases, "blind_spots": expected_failure_refusal(expected, results),
-            "report_only_checks": report_only, "blocking_checks": sorted(blocking),
+            "report_only_checks": report_only, "positive_still_blocking": still_blocking,
+            "blocking_checks": sorted(blocking),
             "playing_covered_reported": "playing-covered" not in blocking,
             "first_run_sha256": NR.file_sha(aside),
             "gate_sha256": NR.file_sha(gate_path()), "attacks_sha256": NR.file_sha(attacks_path())}
     body["ok"] = calibration_ok(covered, cases, PHASE_GO_CLIPS in (m.get(LEDGER_ID) or {}),
-                                covered_reported=body["playing_covered_reported"])
+                                covered_reported=body["playing_covered_reported"], positive_blocking=still_blocking)
     NR.write_once(calibration_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_CALIB}",
                                        "made": time.strftime("%Y-%m-%d %H:%M:%S"), "body": body})
     print(f"CALIBRATE {'PASS' if body['ok'] else 'STOP'}: blocking {sorted(blocking)}, report-only {report_only}; "

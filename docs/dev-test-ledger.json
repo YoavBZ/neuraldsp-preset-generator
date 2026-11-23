@@ -4668,9 +4668,9 @@
     "declared": "2026-11-23, after the first calibrate run stopped (calibration.json sha256 a18ec73ce485473a7e7786a2d8b43abcf085baf7d6dec3d36c78bc70f3d13ab8) and on the user's answer (phase_nr_1_redo_go_calib); before the rerun. No threshold changed.",
     "first_run": "playing-covered 8 of 27 windows (declared 25; playing share median 0.90 against 0.95); annotated-found no window admitted (0 of 27); the positive control failed: the true DI on 19 of 27 (all chords-kept), avg+mild on 26 (chords-kept 26, ring-kept 7, judge-accepts 1); the six rejected clips all caught by a blocking check (playing-covered fails on all six)",
     "chords_kept": "the round trip's notes go through the same steps as the DI's notes (timed_notes: the clean-up, the notes inside the audio, coarse_offset, the +-20 ms snap) against the audio that was transcribed (note_transcribe.round_trip_notes), in calibrate, its negative control and build; as run, the DI's notes were shifted and the round trip's were not",
-    "chords_kept_measured": "zero cost, from the stored calibration inputs (every rebuilt input identical to the stored one): the true DI passes chords-kept on 11 of 27 windows on one timeline (8 of 27 as run); avg+mild 0 of 27 (1 as run); the true DI's round-trip F median 0.82 (item_102 0.00 -> 0.13). The rest is Basic Pitch itself: the DI's notes come from the window with its margins, the round trip from the section alone",
+    "chords_kept_measured": "zero cost, from the stored calibration inputs (every rebuilt input identical to the stored one): the true DI passes chords-kept on 11 of 27 windows on one timeline (8 of 27 as run); avg+mild 0 of 27 (1 as run); the true DI's round-trip F median 0.82 (item_102 0.00 -> 0.13). The rest is Basic Pitch itself: the DI's notes come from the window with its margins, the round trip from the section alone. The timeline fix moves only 3 windows (8 -> 11 of 27); the true DI's remaining 16 failures are Basic Pitch's own variability on the same audio, not the timelines",
     "annotated_found": "a report, never a gate: no fair admission test admits GOAT's windows. Zero cost: the declared test admits 0 of 27; with each cluster's rise search bounded halfway to its neighbours, 0 of 27 (item_137 0.28 -> 0.33); a +-40 ms search admits 8 of 25 but random onset times pass it 6 of 75 (median share 0.57), so it does not separate an annotation from chance. The +-150 ms rise search does separate them (0.45 against 0.24) but reaches 80% on no window: in GOAT's dense playing the steepest rise near a note is often a neighbour's",
-    "positive_control_rule": "a declared blocking check the true DI or avg+mild fails on any calibration window, after these fixes, becomes report-only for the row (positive_report_only, recorded as report_only_checks); the user is told; no further stop. Expected from the first run's figures: chords-kept (the true DI fails it on 16 of 27 on one timeline), ring-kept (avg+mild 7) and judge-accepts (avg+mild 1), which with playing-covered reported under the user's go leaves no blocking content check: the listening page is the guard",
+    "positive_control_rule": "a declared blocking check the true DI or avg+mild still fails on any calibration window, after these fixes, becomes report-only for the row only when main holds the user's go on that effect (phase_nr_1_redo_go_guard, go true, naming the check in report_only_checks); a failing check the go does not name stays blocking and its failure stops the calibration, as declared before (positive_report_only, calibration_ok positive_blocking). One failing window is enough. Expected from the first run's figures: chords-kept (the true DI fails it on 16 of 27), ring-kept (avg+mild 7) and judge-accepts (avg+mild 1), all three named by the user's go; with playing-covered reported, no content check then blocks: the listening page is the guard",
     "blocking": "effective_blocking: the declared blocking checks less playing-covered under the user's go and less the report-only checks; used by calibrate's clip cases, transcribe and build",
     "calibration_ok": "playing-covered on 25 of 27 unless the user's go makes it a report; every rejected clip caught by a check (caught by no check: the user's go, phase_nr_1_redo_go_clips); annotated-found and the positive control no longer stop it",
     "rerun": "the first calibration.json and its work folder (work/calibrate/) move aside into PF/note-rebuild/redo/calibration.failed-20261123/ (calibration.json, work-calibrate/), never deleted; calibrate then runs once, refusing unless main holds this key and the user's go naming the set-aside record's sha256 (calib_rerun_refusal), and never overwriting calibration.json or work/calibrate/",
@@ -4690,6 +4690,24 @@
     "calibration_file": "PF/note-rebuild/redo/calibration.json (set aside to calibration.failed-20261123/)",
     "playing_covered": "reported, not a stop, for this run (effective_blocking; calibration_ok covered_reported)",
     "guard": "the listening page"
+   },
+   "phase_nr_1_redo_go_guard": {
+    "date": "2026-11-23",
+    "by": "the user",
+    "asked": "Rebuild checks, after fixing them: even fixed, three of the remaining automatic checks still fail on the real DI itself (e.g. note-matching passes the real DI on only 11 of 27 clips, because the note tool reads the same audio slightly differently each time), and the annotation check can't be made fair on dense playing. A check that fails the real guitar can't judge a rebuilt one, so under the amendment all of them become reported figures. That leaves your 13-card listening page as the only guard before the 47-recording search row. Proceed that way?",
+    "how": "AskUserQuestion",
+    "answer": "Proceed, listening page guards (Recommended)",
+    "option_description": "Run with every automatic check reported, not stopping. You listen to 13 cards (missing notes, notes cut short, chords as single notes, extra notes) before the row's ~13,450 renders start.",
+    "relayed_by": "the coordinating session, 2026-11-23",
+    "go": true,
+    "report_only_checks": [
+     "chords-kept",
+     "judge-accepts",
+     "ring-kept"
+    ],
+    "calibration_sha256": "a18ec73ce485473a7e7786a2d8b43abcf085baf7d6dec3d36c78bc70f3d13ab8",
+    "guard": "the 13-card listening page, before the row's renders",
+    "code": "positive_report_only makes a check the positive control fails report-only only when named here; any other failing check stays blocking and stops the calibration"
    }
   },
   {
