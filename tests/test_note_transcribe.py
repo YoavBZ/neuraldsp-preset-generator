@@ -516,7 +516,13 @@ def test_the_ledger_holds_the_declarations():
     assert truth["sha256"].startswith("3056dcbc") and truth["file"] == "PF/note-rebuild/redo/truth.json"
     for later in (T.PHASE_GO_CHORDS, T.PHASE_GO_CLIPS):
         assert later not in e["note-rebuild"]
-    assert T.PHASE_EAR not in e["note-rebuild"]                # the ear verdict comes with its own PR
+    ear = e["note-rebuild"][T.PHASE_EAR]                      # the redo page's verdict (12p): the row stops
+    assert ear["verdict"] == "fault-content" and ear["build"] == "114b862b18b3"
+    assert ear["dry_build_sha256"] == e["preset-ladder"][T.PHASE_DRY]["sha256"]
+    from learn import scratch_notes as SN
+    assert "fault-content" in SN.ear_refusal(e["note-rebuild"], ear["dry_build_sha256"])
+    bad = e["note-rebuild"]["phase_nr_1_redo_bad_di"]
+    assert bad["instruction"] == "Bad DI, don't use it" and "item_5" in bad["mapping"]
     # step 7's hash PR (2026-11-23): the install's facts, the transcription and the build, each bound by sha256
     inst, notes, dry = e["note-rebuild"][T.PHASE_INSTALL], e["note-rebuild"][T.PHASE_NOTES], e["preset-ladder"][T.PHASE_DRY]
     assert T.install_record_refusal(inst, inst["gate_sha256"], inst["calibration_sha256"],
