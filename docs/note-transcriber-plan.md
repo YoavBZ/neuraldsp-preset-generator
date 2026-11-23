@@ -771,16 +771,23 @@ sha256 `664b3f0a…440e`.
 
 Large reads alike, with `tx-vote` at +0.331 precision, −0.055 recall and +0.197 F.
 
-**The readings**, the same on both sizes:
-- `tx-vote` and `tx-ms` raise precision, and F is not worse. They do not hold recall: recall and chord-note recall
-  fall more than 0.05 under `tx-bp`'s.
-- `tx-veto` raises precision, holds recall, and its F is not worse.
-- No arm's ends are better.
+**The readings**, the same on both sizes for the deciding arms (not for `tx-ms-free`, a report-only arm, whose
+precision gain on large is undecided: +0.139 [−0.021, +0.299]):
+- `tx-vote` and `tx-ms` raise precision, and F is not worse. They do not hold recall. The bar reads the pooled
+  values: recall 0.923 / 0.938 and chord-note recall 0.881 / 0.909 (medium / large), against `tx-bp`'s 1.000 and
+  1.000, more than 0.05 under.
+- `tx-veto` raises precision, holds recall (it keeps all but 3 of the 259 true notes on medium, 2 on large), and its F
+  is not worse.
+- No arm's ends are better. The vote and the veto keep Basic Pitch's note-offs, so they cannot improve ends.
+
+**So stage b can only end `TXR-undecided`,** with or without `veto-holds`. `TXR-vote` and `TXR-ms` need recall held on
+the lists as well, and `TXR-ends` needs better ends on the lists; both already failed. (The audit's reading.)
 
 **The screen reads `lists-go` on both sizes,** not `TXR-none`.
 
 **The size pick.** `tx-ms` note F, large − medium, is +0.010 [−0.019, +0.040]: undecided, medium kept. Large stays
-open for the user at the stage-b go.
+open for the user at the stage-b go. Beside it (a report, not the pick's measure): `tx-ms` end accuracy, large −
+medium, is +0.183 [+0.040, +0.326], decided better.
 
 **Speed, beside the pick.** Per gate input on MPS, medium takes 1.97 s and large 4.91 s. Stage b would take 0.07 h
 with medium and 0.18 h with large.
@@ -790,3 +797,22 @@ with medium and 0.18 h with large.
 readings decide no code.
 
 **Next.** An independent audit, then the user's go on stage b (`phase_tx_go_read`), which may name large.
+
+## 17. The user's go on stage b, and their stance (2026-11-23; ledger `phase_tx_go_read`)
+
+After the independent audit confirmed the list screen, the user answered: **run stage b on large.** They were shown
+Basic Pitch's real-DI precision, the screen, the size pick and the speed.
+
+**The user's stance, in their own words:** "I don't see any justification to give up on accuracy for speed in this
+scale."
+
+What follows from it:
+- **Large runs stage b.** `picked_size` honours the go, because the pick is undecided and large's own screen read
+  `lists-go`.
+- **Large is the size for every later MuScriptor stage on this track,** the reserved stems read among them, unless
+  large is measured worse (`later_stage_size`).
+- **No MuScriptor rule downgrades by speed alone.** The gate's two-hour switch to small is retired (`gate_rule` keeps
+  the size). The stage-b slow refusal and its `slow_ok` are retired too (`speed_note` reports and never refuses).
+  Speed is still reported and never decides. No scoring rule changes.
+- **Expected:** stage b can only end `TXR-undecided`, with or without `veto-holds` (section 16). It reads the vote's
+  and the veto's real-DI effect sizes.

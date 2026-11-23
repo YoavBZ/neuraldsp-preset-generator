@@ -516,11 +516,26 @@ def test_the_size_pick_reads_accuracy_and_reports_speed_beside():
     assert X.LIST_KINDS == {"medium": ("list", "list-free"), "large": ("list-large", "list-large-free")}
 
 
-def test_a_slow_pick_goes_to_the_user_and_never_to_small():
+def test_speed_never_decides_a_muscriptor_size():
+    """The user's stance (2026-11-23): no downgrade by speed alone; speed is reported."""
     slow = {"size": "large", "size_pick": {"over_two_hours": True, "projections": {"large": 9000.0}}}
-    assert "to the user" in X.slow_refusal(slow, {"go": "yes"})
-    assert X.slow_refusal(slow, {"go": "yes", "slow_ok": True}) is None
-    assert X.slow_refusal({"size": "medium", "size_pick": {"over_two_hours": False}}, None) is None
+    assert X.speed_note(slow, {"go": "yes"}) == "large's stage b projects 2.50 h (over two hours, reported only)"
+    assert X.speed_note({"size": "medium", "size_pick": {"projections": {"medium": 262.0}}}, None) == \
+        "medium's stage b projects 0.07 h"
+    assert not hasattr(X, "slow_refusal") and not hasattr(X, "size_choice")    # both retired
+    for size in ("medium", "large", "small"):
+        assert X.gate_rule(size, 10 ** 9) == size and X.gate_rule(size, None) == size   # never a switch to small
+    assert X.USER_STANCE.startswith("I don't see any justification to give up on accuracy for speed")
+
+
+def test_later_stages_run_large_unless_large_is_measured_worse():
+    assert X.LATER_STAGE_SIZE == "large"
+    for label in ("undecided, medium kept", "large decided better", "fewer than two shared lists, medium kept"):
+        assert X.later_stage_size({"size_pick": {"label": label}}) == "large"
+    assert X.later_stage_size({"size_pick": {"label": "large decided worse, medium kept"}}) == "medium"
+    assert X.later_stage_size({"size_pick": {"label": "large gate stopped, medium kept"}}) == "medium"
+    assert X.later_stage_size({}) == "large"
+    slow = {"size": "large", "size_pick": {"over_two_hours": True, "projections": {"large": 9000.0}}}
     assert X.picked_size(slow) == "large" and X.picked_size({}) == "medium"   # a screen before the amendment
     open_ = {"size": "medium", "size_pick": {"large_open_for_user": True, "projections": {"large": 9000.0}},
              "sizes": {"medium": {"screen": "lists-go"}, "large": {"screen": "lists-go"}}}
@@ -528,8 +543,7 @@ def test_a_slow_pick_goes_to_the_user_and_never_to_small():
     assert X.picked_size(none_large, {"size": "large"}) == "medium"   # never large on medium's screen
     assert X.picked_size(open_, {"size": "large"}) == "large"     # the user may take large on an undecided pick
     assert X.picked_size({"size": "medium", "size_pick": {"large_open_for_user": False}}, {"size": "large"}) == "medium"
-    assert "large's stage b" in X.slow_refusal(open_, {"size": "large"})
-    assert X.slow_refusal(open_, {"size": "large", "slow_ok": True}) is None and X.slow_refusal(open_, {}) is None
+    assert X.speed_note(open_, {"size": "large"}).startswith("large's stage b")   # reported for the size run
     assert not X.large_stopped({"note-transcriber": {X.PHASE_INSTALL_LARGE: {"gate_sha256": "g"}}})
     stop = {"stopped": "no repeat", "gate_sha256": "g"}
     assert X.large_stop_refusal(stop, "g", {"size": "large", "device": None}) is None
@@ -602,8 +616,7 @@ def test_the_device_and_size_rules():
     assert pr == {"mps": 20.0 * 133, "cpu": 30.0 * 133}           # both recorded and printed
     assert X.projection_s(pr, "cpu") == 30.0 * 133 and X.projection_s(pr, "mps") == 20.0 * 133   # the chosen one
     assert X.projection_s(pr, None) is None
-    assert X.size_choice(X.projection_s(pr, "mps")) == "medium"  # at a made-up 20 s: 44 min on 133 runs, not 88 on 265
-    assert X.size_choice(7200.0) == "medium" and X.size_choice(7200.1) == "small" and X.size_choice(None) == "medium"
+    assert X.gate_rule("medium", X.projection_s(pr, "mps")) == "medium"   # 44 min on 133 runs; speed never decides
     one = [{"notes": [1]}, {"notes": [1]}, {"notes": [2]}, {"notes": [2]}]
     assert X.repeat_table(one, [{"notes": [1]}, {"notes": [3]}], 2) == [True, False]
 
@@ -648,7 +661,7 @@ def test_the_ledger_holds_the_declaration_and_the_go():
     e = X.tx_entries(LEDGER.read_text())["note-transcriber"]
     assert e["plan"] == X.PLAN and (REPO / X.PLAN).exists()
     assert X.PHASE in e and X.PHASE_GO in e
-    for later in (X.PHASE_GO_READ, X.PHASE_NOTES, X.PHASE_READ, X.PHASE_BRIDGE) + X.RESERVED_PHASES:
+    for later in (X.PHASE_NOTES, X.PHASE_READ, X.PHASE_BRIDGE) + X.RESERVED_PHASES:
         assert later not in e                                     # each comes with its own PR
     inst = e[X.PHASE_INSTALL]                                     # the hash PR: the shape `require_install` reads
     assert inst["size"] == "medium" and inst["device"] == "mps"
@@ -671,6 +684,9 @@ def test_the_ledger_holds_the_declaration_and_the_go():
     assert X.lists_go_refusal(lists) is None and lists["size"] == X.picked_size(lists) == "medium"
     assert re.fullmatch(r"[0-9a-f]{64}", lists["sha256"]) and lists["size_pick"]["label"] == X.PICK_UNDECIDED
     assert lists["size_pick"]["large_open_for_user"] and set(lists["screens"]) == set(X.SCREENED_SIZES)
+    go_read = e[X.PHASE_GO_READ]                                  # the user's stage-b go and stance
+    assert go_read["size"] == "large" and go_read["stance"] == X.USER_STANCE and go_read["date"] == "2026-11-23"
+    assert "slow_ok" not in go_read and X.private_keys(go_read) == []
     go = e[X.PHASE_GO]
     assert go["answer"] == "Go, I'll get access" and len(go["key_terms"]) == 4
     terms = " ".join(go["key_terms"])
