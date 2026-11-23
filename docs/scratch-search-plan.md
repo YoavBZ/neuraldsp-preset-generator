@@ -16,7 +16,10 @@ deciding on the user's exception for that row only. It does not touch rows (b) a
 asks where row (c)'s loss is made, is declared in
 [section 11](#11-the-tone-split-2026-11-23-ledger-phase_scratch_tone) (ledger `phase_scratch_tone`) on the user's go.
 It re-scores stored answers only (846 renders) and touches no shared code. The search row `fs-tone` is held, not
-declared. Not run.
+declared. **Run 2026-11-23 and audited** (`phase_scratch_tone_split`): the clip moves the yardstick (Cen), not the
+found presets, so rows (b) and (c) stand and are not redone (the user's decision). Declared with it: the gentle-fix CPU
+check (11f, `phase_scratch_tone_gentle`, zero renders) and the clip-free re-score beside new rows (11g,
+`phase_scratch_tone_beside`).
 **2026-11-23:** the codec ceiling, row `fs-codec`, is declared in [section 12](#12-the-fs-codec-row) (ledger
 `phase_scratch_codec`): the true DI after a latent codec's round trip (`rt-m2l`, LOUDAR's latent; `rt-dac`) drives a
 50-evaluation search, read per part against rows (b) and (c) on the full pool. It does not touch rows (b) and (c),
@@ -537,6 +540,104 @@ Otherwise each code goes to the user on its own line. A formal redo of both rows
 
     $MAIN -m learn.scratch_tone split --shard 0/3    # and 1/3, 2/3: 846 renders in all
     $MAIN -m learn.scratch_tone split-read           # zero renders, once -> raw hand-back, audit, results PR
+
+**Run 2026-11-23 and audited** ([results](scratch-search-results.md#the-tone-split-the-measure-steps-clip-priced-track-4),
+`phase_scratch_tone_split`):
+- **`MC-c-moves`** is Cen scoring 0.110 worse through the clip-free DI, with answer (c) level.
+- **`MC-b-moves`** is at its threshold, and no action rests on it.
+- **`TN-short`** comes from `C_tilt` −0.030 alone; the planted tilt and the average balance are level.
+- **The user's decision (2026-11-23, in chat, "Ok"):** rows (b) and (c) are not redone; a gentler fix is priced on CPU
+  (11f); new dry-guitar rows report a clip-free re-score beside the coded one (11g).
+
+### 11f. The gentle-fix CPU check (declared 2026-11-23; ledger `phase_scratch_tone_gentle`; zero renders)
+
+**Why.** The clip-free DI fixes the balance (1.26 dB from the average on the 47, max 2.05; coded 2.81, max 7.14). But
+it adds up to +13.4 dB of energy above 8 kHz and +9.8 dB of peak, a hiss risk (the user's decision, item 2). The
+check prices gentler versions on CPU before anything else.
+
+**The variants** (`GENTLE`; new functions `applied_gain` and `gentle_measure`; `song_bank.measure` and
+`direc_check.eq_to` unchanged). Every variant applies the measure step's asked gain as the coded step does out of band
+(below 80 Hz and above 8 kHz: the coded ±15 dB clip, so no boost beyond today's there), and differs only in band:
+
+| Variant | In band (80 Hz to 8 kHz) |
+|---|---|
+| `wide24` | the coded gain's frame, clipped at ±24 dB instead of ±15 |
+| `centred24` | the clip window centred on the in-band gain's mean, ±24 dB about it |
+| `band-open` | no clip in band (the clip-free fix in band only) |
+
+The coded DI and `true-noclip` are computed beside as references, in the same run. Every DI is back at −22.9 LUFS.
+
+**Measures,** per part against the coded DI, pooled as mean and max over the 47 parts:
+- distance from the average balance (in band, weights 1/f, the weighted mean removed);
+- the rise in energy above 8 kHz and below 80 Hz;
+- the rise in peak;
+- reach: whether the variant's in-band change from the coded DI's spectrum, centred in band, goes past ±12 dB.
+
+**Bars** (`GENTLE_BARS`, each inclusive). A variant passes only if every bar holds:
+
+| Bar | Bound | Clip-free | Coded |
+|---|---|---|---|
+| Distance from the average, mean | ≤ 1.5 dB | 1.26 | 2.81 |
+| Distance from the average, max | ≤ 2.5 dB | 2.05 | 7.14 |
+| Energy above 8 kHz, mean rise | ≤ 1.0 dB | +3.1 | 0 |
+| Energy above 8 kHz, max rise | ≤ 3.0 dB | +13.4 | 0 |
+| Peak, mean rise | ≤ 1.0 dB | +1.6 | 0 |
+| Peak, max rise | ≤ 3.0 dB | +9.8 | 0 |
+| Energy below 80 Hz (hum), max rise | ≤ 3.0 dB | — | 0 |
+
+**Why these bars:**
+- **Distance:** within 0.25 dB of the clip-free mean and 0.5 dB of its max, and far under the coded max. So a passing
+  variant fixes the balance in the clip-free DI's sense.
+- **Caps:** 3 dB is a doubling of power, the most any one part may rise above 8 kHz, below 80 Hz or in peak without a
+  listen; a 1 dB mean keeps the typical change small.
+- **Test:** the clip-free DI fails both caps.
+
+**The codes** (`GV_TABLE`, `gv_code`; exactly one; tested):
+
+| Code | When | What it tells the user |
+|---|---|---|
+| `GV-pass` | at least one variant meets every bar | a gentler fix brings the scoring DI near the clip-free balance without its side effects; the passing variant with the lowest mean distance is the candidate. Adopting it anywhere (the scoring DI, the product's measure step) is the user's decision, forward only, under its own declaration; it changes no stored value and licenses no render |
+| `GV-caps` | no variant meets every bar; at least one meets both distance bars | the balance can be fixed only with side effects past the caps at these settings: keep the measure step as coded, or a listen to the side effects first |
+| `GV-none` | no variant meets both distance bars | keep the measure step as coded; any other variant (a second pass, another target) needs its own declaration |
+
+**Guards:**
+- `learn.scratch_tone gentle` refuses unless this checkout runs main's split code and keys (`on_main`) and main holds
+  `phase_scratch_tone_gentle`.
+- The coded DI is checked against fit v1's sha256 on every part.
+- Every built DI must be finite and the section's length.
+- Output: `PF/fs/tone/gentle-v1.json`, written once; the read happens once.
+
+**Cost:** zero renders, CPU only. The fit's like work on the 47 parts measured 62 s.
+
+### 11g. The clip-free re-score beside new rows (declared 2026-11-23; ledger `phase_scratch_tone_beside`; not coded yet)
+
+**What.** For each new dry-guitar row (`fs-notes`, `fs-codec`), the row's stored, hashed settings are rendered again
+through `true-noclip` (fit v1's file for the part, its sha256 checked). Each is primed alone and judged on the held half
+against the clean record, with the coded DI as the judge's DI, exactly as in this split.
+
+**Cen.** Cen through `true-noclip` is this split's stored value: the same render. As a control, Cen is rendered again
+through `true-noclip` on the row's first BKS and first GOAT part and must repeat the split's value and render sha256
+exactly.
+
+**Reported** per arm:
+- G through `true-noclip`, against Cen through `true-noclip`;
+- the decomposition this split's audit requires: the answer's own shift, with Cen's shift beside;
+- the row's number paired against row (c) through `true-noclip`, beside its coded one.
+
+Against row (b) through `true-noclip` the pairing is biased by row (b) being off its search DI, and is said so.
+
+**Reported only; it never decides.** It never changes a row's code, threshold or recommendation. It is read once,
+after the row's own read.
+
+**Renders** (about 1 a second on 3 processes, as this split measured):
+
+| Row | What is rendered again | Renders |
+|---|---|---|
+| `fs-notes` | the answer and the shrunk answer: 47 × 2 × 2, plus the control's 4 | 192 |
+| `fs-codec`, short row | each codec's `cp50`, 47 × 2 a codec (188 for both), row (c)'s `cp50` once (94) and the control's 4 | 286 |
+| `fs-codec`, full row | its answer and shrunk answer, as `fs-notes` | 188 a codec |
+
+**Coded with the first row that needs it,** under this key and before that row is read.
 
 ## 12. The `fs-codec` row
 

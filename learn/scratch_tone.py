@@ -18,6 +18,11 @@ every time (18 renders a part, `ARMS`):
     $MAIN -m learn.scratch_tone fit                  # zero renders, before the declaration: its version and sha256
     $MAIN -m learn.scratch_tone split --shard 0/3    # and 1/3, 2/3: 846 renders in all
     $MAIN -m learn.scratch_tone split-read           # zero renders, once: P_c, P_b, the C numbers, phi, the codes
+    $MAIN -m learn.scratch_tone gentle               # zero renders, once (phase_scratch_tone_gentle): GV_TABLE's code
+
+`gentle` (section 11f, declared with the split's audited outcome): the measure step's gain applied in band by three
+declared variants (`GENTLE`; out of band always as coded), each against the coded DI and the clip-free DI on the 47
+parts, read against `GENTLE_BARS` by `gv_code`. `song_bank.measure` and `direc_check.eq_to` stay unchanged.
 
 `fit` runs from any checkout whose `learn/scratch_search.py` and `phase_fs*` keys are main's; `split` and `split-read`
 refuse unless this checkout runs main's `learn/scratch_search.py` and `learn/scratch_tone.py` and main's
@@ -48,6 +53,8 @@ PLAN = "docs/scratch-search-plan.md"
 SECTION = 11
 PHASE = "phase_scratch_tone"             # this declaration (the fit's version and sha256, the user's go)
 PHASE_SPLIT = "phase_scratch_tone_split" # the audited outcome
+PHASE_GENTLE = "phase_scratch_tone_gentle"   # the gentle-fix CPU check (zero renders), declared with the outcome
+PHASE_BESIDE = "phase_scratch_tone_beside"   # the clip-free re-score beside new rows (declared; coded later)
 KEY_PREFIX = "phase_scratch_tone"
 HELD_KEYS = ("phase_scratch_tone_hook", "phase_scratch_tone_answers", "phase_scratch_tone_outcome")  # held: fs-tone
 HELD_ROW = "fs-tone"
@@ -864,6 +871,190 @@ def cmd_fit(_args):
           f"declaration as {PHASE})")
 
 
+# --- the gentle-fix CPU check (zero renders; `phase_scratch_tone_gentle`) ------------------------------------------------------
+
+GENTLE_VERSION = 1
+GENTLE = {       # variant: how the measure step's asked gain is applied in band (80 Hz to 8 kHz); out of band as coded
+    "wide24": {"centre": "full", "in_band": 24.0,
+               "what": "the coded gain's frame, the in-band clip widened to +-24 dB; out of band the coded +-15"},
+    "centred24": {"centre": "band", "in_band": 24.0,
+                  "what": "the clip window centred on the in-band gain's mean, +-24 dB in band; out of band the coded "
+                          "+-15"},
+    "band-open": {"centre": "full", "in_band": None,
+                  "what": "no clip in band; out of band the coded +-15 (the fix in band only)"}}
+GENTLE_REFS = ("coded", NOCLIP)          # computed beside: song_bank.measure, and the clip-free DI
+GENTLE_BARS = {  # (measure, statistic, bound): every one must hold for a variant to pass (on the 47 parts)
+    "dist_mean": ("dist_from_average", "mean", 1.5),     # clip-free 1.26, coded 2.81
+    "dist_max": ("dist_from_average", "max", 2.5),       # clip-free 2.05, coded 7.14
+    "hf_mean": ("hf_rise_db", "mean", 1.0),              # clip-free +3.1
+    "hf_max": ("hf_rise_db", "max", 3.0),                # clip-free +13.4
+    "peak_mean": ("peak_rise_db", "mean", 1.0),          # clip-free +1.6
+    "peak_max": ("peak_rise_db", "max", 3.0),            # clip-free +9.8
+    "lf_max": ("lf_rise_db", "max", 3.0)}                # below 80 Hz (hum)
+DIST_BARS = ("dist_mean", "dist_max")
+GV_TABLE = (     # (code, when, what it tells the user); every reading on the 47 parts, zero renders
+    ("GV-pass", "at least one variant meets every bar",
+     "a gentler fix brings the scoring DI near the clip-free balance without the clip-free side effects; the passing "
+     "variant with the lowest mean distance is the candidate. Adopting it anywhere is the user's decision, forward "
+     "only, under its own declaration; it changes no stored value and licenses no render"),
+    ("GV-caps", "no variant meets every bar; at least one meets both distance bars",
+     "the balance can be fixed only with side effects past the caps at these settings: to the user, keep the measure "
+     "step as coded or a listen to the side effects first"),
+    ("GV-none", "no variant meets both distance bars",
+     "none of the declared variants brings the balance near the clip-free one: keep the measure step as coded; any "
+     "other variant (a second pass, another target) needs its own declaration"))
+GV_CODES = tuple(c for c, *_ in GV_TABLE)
+
+
+def applied_gain(g, f, spec, band=BAND, clip=CLIP_DB):
+    """(Pure on arrays.) A variant's applied gain on the measure step's bins: out of band the coded clip (+-15) on the
+    asked gain g; in band g clipped to +-spec["in_band"] about 0 ("full", the coded frame) or about g's in-band mean
+    ("band"), or g unclipped (None). With in_band = 15 in the full frame it is the coded clip exactly."""
+    import numpy as np
+
+    g = np.asarray(g, np.float64)
+    a = np.clip(g, -clip, clip)
+    m = (f >= band[0]) & (f <= band[1])
+    if spec["in_band"] is None:
+        a[m] = g[m]
+    else:
+        c = float(g[m].mean()) if spec["centre"] == "band" else 0.0
+        a[m] = np.clip(g[m] - c, -spec["in_band"], spec["in_band"]) + c
+    return a
+
+
+def gentle_measure(raw, variant):
+    """A gentle variant of the measure step on a raw section: its applied gain (`applied_gain`), interpolated and
+    applied as `direc_check.eq_to` does, then `to_lufs`. A new function; `song_bank.measure` is unchanged."""
+    import numpy as np
+
+    from learn.direc import SPEC_N
+    from learn.direc_check import SR, to_lufs
+
+    x = np.asarray(raw).astype(np.float64)
+    f = np.fft.rfftfreq(SPEC_N, 1 / SR)
+    a = applied_gain(measure_gain(x), f, GENTLE[variant])
+    n = len(x)
+    gg = np.interp(np.fft.rfftfreq(n, 1 / SR), f, a)
+    return to_lufs(np.fft.irfft(np.fft.rfft(x) * 10 ** (gg / 20), n))
+
+
+def gentle_part(y, coded, avg_target):
+    """One variant's measures for a part against the coded DI: its distance from the average balance (in band), the
+    rise in energy above 8 kHz and below 80 Hz, the rise in peak, and whether its applied in-band change from the coded
+    DI's spectrum goes past the EQ's +-12 dB anywhere in band (`beyond_reach` on the change, centred in band)."""
+    import numpy as np
+
+    from learn.direc_check import SR
+
+    y, coded = np.asarray(y, np.float64), np.asarray(coded, np.float64)
+
+    def energy(x, sel):
+        e = np.abs(np.fft.rfft(x)) ** 2
+        return e[sel(np.fft.rfftfreq(len(x), 1 / SR))].sum()
+    sy, sc = spectrum(y), spectrum(coded)
+    f = _bins()
+    m = (f >= BAND[0]) & (f <= BAND[1])
+    d = (sy - sc)[m]
+    d = d - d.mean()
+    return {"dist_from_average": band_distance(sy, avg_target),
+            "hf_rise_db": float(10 * np.log10(energy(y, lambda q: q > BAND[1]) / energy(coded, lambda q: q > BAND[1]))),
+            "lf_rise_db": float(10 * np.log10(energy(y, lambda q: q < BAND[0]) / energy(coded, lambda q: q < BAND[0]))),
+            "peak_rise_db": float(20 * np.log10(np.abs(y).max() / np.abs(coded).max())),
+            "change_max_db": float(d.max()), "change_min_db": float(d.min()),
+            "beyond_reach": beyond_reach(float(d.max()), float(d.min()))}
+
+
+def gentle_stats(parts, name):
+    """(Pure.) A variant's measures pooled over the parts: mean and max of each, and the parts beyond reach."""
+    rows = [p[name] for p in parts.values()]
+    out = {"parts": len(rows), "beyond_reach": sum(bool(r["beyond_reach"]) for r in rows)}
+    for q in ("dist_from_average", "hf_rise_db", "lf_rise_db", "peak_rise_db"):
+        v = [r[q] for r in rows]
+        out[q] = {"mean": sum(v) / len(v), "max": max(v)}
+    return out
+
+
+def bars_met(stats):
+    """(Pure.) {bar: met} for a variant's pooled stats (GENTLE_BARS; each bound inclusive)."""
+    return {b: stats[q][s] <= bound for b, (q, s, bound) in GENTLE_BARS.items()}
+
+
+def gv_code(stats_by_variant):
+    """(Pure.) GV_TABLE's code from every declared variant's pooled stats. -> {code, passing, best, distance_only,
+    bars, tells}."""
+    if set(stats_by_variant) != set(GENTLE):
+        raise SystemExit(f"gv_code needs every declared variant, not {sorted(stats_by_variant)}")
+    bars = {v: bars_met(s) for v, s in stats_by_variant.items()}
+    passing = sorted(v for v, b in bars.items() if all(b.values()))
+    dist = sorted(v for v, b in bars.items() if all(b[q] for q in DIST_BARS))
+    code = "GV-pass" if passing else "GV-caps" if dist else "GV-none"
+    best = min(passing, key=lambda v: (stats_by_variant[v]["dist_from_average"]["mean"], v)) if passing else None
+    return {"code": code, "passing": passing, "best": best, "distance_bars_met": dist, "bars": bars,
+            "tells": dict((c, t) for c, _, t in GV_TABLE)[code]}
+
+
+def gentle_path(version=GENTLE_VERSION):
+    return tone_dir() / f"gentle-v{version}.json"
+
+
+def cmd_gentle(_args):
+    """The gentle-fix CPU check (zero renders), once: per part of the draw the raw section, the coded DI (checked
+    against the fit's sha256), the clip-free DI and each GENTLE variant, each one's `gentle_part` against the coded DI;
+    pooled per variant (`gentle_stats`, the references beside), then `gv_code`. -> PF/fs/tone/gentle-v<version>.json.
+    It refuses unless this checkout runs main's split and main holds `phase_scratch_tone_gentle`."""
+    table_guard()
+    m, why = on_main()
+    if why:
+        raise SystemExit(why)
+    if PHASE_GENTLE not in (m or {}):
+        raise SystemExit(f"main's {LEDGER_ID} entry has no {PHASE_GENTLE}: merge the declaration first")
+    S.never_overwrite(gentle_path())
+    draw = S.require_draw()
+    p_fit = fit_path()
+    if not p_fit.exists() or S.file_sha(p_fit) != ((m.get(PHASE) or {}).get("fit") or {}).get("sha256"):
+        raise SystemExit(f"the fit is not main's {PHASE} fit")
+    fit = json.loads(p_fit.read_text())
+    import numpy as np
+
+    from learn import confirm_run as CR
+    from learn import pipeline_fix as P
+    from learn import pretrain_set as PS
+
+    sd = NR.Stored()
+    if sd.st["sha256"] != draw["c3r_sha256"]:
+        raise SystemExit("C3r's state changed since the draw")
+    avg_target = np.load(CR.AVERAGE)
+    parts, t0 = {}, time.time()
+    for p in sorted(draw["parts"], key=lambda q: q["pkey"]):
+        k = p["pkey"]
+        prt = sd.units[(p["set"], p["unit"], p["amp"])]["prt"]
+        raw = np.asarray(PS.section_audio(prt["di_path"], prt["start_s"]), np.float64)
+        di32 = NR.di_section(prt)
+        if S.npy_sha(di32) != fit["parts"][k]["sha256"][CODED]:
+            raise SystemExit(f"{k}: the coded DI is not the fit's")
+        coded = np.asarray(di32, np.float64)
+        ys = {"coded": coded, NOCLIP: np.asarray(np.asarray(no_clip_measure(raw), np.float32), np.float64),
+              **{v: np.asarray(np.asarray(gentle_measure(raw, v), np.float32), np.float64) for v in GENTLE}}
+        for v, y in ys.items():
+            if len(y) != len(coded) or not np.isfinite(y).all():
+                raise SystemExit(f"{k}: the {v} DI is not finite or not the section's length")
+        parts[k] = {"set": p["set"], "cls": p["cls"], **{v: gentle_part(y, coded, avg_target) for v, y in ys.items()}}
+    stats = {v: gentle_stats(parts, v) for v in GENTLE_REFS + tuple(GENTLE)}
+    out = {"plan": PLAN, "section": SECTION, "ledger": f"{LEDGER_ID} {PHASE_GENTLE}", "version": GENTLE_VERSION,
+           "fit_sha256": S.file_sha(p_fit), "renders": 0, "variants": GENTLE, "bars": GENTLE_BARS, "stats": stats,
+           "time": time.strftime("%Y-%m-%d %H:%M:%S"), "seconds": time.time() - t0, "parts": parts}
+    gv = gv_code({v: stats[v] for v in GENTLE})
+    P.save(gentle_path(), dict(out, code=gv))      # written once
+    for v in GENTLE_REFS + tuple(GENTLE):
+        s = stats[v]
+        print(f"{v}: distance {s['dist_from_average']['mean']:.2f} (max {s['dist_from_average']['max']:.2f}); "
+              f"HF {s['hf_rise_db']['mean']:+.2f} (max {s['hf_rise_db']['max']:+.2f}); peak "
+              f"{s['peak_rise_db']['mean']:+.2f} (max {s['peak_rise_db']['max']:+.2f}); LF max "
+              f"{s['lf_rise_db']['max']:+.2f}; beyond reach {s['beyond_reach']}")
+    print(f"GENTLE {gv['code']}: passing {gv['passing']}; best {gv['best']}. {gv['tells']}")
+
+
 # --- the split (renders) -------------------------------------------------------------------------------------------------------
 
 def score_dry(p, select, settings, dry32, judge_di32, sd, new_renderer, clean=None):
@@ -1104,7 +1295,7 @@ def cmd_split_read(_args):
     print(f"the average balance's cost (-C_avg) on BKS+GOAT: {rows['average_balance_cost']['bks_goat']}")
 
 
-COMMANDS = {"fit": cmd_fit, "split": cmd_split, "split-read": cmd_split_read}
+COMMANDS = {"fit": cmd_fit, "split": cmd_split, "split-read": cmd_split_read, "gentle": cmd_gentle}
 
 
 def main(argv=None):

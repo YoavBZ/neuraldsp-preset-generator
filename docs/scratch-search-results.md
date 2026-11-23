@@ -10,6 +10,12 @@ from the 47 per-part score records, and each came back PASS WITH CORRECTIONS; al
 - Code: `learn/scratch_search.py`.
 - **The cell is F-both**, after (b) passes and (c) passes. [Row (c)'s section](#row-c-fs-both-the-blurred-dry-guitar-against-the-stem)
   covers its result and what it licenses. Row (a) does not run.
+- **The tone split** (plan section 11, `phase_scratch_tone_split`) ran 2026-11-23 and was audited.
+  - The measure step's clip moves the yardstick (Cen +0.110 worse through a clip-free DI), not the found presets
+    (answer (c) level).
+  - So rows (b) and (c) stand as self-consistent and, by the user's decision, are not redone.
+  - [Its section](#the-tone-split-the-measure-steps-clip-priced-track-4) covers the numbers, the user's decision and
+    the two declared follow-ups.
 
 Every number is **by the score** (J0, ln(d_row / d_against) on the held half against the clean record; below zero is
 closer), never heard. 90% cluster t intervals. "Passes" = decided better with the mean at −0.10 or beyond.
@@ -270,3 +276,131 @@ Row (c) says nothing in these cases:
 
 The halves and the target are as in row (b): adjacent halves of the same recording and rig, and the score judged
 against the clean record, not the stem. Nothing in the product changes.
+
+## The tone split: the measure step's clip, priced (track 4)
+
+**Ran 2026-11-23 and audited** (an independent recompute from the 47 per-part files: CONFIRMED WITH CORRECTIONS; all
+six corrections are taken below). Declaration: [plan section 11](scratch-search-plan.md#11-the-tone-split-2026-11-23-ledger-phase_scratch_tone),
+ledger `phase_scratch_tone`; outcome `phase_scratch_tone_split`. Code: `learn/scratch_tone.py`. Every number is **by
+the score**.
+
+**The question.** The measure step clips the correction it asks for at ±15 dB, so the scoring DI sits 2.8 dB from the
+average guitar's balance on the 47 parts (max 7.1), against 1.3 dB without the clip (max 2.0). Rows (b) and (c)'s
+stored answers were scored again through a clip-free DI (`true-noclip`), and row (c)'s answer through dry guitars that
+each carry one part of its blur.
+
+### What ran
+
+- 846 renders (47 parts × 18), about 14 minutes on 3 processes, from a frozen worktree of main at `42cd5953`. The read
+  ran once, at zero renders.
+- The Cen control (Cen through the coded DI, equal to both rows' stored value and render sha256) was exact on 47 of 47
+  parts. No part refused, and no render was non-finite.
+- A first launch stopped on every shard's first part, because a stereo render reached a spectrum (fixed in #554). It
+  cost 6 renders, none of them kept.
+- The judge's DI was the coded DI for every render, as declared.
+
+### The measure step: the fix moves the yardstick, not the presets
+
+| | Pool | BKS+GOAT |
+|---|---|---|
+| `P_c`: row (c)'s G through `true-noclip`, less its stored G | −0.121 [−0.183, −0.059] | −0.129 [−0.201, −0.057] |
+| of which Cen's shift (Cen through `true-noclip` against the coded DI) | +0.110 [+0.047, +0.173] worse | +0.117 worse |
+| of which answer (c)'s own shift (`C_fix`) | −0.011 [−0.042, +0.021], level | −0.012, level |
+| `P_b`: the same for row (b) | +0.051 [+0.016, +0.085] | +0.031 [−0.002, +0.065] |
+| of which answer (b)'s own shift | +0.161 [+0.072, +0.251] worse | +0.148 worse |
+
+Each P is the answer's own shift less Cen's shift; this holds per part to 2e-16.
+
+- **`MC-c-moves`, read as the decomposition.** Cen is 0.110 worse through the clip-free DI, and answer (c) is level
+  (`C_fix` −0.011). So `P_c` measures the yardstick moving, not row (c)'s answer getting closer to the record.
+  - The cause is the fix's intended effect. Cen's shift follows the in-band clip residual (Spearman +0.80; partial
+    +0.67 holding the high-frequency rise), not the high-frequency rise (partial −0.04) or the peak rise (−0.10).
+  - On the 6 parts where the clip-free DI is bit-identical to the coded one, `P_c`, `P_b` and Cen's shift are exactly
+    0.
+  - Split by clip residual: the lower half (0.7 dB) gives `P_c` −0.014, the upper half (3.9 dB) −0.255.
+  - The fuller re-balance moves the DI further from the raw guitar that made the record. A fixed preset (Cen) pays the
+    full cost. Answer (c) was searched through avg+mild, which already carries the average balance, so it pays nothing.
+- **`MC-b-moves` is at its threshold** (mean +0.0507). It fails when one cluster or one panel DI file is dropped
+  (+0.042 to +0.063). BKS+GOAT is undecided, and clean (+0.088) and crunch (−0.025) have opposite signs. **No action
+  rests on it.** Its content is expected: an answer searched on the coded DI loses more than Cen when the DI changes.
+- **Rows (b) and (c) stand as self-consistent.** Each was searched and scored against the coded yardstick. Fixing the
+  clip would add about 0.1 to every stored G against Cen (0.15 to 0.2 on clean). It would not move a found preset
+  closer to its record.
+
+**The share of row (b)'s gain row (c) keeps:**
+- **Stored:** 0.47 on the pool (0.33 on BKS+GOAT).
+- **Re-scored on one yardstick:** 1.02 (0.93). This figure is **biased high by row (b) being off its search DI**: 70%
+  of its rise comes from answer (b)'s +0.161 off-DI loss.
+- **The bracket:** 0.63 to 1.02 (BKS+GOAT 0.57 to 0.93), depending on whether a redone row (b) would regain all or none
+  of that loss. It rests on assumptions; only row (b)'s redo would measure it. Both ends exceed the stored share.
+- ***Mixed*** ((c) re-scored over (b) stored; a mixed figure, not a share on one yardstick): 0.85 (0.82).
+
+**Within the EQ's reach** (9 parts, 7 BKS and 2 GOAT): `P_c` −0.009, `P_b` −0.001. This is **not evidence either way**.
+Three of the 9 have a bit-identical DI, and reach is defined on the measure step's whole ask, not on what the fix
+adds (3 of the 6 bit-identical parts count as beyond). The clip-residual split above is the right test.
+
+### Where row (c)'s loss is made (BKS+GOAT): `TN-short`
+
+| Number | BKS+GOAT | Clean | Crunch |
+|---|---|---|---|
+| `C_fix` (the average balance, by the fix) | −0.012 [−0.057, +0.032] | −0.052 | +0.027 |
+| `C_avg` (the average balance, stored `avg`) | +0.004 [−0.043, +0.051] | −0.032 | +0.040 |
+| `C_planted` (the planted tilt) | −0.003 [−0.027, +0.022] | −0.007 | +0.002 |
+| `C_tilt` (the truth-fitted tilt) | −0.030 [−0.056, −0.005] | −0.071 | +0.010 |
+| `C_blur` (the whole blur, through avg+mild) | +0.179 [+0.089, +0.268] | +0.195 | +0.162 |
+
+- **`TN-short`: "the tone costs (`C_tilt`); not a heard size by the split."**
+  - `C_tilt` is the only C number below zero. Its mean is under 0.05, so no action rests on it.
+  - The planted tilt and the average balance are level.
+  - It is **not shown by the split** that row (c)'s loss is carried by the dry guitar's static tone.
+  - "Not a heard size" is not "the static tone is cheap": on clean, `C_tilt` is −0.071 at φ 0.74.
+- **The average balance's cost** (−`C_avg`): −0.004 [−0.051, +0.043] on BKS+GOAT, −0.008 on the pool. Level, not
+  readable by the score.
+- **`C_blur` is dominated by the blur's damage beyond tone** (smear, soft clip and bleed): Cen alone scores +0.324
+  worse through avg+mild.
+- **φ:**
+  - By render: 0.47 on BKS+GOAT; 0.74 on clean (per-part median 0.80, GOAT clean 0.92); 0.20 on crunch.
+  - From the EQ answers: 0.22; 0.44 on clean; 0.00 on crunch.
+  - By render reads about twice the EQ estimate on clean, because the whole chain, not only the 9 bands, takes up the
+    dry guitar's tone.
+- **The no-drive, no-compressor answers** (15 parts on answer (c); BKS+GOAT read): `P_c` −0.188, `C_tilt` −0.042,
+  `C_blur` +0.255, the tone numbers level. They point the same way as the 40.
+
+**On clean, the search bakes the dry guitar's balance into the preset** (φ about 0.8 by render). For the product:
+- A rebuilt DI enters through `song_bank.measure`, and on clean its balance error goes into the preset. The measure
+  step's balance therefore matters there.
+- The clip residual (about 2.3 dB mean, max 7) is small next to a guitar's own distance from the average (7.7 dB raw).
+- No score here shows a product loss. Any product change is forward-only and follows the gentle-fix CPU check (plan
+  11f).
+
+### The fix's side effects
+
+- The measure step's whole ask above 8 kHz is about +21 dB, and +19 dB even where nothing clips. That is not what the
+  fix adds.
+- **The fix adds +3.1 dB of energy above 8 kHz on average (max 13.4) and +1.6 dB of peak (max 9.8).** Beyond reach
+  this is +3.8 and +2.0; within reach +0.3 and +0.0.
+- Once the in-band residual is known, neither explains Cen's shift.
+- A rise of up to 13 dB in the highs is a hiss risk, so a gentler fix is priced first.
+
+### The user's decision (2026-11-23, in chat)
+
+After a plain-language explanation, the user answered "Ok" to this recommendation:
+1. Don't redo rows (b) and (c). The numbers stand as self-consistent: the fix moves the yardstick (Cen), not the found
+   presets.
+2. Test a gentler fix on CPU with zero renders. The no-clip version boosts the highs by up to 13 dB, which is a hiss
+   risk.
+3. For new dry-guitar rows, report a clip-free re-score beside the coded one, at a few renders a part.
+
+Declared with this outcome:
+- the gentle-fix CPU check (plan 11f, `phase_scratch_tone_gentle`, coded, zero renders);
+- the clip-free re-score beside `fs-notes` and `fs-codec` (plan 11g, `phase_scratch_tone_beside`, reported only, never
+  deciding).
+
+The measure step (`song_bank.measure`, `direc_check.eq_to`) is unchanged. `fs-tone` stays held.
+
+### What the split does not say
+
+- It says nothing by ear.
+- It says nothing on a fix other than removing the clip; the gentler variants are priced in 11f, on CPU.
+- Its share bracket rests on assumptions; only row (b)'s redo (12,351 + 940 renders) would measure it.
+- It does not price the blur's non-tone parts on their own.
