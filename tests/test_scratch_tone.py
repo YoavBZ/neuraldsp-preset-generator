@@ -358,6 +358,72 @@ def test_the_fit_refuses_off_main(monkeypatch, tmp_path):
         T.cmd_fit(None)
 
 
+def _gstats(dist=(1.3, 2.0), hf=(0.5, 2.0), peak=(0.5, 2.0), lf=1.0):
+    return {"parts": 47, "beyond_reach": 0, "dist_from_average": {"mean": dist[0], "max": dist[1]},
+            "hf_rise_db": {"mean": hf[0], "max": hf[1]}, "peak_rise_db": {"mean": peak[0], "max": peak[1]},
+            "lf_rise_db": {"mean": 0.0, "max": lf}}
+
+
+def test_the_gentle_bars_and_their_boundaries():
+    assert T.GENTLE_BARS["dist_mean"] == ("dist_from_average", "mean", 1.5)
+    assert all(T.bars_met(_gstats()).values())
+    assert all(T.bars_met(_gstats(dist=(1.5, 2.5), hf=(1.0, 3.0), peak=(1.0, 3.0), lf=3.0)).values())   # inclusive
+    for kw, bar in ((dict(dist=(1.51, 2.0)), "dist_mean"), (dict(dist=(1.3, 2.51)), "dist_max"),
+                    (dict(hf=(1.01, 2.0)), "hf_mean"), (dict(hf=(0.5, 3.01)), "hf_max"),
+                    (dict(peak=(1.01, 2.0)), "peak_mean"), (dict(peak=(0.5, 3.01)), "peak_max"),
+                    (dict(lf=3.01), "lf_max")):
+        got = T.bars_met(_gstats(**kw))
+        assert [b for b, ok in got.items() if not ok] == [bar]
+
+
+def test_every_set_of_variants_gives_exactly_one_gv_code_each_reachable():
+    kinds = {"pass": _gstats(), "caps": _gstats(hf=(2.0, 13.0)), "far": _gstats(dist=(2.8, 7.1)),
+             "far-capped": _gstats(dist=(2.0, 8.7))}
+    seen = set()
+    for combo in itertools.product(kinds, repeat=len(T.GENTLE)):
+        stats = {v: kinds[c] for v, c in zip(T.GENTLE, combo)}
+        got = T.gv_code(stats)
+        want = "GV-pass" if "pass" in combo else "GV-caps" if "caps" in combo else "GV-none"
+        assert got["code"] == want
+        assert (got["best"] is None) == (want != "GV-pass")
+        seen.add(got["code"])
+    assert seen == set(T.GV_CODES)
+    best = T.gv_code({"wide24": _gstats(dist=(1.4, 2.0)), "centred24": _gstats(dist=(1.2, 2.0)),
+                      "band-open": _gstats(hf=(3.1, 13.4))})
+    assert best["best"] == "centred24" and best["passing"] == ["centred24", "wide24"]
+    with pytest.raises(SystemExit):
+        T.gv_code({"wide24": _gstats()})
+
+
+def test_gentle_stats_pools_the_parts():
+    def part(d, hf, lf, pk, br):
+        return {"v": {"dist_from_average": d, "hf_rise_db": hf, "lf_rise_db": lf, "peak_rise_db": pk,
+                      "beyond_reach": br}}
+    got = T.gentle_stats({"a": part(1.0, 0.0, 0.5, 1.0, False), "b": part(2.0, 4.0, -0.5, 3.0, True)}, "v")
+    assert got["parts"] == 2 and got["beyond_reach"] == 1
+    assert got["dist_from_average"] == {"mean": 1.5, "max": 2.0} and got["hf_rise_db"] == {"mean": 2.0, "max": 4.0}
+
+
+def test_the_gentle_variants_are_declared():
+    assert set(T.GENTLE) == {"wide24", "centred24", "band-open"} and T.GENTLE_REFS == ("coded", "true-noclip")
+    assert {v["centre"] for v in T.GENTLE.values()} <= {"full", "band"}
+    assert T.gentle_path().name == "gentle-v1.json" and T.gentle_path().relative_to(S.fs_dir() / "tone")
+
+
+def test_the_gentle_check_refuses_off_main_or_undeclared(monkeypatch, tmp_path):
+    monkeypatch.setattr(T, "on_main", lambda: (None, "this checkout's learn/scratch_tone.py differs from main's"))
+    with pytest.raises(SystemExit, match="differs from main's"):
+        T.cmd_gentle(None)
+    monkeypatch.setattr(T, "on_main", lambda: ({T.PHASE: {}}, None))
+    with pytest.raises(SystemExit, match="phase_scratch_tone_gentle"):
+        T.cmd_gentle(None)
+    monkeypatch.setattr(T, "on_main", lambda: ({T.PHASE: {}, T.PHASE_GENTLE: {}}, None))
+    monkeypatch.setattr(T, "gentle_path", lambda version=1: tmp_path / "gentle-v1.json")
+    (tmp_path / "gentle-v1.json").write_text("{}")
+    with pytest.raises(SystemExit, match="never overwritten"):
+        T.cmd_gentle(None)
+
+
 def test_on_main_guards_both_files():
     assert T.CODE_FILES == ("learn/scratch_search.py", "learn/scratch_tone.py")
 
@@ -377,9 +443,37 @@ def test_the_ledger_holds_the_declaration_and_holds_fs_tone_back():
     assert rec["held"]["row"] == T.HELD_ROW
     assert set(rec["mc_table"]) == set(T.MC_CODES) and set(rec["tn_table"]) == set(T.TN_CODES)
     assert rec["renders"] == 846 == T.PARTS * T.RENDERS_PER_PART
-    for k in T.HELD_KEYS + (T.PHASE_SPLIT,):
-        assert k not in e                                          # nothing beyond the declaration yet
-    assert set(T.tone_keys(e)) == {T.PHASE}
+    for k in T.HELD_KEYS:
+        assert k not in e                                          # fs-tone stays held
+    assert set(T.tone_keys(e)) == {T.PHASE, T.PHASE_SPLIT, T.PHASE_GENTLE, T.PHASE_BESIDE}
+
+
+def test_the_ledger_holds_the_audited_outcome_and_the_users_decision():
+    e = _ladder()
+    out = e[T.PHASE_SPLIT]
+    assert out["codes"]["mc"] == {"c": "MC-c-moves", "b": "MC-b-moves"} and out["codes"]["tn"] == "TN-short"
+    assert out["renders"] == 846 and out["refused"] == 0 and out["nonfinite"] == 0
+    assert out["audit"]["verdict"] == "CONFIRMED WITH CORRECTIONS" and len(out["audit"]["corrections"]) == 6
+    d = out["user_decision"]
+    assert d["date"] == "2026-11-23" and d["how"] == "in chat" and d["answer"] == "Ok" and len(d["recommendation"]) == 3
+    assert "Don't redo rows (b) and (c)" in d["recommendation"][0]
+    assert "a redo would show at least this change" not in json.dumps(out["mc_readings_corrected"])
+    assert "biased high by row (b) being off its search DI" in json.dumps(out)
+
+
+def test_the_ledger_declares_the_gentle_check_and_the_side_read():
+    e = _ladder()
+    g = e[T.PHASE_GENTLE]
+    assert set(g["variants"]) == set(T.GENTLE) and g["renders"] == 0
+    assert {b: tuple(v) for b, v in g["bars"].items()} == T.GENTLE_BARS
+    assert set(g["gv_table"]) == set(T.GV_CODES)
+    b = e[T.PHASE_BESIDE]
+    assert b["decides"] is False and "never decides" in b["status"] and b["coded"] is False
+    assert b["partner"]["fs-notes"].startswith("row (c)") and b["partner"]["fs-codec"].startswith("row (b)")
+    assert "+0.15" in b["partner"]["fs-codec"]                          # the bias against row (c), named
+    assert b["renders"]["fs-notes"].endswith(": 286") and b["renders"]["fs-codec_short"].endswith(": 286")
+    assert "true-noclip" in b["dry_guitar"] and "own declaration" in b["dry_guitar"]
+    assert "GV-pass against GV-caps" in g["gv_none_note"] and "quiet" in g["beside_report_only"]
 
 
 def test_no_part_key_and_no_module_level_numpy_in_these_files():
@@ -470,6 +564,77 @@ def test_score_dry_takes_a_stereo_render_as_the_judge_folds_it(monkeypatch):
     assert v == 0.75 and seen["ndim"] == 2 and sha == AM.audio_sha(y)
     want = T.on_grid(DR.smoothed_spectrum(y.mean(axis=1)))
     assert len(sp) == T.GRID_N and np.allclose(sp, want)
+
+
+def test_applied_gain_per_variant():
+    np = pytest.importorskip("numpy")
+    f = np.fft.rfftfreq(4096, 1 / 48000)
+    m = (f >= 80) & (f <= 8000)
+    g = np.linspace(-40, 30, len(f)) + 10 * np.sin(f / 500)
+    coded = np.clip(g, -15, 15)
+    assert np.array_equal(T.applied_gain(g, f, {"centre": "full", "in_band": 15.0}), coded)   # the coded clip exactly
+    for v, spec in T.GENTLE.items():
+        a = T.applied_gain(g, f, spec)
+        assert np.array_equal(a[~m], coded[~m]), v                                           # out of band as coded
+    assert np.array_equal(T.applied_gain(g, f, T.GENTLE["band-open"])[m], g[m])
+    w = T.applied_gain(g, f, T.GENTLE["wide24"])[m]
+    assert w.max() <= 24 and w.min() >= -24 and np.array_equal(w, np.clip(g[m], -24, 24))
+    c = T.applied_gain(g, f, T.GENTLE["centred24"])[m]
+    mu = g[m].mean()
+    assert np.allclose(c, np.clip(g[m] - mu, -24, 24) + mu)
+    assert np.array_equal(g, np.linspace(-40, 30, len(f)) + 10 * np.sin(f / 500))         # g untouched
+
+
+def test_gentle_measure_equals_measure_where_nothing_clips(monkeypatch, tmp_path):
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("pyloudnorm")
+    from learn import confirm_run as CR
+    from learn import di_robustness as DR
+    from learn import song_bank as SB
+
+    x = np.random.default_rng(4).standard_normal(48000 * 3).astype(np.float32) * 0.05
+    own = DR.smoothed_spectrum(x.astype(np.float64))
+    np.save(tmp_path / "avg.npy", (own - own.mean()) + np.asarray(T.tilt_gain_db(np.fft.rfftfreq(4096, 1 / 48000), 4.0)))
+    monkeypatch.setattr(CR, "AVERAGE", tmp_path / "avg.npy")
+    for v in T.GENTLE:
+        assert np.array_equal(T.gentle_measure(x, v), SB.measure(x)), v
+
+
+def test_gentle_part_against_itself_is_zero_change():
+    np = pytest.importorskip("numpy")
+    x = np.random.default_rng(6).standard_normal(48000 * 2) * 0.05
+    got = T.gentle_part(x, x, np.zeros(2049))
+    assert got["hf_rise_db"] == 0.0 and got["lf_rise_db"] == 0.0 and got["peak_rise_db"] == 0.0
+    assert not got["beyond_reach"] and got["dist_from_average"] > 0
+    y = T.apply_tilt(np.asarray(x, np.float32), 6.0)
+    assert T.gentle_part(y, x, np.zeros(2049))["hf_rise_db"] > 0.5      # a high tilt at the same RMS lifts the highs
+
+
+def test_the_hiss_figures_are_report_only():
+    assert T.HISS_FIGURES == ("quiet_hf_rise_db", "mid_rise_db") and T.MID == (2000.0, 8000.0)
+    assert not set(T.HISS_FIGURES) & {q for q, _, _ in T.GENTLE_BARS.values()}
+    row = {"dist_from_average": 1.0, "hf_rise_db": 0.0, "lf_rise_db": 0.0, "peak_rise_db": 0.0, "beyond_reach": False,
+           "quiet_hf_rise_db": 9.0, "mid_rise_db": 2.0}
+    got = T.gentle_stats({"a": {"v": row}}, "v")
+    assert got["quiet_hf_rise_db"] == {"mean": 9.0, "max": 9.0} and got["mid_rise_db"]["max"] == 2.0
+    assert all(T.bars_met(got).values())                  # a large quiet-frame rise fails no bar
+
+
+def test_the_quietest_frames_and_their_hiss():
+    np = pytest.importorskip("numpy")
+    sr, n = 48000, 2400
+    rng = np.random.default_rng(8)
+    loud = rng.standard_normal(n * 60) * 0.3
+    quiet = 0.003 * np.sin(2 * np.pi * 200 * np.arange(n * 20) / sr)  # a soft low note, 40 dB down: inside the floor
+    x = np.concatenate([np.zeros(n * 5), loud, quiet, loud])            # leading digital silence is left out
+    idx = T.quiet_frames(x, sr)
+    assert len(idx) == round(0.10 * 140) == 14 and all(65 <= i < 85 for i in idx)       # 140 non-silent frames
+    assert T.quiet_hf_rise(x, x) == 0.0
+    b, a = np.fft.rfftfreq(len(x), 1 / sr) > 9000, np.fft.rfft(rng.standard_normal(len(x)) * 0.001)
+    hiss = np.fft.irfft(a * b, len(x))
+    y = x + hiss                                                        # broadband hiss above 8 kHz, small overall
+    part = T.gentle_part(y, x, np.zeros(2049))
+    assert part["quiet_hf_rise_db"] > 3 and part["hf_rise_db"] < 0.5 and abs(part["mid_rise_db"]) < 0.01
 
 
 def test_band_distance_is_zero_for_a_constant_offset():

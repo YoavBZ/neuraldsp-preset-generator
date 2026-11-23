@@ -3983,6 +3983,165 @@
     "install": "codec-venv: CPython 3.12.13 (pyenv 2.8.1, its source sha256 c08bc65a81971c1dd5783182826503369466c7e67374d1646519adf05207b684 checked by python-build; built without _lzma, unused); torch-2.10.0-2-cp312-none-macosx_11_0_arm64.whl (13ec4add...), numpy-1.26.4-cp312 (03a8c78d...), linear_cae-0.1.4 (29e5e9d4...), each downloaded into its own folder and checked; a resolver report then a 36-package hashed lock, installed --require-hashes --only-binary :all: --no-deps; huggingface_hub 2.4.0. m2l from BernardoTorres/linear_consistency_autoencoders at revision 8553af6da62bd7c7275ead8906304911f2e1b12b: autoencoder_inference_model_last.pth 232,976,270 B, sha256 405499f959fbbe38496fa2c0cc5663b495058a353157304006bff5bfced5b20b (the declared value), its 3 YAML files matching the HF API's git oids. dac-venv: system CPython 3.9.6; the resolver dry run (pip 25.3 run from its wheel, sha256 9655943313a94722b7774661c21049070f6bbb0a1516bf02f7c8d5d9201514cd, as the venv's pip 21.2.4 has no --dry-run) with tensorboard==2.20.0 and protobuf==3.19.6 as constraints: 90 packages, 207,419,603 B, every sha256 equal to PyPI's, all open licences; installed on the user's yes (2026-11-23, by AskUserQuestion: 'Yes, install DAC') from that list's hashed lock, --require-hashes --no-deps; argbind 0.3.9 and randomname 0.2.1 built from their hashed sdists (pip's isolated build env fetched their build requirements unhashed); pip check clean; DAC weights on disk a88eed82... (checked). manifest.json and the locks under ~/ndsp-presets/tools/codec-models/ (manifest.json's lock notes were rewritten after the round trips to record the DAC install; its file entries are unchanged)",
     "figures": "zero-render, descriptive, never deciding (figures.json; whole signals, mean over 47 parts): floored log-mel distance from the true DI at 256 / 2,048 samples, 5-ms envelope distance, crest change (dB): rt-m2l 3.62 / 3.55 / 1.41 / -0.85; rt-m2l-b 3.63 / 3.54 / 1.41 / -0.95; rt-dac 2.33 / 2.53 / 0.70 / -0.38; rt-rs 0.16 / 0.16 / 0.08 / -0.10; avg+mild 2.49 / 3.05 / 2.00 / -0.69. Against avg+mild, paired on the pool: rt-m2l mel256 +1.11 [+0.71, +1.50], envelope -0.69 [-1.02, -0.36]; rt-dac mel256 -0.20 [-0.72, +0.32], envelope -1.39 [-1.69, -1.09]. rt-m2l-b against rt-m2l: 3.52 / 3.35 / 1.26 (the two decode seeds differ from each other about as much as from the true DI: the decoder invents its fine detail). Before the measure step, the long-term spectral distance from the raw section: rt-m2l 1.08 dB mean (max 2.19), rt-dac 0.83 (max 1.51), rt-rs 0.01. The measured DIs' offset from the average balance: true DI 2.81 mean (max 7.14), rt-m2l 2.22 (5.06), rt-dac 3.05 (6.92), avg+mild 2.07 (3.02). No zero-render figure decides",
     "next": "start (rt-m2l, rt-m2l-b, rt-dac on 47; rt-id on the 2 check parts), control, then search --name rt-m2l, once this hash is on main"
+   },
+   "phase_scratch_tone_split": {
+    "date": "2026-11-23",
+    "results": "docs/scratch-search-results.md, section 'The tone split'; plan docs/scratch-search-plan.md section 11",
+    "run": "from a frozen detached worktree of main at 42cd5953 (#550 with #554's stereo fold); 3 shards 08:59:42 to 09:13:43 (842, 807, 819 s wall; 288 + 288 + 270 renders), split-read once (17.7 s). A first launch at 80cd6590 stopped on every shard's first part (a stereo render reached the spectrum; fixed in #554): 6 renders, none kept, no split file",
+    "renders": 846,
+    "refused": 0,
+    "nonfinite": 0,
+    "cen_control": "exact (value and render sha256, against both rows' stored) on 47 of 47 parts",
+    "files": {
+     "report": "PF/fs/tone/report.json",
+     "report_sha256": "60cf0a35891cf2d8afa7118bf5f15bb3c40ffcb4e52adff72fcddb002fffa3e5",
+     "rows": "PF/fs/tone/rows.json",
+     "rows_sha256": "05b102a7884a7636c45a0f4f93f944042d3944222207f4204070da65bcb99cde"
+    },
+    "codes": {
+     "mc": {
+      "c": "MC-c-moves",
+      "b": "MC-b-moves"
+     },
+     "tn": "TN-short"
+    },
+    "P_c": "pool -0.121 [-0.183, -0.059]; BKS+GOAT -0.129 [-0.201, -0.057]; clean -0.196, crunch -0.062. By the identity P = the answer's shift - Cen's shift: Cen scores +0.110 [+0.047, +0.173] worse through the clip-free DI and answer (c) is level (C_fix -0.011 [-0.042, +0.021]). It measures the yardstick (Cen) moving, not row (c)'s answer improving",
+    "P_b": "pool +0.051 [+0.016, +0.085], at its threshold (mean +0.0507); it fails when one cluster or one panel DI file is dropped (+0.042 to +0.063); BKS+GOAT undecided (+0.031); clean +0.088 and crunch -0.025 of opposite signs. No action rests on it. Its content is expected: answer (b), searched on the coded DI, loses +0.161 [+0.072, +0.251] when the DI changes, more than Cen",
+    "mc_readings_corrected": {
+     "MC-c-moves": "by the coded rule; read as the decomposition: Cen +0.110 worse, answer (c) level (C_fix -0.011). Row (c)'s stored number stands as self-consistent against the coded yardstick; on the clip-free yardstick its G against Cen is larger because Cen gets worse",
+     "MC-b-moves": "by the coded rule, at its threshold; fails when one cluster is dropped; no action rests on it"
+    },
+    "shares": {
+     "stored": "0.47 pool, 0.33 BKS+GOAT",
+     "one_yardstick": "1.02 pool, 0.93 BKS+GOAT, biased high by row (b) being off its search DI; the bracket 0.63 to 1.02 (BKS+GOAT 0.57 to 0.93), under assumptions (a redone row (b) regaining all or none of its off-DI loss), not measured",
+     "mixed": "0.85 pool, 0.82 BKS+GOAT: a mixed figure ((c) re-scored over (b) stored), not a share on one yardstick"
+    },
+    "clip_residual_halves": "lower half (0.7 dB): P_c -0.014, Cen +0.036; upper half (3.9 dB): P_c -0.255, Cen +0.210; Spearman P_c against the residual -0.76; on the 6 parts where the clip-free DI is bit-identical, P_c, P_b and Cen's shift are exactly 0. Cen's shift follows the in-band clip residual (partial rho +0.67), not the high-frequency rise (-0.04) or the peak rise (-0.10)",
+    "reach": "within the EQ's reach 9 parts (7 BKS, 2 GOAT, none from the panel): P_c -0.009, P_b -0.001; not evidence either way (3 of the 9 have a bit-identical DI, and reach is defined on the measure step's whole ask, not on what the fix adds: 3 of the 6 bit-identical parts count as beyond)",
+    "tn": "TN-short on BKS+GOAT, 'the tone costs (C_tilt); not a heard size by the split': C_tilt -0.030 [-0.056, -0.005] (mean under 0.05: no action rests on it); C_fix -0.012, C_avg +0.004, C_planted -0.003 level; C_blur +0.179 [+0.089, +0.268], dominated by the blur's damage beyond tone (Cen alone +0.324 worse through avg+mild). Not shown by the split that row (c)'s loss is carried by the dry guitar's static tone. 'Not a heard size' is not 'the static tone is cheap': on clean C_tilt -0.071 at phi 0.74",
+    "average_balance_cost": "-C_avg: BKS+GOAT -0.004 [-0.051, +0.043], pool -0.008 [-0.040, +0.025]: level, not readable by the score",
+    "phi": "by render 0.47 BKS+GOAT (clean 0.74, crunch 0.20, GOAT clean 0.92; per-part median on clean 0.80); from the EQ answers 0.22 (clean 0.44, crunch 0.00, GOAT clean 0.29)",
+    "finding_clean_balance": "on clean the search bakes the dry guitar's balance into the preset (phi by render about 0.8): the whole chain inverts most of the dry guitar's static tone. For the product: a rebuilt DI's balance error (it enters through song_bank.measure) goes into a clean preset, so the measure step's balance matters there. The clip residual (about 2.3 dB mean, max 7) is small next to a guitar's own distance from the average (7.7 dB raw); no score here shows a product loss; any product change is forward-only and follows the gentle-fix CPU check",
+    "side_effects": "the measure step's whole ask above 8 kHz is about +21 dB (+19 even where nothing clips), not what the fix adds. The fix adds +3.1 dB of energy above 8 kHz on average (max 13.4) and +1.6 dB of peak (max 9.8), beyond reach +3.8 / +2.0, within +0.3 / +0.0. Neither explains Cen's shift once the in-band residual is known",
+    "no_drive_group": "15 parts on answer (c) (12 BKS+GOAT + 3 panel; the pool falls back to BKS+GOAT): P_c -0.188 [-0.353, -0.023], C_tilt -0.042 [-0.083, -0.002], C_blur +0.255, the tone numbers level; 16 on answer (b): P_b +0.074 [-0.001, +0.149]",
+    "audit": {
+     "verdict": "CONFIRMED WITH CORRECTIONS",
+     "report": "handover/2026-11-23/audit-tone-split/REPORT.md (local)",
+     "reproduced": "every per-part number exactly (max |diff| 0), the intervals to 4 dp, the identity to 2e-16, the shares and phi",
+     "corrections": [
+      "MC-c-moves: reported as the decomposition (Cen +0.110 worse, answer (c) level, C_fix -0.011); 'a redo would show at least this change' dropped",
+      "MC-b-moves: at its threshold, fails when one cluster is dropped; no action rests on it",
+      "the 1.02 share: biased high by row (b) being off its search DI; bracket 0.63 to 1.02 (BKS+GOAT 0.57 to 0.93)",
+      "deleted: the line reading C_blur above zero as phi under 0.5 (on clean phi 0.74 and C_blur +0.195)",
+      "within reach: not evidence either way (3 bit-identical parts; reach on the whole ask)",
+      "the +21 dB above 8 kHz is the measure step's whole ask; the fix adds +3.1 dB of high-frequency energy (max 13.4) and +1.6 dB of peak (max 9.8)"
+     ]
+    },
+    "user_decision": {
+     "date": "2026-11-23",
+     "how": "in chat",
+     "answer": "Ok",
+     "context": "after a plain-language explanation, the user answered 'Ok' to this recommendation",
+     "recommendation": [
+      "Don't redo rows (b) and (c). The numbers stand as self-consistent: the fix moves the yardstick (Cen), not the found presets.",
+      "Test a gentler fix on CPU with zero renders. The no-clip version boosts the highs by up to 13 dB, which is a hiss risk.",
+      "For new dry-guitar rows, report a clip-free re-score beside the coded one, at a few renders a part."
+     ]
+    },
+    "next": "phase_scratch_tone_gentle (declared here, coded, zero renders, after merge); phase_scratch_tone_beside (declared here, coded with the first new row that needs it). Rows (b) and (c) are not redone; fs-tone stays held; song_bank.measure and direc_check.eq_to unchanged"
+   },
+   "phase_scratch_tone_gentle": {
+    "declared": "2026-11-23",
+    "plan": "docs/scratch-search-plan.md section 11f; code learn/scratch_tone.py (GENTLE, applied_gain, gentle_measure, gentle_part, gentle_stats, bars_met, gv_code, cmd_gentle); tests tests/test_scratch_tone.py",
+    "why": "the user's decision of 2026-11-23, item 2: the clip-free DI fixes the balance (1.26 dB from the average on the 47, max 2.05; coded 2.81, max 7.14) but adds up to +13.4 dB of energy above 8 kHz and +9.8 dB of peak, a hiss risk. Price gentler versions on CPU first",
+    "renders": 0,
+    "variants": {
+     "wide24": "the coded gain's frame, the in-band clip widened to +-24 dB; out of band the coded +-15",
+     "centred24": "the clip window centred on the in-band gain's mean, +-24 dB in band; out of band the coded +-15",
+     "band-open": "no clip in band; out of band the coded +-15 (the fix in band only)"
+    },
+    "references": "the coded DI (song_bank.measure, unchanged) and true-noclip, computed beside in the same run; every variant is a new function (gentle_measure); in band = 80 Hz to 8 kHz on the measure step's bins; every DI back at -22.9 LUFS (to_lufs)",
+    "measures": "per part against the coded DI: distance from the average balance (in band, weights 1/f, the weighted mean removed), the rise in energy above 8 kHz and below 80 Hz, the rise in peak, and reach (the variant's in-band change from the coded DI's spectrum, centred in band, past +-12 dB); pooled as mean and max over the 47 parts",
+    "bars": {
+     "dist_mean": [
+      "dist_from_average",
+      "mean",
+      1.5
+     ],
+     "dist_max": [
+      "dist_from_average",
+      "max",
+      2.5
+     ],
+     "hf_mean": [
+      "hf_rise_db",
+      "mean",
+      1.0
+     ],
+     "hf_max": [
+      "hf_rise_db",
+      "max",
+      3.0
+     ],
+     "peak_mean": [
+      "peak_rise_db",
+      "mean",
+      1.0
+     ],
+     "peak_max": [
+      "peak_rise_db",
+      "max",
+      3.0
+     ],
+     "lf_max": [
+      "lf_rise_db",
+      "max",
+      3.0
+     ]
+    },
+    "bars_why": "distance: within 0.25 dB of the clip-free mean (1.26) and 0.5 dB of its max (2.05), far under the coded max (7.14), so the balance is fixed in the clip-free DI's sense; the caps: 3 dB is a doubling of power, the most any one part may rise above 8 kHz, below 80 Hz (hum) or in peak without a listen, and a 1 dB mean keeps the typical change small (the clip-free DI's +3.1 dB mean and +13.4 dB max fail both); each bound inclusive",
+    "gv_table": {
+     "GV-pass": "at least one variant meets every bar: the passing variant with the lowest mean distance is the candidate; adopting it anywhere is the user's decision, forward only, under its own declaration; it changes no stored value and licenses no render",
+     "GV-caps": "no variant meets every bar, at least one meets both distance bars: the balance can be fixed only with side effects past the caps; to the user: keep the measure step as coded, or a listen to the side effects first",
+     "GV-none": "no variant meets both distance bars: keep the measure step as coded; any other variant (a second pass, another target) needs its own declaration"
+    },
+    "gate": "cmd_gentle refuses unless this checkout runs main's learn/scratch_search.py and learn/scratch_tone.py and phase_scratch_tone* keys (on_main) and main holds this key; the coded DI checked against fit v1's sha256 on every part; every built DI finite and the section's length",
+    "output": "PF/fs/tone/gentle-v1.json, written once; a changed check writes gentle-v2.json under a new key",
+    "cost": "zero renders; CPU only (the fit's like work measured 62 s on the 47 parts); no training, separation, MPS job or download",
+    "stop_rule": "run once; the code and the stats go to the user with the audit; nothing in the product or the scoring DI changes on it",
+    "beside_report_only": "two hiss figures, never a bar (HISS_FIGURES): the rise above 8 kHz on the quietest frames (quiet_hf_rise: the quietest 10% of the coded DI's 50-ms frames among those within 60 dB of its loudest, Hann-windowed, the same frames in every variant; the total above 8 kHz is dominated by played notes, hiss shows between them) and the rise from 2 to 8 kHz (where an in-band variant may boost by up to +24 dB)",
+    "gv_none_note": "GV-none can hardly happen: band-open applies the clip-free gain in band, so it should meet both distance bars nearly by construction (1.26 and 2.05 dB); the real choice is GV-pass against GV-caps"
+   },
+   "phase_scratch_tone_beside": {
+    "declared": "2026-11-23",
+    "status": "declared, not coded: reported only, never decides; coded with the first new row that needs it, under this key, before that row is read",
+    "coded": false,
+    "decides": false,
+    "why": "the user's decision of 2026-11-23, item 3: every new dry-guitar row reports a clip-free re-score beside the coded one",
+    "rows": [
+     "fs-notes (phase_scratch_notes)",
+     "fs-codec (phase_scratch_codec)"
+    ],
+    "what": "a row's stored, hashed settings re-rendered through true-noclip (fit v1's built file for the part, its sha256 checked), each primed alone, judged on the held half against the clean record with the coded true DI as the judge's DI, exactly as this split; Cen through true-noclip is taken from this split's stored per-part value (the same render), with a control: Cen re-rendered through true-noclip on the row's first BKS and first GOAT part must repeat the split's value and render sha256 exactly",
+    "settings": {
+     "fs-notes": "the answer and the shrunk answer; row (c)'s shrunk answer once (its answer is stored in this split)",
+     "fs-codec": "each codec's scored setting (cp50 in the short row; the answer and the shrunk answer in a full row); row (b)'s cp50 once for the short row, row (b)'s shrunk answer once for a full row, shared (its answer is stored in this split)"
+    },
+    "renders": {
+     "fs-notes": "47 x 2 x 2 = 188, row (c)'s shrunk answer once 94, the control's 4: 286",
+     "fs-codec_short": "47 x 2 = 94 a codec (188 for rt-m2l and rt-dac), row (b)'s cp50 once 94, the control's 4: 286",
+     "fs-codec_full": "188 a codec, plus row (b)'s shrunk answer once (94, shared)",
+     "rate": "about 1.0 a second on 3 processes, as measured by this split (846 renders in about 14 min)"
+    },
+    "reported": "per arm: G through true-noclip against Cen through true-noclip, the answer's own shift (through true-noclip less through the coded DI) and Cen's shift beside (the decomposition this split's audit requires); the row's number paired arm by arm against its partner row through true-noclip, beside its coded one",
+    "never": "it never changes a row's code, threshold or recommendation; it is read after the row's own read, once",
+    "gate": "the row's answers hashed on main; this key and phase_scratch_tone on main; on_main; at most 3 render processes; the disk guard; never beside a separation",
+    "partner": {
+     "rule": "the partner is the row measured the same way: an answer searched on a coded-like DI loses when the DI becomes clip-free (row (b)'s answer +0.161 [+0.072, +0.251]); one searched on an average-balanced DI does not (row (c)'s C_fix -0.011)",
+     "fs-notes": "row (c): tr-di is finished with the measure step then average_balance, average-balanced like avg+mild; against row (b) through true-noclip the pairing is biased by row (b) being off its search DI, said so",
+     "fs-codec": "row (b): each round trip goes through song_bank.measure (section 12), so the codec's dry guitar keeps the clip offset like the coded true DI, measured alike (as D_true is the clean one in the coded read); against row (c) through true-noclip its pairing is biased against the codec by about +0.15 (row (b)'s +0.161 less row (c)'s -0.011), said so wherever shown"
+    },
+    "dry_guitar": "it keeps true-noclip: if the gentle-fix check reads GV-pass, this side read still re-scores through true-noclip; switching it to the passing variant needs its own declaration"
    }
   },
   {
