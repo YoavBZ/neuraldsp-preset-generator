@@ -402,6 +402,17 @@ def dry_key(name=None):
     return PHASE_DRY if not name else f"{PHASE_DRY}_{name}"
 
 
+def build1_read_refusal(ladder_main, name=None):
+    """(Pure.) 12q R8's order guard: build 1's search (the ear-faulty build) is answered, scored and read only after a
+    later build is hashed on main (`phase_scratch_notes_dry_<name>`), so its read cannot steer the later build's
+    design. -> refusal or None (a later build: None)."""
+    if name:
+        return None
+    if any(k.startswith(PHASE_DRY + "_") for k in (ladder_main or {})):
+        return None
+    return "build 1 is read only after a later build is hashed on main (12q R8: phase_scratch_notes_dry_<name>)"
+
+
 def ear_label(nr_main, build_sha):
     """(Pure.) 12q R5: the ear verdict as a label beside a read, never a gate: "ear ok", "ear <verdict>" or "ear
     pending" (no verdict yet). The row's outcome code waits for a verdict."""
@@ -697,6 +708,9 @@ def cmd_answers(_args):
     (`dry_refusal`); `scratch_search.answer_parts`; the refusal stop on the 40 deciding parts (`deciding_stop`).
     -> answers.json; its sha256 into the ledger as phase_scratch_notes_answers before `score`."""
     m = require_row(NT.PHASE_INSTALL, NT.PHASE_NOTES, ladder=(dry_key(BUILD_NAME),))
+    why = build1_read_refusal(m.get(LEDGER_ID), BUILD_NAME)
+    if why:
+        raise SystemExit(why)
     ear = ear_label(m.get(NT.LEDGER_ID), ((m.get(LEDGER_ID) or {}).get(dry_key(BUILD_NAME)) or {}).get("sha256"))
     build = require_build(m)
     NT.never_overwrite(answers_path())
@@ -730,6 +744,9 @@ def cmd_score(args):
     """One shard of the row's score (renders): `scratch_search.score_row_part` on the hashed answers, exactly as rows
     (b) and (c) were scored. -> score/<part>.json."""
     m = require_row(NT.PHASE_INSTALL, NT.PHASE_NOTES, ladder=(dry_key(BUILD_NAME), PHASE_ANSWERS))
+    why = build1_read_refusal(m.get(LEDGER_ID), BUILD_NAME)
+    if why:
+        raise SystemExit(why)
     ear = ear_label(m.get(NT.LEDGER_ID), ((m.get(LEDGER_ID) or {}).get(dry_key(BUILD_NAME)) or {}).get("sha256"))
     print(f"{ROW}: {ear} (12q R5: a label beside the read; the outcome code waits for the ear verdict)")
     ans = NT.require_file_hash(m.get(LEDGER_ID), PHASE_ANSWERS, answers_path())
@@ -798,6 +815,9 @@ def cmd_read(_args):
     checkpoints, the search-half gain against held G, tr-plain's checks, and the bottleneck with D_notes by `ring-kept`'s
     figure, the share of bent notes and the share of chords (`part_figures`, `by_figure`). -> rows.json, report.json."""
     m = require_row(NT.PHASE_INSTALL, NT.PHASE_NOTES, ladder=(dry_key(BUILD_NAME), PHASE_ANSWERS))
+    why = build1_read_refusal(m.get(LEDGER_ID), BUILD_NAME)
+    if why:
+        raise SystemExit(why)
     ear = ear_label(m.get(NT.LEDGER_ID), ((m.get(LEDGER_ID) or {}).get(dry_key(BUILD_NAME)) or {}).get("sha256"))
     print(f"{ROW}: {ear} (12q R5: a label beside the read; the outcome code waits for the ear verdict)")
     ans = NT.require_file_hash(m.get(LEDGER_ID), PHASE_ANSWERS, answers_path())
@@ -814,6 +834,7 @@ def cmd_read(_args):
     per, refused, replaced, ctl = S.read_row_parts(draw, ans, S.file_sha(answers_path()), score_path, sd, rby)
     dec, pan, stop = deciding_stop(refused, sets_of)
     out = {**S.report_body(ROW, "notes", S.file_sha(answers_path()), per, refused, replaced, ctl), "ear": ear,
+           "code_provisional": ear != "ear ok",            # 12q R5: the FN code is provisional while the ear is pending
            "refused_deciding": dec, "refused_panel": pan, "stopped": stop,
            "stop_reason": f"{len(dec)} of the 40 deciding parts refused (the stop is {REFUSAL_STOP})" if stop else None}
     if stop:

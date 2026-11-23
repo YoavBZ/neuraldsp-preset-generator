@@ -574,9 +574,6 @@ def chords_go_refusal(p2_chord_recall, nr_main, trigger=P2_CHORD_TRIGGER):
     if p2_chord_recall is None:
         return "the truth report has no P2 chord recall"
     return None                                  # 12q R1: the chord recall is reported, never a trigger
-    if p2_chord_recall < trigger and PHASE_GO_CHORDS not in (nr_main or {}):
-        return f"P2's chord recall {p2_chord_recall:.3f} is under {trigger}: to the user first ({PHASE_GO_CHORDS})"
-    return None
 
 
 def flags_note(flagged_deciding, nr_main, trigger=FLAG_TRIGGER):
@@ -591,10 +588,6 @@ def flags_go_refusal(flagged_deciding, nr_main, trigger=FLAG_TRIGGER):
     """(Pure.) Why nothing may be built after transcription, or None: `onsets-found` flags on `trigger` or more of the
     40 deciding parts go to the user first (their go on main, `PHASE_GO_FLAGS`)."""
     return None                                  # 12q R1: the flag count is reported, never a trigger
-    if len(flagged_deciding) >= trigger and PHASE_GO_FLAGS not in (nr_main or {}):
-        return (f"onsets-found flags {len(flagged_deciding)} of the 40 deciding parts: to the user first "
-                f"({PHASE_GO_FLAGS})")
-    return None
 
 
 def versions_loud(nr_main):
@@ -1970,15 +1963,15 @@ def build_todo(pair=None, ear_file=None):
     return todo
 
 
-def replace_ruled_out_kinds(order, ear, figs, kinds_of):
+def replace_ruled_out_kinds(order, ear, figs, kinds_of, exclude=()):
     """(Pure.) A later page's ear items (12q; #581's nit): the first page's items kept, each new item that is a
     ruled-out DI replaced for its kind by the first item in the seeded `order` (ruled-out items dropped) that shows
     the kind and is not already on the page, else its nearest by the kind's own figure (`nearest_fill`).
     ear: the first page's items; figs/kinds_of: the kind figures and kinds by item (from the kind's own source).
-    -> (items, replacements)."""
+    `exclude`: items never drawn (12q: D's 19 development windows, so the new page never hears an item the fixes
+    were picked on). -> (items, replacements)."""
     keep = [e for e in ear if e["old"] or e["item"] not in RULED_OUT]
-    picked = {e["kind"]: e["item"] for e in keep if not e["old"]}
-    order = [it for it in order if it not in RULED_OUT]
+    order = [it for it in order if it not in RULED_OUT and it not in set(exclude)]
     out, repl = [dict(e) for e in keep], {}
     for e in ear:
         if e["old"] or e["item"] not in RULED_OUT:
@@ -2032,7 +2025,9 @@ def cmd_ear_items(_args):
                                        if st + 0.25 <= n["on"] < st + 10.25])
     kinds = ear_kinds_of(kinds_tr, {k: set(v) for k, v in (first.get("kinds_annotated") or {}).items()})
     figs = dict(first.get("figures") or {})
-    items, repl = replace_ruled_out_kinds(order, first["items"], figs, kinds)
+    d_items = {w["item"] for w in read_dev_windows(dev_windows(z, excl, tn["items"]))} - \
+        {e["item"] for e in first["items"]}                 # D: the fixes' development windows
+    items, repl = replace_ruled_out_kinds(order, first["items"], figs, kinds, exclude=d_items)
     jobs, meta_of = [], []
     for e in items:
         if e["start_s"] is None:

@@ -92,3 +92,19 @@ def test_a_later_build_has_its_own_record_and_dry_root():
     assert T.build_path() == T.REDO / "build.json" and T.build_path("b2") == T.REDO / "build-b2.json"
     assert T.dry_root() == T.REDO / "dry" and T.dry_root("b2") == T.REDO / "dry-b2"
     assert T.ear_items_file("never-made") == T.ear_items_path()
+
+
+def test_the_replacement_ear_item_is_drawn_outside_d():
+    ear = [{"item": "o1", "old": True, "kind": None}, {"item": "item_5", "old": False, "kind": "let-ring"}]
+    order = ["item_5", "d1", "b"]
+    figs = {"d1": {"let-ring": 0.13}, "b": {"let-ring": 0.02}}
+    items, _ = T.replace_ruled_out_kinds(order, ear, figs, {}, exclude={"d1"})
+    assert items[-1]["item"] == "b"                                       # D's window never drawn
+
+
+def test_build_1_is_read_only_after_a_later_build_is_hashed():
+    from learn import scratch_notes as SN
+
+    assert "12q R8" in SN.build1_read_refusal({SN.PHASE_DRY: {}})
+    assert SN.build1_read_refusal({SN.PHASE_DRY: {}, SN.PHASE_DRY + "_b2": {}}) is None
+    assert SN.build1_read_refusal({}, "b2") is None                        # a later build reads freely

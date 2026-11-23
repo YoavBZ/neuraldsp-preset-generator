@@ -33,7 +33,8 @@ PHASE = "phase_nr_1_redo_fixes"
 F1_MODES = ("global", "median")          # the bend baseline's two candidates
 BASELINE_STEP = 1                        # Basic Pitch's bend track on an in-tune note (93% of notes, the decision's
                                          # measurement): the global candidate subtracts it
-# the pair definitions (the decision's probes, `rebuild-one-fix-probes/probe4.py`): which notes a join may consider
+# the pair definitions, candidate definitions and not tuned bars (the decision's probes, `probe4.py`): which notes a
+# join may consider; the discriminator then decides each pair
 REFIND_LEAD_S, REFIND_TAIL_S = 0.030, 0.060   # a same-pitch note started 30 ms or more before, still sounding or
                                               # ended within 60 ms of this onset
 HANDOFF_S = 0.060                        # a glide's next note starts within 60 ms of this note's end
@@ -327,13 +328,17 @@ def isolate(out_path):
             held.append({"truth_steps": max(t["bends"]), "rebuilt_steps": statistics.median(tail) if tail else None})
         f1[mode] = {**compare(fig), "bent_share_bend_free_lists": {
             "as_built": bent_share([n for w in free for n in w["notes"]]),
-            "fixed": statistics.mean([bent_share(rezero_bends(w["notes"], mode)) or 0.0 for w in free])},
+            "fixed": bent_share([n for w in free for n in rezero_bends(w["notes"], mode)])},   # pooled alike
             "bend_list": held, "figures": fig}
     body["F1"] = f1
-    # pick F1's mode by the measured distance on D (then L), recorded; F2 and F3 sit on top of it
-    pick = min(F1_MODES, key=lambda m: (f1[m]["D"]["distance_less_as_built"]["mean"],
-                                        f1[m]["L"]["distance_less_as_built"]["mean"]))
+    # F1's mode: median less global per D window; an interval spanning zero is a tie, and the tie takes the global
+    # step, the simpler rule (#584's review); F2 and F3 sit on top of the pick
+    md = interval90([f1["median"]["figures"]["D"][k]["distance"] - f1["global"]["figures"]["D"][k]["distance"]
+                     for k in base["D"]])
+    tie = md is None or md["lo90"] is None or md["lo90"] <= 0 <= md["hi90"]
+    pick = "global" if tie else ("median" if md["mean"] < 0 else "global")
     body["F1_pick"] = pick
+    body["F1_median_less_global_D"] = {**(md or {}), "tie": tie}
     # 3. F3 on top of F1
     f3fig, f3joins = {}, {}
     for s, ws in (("L", L), ("D", D)):

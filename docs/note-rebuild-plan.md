@@ -1309,7 +1309,7 @@ below). That holds for the versions read, both calibrations, the build's checks 
 
 | Fix | What it does | Candidates, picked by measurement |
 |---|---|---|
-| F1, the bend baseline | A note's bend is its track less its baseline | The global −1 step; each note's own median |
+| F1, the bend baseline | A note's bend is its track less its baseline | The global −1 step; each note's own median. A tie (median less global on D spanning zero) takes the global step, the simpler rule |
 | F2, same-pitch re-finds | A note re-found while its pitch still sounds extends that note instead of re-plucking it | The DI's pitch-band rise (now); MuScriptor's onsets and Basic Pitch's own onset activation (after track 1's read; the second only if a rerun reproduces the stored events exactly). The operating point is read off the measured trade-off |
 | F3, glides | When a note's re-zeroed bend moves toward the next note's pitch and the next starts as it ends, the next continues the same sample along the bend path | — |
 | F4, harmonic ghosts | `tx-veto` | After track 1's stage-b read |
@@ -1337,12 +1337,18 @@ together; then the held-out ear items):
 - R4: how often each synthesis clamp acts, reported; the clamps stay as they are in build 2 so the fixes' isolation
   stays clean.
 - R5: the ear verdict is a label, not a gate. A frozen build may be answered, scored and read, labelled "ear pending";
-  the row's outcome code waits for its ear verdict.
+  the FN code in `report.json` is marked provisional while it is, wherever the outcome is written, and the row's
+  outcome code waits for its ear verdict.
+- R8's order guard: build 1's search (the ear-faulty build) is answered, scored and read only after a later build is
+  hashed on main (`phase_scratch_notes_dry_<name>`).
+- The pair definitions (`REFIND_LEAD_S`, `REFIND_TAIL_S`, `HANDOFF_S`) are candidate definitions, not tuned bars: they
+  say which pairs a join may consider; the discriminator decides each pair.
 
 **A later build** (#581's review): `build --build-name NAME --fixes JSON` writes `build-NAME.json` and its dry guitars
 under `dry-NAME/`, and refuses ear items that hold a ruled-out DI. `ear-items --build-name NAME` makes that page's ear
 items: the first page's items, each ruled-out DI replaced for its kind (the declared pass in the seeded order, else the
-nearest by the kind's own figure). fs-notes takes `--build-name` for that build's own hash key
+nearest by the kind's own figure), drawn from outside D's 19 windows so the page never hears an item the fixes were
+picked on. fs-notes takes `--build-name` for that build's own hash key
 (`phase_scratch_notes_dry_NAME`) and folders, and `ear_refusal` refuses a verdict filed under any key but
 `ear_key(sha)`.
 
@@ -1351,7 +1357,7 @@ nearest by the kind's own figure). fs-notes takes `--build-name` for that build'
 | Step | Set | Figure |
 |---|---|---|
 | Identity | 54 items × 2 arms | 108 of 108 files byte-identical |
-| F1 (median; global within 0.001) | D | distance −0.093 [−0.152, −0.035]; tuning +26.8 c → −0.7 c |
+| F1 (median less global on D: a tie, 0.0007 [−0.026, +0.035]; the global step used) | D | distance −0.093 [−0.152, −0.035]; tuning +26.8 c → −0.7 c |
 | F1 | L | distance −0.294 [−0.585, −0.002]; tuning +30.5 c → −1.4 c; bent share on the nine bend-free lists 0.18 → 0.04 |
 | F3 on F1 | D | distance +0.174 [+0.059, +0.289] (farther); joins: 36 annotated plucks, 4 annotated glides, 28 unannotated |
 | F3 on F1 | L | distance +0.466 [−0.094, +1.025]; the `bend` list's 7 splits all joined |
@@ -1360,3 +1366,7 @@ nearest by the kind's own figure). fs-notes takes `--build-name` for that build'
 | R4 clamps, as built | parts / D / E | the 2-semitone clear rule acts on 38% / 42% / 42% of notes; the bend cap on none; the onset snap moves 89% / 90% / 91% of groups; MIDI range, octave-up and six-at-once under 1% |
 
 So far F1 brings the rebuild closer on both sets, and F3 and F2's DI-band candidate as defined move it farther on D.
+F3's reading is that its pair detector fails, not that joining glides does not help: on the `bend` list it joins all 7
+true splits (distance −0.005 there), and the harm comes from false joins on the scales and D's plucks. Queued: a
+discriminator sweep for glides like F2's, on how far the bend travels toward the next note and on the DI's band at
+the next onset.
