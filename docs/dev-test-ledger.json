@@ -4663,6 +4663,33 @@
     "versions_sha256": "8f77f5d7bd2b380b989f44c958fb2bacd2303d85379b9cd57996a399ae59386f",
     "next_fix": "merge re-found held notes (a same-pitch merge over a held note's re-finds) and gate spurious bends, zero renders, under its own later declaration; taken up only if the fs-notes row shows the rebuild limits the search",
     "effect": "`build` reads loud null (versions_loud): tr-di and tr-plain as declared, no loudness"
+   },
+   "phase_nr_1_redo_calib_fix": {
+    "declared": "2026-11-23, after the first calibrate run stopped (calibration.json sha256 a18ec73ce485473a7e7786a2d8b43abcf085baf7d6dec3d36c78bc70f3d13ab8) and on the user's answer (phase_nr_1_redo_go_calib); before the rerun. No threshold changed.",
+    "first_run": "playing-covered 8 of 27 windows (declared 25; playing share median 0.90 against 0.95); annotated-found no window admitted (0 of 27); the positive control failed: the true DI on 19 of 27 (all chords-kept), avg+mild on 26 (chords-kept 26, ring-kept 7, judge-accepts 1); the six rejected clips all caught by a blocking check (playing-covered fails on all six)",
+    "chords_kept": "the round trip's notes go through the same steps as the DI's notes (timed_notes: the clean-up, the notes inside the audio, coarse_offset, the +-20 ms snap) against the audio that was transcribed (note_transcribe.round_trip_notes), in calibrate, its negative control and build; as run, the DI's notes were shifted and the round trip's were not",
+    "chords_kept_measured": "zero cost, from the stored calibration inputs (every rebuilt input identical to the stored one): the true DI passes chords-kept on 11 of 27 windows on one timeline (8 of 27 as run); avg+mild 0 of 27 (1 as run); the true DI's round-trip F median 0.82 (item_102 0.00 -> 0.13). The rest is Basic Pitch itself: the DI's notes come from the window with its margins, the round trip from the section alone",
+    "annotated_found": "a report, never a gate: no fair admission test admits GOAT's windows. Zero cost: the declared test admits 0 of 27; with each cluster's rise search bounded halfway to its neighbours, 0 of 27 (item_137 0.28 -> 0.33); a +-40 ms search admits 8 of 25 but random onset times pass it 6 of 75 (median share 0.57), so it does not separate an annotation from chance. The +-150 ms rise search does separate them (0.45 against 0.24) but reaches 80% on no window: in GOAT's dense playing the steepest rise near a note is often a neighbour's",
+    "positive_control_rule": "a declared blocking check the true DI or avg+mild fails on any calibration window, after these fixes, becomes report-only for the row (positive_report_only, recorded as report_only_checks); the user is told; no further stop. Expected from the first run's figures: chords-kept (the true DI fails it on 16 of 27 on one timeline), ring-kept (avg+mild 7) and judge-accepts (avg+mild 1), which with playing-covered reported under the user's go leaves no blocking content check: the listening page is the guard",
+    "blocking": "effective_blocking: the declared blocking checks less playing-covered under the user's go and less the report-only checks; used by calibrate's clip cases, transcribe and build",
+    "calibration_ok": "playing-covered on 25 of 27 unless the user's go makes it a report; every rejected clip caught by a check (caught by no check: the user's go, phase_nr_1_redo_go_clips); annotated-found and the positive control no longer stop it",
+    "rerun": "the first calibration.json and its work folder (work/calibrate/) move aside into PF/note-rebuild/redo/calibration.failed-20261123/ (calibration.json, work-calibrate/), never deleted; calibrate then runs once, refusing unless main holds this key and the user's go naming the set-aside record's sha256 (calib_rerun_refusal), and never overwriting calibration.json or work/calibrate/",
+    "renders": "zero; no training, no download",
+    "clip_fault": "the DIs here pass through song_bank.measure, whose +-15 dB EQ clip the track-4 audit found; its clip-free re-score is declared by track 4 and reported beside new dry-guitar rows; not run here"
+   },
+   "phase_nr_1_redo_go_calib": {
+    "date": "2026-11-23",
+    "by": "the user",
+    "asked": "The rebuild's automatic checks stopped the run before anything was built. Two of the checks are themselves broken: one compares notes on two mismatched timelines (so even the real DI fails it on 19 of 27 clips), and the other can't admit any clip to test on. The third check works, and it's catching the fault the audit already found and you chose to defer: held notes cut short (the rebuild is silent for about 10% of the time the real guitar plays; the bar is 5%). How should we proceed?",
+    "how": "AskUserQuestion",
+    "answer": "Fix broken checks, go on (Recommended)",
+    "option_description": "Fix the two broken checks under a short reviewed amendment (no thresholds changed), and record your go that the held-note check is reported rather than a stop, matching your 'run as is'. Your listening page stays the guard; the 47-recording row then decides.",
+    "relayed_by": "the coordinating session, 2026-11-23",
+    "go": true,
+    "calibration_sha256": "a18ec73ce485473a7e7786a2d8b43abcf085baf7d6dec3d36c78bc70f3d13ab8",
+    "calibration_file": "PF/note-rebuild/redo/calibration.json (set aside to calibration.failed-20261123/)",
+    "playing_covered": "reported, not a stop, for this run (effective_blocking; calibration_ok covered_reported)",
+    "guard": "the listening page"
    }
   },
   {

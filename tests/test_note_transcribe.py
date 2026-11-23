@@ -237,19 +237,72 @@ def test_annotated_found_on_the_top_tertile():
     assert T.annotated_found_pass(rows)["windows"] == 2
 
 
-def test_calibration_needs_annotated_found_and_playing_covered():
-    af = {"passes": True}
-    pos = {"avg+mild": [], "true": []}
+def test_calibration_as_fixed():
+    """12m's calibration fix (2026-11-23): playing-covered on 25 of 27 unless the user's go makes it a report;
+    annotated-found and the positive control no longer stop it; a clip caught by no check still needs the user's go."""
     caught = {"item_102|nr-plain": "caught by a blocking check", "item_46|nr-plain": "caught by a report only"}
-    assert T.calibration_ok(25, af, pos, caught)
-    assert not T.calibration_ok(24, af, pos, caught)                     # playing-covered on 25 of the 27
-    assert not T.calibration_ok(27, {"passes": False}, pos, caught)      # it gates the transcriber's settings
-    assert not T.calibration_ok(27, {"passes": None, "windows": 0}, pos, caught)   # no window to read it on
-    assert not T.calibration_ok(27, af, {"avg+mild": ["item_5"], "true": []}, caught)
-    assert not T.calibration_ok(27, af, {"avg+mild": [], "true": ["item_5"]}, caught)
+    assert T.calibration_ok(25, caught)
+    assert not T.calibration_ok(24, caught)                                    # playing-covered on 25 of the 27
+    assert T.calibration_ok(8, caught, covered_reported=True)                  # ... a report under the user's go
     blind = dict(caught, **{"item_160|nr-level": "caught by no check"})
-    assert not T.calibration_ok(27, af, pos, blind)                      # caught by no check: the user's go first
-    assert T.calibration_ok(27, af, pos, blind, clips_go=True)
+    assert not T.calibration_ok(27, blind)                                     # caught by no check: the user's go first
+    assert not T.calibration_ok(8, blind, covered_reported=True)
+    assert T.calibration_ok(27, blind, clips_go=True)
+
+
+def test_the_positive_controls_rule_and_the_blocking_set():
+    """A declared blocking check that avg+mild or the true DI fails on any window becomes report-only; the user's
+    calibration go makes playing-covered a report; the verdict and the clip cases follow the effective set."""
+    checks = {"avg+mild": {"w1": {"passes": {"judge-accepts": True, "ring-kept": False, "chords-kept": True}},
+                           "w2": {"passes": {"judge-accepts": None, "ring-kept": True, "chords-kept": True}}},
+              "true": {"w1": {"passes": {"judge-accepts": True, "ring-kept": True, "chords-kept": False}}},
+              "ring-soft": {"w1": {"passes": {"judge-accepts": False}}}}          # not a control: never counted
+    assert T.positive_report_only(checks) == ["chords-kept", "ring-kept"]
+    assert T.positive_report_only({"true": {"w": {"passes": {"onsets-found": False}}}}) == []   # already a report
+    full = T.declared_blocking()
+    assert full == {"playing-covered", "judge-accepts", "ring-kept", "chords-kept"}
+    assert T.effective_blocking(None, {}) == full
+    go = {T.PHASE_GO_CALIB: {"go": True}}
+    assert T.effective_blocking(None, go) == full - {"playing-covered"}
+    assert T.effective_blocking(None, {T.PHASE_GO_CALIB: {"go": False}}) == full
+    assert T.effective_blocking(None, {T.PHASE_GO_CALIB: "yes"}) == full
+    assert T.effective_blocking({"report_only_checks": ["ring-kept"]}, go) == {"judge-accepts", "chords-kept"}
+    figs = {"playing-covered": {"playing_share": 0.5, "silent_share": 0.0}}
+    assert T.check_verdict(figs, T.NOTE_CHECKS)["failed"] == ["playing-covered"]
+    assert T.check_verdict(figs, T.NOTE_CHECKS, T.effective_blocking(None, go))["failed"] == []
+    exp = [{"clip": "a|nr-plain", "must_fail_any": ["onsets-found", "playing-covered"]}]
+    res = {"a|nr-plain": {"onsets-found": False, "playing-covered": False}}
+    assert T.clip_case(exp, res) == {"a|nr-plain": "caught by a blocking check"}
+    assert T.clip_case(exp, res, T.effective_blocking(None, go)) == {"a|nr-plain": "caught by a report only"}
+
+
+def test_the_calibrations_only_rerun_path():
+    """`calibrate` runs again only with main's fix and the user's go naming the first record's sha256, that record
+    and its work folder set aside in CALIB_ASIDE."""
+    ok = {T.PHASE_CALIB_FIX: {}, T.PHASE_GO_CALIB: {"go": True, "calibration_sha256": "s"}}
+    assert T.calib_rerun_refusal(ok, "s", True) is None
+    assert T.PHASE_CALIB_FIX in T.calib_rerun_refusal({T.PHASE_GO_CALIB: ok[T.PHASE_GO_CALIB]}, "s", True)
+    for go in (None, "yes", {"calibration_sha256": "s"}, {"go": False, "calibration_sha256": "s"}, {"go": True}):
+        m = {T.PHASE_CALIB_FIX: {}, T.PHASE_GO_CALIB: go} if go is not None else {T.PHASE_CALIB_FIX: {}}
+        assert T.PHASE_GO_CALIB in T.calib_rerun_refusal(m, "s", True), go
+    assert "not set aside" in T.calib_rerun_refusal(ok, None, True)
+    assert "not set aside" in T.calib_rerun_refusal(ok, "s", False)
+    assert "is not the one" in T.calib_rerun_refusal(ok, "other", True)
+
+
+def test_a_round_trip_on_the_di_notes_timeline():
+    """chords-kept's round trip goes through the same steps as the DI's notes (`timed_notes`): one timeline."""
+    np = pytest.importorskip("numpy")
+    rate = T.NR.SR
+    x = np.zeros(int(2.0 * rate))
+    for t in (0.50, 1.20):                                   # two plucks: sharp attacks
+        k = int(t * rate)
+        x[k:k + 4800] += np.exp(-np.arange(4800) / 900.0) * np.sin(2 * np.pi * 196.0 * np.arange(4800) / rate)
+    ev = [{"on": 0.45, "off": 0.9, "pitch": 55, "amp": 0.8, "bends": []},
+          {"on": 1.15, "off": 1.6, "pitch": 55, "amp": 0.8, "bends": []}]
+    got = T.round_trip_notes(ev, x)
+    want, _ = T.timed_notes({"events": ev, "pre_s": 0.0}, x)
+    assert got == want
 
 
 def test_the_gate_passes_on_repeatability():
@@ -266,6 +319,8 @@ def test_the_rejected_clips_cases():
            "c|nr-plain": {"onsets-found": False, "playing-covered": True}}
     assert T.clip_case(exp, res) == {"a|nr-plain": "caught by a blocking check", "b|nr-plain": "caught by no check",
                                      "c|nr-plain": "caught by a report only"}
+    only_ring = {"ring-kept"}                                # playing-covered a report: a now caught by a report only
+    assert T.clip_case(exp, res, only_ring)["a|nr-plain"] == "caught by a report only"
 
 
 def test_the_two_triggers_and_the_versions_loudness():
@@ -498,6 +553,19 @@ def test_the_note_versions_read_on_main():
     go = e[T.PHASE_GO_VERSIONS]                                # the user's "Run as is", 2026-11-23
     assert go["answer"] == "Run as is (Recommended)" and go["go"] is True and go["versions_sha256"] == rec["sha256"]
     assert T.versions_loud(e) == (None, None)                 # build runs with no loudness
+
+
+def test_the_calibration_fix_and_the_users_go_on_main():
+    """12m's calibration fix and the user's go (2026-11-23): the go bound to the first calibration.json's sha256,
+    playing-covered reported for this run, and the rerun reachable only through the set-aside record."""
+    e = T.entries((REPO / "docs" / "dev-test-ledger.json").read_text())["note-rebuild"]
+    fix, go = e[T.PHASE_CALIB_FIX], e[T.PHASE_GO_CALIB]
+    assert go["answer"] == "Fix broken checks, go on (Recommended)" and go["go"] is True
+    assert go["calibration_sha256"].startswith("a18ec73c") and "reported" in go["playing_covered"]
+    assert "11 of 27" in fix["chords_kept_measured"] and "0 of 27" in fix["annotated_found"]
+    assert T.calib_rerun_refusal(e, go["calibration_sha256"], True) is None
+    assert T.calib_rerun_refusal(e, go["calibration_sha256"], False)
+    assert T.effective_blocking(None, e) == T.declared_blocking() - {"playing-covered"}
 
 
 def test_the_old_pages_expected_failure_table():
