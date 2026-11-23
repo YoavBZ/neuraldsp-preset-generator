@@ -555,6 +555,26 @@ def test_later_stages_run_large_unless_large_is_measured_worse():
     assert "device null" in X.large_stop_refusal(stop, "g", {"size": "large", "device": "mps"})
 
 
+def test_the_side_figure_counts_only_notes_starting_inside_and_decides_nothing():
+    truth = [_n(0.5, 60), _n(1.0, 64)]
+    est = [_n(-0.30, 55), _n(-0.03, 67), _n(0.5, 60), _n(1.0, 64)]   # a chord ringing in, a note 30 ms early
+    assert X.INSIDE_LEADS == {"inside": 0.0, "inside_lead": 0.050}
+    assert [n["pitch"] for n in X.inside_notes(est)] == [60, 64]
+    assert [n["pitch"] for n in X.inside_notes(est, 0.05)] == [67, 60, 64]
+    row = X.window_row("real", "P1|chords|a", "k", "P1", "chords", truth, {"tx-bp": est, "tx-vote": est[2:]})
+    assert row["figures"]["tx-bp"]["precision"] == 0.5                 # the deciding figure is unchanged
+    assert row["side"]["inside"]["tx-bp"]["precision"] == 1.0 and row["side"]["inside_lead"]["tx-bp"]["est"] == 3
+    rep = X.side_report([row])
+    assert rep["real"]["inside"]["tx-bp"]["precision"] == 1.0 and rep["P1|chords"]["inside_lead"]["tx-vote"]["est"] == 2
+    figs = lambda: _row("l0", {"tx-bp": _fig(10, 10, 16), "tx-vote": _fig(10, 10, 11), "tx-ms": _fig(10, 10, 11),
+                               "tx-veto": _fig(10, 10, 11)})
+    real = dict(figs(), set="real", group="P1", kind="chords", cluster="P1|chords|x")
+    tweaked = dict(real, side={"inside": {"tx-bp": _fig(10, 10, 10)}, "inside_lead": {"tx-bp": _fig(10, 10, 10)}})
+    a, b = X.summarise_read([figs()], [real], []), X.summarise_read([figs()], [tweaked], [])
+    assert a["readings"] == b["readings"] and a["code"] == b["code"]   # it never decides
+    assert "side_inside" in b and b["side_inside"]["real"]["inside"]["tx-bp"]["precision"] == 1.0
+
+
 def test_stage_b_reads_the_truth_report_with_the_users_hum_go(monkeypatch):
     """The truth report stopped on its hum guard; stage b reads it only as the redo does, with main's
     `phase_nr_1_redo_go_hum` naming the file's sha256 (note_transcribe.truth_report_refusal)."""

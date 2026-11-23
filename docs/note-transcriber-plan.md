@@ -816,3 +816,26 @@ What follows from it:
   Speed is still reported and never decides. No scoring rule changes.
 - **Expected:** stage b can only end `TXR-undecided`, with or without `veto-holds` (section 16). It reads the vote's
   and the veto's real-DI effect sizes.
+
+## 18. Stage b's truth report and a side figure (2026-11-23; ledger `phase_tx_inside_amend`)
+
+Declared before any stage-b note exists. The first `transcribe` refused at the truth report's hum guard and wrote
+nothing.
+
+**The hum go.** This is the orchestrator's technical call, not a new user go. The user's go on the hum guard's stop
+(`note-rebuild` `phase_nr_1_redo_go_hum`) attests that this exact file, `truth-report.json` sha256 `425f3fd1…f16f`, is
+sound, and stage b reads that file for the same windows.
+- `stage_b_context` now reads the report as the redo does: `note_transcribe.require_truth_report` with main's
+  `note-rebuild` entry.
+- Nothing in the hum rule or any threshold changes.
+
+**The side figure** is a declared report-only addition.
+- Beside every arm's precision and extras, `read` reports the same figures counting only found notes that start
+  inside the window. It uses the redo's own definition: on ≥ 0, and beside it the guard's 50-ms lead, on ≥ −0.05 s.
+- It is given per window and pooled per group: `side_report`, stored in `read.json` as `side_inside`. The truth is
+  unchanged.
+- **It never gates, never enters a reading and never decides a code.**
+- Why it is there: chords ringing in from before each window, and notes in the transcriber's 1-s lead-in, inflate
+  every arm's extras alike. This is the hum go's own finding.
+
+**A guard.** `later_stage_size` returns large only when large's own screen read `lists-go`, as `picked_size` does.
