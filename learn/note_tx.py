@@ -971,6 +971,19 @@ def later_stage_size(lists_body):
     return LATER_STAGE_SIZE
 
 
+def list_rows_for(lists_body, size):
+    """(Pure.) The list screen's rows for the size stage b runs: that size's own rows (`sizes[size].rows`), so the
+    read never pools one size's list rows with another's real-DI rows (PR #582's review). A screen made before the
+    amendment has no per-size rows: its `rows` then."""
+    body = lists_body or {}
+    own = ((body.get("sizes") or {}).get(size) or {}).get("rows")
+    if own is not None:
+        return own
+    if body.get("sizes"):
+        raise SystemExit(f"the list screen holds no rows for {size}")
+    return body["rows"]
+
+
 def picked_size(lists_body, go_read=None):
     """(Pure.) The size stage b runs: the list screen's pick (medium for a screen made before the amendment); on an
     undecided pick (large open for the user) the user's go may name large (`phase_tx_go_read` "size": "large"), but
@@ -1710,8 +1723,9 @@ def cmd_read(_args):
                          timing={"tx-bp": rb, "tx-ms": rm, "tx-ms-free": rf})
         row["checks"] = goat_checks(notes, di, bank, a, offset, round_trip, SB.measure)
         goat.append(row)
-    body = {"lists_rows": len(lists["rows"]), "real": real, "goat": goat, "audio_levels": AUDIO_LEVELS,
-            **summarise_read(lists["rows"], real, goat), "detector_offset_s": offset,
+    lrows = list_rows_for(lists, inst["size"])        # the stage-b size's own list rows
+    body = {"lists_rows": len(lrows), "lists_size": inst["size"], "real": real, "goat": goat,
+            "audio_levels": AUDIO_LEVELS, **summarise_read(lrows, real, goat), "detector_offset_s": offset,
             "lists_sha256": NR.file_sha(lists_path()), "truth_report_sha256": NR.file_sha(T.truth_report_path()),
             "notes_listing_sha256": sha, "device": inst["device"], "size": inst["size"]}
     NR.write_once(read_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}",

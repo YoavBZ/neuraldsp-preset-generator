@@ -929,6 +929,28 @@ def test_the_read_and_the_bridge_drop_the_ruled_out_di(monkeypatch, tmp_path):
     assert str(got.value) == "item_14"
 
 
+def test_the_read_takes_the_stage_b_sizes_own_list_rows():
+    """PR #582's review: the stored pick kept medium but stage b ran large on the user's go, so the read must take
+    large's list rows, not the screen's top-level (medium) rows."""
+    med, big = [{"key": "medium-row"}], [{"key": "large-row"}]
+    body = {"size": "medium", "rows": med, "sizes": {"medium": {"rows": med}, "large": {"rows": big}}}
+    assert X.list_rows_for(body, "large") is big and X.list_rows_for(body, "medium") is med
+    assert X.list_rows_for({"size": "medium", "rows": med}, "medium") is med     # a screen before the amendment
+    with pytest.raises(SystemExit, match="no rows for large"):
+        X.list_rows_for({"rows": med, "sizes": {"medium": {"rows": med}}}, "large")
+    go = {"size": "large"}
+    body["size_pick"] = {"large_open_for_user": True}
+    body["sizes"]["large"]["screen"] = "lists-go"
+    assert X.list_rows_for(body, X.picked_size(body, go)) is big                  # what cmd_read does
+    p = X.lists_path()
+    if p.exists():                                                                # the stored screen, when present
+        stored = json.loads(p.read_text())["body"]
+        go_read = X.tx_entries(LEDGER.read_text())["note-transcriber"][X.PHASE_GO_READ]
+        size = X.picked_size(stored, go_read)
+        assert size == "large" and X.list_rows_for(stored, size) == stored["sizes"]["large"]["rows"]
+        assert X.list_rows_for(stored, size) != stored["rows"]                    # not medium's rows
+
+
 def test_the_stored_list_screen_rederives_unchanged_under_t1():
     """T1: the list screen was read under the old bars; re-derived from the stored rows under the new rules (no
     re-run), every reading and the screen are unchanged (skipped without the stored lists.json)."""

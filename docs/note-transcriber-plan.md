@@ -902,3 +902,8 @@ before the real-DI read.
 No measure, pairing, clean-up or threshold of the figures changes; only what the readings compare to.
 
 **12p's "`CHECK_SLACK` stays one window" is superseded.** The paragraph above (and #580's bar table, `phase_nr_1_redo_item5_out`) predate T1. The checks now count over the read's 26 windows as a per-window report (`check_window_report`), and no slack gates anything.
+
+**The read's list rows (PR #582's review).** `read` takes the stage-b size's own list rows (`list_rows_for`:
+`sizes[size].rows`). The stored screen's top-level rows are medium's, because its pick kept medium, while stage b runs
+large on the user's go. Taking the top-level rows would have pooled medium's list rows with large's real-DI rows, and
+the read would have disagreed with the bridge. A screen made before the amendment falls back to its `rows`.
