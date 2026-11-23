@@ -1176,11 +1176,12 @@ def cmd_gate(args):
     """Phase 2 (zero renders): per device, REPEAT_WINDOWS development windows, three runs each (two in one process, one
     fresh), identical notes; seconds per window, transcription only (tx_run's per-input seconds; the load apart);
     the device by `device_choice`; stage b's projection on each device for its real run count (`stage_b_runs`: the
-    listing's consistent windows plus 2 x 27), the chosen device's read by `size_choice`. If the size stays (medium, or small after a switch), the ten lists
-    are transcribed with it (the guitar groups, and no mask for tx-ms-free), each note file written once, their
-    listing sha256 printed. If the rule calls for small, it stops with no list notes written; after the user installs
-    the small weights, `gate --size small` runs the repeat and speed tests again on small, then the lists. Refuses
-    while another MPS user or a render runs. -> tx/gate-<size>.json (its sha256 goes into phase_tx_install)."""
+    listing's consistent windows plus 2 x 27), the chosen device's read by `size_choice`. If the size stays (medium,
+    or small after a switch), the ten lists are transcribed with it (the guitar groups, and no mask for tx-ms-free),
+    each note file written once, their listing sha256 printed. If the rule calls for small, it stops with no list
+    notes written; after the user installs the small weights, `gate --size small` runs the repeat and speed tests
+    again on small, then the lists. Refuses while another MPS user or a render runs.
+    -> tx/gate-<size>.json (its sha256 goes into phase_tx_install)."""
     size = getattr(args, "size", None) or "medium"
     m = require_tx(PHASE_GO, nr=(T.PHASE_TRUTH,))
     man = load_manifest()

@@ -234,7 +234,8 @@ def main(argv=None):
     torch.set_num_threads(THREADS)
     t0 = time.perf_counter()
     model = TranscriptionModel.load_model(args["weights"], device=args["device"], dtype=None)
-    meta = {"load_s": time.perf_counter() - t0,"weights_sha256": wsha, "weights_size": size, "device": args["device"], "dtype": _dtype_name(model),
+    meta = {"load_s": time.perf_counter() - t0, "weights_sha256": wsha, "weights_size": size,
+            "device": args["device"], "dtype": _dtype_name(model),
             "muscriptor": md.version("muscriptor"), "torch": torch.__version__, "threads": THREADS,
             "python": sys.version.split()[0], "settings": args["settings"]}
     for src, dst, sha in plan:
