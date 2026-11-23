@@ -697,6 +697,14 @@ Code: `learn/scratch_codec.py` (the row) and `learn/codec_roundtrip.py` (the rou
 interpreter, importing nothing from this project); tests: `tests/test_scratch_codec.py`, `tests/test_codec_roundtrip.py`.
 Data: `PF/fs/codec/`. Section 11 is track 4's.
 
+**Status (2026-11-23): ran and audited.** Both codecs read **`FK-clear`** on the pool and on BKS+GOAT. On the pool,
+`D_true` is +0.023 [+0.010, +0.037] for `rt-m2l` and +0.009 [−0.004, +0.023] for `rt-dac`: a weak go, "not ruled out
+by its codec", for each. No full row runs.
+- Ledger: `phase_scratch_codec_outcome`.
+- Results, corrections and caveats:
+  [results](scratch-search-results.md#the-codec-ceiling-row-fs-codec-track-2-both-codecs-fk-clear).
+- Next on this track (recorded, not started): declare LOUDAR's second test, with BKS and the panel deciding.
+
 **The question.** Before LOUDAR is downloaded or any latent DI rebuild is built: does a dry guitar that has only passed
 through the codec still drive the search? One short search row per codec, driven by the **true DI after a codec round
 trip**, read against row (b) (the true DI) and row (c) (avg+mild).
