@@ -1281,3 +1281,14 @@ the redo and track 1: this key.
   - `scratch_notes.notes_draw` refuses fs-notes's draw the same way. Today's draw holds none.
   - `note_tx read` drops `item_5`'s GOAT rows for every arm, and the bridge drops them on both its stored and built
     sides. Both refuse until this key is on main; `read` runs once.
+
+**12h's fix cap and its stop, retired by the user (2026-11-24; ledger `phase_nr_1_redo_no_caps`).** In their words:
+"I don't want any such predefined rules. We should do whatever takes us further towards our main goal. No made up or random thresholds/limits/etc."
+- **Gone:** "one declared fix", the stop that followed a second failure or a second ear content fault, and "one build"
+  before the ear check. Every fix is a new build.
+- **Kept:** the ear page, the listening check on whether the rebuilt notes are right. Each build is heard on its own
+  page (clips and page folders suffixed by the build's sha256 prefix; the first build's as built) and gets its own
+  verdict (`phase_nr_1_redo_ear` for the first, `phase_nr_1_redo_ear_<sha12>` after). `ear_refusal` reads the verdict
+  for the build asked about. No count of builds or fixes is kept.
+- A later page never plays a ruled-out DI (12p): new ear items come first.
+- The path's other predefined bars and caps are listed for the user's call; none is changed here.

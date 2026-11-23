@@ -744,6 +744,36 @@ def test_the_exclusion_on_main():
     assert {"note_tx.CHECK_SLACK = 1", "note_tx.DEV_RUNS = 54"} <= set(rec["bars"])
 
 
+def test_a_second_and_a_third_fixed_build_can_be_listened_to():
+    """The user retired 12h's fix cap and its stop (2026-11-24): each build gets its own clips, page and verdict;
+    none overwrites another; no count of builds or fixes is kept anywhere."""
+    from learn import note_rebuild_ear as NE
+    from learn import scratch_notes as SN
+
+    first, second, third = T.FIRST_DRY_SHA, "b2" * 32, "b3" * 32
+    assert T.listening_suffix(first) == "" and T.clips_dir(first).name == "note-rebuild-ear-2"
+    assert NE.redo_page_dir().name == "note-rebuild-ear-page-2" == NE.redo_page_dir(first).name
+    dirs = {T.clips_dir(b) for b in (first, second, third)} | {NE.redo_page_dir(b) for b in (first, second, third)}
+    assert len(dirs) == 6                                         # every build its own clips and page
+    assert T.ear_key(first) == T.PHASE_EAR and len({T.ear_key(b) for b in (first, second, third)}) == 3
+    assert T.dry_path("tr-di", "ear|item_14", "/x/fix2").as_posix() == "/x/fix2/tr-di/ear|item_14.npy"
+    assert T.dry_path("tr-di", "ear|item_14") == T.REDO / "dry" / "tr-di" / "ear|item_14.npy"
+    nr = {T.PHASE_EAR: {"verdict": "fault-content", "dry_build_sha256": first},
+          T.ear_key(second): {"verdict": "fault-content", "dry_build_sha256": second},
+          T.ear_key(third): {"verdict": "ok", "dry_build_sha256": third}}
+    assert "fault-content" in SN.ear_refusal(nr, first)
+    assert "fault-content" in SN.ear_refusal(nr, second)          # a second fixed build heard: no stop by count
+    assert SN.ear_refusal(nr, third) is None                     # a third, heard ok: the row may go on
+    assert "not recorded" in SN.ear_refusal({}, "b4" * 32)
+    assert "another build" in SN.ear_refusal(nr, "b4" * 32)
+
+
+def test_the_cap_retirement_on_main():
+    e = T.entries((REPO / "docs" / "dev-test-ledger.json").read_text())["note-rebuild"]
+    rec = e[T.PHASE_NO_CAPS]
+    assert rec["words"].startswith("I don't want any such predefined rules.") and rec["by"].startswith("the user")
+
+
 def test_the_old_pages_expected_failure_table():
     """`phase_nr_1_ear_old` (step 2): the stored read, the user's words, and which check must fail which rejected
     clip, ledgered before any check runs on them; the table is the shape `calibrate` reads."""

@@ -190,7 +190,7 @@ def test_the_old_page_is_never_overwritten(monkeypatch, tmp_path):
 def test_redo_page_refuses_to_overwrite(monkeypatch, tmp_path):
     pytest.importorskip("numpy")
     (tmp_path / "artifact.html").write_text("")
-    monkeypatch.setattr(NE, "redo_page_dir", lambda: tmp_path)
+    monkeypatch.setattr(NE, "redo_page_dir", lambda *a: tmp_path)
     with pytest.raises(SystemExit, match="never overwritten"):
         NE.cmd_redo_page(None)
 
