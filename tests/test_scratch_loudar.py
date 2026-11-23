@@ -207,12 +207,51 @@ def test_the_subwindow_fraction_beside_g50_and_its_spearman():
     d_true = {"a": 0.3, "b": 0.2, "c": 0.1, "g": 9.0}                            # GOAT never counted
     r = SL.d_true_vs_subwin(d_true, sub, sets_of, "ld-stem")
     assert r == {"name": "ld-stem", "n": 3, "rho": pytest.approx(-1.0), "reported_only": True}
-    assert SL.d_true_vs_subwin(d_true, sub, sets_of, "ld-rec") == {"name": "ld-rec", "n": 0, "rho": None,
-                                                                   "reported_only": True}
+    assert SL.d_true_vs_subwin(d_true, sub, sets_of, "ld-rec") == {
+        "name": "ld-rec", "note": "no sub-window diagnostic for ld-rec", "reported_only": True}
     assert SL.spearman([1, 2, 3, 4], [10, 20, 30, 40]) == pytest.approx(1.0)
     assert SL.spearman([1, 2, 2, 3], [1, 3, 2, 4]) == pytest.approx(0.9486832980505138)   # scipy's, with ties
     assert SL.spearman([1, 2], [2, 1]) is None and SL.spearman([1, 1, 1], [1, 2, 3]) is None
     assert SL.ranks([3.0, 1.0, 3.0, 2.0]) == [3.5, 1.0, 3.5, 2.0]
+
+
+def test_ld_rec_reads_no_subwindow_diagnostic_not_blanks(capsys):
+    sub = {"a": {"set": "bks", "ld-stem-b": {"sub_frac_within1": 0.25}, "stem-in": {"sub_frac_within1": 1.0}},
+           "b": {"set": "panel", "stem-in": {"sub_frac_within1": 0.5}}}
+    got = SL.lags_beside_g50({"a": 0.1, "b": 0.0}, {}, ["ld-rec", "ld-stem-b", "stem-in"], sub)
+    assert got["a"]["sub_within_1ms"] == {"ld-rec": "no sub-window diagnostic for ld-rec", "ld-stem-b": 0.25,
+                                          "stem-in": 1.0}
+    assert got["b"]["sub_within_1ms"]["ld-rec"] == SL.no_subwin("ld-rec")
+    assert got["b"]["sub_within_1ms"]["ld-stem-b"] is None                  # held elsewhere, blank on this part
+    SL.print_lags(got)
+    out = capsys.readouterr().out
+    assert out.count("no sub-window diagnostic for ld-rec") == 2 and "ld-stem-b 0.25" in out and "ld-stem-b -" in out
+    r = SL.d_true_vs_subwin({"a": 0.3, "b": 0.1}, sub, {"a": "bks", "b": "panel"}, "ld-rec")
+    assert r["note"] == "no sub-window diagnostic for ld-rec" and "rho" not in r and "n" not in r
+
+
+def test_read_rec_checks_the_bottleneck_before_any_report(monkeypatch, tmp_path):
+    from learn import note_replay as NR
+
+    monkeypatch.setattr(SL, "loudar_dir", lambda: tmp_path)
+    (tmp_path / "report.json").write_text(json.dumps({"goat": "short"}))
+    (tmp_path / f"answers-{SL.REC}.json").write_text("{}")
+    monkeypatch.setattr(SL, "require_loudar", lambda *a: {})
+    monkeypatch.setattr(SL, "require_rec", lambda m: {})
+    monkeypatch.setattr(S, "require_draw", lambda: {"parts": []})
+    monkeypatch.setattr(NR, "Stored", lambda: None)
+    iv = _iv(0.1, 0.05, 0.15)
+    rows = {q: {"bp": iv} for q in ("D_null", "D_blur", "D_cut", "D_bar", "G50")}
+    rows.update(G50_rows_b_c={"fs-both": {"bp": iv}}, lag_beside_g50={}, D_true_vs_subwin={})
+    monkeypatch.setattr(SL, "read_body", lambda *a: (rows, {}, {}))
+    monkeypatch.setattr(SL, "bottleneck", lambda code, goat: {"bottleneck": "the generator or its operator",
+                                                               "next": "x"})
+    with pytest.raises(SystemExit, match="timing and timbre are not separated"):
+        SL.cmd_read_rec(None)
+    assert not SL.report_path(True).exists() and SL.rows_path(True).exists()   # the rows first, never the report
+    src = (REPO / "learn" / "scratch_loudar.py").read_text()
+    body = src[src.index("def cmd_read_rec("):src.index("def cmd_versus_notes(")]
+    assert body.index("endswith(NOT_SEPARATED)") < body.index("P.save(report_path(True)")
 
 
 def test_the_timing_diagnostic_is_read_by_its_sha256(monkeypatch, tmp_path):
@@ -266,7 +305,8 @@ def test_the_phases_are_new_and_outside_the_other_rows_guards():
     e = next(t for t in d["tests"] if t.get("test_id") == S.LEDGER_ID)
     pinned = {"phase_scratch_loudar_globals",        # the checkpoint's allowlist (learn/loudar_run.py's pin)
               "phase_scratch_loudar_gate_amend",     # the gate's amendment (the direction check removed)
-              "phase_scratch_loudar_timing_amend"}   # the timing check made report-only, the placement stop kept
+              "phase_scratch_loudar_timing_amend",   # the timing check made report-only, the placement stop kept
+              "phase_scratch_loudar_read_nits"}      # the reads' report-only nits; timing-subwin.json protected
     assert set(SL.loudar_keys(e)) <= set(keys) | pinned and SL.PHASE in e
 
 
