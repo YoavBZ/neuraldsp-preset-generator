@@ -1145,3 +1145,38 @@ all caught by a blocking check.
   set-aside record's sha256 (`calib_rerun_refusal`), and it never overwrites `calibration.json` or `work/calibrate/`.
 - **The clip fault:** these DIs pass through `song_bank.measure`, whose ±15 dB EQ clip the track-4 audit found. Its
   clip-free re-score is declared by track 4 and reported beside new dry-guitar rows; it is not run here.
+
+### 12n. The ear items' kinds, amended 2026-11-23 (the delegated decision; ledger `phase_nr_1_ear_kinds`)
+
+**Why.** After the calibration's rerun passed, `transcribe` stopped before transcribing any part: "no item of kind
+['let-ring', 'single-note'] among the development items". This was diagnosed from the stored scans, with no runs.
+- `single-note` needs no bent note, and Basic Pitch marks nearly every note bent: `item_14` 14 of 14, `item_143` 69 of
+  75. No item qualifies, even with every group a single note.
+- `let-ring` needs half or more of the groups to ring 100 ms into the next onset. The highest share is 0.16
+  (`item_5`), and on GOAT's annotated notes every item reads 0.00.
+- Both are the faults the versions read's independent audit found (its section 4, summarised in the step-5 note
+  above): spurious pitch bends, and held notes cut short.
+
+**The decision** was made by the delegated decision agent under the user's standing instruction of 2026-11-23
+(technical decisions go to it). It is not a go of the user's.
+
+| Kind | Rule |
+|---|---|
+| `single-note` | Read from GOAT's annotated notes: the same window (the 10 s with the most notes on the 5-s grid), the same grouping, the same bar (80% or more single-note groups). "No bend" holds because the annotation carries none. Its ear window is that window |
+| `chord-led`, `bends`, `let-ring` | On the transcription, as declared |
+| A kind still unfilled after the declared pass through the seeded order | The not-yet-picked item with the highest value of that kind's own figure (ties by the seeded order), recorded as `{"kind", "filled": false, "nearest": true, "figure", "bar"}` and labelled "let-ring (nearest; none met 0.50)" |
+
+- **Rejected:** a bend threshold set after the fact; dropping cards.
+- **Measured on the stored scans** (the branch's code): `chord-led` `item_77`, `bends` `item_39`, `single-note`
+  `item_49` (from the annotation), and `let-ring` filled by nothing, so its nearest is `item_5` (figure 0.16 against
+  the bar 0.50). All four are clear of the exclusion list and are in neither the row's draw nor the replay's.
+- **Statement:** No development item meets the declared let-ring bar. The figure reads note-offs, which the transcription is known to cut short and the annotation does not carry. This is a limit of the figure, not evidence that the pool has no let-ring playing.
+- **Caveats.** The transcriber's bends are mostly spurious, so the `bends` slot is labelled by the transcriber and is
+  not verified; how it is picked is unchanged. Picking `let-ring` by the transcriber's note-ends leans toward the item
+  where its cutting is mildest.
+- **Unchanged:** the 13 cards; the 4 crunch repeats (the nearest let-ring item included); the hidden control; the
+  buttons; `redo_verdict`'s reading; the exclusion list; no other GOAT items used. The kind is not shown on the cards:
+  it is kept in the transcribe record, `ear-items.json` and the clips index.
+- **Code:** `kind_figures`, `ear_kinds_of`, `nearest_fill`, `choose_ear_kinds` beside `pick_ear_items` (which stays
+  pure and unchanged) and `annotated_notes`. `transcribe` writes the chosen items, sources and figures to
+  `ear-items.json` and `transcribe.json` (`ear_kinds`).
