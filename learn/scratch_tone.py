@@ -887,7 +887,8 @@ def score_dry(p, select, settings, dry32, judge_di32, sd, new_renderer, clean=No
     if not np.isfinite(y).all():
         return math.inf, AM.audio_sha(np.nan_to_num(y)), None
     v = NR.half_distance(clean, y, di, p["lag"], p["held"])
-    return v, AM.audio_sha(y), [float(q) for q in on_grid(spectrum(y))]
+    mono = y.mean(axis=1) if y.ndim == 2 else y      # a stereo render folded as the judge folds it (aligned._signal)
+    return v, AM.audio_sha(y), [float(q) for q in on_grid(spectrum(mono))]
 
 
 def stored_cen(k):

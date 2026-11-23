@@ -440,6 +440,38 @@ def test_no_clip_measure_equals_measure_where_the_gain_never_clips(monkeypatch, 
     assert not np.allclose(T.no_clip_measure(x), SB.measure(x))     # where it clips, they part
 
 
+def test_score_dry_takes_a_stereo_render_as_the_judge_folds_it(monkeypatch):
+    """The plugin renders (samples, 2): the distance and the render sha256 take the render as `score_row_part` does,
+    and the spectrum is of the channel mean (`analysis.aligned._signal`'s fold). The split's first run stopped here."""
+    np = pytest.importorskip("numpy")
+    from learn import audibility_measure as AM
+    from learn import di_robustness as DR
+    from learn import note_replay as R
+    from learn import pretrain_set as PS
+
+    n = int((PS.TRIM_S + PS.SEC_S) * PS.SR) + 4800
+    rng = np.random.default_rng(5)
+    y2 = rng.standard_normal((n, 2))
+    seen = {}
+
+    def fake_render(make, di, sel, xp, x):
+        return y2
+
+    def fake_half(ref, y, di, lag, half):
+        seen["ndim"] = y.ndim
+        return 0.75
+    monkeypatch.setattr(AM, "fresh_render", fake_render)
+    monkeypatch.setattr(R, "half_distance", fake_half)
+    p = {"lag": 0, "held": "B"}
+    v, sha, sp = T.score_dry(p, "sel", {}, np.zeros(n, np.float32), np.zeros(n, np.float32), None, None,
+                             clean=np.zeros(n))
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    y = y2[trim[0]:trim[1]]
+    assert v == 0.75 and seen["ndim"] == 2 and sha == AM.audio_sha(y)
+    want = T.on_grid(DR.smoothed_spectrum(y.mean(axis=1)))
+    assert len(sp) == T.GRID_N and np.allclose(sp, want)
+
+
 def test_band_distance_is_zero_for_a_constant_offset():
     np = pytest.importorskip("numpy")
     a = np.linspace(-20, 5, 2049)
