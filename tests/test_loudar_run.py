@@ -166,6 +166,10 @@ def test_the_gates_reading():
     d = {"distorted": [6.0] * 6, "authors": [3.0] * 6, "ours": {"released": [3.0] * 6}, "cut": [4.1] * 6,
          "from_full": [3.0] * 6}
     assert not LR.gate_reading(d)["length_ok"]
+    assert LR.gate_reading(d)["length_per_clip_db"] == pytest.approx([1.1] * 6)    # beside the mean, report only
+    d["cut"] = [4.4, 3.0, 3.0, 3.0, 3.0, 3.0]                            # one clip +1.4, the mean +0.23: passes
+    got = LR.gate_reading(d)
+    assert got["length_ok"] and got["length_per_clip_db"][0] == pytest.approx(1.4)
     with pytest.raises(SystemExit):
         LR.gate_reading({"distorted": [1], "authors": [1], "ours": {}})
 

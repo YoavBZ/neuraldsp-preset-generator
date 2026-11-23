@@ -248,9 +248,10 @@ def gate_reading(d):
     out["reproduction_ok"] = abs(out["reproduction_db"]) <= GATE_TOL_DB and not out["reproduction_clips_beyond"]
     if d.get("cut") and d.get("from_full"):
         out["length_db"] = mean(d["cut"]) - mean(d["from_full"])
+        out["length_per_clip_db"] = [c - f for c, f in zip(d["cut"], d["from_full"])]   # beside the mean, report only
         out["length_ok"] = out["length_db"] <= GATE_TOL_DB
     else:
-        out["length_db"], out["length_ok"] = None, None
+        out["length_db"], out["length_per_clip_db"], out["length_ok"] = None, None, None
     out["passed"] = bool(out["reproduction_ok"] and out["length_ok"])
     return out
 

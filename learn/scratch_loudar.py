@@ -74,8 +74,14 @@ LATENCY = 52                                       # the plugin's (knob_ceiling.
 HALVES = {"A": (1.0, 5.5), "B": (5.5, 10.0)}       # pretrain_set.HALVES (= knob_ceiling.R.HALVES; a test holds it)
 SMALL, BIG = S.SMALL, S.BIG
 CUT_SWITCH = 0.05                                  # D_cut's upper end above this: the table reads D_bar
-TIMING_MS, TIMING_STOP = 1.0, 3                    # the codec row's rule, as a check: 3 or more deciding parts stop
-TIMING_NAMES_PREFIX = "ld-"                        # only LOUDAR's dry guitars stop it; stem-in is reported beside
+TIMING_MS = 1.0                                    # the 1-ms envelope check, report-only (timing_report)
+TIMING_NAMES_PREFIX = "ld-"                        # LOUDAR's dry guitars (the 1-ms check is report-only for all)
+PLACEMENT_MS = 2.0                                 # the placement stop: a placed name's median whole-clip lag
+TIMING_DIAGNOSTIC_SHA256 = "d7f2f8ec8a2dd19e3f012f4e952fdef92b184ae43b569d3d7f40a9dfa882b8b0"   # timing-subwin.json
+TIMING_DECISION_SHA256 = "f2beba2436fba5ee04e77cfc0669c61a623fe9d2525de3b8f25d8759a8d4acde"     # loudar-timing-stop.md
+TIMING_CAVEAT = ("the row prices LOUDAR's timing and timbre together: an FL-short or FL-null does not on its own say "
+                 "which fell short. The per-part whole-clip lags are printed beside the per-part G50; they never "
+                 "decide (phase_scratch_loudar_timing_amend)")
 OPEN_VERDICTS = ("fault-content", "fault-signal")  # a recorded ear verdict that rules fs-notes out (not "ask")
 CHECK_SHA256 = SC.CHECK_SHA256
 COMPRESSION_NOTE = SC.COMPRESSION_NOTE
@@ -571,14 +577,26 @@ def build_names(draw, sd, names, rec=False):
     return held, recs, figs, offsets, lufs
 
 
-def timing_stop(offsets, sets_of, tol=TIMING_MS, stop=TIMING_STOP):
-    """(Pure.) The codec row's rule as a check, never a correction: {name: {pkey: lag ms}} -> ({name: [deciding pkeys
-    beyond tol]}, stopped when any of LOUDAR's dry guitars (`ld-*`) has `stop` or more deciding parts beyond).
-    `stem-in` is reported beside and never stops the build: it is an amped signal, whose envelope's lag against the DI
-    can differ for reasons other than timing."""
-    beyond = {n: sorted(k for k, v in d.items() if sets_of.get(k) in DECIDING and (v is None or abs(v) > tol))
-              for n, d in offsets.items()}
-    return beyond, any(len(v) >= stop for n, v in beyond.items() if n.startswith(TIMING_NAMES_PREFIX))
+def timing_report(offsets, sets_of, tol=TIMING_MS):
+    """(Pure.) The 1-ms timing check, report-only since phase_scratch_loudar_timing_amend: {name: {pkey: lag ms}} ->
+    {name: [deciding pkeys beyond tol]}. It never stops the build: on LOUDAR's regenerated audio the 1-ms envelope
+    slips by a pitch cycle and the onsets jitter, with no constant per-clip offset (the decision agent's diagnostic,
+    TIMING_DIAGNOSTIC_SHA256)."""
+    return {n: sorted(k for k, v in d.items() if sets_of.get(k) in DECIDING and (v is None or abs(v) > tol))
+            for n, d in offsets.items()}
+
+
+def placement_stop(offsets, sets_of, tol=PLACEMENT_MS):
+    """(Pure.) The placement stop, the timing check's first purpose: the median whole-clip lag over the deciding parts
+    of any placed name (`ld-*` or `stem-in`) beyond +-tol ms means the placement is wrong (padding, latency or lag),
+    not the generator: the build stops and writes nothing. -> ({name: median ms or None}, stopped)."""
+    import statistics
+
+    med = {}
+    for n, d in offsets.items():
+        vals = [v for k, v in d.items() if sets_of.get(k) in DECIDING and v is not None]
+        med[n] = statistics.median(vals) if vals else None
+    return med, any(v is None or abs(v) > tol for v in med.values())
 
 
 def write_build(draw, rec, held, recs, figs, offsets, lufs, names):
@@ -587,14 +605,16 @@ def write_build(draw, rec, held, recs, figs, offsets, lufs, names):
     from learn import pipeline_fix as P
 
     sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}
-    beyond, tstop = timing_stop(offsets, sets_of)
+    beyond = timing_report(offsets, sets_of)
+    medians, tstop = placement_stop(offsets, sets_of)
     off_level = SC.lufs_beyond(lufs)
     runs = {n: run_records(n)[1] for n in names if n in SOURCES}
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}", "draw_sha256": S.file_sha(S.draw_path()),
            "in_json_sha256": S.file_sha(in_json()), "run_records": runs,
            "settings": sorted({r["setting"] for v in runs.values() for r in v.values()}),
-           "lufs_beyond": off_level, "timing_beyond_1ms": beyond, "timing_stopped": tstop,
-           "timing_beside_only": sorted(n for n in beyond if not n.startswith(TIMING_NAMES_PREFIX)),
+           "lufs_beyond": off_level, "timing_beyond_1ms_reported_only": beyond,
+           "placement_median_lag_ms": medians, "placement_stopped": tstop,
+           "timing_diagnostic_sha256": TIMING_DIAGNOSTIC_SHA256, "timing_decision_sha256": TIMING_DECISION_SHA256,
            "goat_built": any(sets_of[k] == "goat" for k in recs.get("ld-stem", {})),
            "time": time.strftime("%Y-%m-%d %H:%M:%S"), "names": recs}
     if len(out["settings"]) > 1:
@@ -603,8 +623,8 @@ def write_build(draw, rec, held, recs, figs, offsets, lufs, names):
     if off_level:
         why.append(f"{len(off_level)} measured clips more than {SC.LUFS_TOL} LU off {SC.LUFS}")
     if tstop:
-        why.append(f"the timing check: {beyond} (an ld-* dry guitar with 3 or more deciding parts beyond 1 ms): stop "
-                   "and ask before renders")
+        why.append(f"the placement stop: a placed name's median whole-clip lag over the deciding parts is beyond "
+                   f"+-{PLACEMENT_MS} ms ({medians}): a placement bug, not the generator; stop and ask before renders")
     if why:
         P.save(loudar_dir() / f"build{'-rec' if rec else ''}-stopped-{time.strftime('%Y%m%d-%H%M%S')}.json",
                dict(out, stopped=why))
@@ -875,6 +895,19 @@ def numbers(g, comp, gcut=None, gin=None):
     return out
 
 
+def lags_beside_g50(g, fig_parts, names):
+    """(Pure.) Per part, the G50 with the placed names' whole-clip lags (ms, from the build's figures) beside it:
+    {pkey: {"G50": value, "lag_ms": {name: lag or None}}}. Reported only; never decides."""
+    return {k: {"G50": v, "lag_ms": {n: ((fig_parts.get(k) or {}).get(n) or {}).get("lag_ms") for n in names}}
+            for k, v in sorted(g.items())}
+
+
+def print_lags(beside):
+    for k, r in beside.items():
+        lags = ", ".join(f"{n} {v:+.0f} ms" if v is not None else f"{n} -" for n, v in r["lag_ms"].items())
+        print(f"  {k[-56:]}: G50 {r['G50']:+.3f} | {lags}")
+
+
 def read_body(sd, draw, m, name, gin=None):
     """The rows of a read for `name` (ld-stem or ld-rec): G50, the five numbers, rows (b) and (c), rt-m2l."""
     comp_full = SC.comparators()
@@ -897,6 +930,9 @@ def read_body(sd, draw, m, name, gin=None):
     rows["room_kept"] = (1 - room[0] / room[1]["bp"]["mean"]) if room[0] is not None and room[1] and \
         room[1]["bp"] and room[1]["bp"]["mean"] else None
     rows["parts_at_or_over_0.10"] = sorted(k for k, v in g.items() if v >= BIG)
+    fp = figures_path(name == REC)
+    figs = json.loads(fp.read_text())["parts"] if fp.exists() else {}
+    rows["lag_beside_g50"] = lags_beside_g50(g, figs, [n for n in (name, "ld-stem-b", "stem-in") if n in PLACED])
     head = {"refused": refused, "nonfinite_replaced": replaced, "scoring_control_misses": miss}
     return rows, head, g
 
@@ -926,7 +962,7 @@ def cmd_read(_args):
     fl = fl_code(rows["D_null"]["bp"], rows["D_blur"]["bp"], rows["D_cut"]["bp"], rows["D_bar"]["bp"],
                  rows["G50"]["bp"], rows["G50_rows_b_c"]["fs-both"]["bp"])
     goat = goat_reading((rows["D_blur"]["goat"] or None) if build.get("goat_built") else None)
-    rep = dict(out, rows=rows, fl=fl, goat=goat, caveat=NO_PRIOR_IMPROVEMENT_NOTE,
+    rep = dict(out, rows=rows, fl=fl, goat=goat, caveat=NO_PRIOR_IMPROVEMENT_NOTE, timing_caveat=TIMING_CAVEAT,
                next="ld-rec" if fl["code"] in REC_CODES else fl["next"],
                bks_g50_below_zero=((rows["G50"]["bks"] or {}).get("hi90") or 0) < 0)
     if SN.report_path().exists():
@@ -935,6 +971,8 @@ def cmd_read(_args):
     d = rows[fl["number"]]["bp"]
     print(f"fs-loudar: {fl['number']} {d['mean']:+.3f} [{d['lo90']:+.3f}, {d['hi90']:+.3f}] on BKS+panel -> "
           f"{fl['code']}: {fl['reading']}. Next: {rep['next']}")
+    print(f"Caveat: {TIMING_CAVEAT}")
+    print_lags(rows["lag_beside_g50"])
 
 
 def cmd_read_rec(_args):
@@ -955,8 +993,10 @@ def cmd_read_rec(_args):
     fl = fl_code(rows["D_null"]["bp"], rows["D_blur"]["bp"], rows["D_cut"]["bp"], rows["D_bar"]["bp"],
                  rows["G50"]["bp"], rows["G50_rows_b_c"]["fs-both"]["bp"])
     bn = bottleneck(fl["code"], main_rep.get("goat"))
-    P.save(report_path(True), dict(out, rows=rows, fl=fl, bottleneck=bn, caveat=NO_PRIOR_IMPROVEMENT_NOTE))
-    print(f"ld-rec: {fl['code']} ({REC_NULL_NOTE}); bottleneck: {bn['bottleneck']}")
+    P.save(report_path(True), dict(out, rows=rows, fl=fl, bottleneck=bn, caveat=NO_PRIOR_IMPROVEMENT_NOTE,
+                                   timing_caveat=TIMING_CAVEAT))
+    print(f"ld-rec: {fl['code']} ({REC_NULL_NOTE}); bottleneck: {bn['bottleneck']}. Caveat: {TIMING_CAVEAT}")
+    print_lags(rows["lag_beside_g50"])
 
 
 def cmd_versus_notes(_args):

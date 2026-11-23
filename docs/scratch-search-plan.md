@@ -993,6 +993,24 @@ it is the first dry guitar from the song alone to do so. If it does not, `ld-rec
   guitars (`ld-stem`, `ld-stem-b`, `ld-rec`): the build stops, and the question goes to the user before any render.
   `stem-in`'s lag is reported beside and never stops the build: it is an amped signal, whose envelope's lag against
   the DI can differ for reasons other than timing.
+
+  **Settled 2026-11-23 (ledger `phase_scratch_loudar_timing_amend`), after build's declared timing stop**, by an
+  isolated decision agent under the user's standing rule for technical calls, option (a), about 0.8 confidence; not
+  the user's own answer. The record is the handover's `decisions/loudar-timing-stop.md` (sha256 `f2beba24…acde`),
+  and its diagnostic is `loudar-unit0/timing-subwin.json` (sha256 `d7f2f8ec…b8b0`, zero renders).
+  - *What fired:* beyond 1 ms on `ld-stem` 9 of 23 deciding parts, `ld-stem-b` 10 of 23, `stem-in` 2 of 23.
+  - *What the diagnostic found:* no part has a consistent offset over 1 ms for any name; every name's median
+    whole-clip lag is 0 ms, so the placement is right. The readings sit near multiples of 11 to 12 ms (the low
+    strings' pitch period): the 1-ms envelope slips a cycle on regenerated audio, and onsets jitter.
+  - *What changes:* the 1-ms check is **report-only** for every name; `build.json` keeps the parts beyond, and
+    `figures.json` keeps each part's whole-clip lag per name. One **placement stop** stays: if the median whole-clip
+    lag over the deciding parts of any placed name (`ld-*` or `stem-in`) is beyond ±2 ms, build stops and writes
+    nothing (a padding, latency or lag bug, not the generator). No other new measure.
+  - *The caveat, in the read and in `ld-rec`'s read:* the row prices LOUDAR's timing and timbre together, so an
+    `FL-short` or `FL-null` alone does not say which fell short. The per-part lags are printed beside the per-part
+    G50 and never decide. J0 renders each answer through the true DI, so timing can only bias the row against a
+    pass, never toward one.
+  - Shifting each clip by its measured lag was rejected: it reads timing from the true DI, which a song does not have.
 - **The deciding sets: BKS and the panel** (23 parts, 11 DI files), weighted equally. LOUDAR's prior trained on GOAT's
   DI, so GOAT is read beside, marked in-sample, and never decides.
 
@@ -1127,7 +1145,9 @@ beside `ld-stem`'s), descriptive, never deciding.
    - The distorted inputs read 4.03 mean from the original. The authors' own LOUDAR outputs read 6.07, farther on all
      6 clips, so the authors' gain is −2.04 dB and the fraction-of-gain tolerance is undefined.
    - Ours: released 6.12, paper 6.36, so the released setting is chosen by the declared rule.
-   - Reproduction: 0.05 dB from the authors' mean. Length: +0.72 dB.
+   - Reproduction: 0.05 dB from the authors' mean. Length: +0.72 dB (the mean; the reading gives the per-clip
+     length gaps beside it, +1.37, +0.23, +1.90, +0.04, +0.27 and +0.54 dB, added by
+     `phase_scratch_loudar_timing_amend`; the rule still reads the mean).
    - Timing: 116.8 s a whole 10.96-s clip and 58.3 s a 4.5-s clip, about 1.7 wall hours projected for everything.
    - Both byte checks are equal.
 
@@ -1142,7 +1162,8 @@ beside `ld-stem`'s), descriptive, never deciding.
      `figures.json`, never in a gate or a reading.
 
    Nothing else changes: the table, the codes, the thresholds, the sets, the checkpoint, the setting rule, the cost
-   stop, the timing check, the `stem-in` null, the `ld-rec` trigger and the `fs-notes` render wait stay as declared.
+   stop, the timing check (later made report-only, §13a), the `stem-in` null, the `ld-rec` trigger and the
+   `fs-notes` render wait stay as declared.
    **With any result:** no measure we hold showed LOUDAR improving on its input before the J0 row; the row's
    `FL-null` is the first test of that.
 7. Its facts (the setting, the gate's figures, the measured seconds a clip and the projected build time) go into

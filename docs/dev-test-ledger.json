@@ -4340,6 +4340,34 @@
     "caveat": "with any result: no measure we hold showed LOUDAR improving on its input before the J0 row; the row's FL-null is the first test of that (written into every report)",
     "code": "learn/loudar_run.py gate_reading (direction reported only; reproduction per clip); learn/scratch_loudar.py NO_PRIOR_IMPROVEMENT_NOTE in each report; tests in tests/test_loudar_run.py and tests/test_scratch_loudar.py",
     "next": "after this merges: prep, LOUDAR's runs (CPU), build, then the phase_scratch_loudar_dry hash PR"
+   },
+   "phase_scratch_loudar_timing_amend": {
+    "declared": "2026-11-23, after build's declared timing stop (from main 94fd83e6; nothing written under rt/, no build.json, no render)",
+    "decided_by": "an isolated decision agent (Opus) under the user's standing instruction of 2026-11-23 that very technical decisions are delegated: option (a), about 80% confidence; not the user's own answer. The record asks that the user see it before the row's renders start",
+    "decision_record": {
+     "file": "handover 2026-11-23 decisions/loudar-timing-stop.md",
+     "sha256": "f2beba2436fba5ee04e77cfc0669c61a623fe9d2525de3b8f25d8759a8d4acde"
+    },
+    "diagnostic": {
+     "file": "handover 2026-11-23 loudar-unit0/timing-subwin.json (the decision agent's 0.5-s sub-window lags, zero renders)",
+     "sha256": "d7f2f8ec8a2dd19e3f012f4e952fdef92b184ae43b569d3d7f40a9dfa882b8b0"
+    },
+    "whole_clip_figures": {
+     "file": "handover 2026-11-23 loudar-unit0/timing-diag.json (the implementer's, zero renders)",
+     "sha256": "c264121e966d72ab491bd597c726c02094a76a8014c0159ab859d5310fe673b4"
+    },
+    "facts": "the 1-ms envelope lag against the true DI beyond 1 ms on the deciding parts: ld-stem 9 of 23 (GOAT 9 of 24), ld-stem-b 10 of 23, stem-in 2 of 23; median whole-clip lag ld-stem +0 ms, ld-stem-b +0 ms, stem-in +0 ms. Sub-windows within 1 ms: ld-stem 0.28, ld-stem-b 0.26, stem-in 0.74; at 10 ms or more 0.47, 0.45, 0.16; parts with a consistent offset over 1 ms: 0 of 23 for each; readings near multiples of 11 to 12 ms (the low strings' pitch period): the 1-ms envelope slips a cycle on regenerated audio, and onsets jitter. The placement is right (medians 0 ms; the waveform clusters match stem-in's); the true DI shifted +10 ms reads +10 on 22 of 23",
+    "changes": {
+     "report_only": "the 1-ms timing check is report-only for every placed name (timing_report): build.json keeps timing_beyond_1ms_reported_only and figures.json keeps lag_ms and lag_samples per part and name; the diagnostic is cited by its sha256",
+     "placement_stop": "kept as a stop: if the median whole-clip lag over the deciding parts of any placed name (ld-stem, ld-stem-b, ld-rec, stem-in) is beyond +-2 ms, build stops and writes nothing (a placement bug: padding, latency or lag, not the generator). Today every name reads 0 ms. No other new measure",
+     "caveat": "the read and ld-rec's read carry it: the row prices LOUDAR's timing and timbre together, so an FL-short or FL-null does not on its own say which fell short; the per-part whole-clip lags are printed beside the per-part G50 (lag_beside_g50) and never decide",
+     "length_per_clip": "the reviewer's nit on #568: the gate's reading gives the per-clip length gaps beside the mean (length_per_clip_db; the stored record's: +1.37, +0.23, +1.90, +0.04, +0.27, +0.54 dB, mean +0.72; the declared rule reads the mean)"
+    },
+    "rejected": "(b), shifting each clip by its measured lag: it reads timing from the true DI, which the plan forbids and a song does not have, and the diagnostic finds no constant offset to shift by. A stem-aligned or timing-repaired arm would be a new arm, a route decision for the user; not proposed",
+    "why_j0_prices_it": "the score renders each answer through the true DI on the held half against the clean record, so LOUDAR's timing can only make the search choose worse answers, which J0 prices; it biases the row against FL-above and FL-reach, never toward them",
+    "unchanged": "the deciding number and its switch, FL_TABLE and its codes, the deciding sets, the comparators, the stem-in null, the ld-rec trigger, the refusal stop, the cost stop and the fs-notes render wait stay as declared",
+    "code": "learn/scratch_loudar.py (timing_report, placement_stop, PLACEMENT_MS, TIMING_CAVEAT, lags_beside_g50); learn/loudar_run.py (length_per_clip_db); tests in tests/test_scratch_loudar.py and tests/test_loudar_run.py",
+    "next": "after this merges: build again from the new main (zero renders), then the phase_scratch_loudar_dry hash PR"
    }
   },
   {
