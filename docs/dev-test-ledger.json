@@ -4181,6 +4181,14 @@
      "target": "a target question: should the balance above 8 kHz and below 80 Hz be applied relative to the in-band level at all, given that a raw DI's highs may be largely noise? It would need its own declaration"
     },
     "public_repo": "no part keys, settings values, audio or song paths in git"
+   },
+   "phase_scratch_codec_answers_dac": {
+    "sha256": "5f832057e48f03c9cd41040352d7dc81e7423ec04d0216f86796c8aede7f1511",
+    "file": "PF/fs/codec/answers-rt-dac.json",
+    "made": "2026-11-23, from a frozen detached worktree of main at 1cd49f0a (PR #557's squash), every guard passed, zero renders",
+    "about": "rt-dac's short row: 47 of 47 parts answered, 0 refused (each record's dry guitar the hashed build's, exactly 50 evaluations, budget_used 50, checkpoint '50' only); {select, cp50, borrowed: []} per part. Its start reads ran with rt-m2l's (94 renders) and the control was the same PASS; the search ran on 3 shards while rt-m2l's answers' hash PR was open, 2,397 renders. No held-half value is read before this hash is on main",
+    "rates": "2,397 renders in 3,664 process-seconds (1.53 a render, the plan's rate), 23 minutes of wall on 3 processes",
+    "next": "score --name rt-dac (3 shards, 188 renders) and read --name rt-dac once this hash is on main"
    }
   },
   {
