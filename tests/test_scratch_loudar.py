@@ -148,22 +148,44 @@ def test_the_halves_and_latency_are_mains():
     assert SL.LATENCY == K.P.LATENCY and SL.TRIM_N == int(PS.TRIM_S * PS.SR) and SL.SECTION == 492000
 
 
-def test_the_timing_check_counts_deciding_parts():
+def test_the_1ms_timing_check_is_report_only():
     sets_of = {"b1": "bks", "b2": "bks", "p1": "panel", "g1": "goat", "g2": "goat", "g3": "goat"}
-    off = {"ld-stem": {"b1": 2.0, "b2": 0.0, "p1": 1.5, "g1": 5.0, "g2": 5.0, "g3": 5.0}}
-    assert SL.timing_stop(off, sets_of) == ({"ld-stem": ["b1", "p1"]}, False)       # GOAT never stops it
-    off["ld-stem"]["b2"] = None
-    assert SL.timing_stop(off, sets_of)[1]
+    jitter = {"b1": -33.0, "b2": 0.0, "p1": 7.0, "g1": 5.0, "g2": 5.0, "g3": 5.0}      # as on LOUDAR's clips
+    offsets = {"ld-stem": dict(jitter), "ld-stem-b": dict(jitter), "stem-in": {"b1": 0, "b2": 1.0, "p1": 0}}
+    assert SL.timing_report(offsets, sets_of) == {"ld-stem": ["b1", "p1"], "ld-stem-b": ["b1", "p1"], "stem-in": []}
+    medians, stop = SL.placement_stop(offsets, sets_of)                    # GOAT is never counted
+    assert medians == {"ld-stem": 0.0, "ld-stem-b": 0.0, "stem-in": 0.0} and not stop
+    assert not hasattr(SL, "timing_stop") and SL.TIMING_NAMES_PREFIX == "ld-" and "di-cut" not in SL.PLACED
 
 
-def test_the_timing_check_stops_on_ld_names_only_and_reports_stem_in_beside():
+@pytest.mark.parametrize("name", ["ld-stem", "ld-stem-b", "ld-rec", "stem-in"])
+@pytest.mark.parametrize("shift", [2.5, -2.5, 3.0, -9.0])
+def test_the_placement_stop_on_either_side(name, shift):
     sets_of = {"b1": "bks", "b2": "bks", "p1": "panel"}
-    late = {"b1": 3.0, "b2": -2.0, "p1": 4.0}
-    beyond, stop = SL.timing_stop({"stem-in": dict(late), "ld-stem": {"b1": 0.0, "b2": 0.0, "p1": 0.0}}, sets_of)
-    assert not stop and beyond == {"stem-in": ["b1", "b2", "p1"], "ld-stem": []}     # reported, never a stop
-    for name in ("ld-stem", "ld-stem-b", "ld-rec"):
-        assert SL.timing_stop({name: dict(late)}, sets_of)[1]
-    assert SL.TIMING_NAMES_PREFIX == "ld-" and "di-cut" not in SL.PLACED
+    ok = {"b1": 0.0, "b2": 1.0, "p1": -1.0}
+    moved = {k: v + shift for k, v in ok.items()}
+    medians, stop = SL.placement_stop({name: moved, "other": dict(ok)}, sets_of)
+    assert stop and medians[name] == pytest.approx(shift)
+    assert not SL.placement_stop({name: {k: v + (2.0 if shift > 0 else -2.0) for k, v in
+                                         {"b1": 0.0, "b2": 0.0, "p1": 0.0}.items()}}, sets_of)[1]   # +-2.0: passes
+    assert SL.placement_stop({name: {"g1": 0.0}}, {"g1": "goat"})[1]       # no deciding value at all: stop
+    assert SL.PLACEMENT_MS == 2.0
+
+
+def test_the_timing_caveat_and_the_lags_beside_g50():
+    c = SL.TIMING_CAVEAT
+    assert "timing and timbre together" in c and "FL-short or FL-null" in c and "never" in c
+    src = (REPO / "learn" / "scratch_loudar.py").read_text()
+    assert src.count("timing_caveat=TIMING_CAVEAT") == 2                    # the read and ld-rec's read
+    figs = {"a": {"ld-stem": {"lag_ms": -11.0}, "stem-in": {"lag_ms": 0.0}}, "b": {"ld-stem": {"lag_ms": 1.0}}}
+    got = SL.lags_beside_g50({"b": -0.2, "a": 0.1}, figs, ["ld-stem", "stem-in"])
+    assert list(got) == ["a", "b"] and got["a"] == {"G50": 0.1, "lag_ms": {"ld-stem": -11.0, "stem-in": 0.0}}
+    assert got["b"]["lag_ms"] == {"ld-stem": 1.0, "stem-in": None}
+    assert len(SL.TIMING_DIAGNOSTIC_SHA256) == len(SL.TIMING_DECISION_SHA256) == 64
+    d = json.loads((REPO / "docs/dev-test-ledger.json").read_text())
+    e = next(t for t in d["tests"] if t.get("test_id") == S.LEDGER_ID)["phase_scratch_loudar_timing_amend"]
+    assert e["diagnostic"]["sha256"] == SL.TIMING_DIAGNOSTIC_SHA256
+    assert e["decision_record"]["sha256"] == SL.TIMING_DECISION_SHA256 and "not the user's" in e["decided_by"]
 
 
 def test_the_pool_rule_and_the_refusal_stop():
@@ -194,7 +216,8 @@ def test_the_phases_are_new_and_outside_the_other_rows_guards():
     d = json.loads((REPO / "docs/dev-test-ledger.json").read_text())
     e = next(t for t in d["tests"] if t.get("test_id") == S.LEDGER_ID)
     pinned = {"phase_scratch_loudar_globals",        # the checkpoint's allowlist (learn/loudar_run.py's pin)
-              "phase_scratch_loudar_gate_amend"}     # the gate's amendment (the direction check removed)
+              "phase_scratch_loudar_gate_amend",     # the gate's amendment (the direction check removed)
+              "phase_scratch_loudar_timing_amend"}   # the timing check made report-only, the placement stop kept
     assert set(SL.loudar_keys(e)) <= set(keys) | pinned and SL.PHASE in e
 
 
