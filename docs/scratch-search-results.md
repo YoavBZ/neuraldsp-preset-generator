@@ -19,6 +19,10 @@ from the 47 per-part score records, and each came back PASS WITH CORRECTIONS; al
   - The gentle-fix check (plan 11f, `phase_scratch_tone_gentle_outcome`) ran and was audited: **`GV-caps`**. The
     lift above 8 kHz is the balance fix itself at fixed loudness, so it changes nothing: the measure step stays as it
     is.
+- **The codec ceiling, row `fs-codec`** (plan section 12, `phase_scratch_codec_outcome`), ran 2026-11-23 and was
+  audited: **both codecs `FK-clear`**. On the pool, `D_true` is +0.023 for `rt-m2l` and +0.009 for `rt-dac`. Each is
+  a weak go, "not ruled out by its codec", and says nothing about generation, songs or the ear.
+  [Its section](#the-codec-ceiling-row-fs-codec-track-2-both-codecs-fk-clear) has the numbers and the next step.
 
 Every number is **by the score** (J0, ln(d_row / d_against) on the held half against the clean record; below zero is
 closer), never heard. 90% cluster t intervals. "Passes" = decided better with the mean at −0.10 or beyond.
@@ -472,3 +476,136 @@ hiss.
 - It says nothing on a fix other than removing the clip; the gentler variants are priced in 11f, on CPU.
 - Its share bracket rests on assumptions; only row (b)'s redo (12,351 + 940 renders) would measure it.
 - It does not price the blur's non-tone parts on their own.
+
+## The codec ceiling, row `fs-codec` (track 2): both codecs `FK-clear`
+
+Ran 2026-11-23 and was audited. The audit was an independent recompute from the 47 per-part score records of each
+codec and of rows (b) and (c). It came back CONFIRMED WITH CORRECTIONS, and all eight corrections are taken below.
+- Declaration: [plan section 12](scratch-search-plan.md#12-the-fs-codec-row).
+- Ledger, entry `preset-ladder`: `phase_scratch_codec`, `phase_scratch_codec_dry`, `phase_scratch_codec_answers_m2l`,
+  `phase_scratch_codec_answers_dac` and `phase_scratch_codec_outcome`.
+- Code: `learn/scratch_codec.py` and `learn/codec_roundtrip.py`.
+
+**The question.** Does a dry guitar that has only passed through a latent codec still drive the search? The true DI
+goes through each codec and back, is measured as usual, and drives a 50-evaluation search from Cen against the
+`xlnoG@-3` stem on the search half. Its 50-evaluation incumbent `cp50` is scored through the true DI on the held half,
+then read per part against row (b) (the true DI) and row (c) (avg+mild) at the same checkpoint.
+
+### What ran
+
+| Step | Renders |
+|---|---|
+| Unit 0, `prep`, the round trips, `build` (CPU; zero renders) | 0 |
+| Start reads (`rt-m2l`, `rt-m2l-b`, `rt-dac` on 47 parts; `rt-id` on 2) | 286 |
+| Control: `rt-id` through the row's search path equals row (b)'s stored curves; PASS | 22 |
+| Searches: `rt-m2l` and `rt-dac`, 47 parts each, 51 renders a part | 2 × 2,397 |
+| Scores: Cen and `cp50` through the true DI on the held half | 2 × 188 |
+| **All** | **5,478** |
+
+- Every stage ran from frozen worktrees of merged main, and each hash was on main before its next step.
+- **Clean run:** no part refused, no scoring-control miss, and no non-finite scored value. Seven in-search trial
+  renders were non-finite; by design they read as inf and were never chosen.
+- **Fairness:** Cen's render sha256 equals row (b)'s on 47 of 47 parts. Where a codec's `cp50` equals row (b)'s,
+  `D_true` is exactly 0.
+- **Timing:** on the CPU, `rt-m2l` took 12.86 s a part in unit 0's smoke and 16.2 s in the build. `rt-dac` took
+  3.9 s a part.
+
+### The result: `FK-clear` for both codecs
+
+| | `rt-m2l` (LOUDAR's `m2l`, fed 48 kHz) | `rt-dac` (DAC 44.1 kHz, 8 kbps, 9 codebooks) |
+|---|---|---|
+| **`D_true` on the pool (deciding)** | **+0.023 [+0.010, +0.037]** | **+0.009 [−0.004, +0.023]** |
+| `D_true` on BKS+GOAT | +0.036 [+0.016, +0.057] | +0.010 [−0.007, +0.027] |
+| `D_blur` on the pool | −0.117 [−0.156, −0.079] | −0.132 [−0.173, −0.090] |
+| G50 on the pool | −0.248 [−0.370, −0.126] | −0.262 [−0.405, −0.119] |
+| Room kept, 1 − `D_true` / ((c) − (b)) | 83% | 94% |
+| Share of row (b)'s G50 kept, pool / BKS+GOAT | 0.91 / 0.85 | 0.97 / 0.96 |
+| Code on the pool and on BKS+GOAT | `FK-clear`, `FK-clear` | `FK-clear`, `FK-clear` |
+
+The comparators at the same checkpoint, on the pool: row (b) G50 −0.271, row (c) −0.130, so (c) − (b) is +0.141
+[+0.102, +0.180].
+
+- **`rt-m2l`** costs a little against the true DI, +0.023 [+0.010, +0.037] by the score: decided, but under 0.05, so
+  not readable by the score. The ear is a coin flip at that size.
+- **`rt-dac`** is level with the true DI, also not readable by the score.
+- **A 0.05 cost at the checkpoint is ruled out for both codecs on the pool** (upper ends 0.037 and 0.023). It is not
+  ruled out for `rt-m2l` on BKS+GOAT, where the upper end is 0.057.
+- **"Room kept"** is the share of the gap between the blur and the true DI that the codec keeps. It says more than
+  the G50 share, because row (b)'s G50 interval is wide.
+- **`FK-above` adds no independent evidence.** Per part, `D_blur` = `D_true` − ((c) − (b)), so it holds here because
+  `FK-clear` holds. `FK-clear` comes first in the table and is the code.
+
+**The per-part tail.**
+- `D_true` is +0.10 or worse on 5 of 47 parts for `rt-m2l` (worst +0.25) and on 3 of 47 for `rt-dac` (worst +0.18).
+- The two codecs' per-part `D_true` are uncorrelated (r +0.05). That suggests search-path noise rather than parts a
+  codec damages.
+- For comparison, row (c) has 9 of 47 parts at +0.10 or worse than row (b) at the checkpoint; 8 of 47 is its count at
+  the final answer.
+
+### What each code covers
+
+- **`rt-m2l`.** Covers: `m2l` fed 48 kHz, i.e. LOUDAR as released, and anything built in that latent used that way
+  (GuitarFlow retrained on `m2l` included). A weak go means **LOUDAR's second test may be proposed**, under its own
+  declaration, timed on one clip first. Does not cover: GuitarFlow as published (SonyCSL weights at 44.1 kHz), `m2l`
+  fed at its trained 44.1 kHz, or any other codec.
+- **`rt-dac`.** Covers: a rebuild in DAC's latent at 8 kbps, i.e. track 3's DAC option and a codec of EG-VAE's
+  family. A weak go means **track 3 may consider DAC's latent**, once `fs-notes` and its own gate say a guided rebuild
+  is wanted. Does not cover: DAC at fewer codebooks, DAC-VAE itself, or any 12-Hz latent.
+  - The table's generic "next" line names LOUDAR, so `report-rt-dac.json` carries LOUDAR's line. The line above,
+    from `covers()`, is the right one for `rt-dac`.
+
+### Caveats
+
+1. **The checkpoint compresses differences.**
+   - (c) − (b) grows from +0.141 at 50 evaluations to +0.167 at the final answer, which leans `D_true` toward
+     `FK-clear`.
+   - Scaled the same way, `rt-m2l`'s cost is about +0.028 (upper end about 0.044), and about 0.063 in the worst case.
+     Both are well under 0.10.
+   - Every row is still improving at 50 evaluations. The codec curves fall at row (b)'s rate between evaluations 30
+     and 50, but they cannot show a later divergence. The compression calibration, from one pair of rows, is the only
+     handle.
+2. **The test is blind to long-term tone colour.** The measure step equalises each codec's output to the average
+   balance, so `D_true` cannot see a codec's long-term spectral error. The same holds for any rebuild that enters
+   through the measure step. Before the measure step, that error was 1.08 dB for `rt-m2l` and 0.83 dB for `rt-dac`
+   (mean absolute, 80 Hz to 8 kHz).
+3. **`D_blur`'s comparator, row (c), is biased against itself, so `D_blur` leans the codec's way.** Row (c)'s
+   avg+mild loses the measure step's clip offset, while the codec DIs and the true DI keep it. On clean, the search
+   also bakes the dry guitar's balance into the preset (track 4's audit). The bias is in row (c), not in the codec
+   rows. `D_blur` is read only beside `D_true`.
+4. **Seed noise.** The `m2l` decoder is random: its two seeds differ from each other about as much as from the true
+   DI. The start read of seed b less seed a is −0.002 per part (sd 0.015), against the codec's own +0.127. `rt-m2l`'s
+   `D_true` interval is no wider than `rt-dac`'s.
+5. **The input's lean.** Eleven half-B parts see the DI file's real end inside their search half. That leans slightly
+   against the codec, toward `FK-shut`.
+6. **The clip-free re-score (plan 11g) has not run.** It is declared but not coded.
+   - The read ran first, as a recorded departure: ledger `phase_scratch_tone_beside_departure`, PR #563, merged as `044f10f0`. It
+     was decided by the delegated decision agent under the user's standing instruction, not by the user.
+   - The departure was committed and pushed (13:58:01 and 13:58:03) before the read (13:58:36 to 13:59:09). It came
+     after the scoring (13:47:59 to 13:53:17), which printed no values.
+   - 11g's summary and inputs are frozen by that key. When it runs, it pairs the row against row (b) and is reported
+     only.
+
+### What a pass licenses, and what it does not
+
+- **It does tell us** that on the same performance and guitar, with a measured true DI, passing through `m2l` at
+  48 kHz or DAC at 8 kbps keeps nearly all of what a 50-evaluation search needs. The codec bottleneck alone rules out
+  neither latent.
+- **It does not tell us anything about:**
+  - **Generation.** On LOUDAR's own test the round trip scores 0.105 and LOUDAR's output 0.308, so generation error
+    is about three times larger.
+  - **Songs.** A song has no true DI, and has other guitars, bleed, effects, the stem, the prior and the operator.
+  - **Anything after 50 evaluations**, step 2, or the ear.
+- **It is a weak go only.** No full row runs (that needs `FK-shut`), and there is no park.
+
+### Next on this track (recorded, not started)
+
+Declare **LOUDAR's second test**, under its own declaration and review, at zero renders. The audit's conditions:
+- **Deciding sets: BKS and the panel, not GOAT.** LOUDAR's prior trained on GOAT's DI. On BKS and the panel:
+  - (c) − (b) is +0.125 [+0.076, +0.173];
+  - this row's reference `D_true` is +0.012 [−0.006, +0.030] for `rt-m2l` and +0.000 [−0.017, +0.017] for `rt-dac`.
+- **Input:** the song's guitar stem, not the reamp, so it serves the goal. Compared against `fs-notes`' best arm.
+- **Install:** LOUDAR's install pin fails on macOS as written, but a PyPI wheel exists. Its weights are 1.08 GB, under
+  the standing download approval and recorded in the manifest.
+- **Timing:** the released config uses 300 steps (the paper says 10) and no runtime is given, so time one clip on the
+  CPU first.
+- **Renders** come after `fs-notes`' 47-part row.
