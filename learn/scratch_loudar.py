@@ -82,6 +82,8 @@ TIMING_DECISION_SHA256 = "f2beba2436fba5ee04e77cfc0669c61a623fe9d2525de3b8f25d87
 TIMING_CAVEAT = ("the row prices LOUDAR's timing and timbre together: an FL-short or FL-null does not on its own say "
                  "which fell short. The per-part whole-clip lags are printed beside the per-part G50; they never "
                  "decide (phase_scratch_loudar_timing_amend)")
+TIMING_DIAGNOSTIC = "timing-subwin.json"           # in loudar_dir(), bound by TIMING_DIAGNOSTIC_SHA256 (report only)
+NOT_SEPARATED = " (timing and timbre not separated)"   # on every bottleneck (phase_scratch_loudar_dry)
 OPEN_VERDICTS = ("fault-content", "fault-signal")  # a recorded ear verdict that rules fs-notes out (not "ask")
 CHECK_SHA256 = SC.CHECK_SHA256
 COMPRESSION_NOTE = SC.COMPRESSION_NOTE
@@ -231,13 +233,15 @@ def bottleneck(rec_code, goat):
     if rec_code not in FL_CODES:
         raise SystemExit(f"bottleneck needs ld-rec's FL code, not {rec_code!r}")
     if rec_code in ("FL-above", "FL-reach"):
-        return {"bottleneck": "the stem", "next": "LOUDAR becomes a yardstick for separator work"}
+        return {"bottleneck": "the stem" + NOT_SEPARATED, "next": "LOUDAR becomes a yardstick for separator work"}
     if goat is None:
-        return {"bottleneck": "generator against prior: not split", "next": "GOAT was outside the cost stop"}
+        return {"bottleneck": "generator against prior: not split" + NOT_SEPARATED,
+                "next": "GOAT was outside the cost stop"}
     if goat == "at the bar":
-        return {"bottleneck": "the prior's coverage, or memorisation",
+        return {"bottleneck": "the prior's coverage, or memorisation" + NOT_SEPARATED,
                 "next": "a wider prior would be a build with its own go"}
-    return {"bottleneck": "the generator or its operator", "next": "a research target; nothing is closed"}
+    return {"bottleneck": "the generator or its operator" + NOT_SEPARATED,
+            "next": "a research target; nothing is closed"}
 
 
 def slots_refusal(report_exists, ear_record):
@@ -895,17 +899,70 @@ def numbers(g, comp, gcut=None, gin=None):
     return out
 
 
-def lags_beside_g50(g, fig_parts, names):
-    """(Pure.) Per part, the G50 with the placed names' whole-clip lags (ms, from the build's figures) beside it:
-    {pkey: {"G50": value, "lag_ms": {name: lag or None}}}. Reported only; never decides."""
-    return {k: {"G50": v, "lag_ms": {n: ((fig_parts.get(k) or {}).get(n) or {}).get("lag_ms") for n in names}}
+def lags_beside_g50(g, fig_parts, names, subwin=None):
+    """(Pure.) Per part, the G50 with the placed names' whole-clip lags (ms, from the build's figures) and their
+    sub-window fraction within 1 ms (from the timing diagnostic) beside it: {pkey: {"G50": value, "lag_ms": {name:
+    lag or None}, "sub_within_1ms": {name: fraction or None}}}. Reported only; never decides."""
+    sub = subwin or {}
+    return {k: {"G50": v, "lag_ms": {n: ((fig_parts.get(k) or {}).get(n) or {}).get("lag_ms") for n in names},
+                "sub_within_1ms": {n: ((sub.get(k) or {}).get(n) or {}).get("sub_frac_within1") for n in names}}
             for k, v in sorted(g.items())}
 
 
 def print_lags(beside):
     for k, r in beside.items():
         lags = ", ".join(f"{n} {v:+.0f} ms" if v is not None else f"{n} -" for n, v in r["lag_ms"].items())
-        print(f"  {k[-56:]}: G50 {r['G50']:+.3f} | {lags}")
+        subs = ", ".join(f"{n} {v:.2f}" if v is not None else f"{n} -"
+                         for n, v in (r.get("sub_within_1ms") or {}).items())
+        print(f"  {k[-56:]}: G50 {r['G50']:+.3f} | lag {lags} | sub-windows within 1 ms {subs}")
+
+
+def ranks(xs):
+    """(Pure.) Average ranks, 1-based (ties share the mean rank)."""
+    order = sorted(range(len(xs)), key=lambda i: xs[i])
+    out = [0.0] * len(xs)
+    i = 0
+    while i < len(order):
+        j = i
+        while j + 1 < len(order) and xs[order[j + 1]] == xs[order[i]]:
+            j += 1
+        for t in range(i, j + 1):
+            out[order[t]] = (i + j) / 2 + 1
+        i = j + 1
+    return out
+
+
+def spearman(a, b):
+    """(Pure.) Spearman's rho of two equal-length lists (Pearson on average ranks); None under 3 or with no spread."""
+    if len(a) != len(b) or len(a) < 3:
+        return None
+    ra, rb = ranks(a), ranks(b)
+    ma, mb = sum(ra) / len(ra), sum(rb) / len(rb)
+    cov = sum((x - ma) * (y - mb) for x, y in zip(ra, rb))
+    va, vb = sum((x - ma) ** 2 for x in ra), sum((y - mb) ** 2 for y in rb)
+    return cov / (va * vb) ** 0.5 if va and vb else None
+
+
+def d_true_vs_subwin(d_true, subwin, sets_of, name):
+    """(Pure.) Descriptive only, never decides: Spearman of D_true against `name`'s sub-window fraction within 1 ms
+    over the deciding parts holding both. -> {"name", "n", "rho", "reported_only"}."""
+    sub = subwin or {}
+    keys = sorted(k for k, v in d_true.items() if sets_of.get(k) in DECIDING and v is not None
+                  and ((sub.get(k) or {}).get(name) or {}).get("sub_frac_within1") is not None)
+    rho = spearman([d_true[k] for k in keys], [sub[k][name]["sub_frac_within1"] for k in keys])
+    return {"name": name, "n": len(keys), "rho": rho, "reported_only": True}
+
+
+def subwin_of():
+    """The timing diagnostic's per-part sub-window figures (`timing-subwin.json` in the row's folder). Its sha256
+    must be TIMING_DIAGNOSTIC_SHA256, or the read stops; it is only ever printed beside, never decides."""
+    p = loudar_dir() / TIMING_DIAGNOSTIC
+    if not p.exists():
+        raise SystemExit(f"no {p.name} in the row's folder (the timing diagnostic, sha256 "
+                         f"{TIMING_DIAGNOSTIC_SHA256[:12]}): copy it there first")
+    if S.file_sha(p) != TIMING_DIAGNOSTIC_SHA256:
+        raise SystemExit(f"{p.name}: its sha256 is not TIMING_DIAGNOSTIC_SHA256")
+    return {k: v for k, v in json.loads(p.read_text()).items() if isinstance(v, dict) and "set" in v}
 
 
 def read_body(sd, draw, m, name, gin=None):
@@ -932,7 +989,11 @@ def read_body(sd, draw, m, name, gin=None):
     rows["parts_at_or_over_0.10"] = sorted(k for k, v in g.items() if v >= BIG)
     fp = figures_path(name == REC)
     figs = json.loads(fp.read_text())["parts"] if fp.exists() else {}
-    rows["lag_beside_g50"] = lags_beside_g50(g, figs, [n for n in (name, "ld-stem-b", "stem-in") if n in PLACED])
+    subwin = subwin_of()
+    rows["lag_beside_g50"] = lags_beside_g50(g, figs, [n for n in (name, "ld-stem-b", "stem-in") if n in PLACED],
+                                             subwin)
+    rows["D_true_vs_subwin"] = d_true_vs_subwin(nums["D_true"], subwin,
+                                                {p["pkey"]: p["set"] for p in draw["parts"]}, name)
     head = {"refused": refused, "nonfinite_replaced": replaced, "scoring_control_misses": miss}
     return rows, head, g
 
@@ -973,6 +1034,7 @@ def cmd_read(_args):
           f"{fl['code']}: {fl['reading']}. Next: {rep['next']}")
     print(f"Caveat: {TIMING_CAVEAT}")
     print_lags(rows["lag_beside_g50"])
+    print(f"D_true against the sub-window fraction (descriptive, never decides): {rows['D_true_vs_subwin']}")
 
 
 def cmd_read_rec(_args):
@@ -995,8 +1057,11 @@ def cmd_read_rec(_args):
     bn = bottleneck(fl["code"], main_rep.get("goat"))
     P.save(report_path(True), dict(out, rows=rows, fl=fl, bottleneck=bn, caveat=NO_PRIOR_IMPROVEMENT_NOTE,
                                    timing_caveat=TIMING_CAVEAT))
+    if not bn["bottleneck"].endswith(NOT_SEPARATED):
+        raise SystemExit("the bottleneck must say timing and timbre are not separated")
     print(f"ld-rec: {fl['code']} ({REC_NULL_NOTE}); bottleneck: {bn['bottleneck']}. Caveat: {TIMING_CAVEAT}")
     print_lags(rows["lag_beside_g50"])
+    print(f"D_true against the sub-window fraction (descriptive, never decides): {rows['D_true_vs_subwin']}")
 
 
 def cmd_versus_notes(_args):

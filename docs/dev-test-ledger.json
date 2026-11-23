@@ -4368,6 +4368,34 @@
     "unchanged": "the deciding number and its switch, FL_TABLE and its codes, the deciding sets, the comparators, the stem-in null, the ld-rec trigger, the refusal stop, the cost stop and the fs-notes render wait stay as declared",
     "code": "learn/scratch_loudar.py (timing_report, placement_stop, PLACEMENT_MS, TIMING_CAVEAT, lags_beside_g50); learn/loudar_run.py (length_per_clip_db); tests in tests/test_scratch_loudar.py and tests/test_loudar_run.py",
     "next": "after this merges: build again from the new main (zero renders), then the phase_scratch_loudar_dry hash PR"
+   },
+   "phase_scratch_loudar_dry": {
+    "sha256": "92ddf8ae3da1924f9bd7b79ab277055d03a696cc811070e526fd744f0958be54",
+    "file": "PF/fs/loudar/build.json",
+    "built": "2026-11-23, from a frozen detached worktree of main at 7d6d2c9d (PR #569's squash), every guard passed (main's code and keys, the scratch_search.py blob, fs-notes' two checks). The 1-ms timing check reported only; the placement stop did not fire: the median whole-clip lag over the 23 deciding parts is 0 ms for ld-stem, ld-stem-b and stem-in. Zero renders",
+    "files_sha256": {
+     "in/in.json": "d418a293b89aa25555f46c23b56812ce81422ee36bd53ae9c1482581081f4886",
+     "out/ld-stem/run-ld-stem-bks-panel.json": "fdfb760873a83fc7b7ef65d03543c448e84f9199fb3238aede88c0cc0649d0f3",
+     "out/ld-stem/run-ld-stem-goat.json": "1ef7fe2aca607b55acc2a3c2b6efd7578184eb26afa1236509fe1a8cbe29dda6",
+     "out/ld-stem-b/run-ld-stem-b-bks-panel.json": "c91d69de3cb8cc4b40f92c769f8b9d48676523dab3a5bb58389d802b13ab772f",
+     "figures.json": "1e3a78d3e591a538da39ccda51354f7602c4e82765d7356e034c0dfbe5c06b6a",
+     "timing-subwin.json": "d7f2f8ec8a2dd19e3f012f4e952fdef92b184ae43b569d3d7f40a9dfa882b8b0"
+    },
+    "earlier_stop": "the first build (main 94fd83e6) stopped at the declared timing check and wrote nothing under rt/; its record build-stopped-20261123-201802.json (sha256 56f4113b6b59c09d601e32e59fd5c0d1e8117655cb4e37ad910631e1660fdbc3) is kept; settled by phase_scratch_loudar_timing_amend",
+    "steps": "prep (47 parts, 10 s) -> loudar_run.py in loudar-venv, CPU, 4 threads, no MPS, one job at a time with no render job on the machine: ld-stem on BKS+panel (23 clips, seed slot 0), ld-stem on GOAT (24, inside the cost stop), ld-stem-b on BKS+panel (23, seed slot 1) -> build. Zero renders",
+    "build_checks": "one setting for every run (released); every measured clip within 0.25 LU of -22.9; names ld-stem 47 (23 deciding + 24 GOAT), ld-stem-b 23, stem-in 23, di-cut 23; GOAT built; beyond 1 ms by the 1-ms envelope, reported only: ld-stem 9 of 23 deciding, ld-stem-b 10 of 23, stem-in 2 of 23; within 1 ms: 14, 13 and 21 of 23",
+    "placement_evidence": "stem-in's tight lags (21 of 23 deciding parts within 1 ms, median 0 ms) are today's evidence that the shared placement code (record t to DI t - lag - 52 + 12000, the same for every placed name) is right; the ld-* medians of 0 ms are not that evidence on their own, since LOUDAR's lags scatter (the 1-ms envelope slips a pitch cycle on regenerated audio)",
+    "unit_0": {
+     "installs": "LOUDAR's GuitarFx-175000.pt (msvento/loudar at revision 6de0a99b0e0e88598842d5a05e5488369d857dbc, sha256 d86e08bbb94bb12cef0b907dd7f3fd67ba112cc463c8ee0e964855155985c297), its src/ at commit 9f3bd1659991b584afcfa7a3ac395c0512f24237 and the authors' 18 gate files, and 16 packages at LOUDAR's uv.lock versions into loudar-venv (--require-hashes --no-deps); codec-models/manifest.json now sha256 aa6efc1b584695bf0a73269aa3d23a53a8c1c0890fe00a80a24d1f309197c677, a line in MANIFEST-HISTORY.md",
+     "checkpoint": "listed by pickletools (nothing executed): 13 globals (handover loudar-unit0/checkpoint-globals.json, sha256 a770213417b4307832c61339a347118e63ac020a9abfba57cf641e7b5e100e3a); loaded weights-only under the pinned allowlist of phase_scratch_loudar_globals (torch 2.10.0, omegaconf 2.3.1), state['ema'] only; TORCH_FORCE_WEIGHTS_ONLY_LOAD=1 on every run; nothing loaded with weights_only=False",
+     "gate": "handover loudar-unit0/loudar-gate.json (sha256 114db6996fe6169137e15e6a38ac2445400272974b1af748cb1a264b6f54b511) and its re-read by the amended rule gate-recheck.json (sha256 2bc88df77b2429e9860b011e04eb86256608d7c2cec7272ead1dc621f47973a1): distorted 4.03, the authors' outputs 6.07 (gain -2.04 dB), ours released 6.12, paper 6.36 -> released; reproduction +0.05 dB, per clip +0.16, -0.06, -0.10, +0.79, -0.20, -0.27 (none beyond 1.0); length +0.72 dB mean, per clip +1.37, +0.23, +1.90, +0.04, +0.27, +0.54; passed under phase_scratch_loudar_gate_amend",
+     "byte_checks": "a second seeded run and a run with the reference set to zeros both byte-equal",
+     "timing": "116.8 s a whole 10.96-s clip, 58.3 s a 4.5-s clip; projected 1.70 wall hours for everything, inside the 8-hour cost stop, with GOAT and ld-stem-b"
+    },
+    "seconds_a_clip": "measured on the runs: ld-stem 59.07 (BKS+panel) and 58.82 (GOAT), ld-stem-b 58.91 s a clip; wall 22.7, 23.6 and 22.6 minutes, about 69 minutes in all against the 1.70 hours projected",
+    "reported_only_additions": "folded in from the independent review of #569, all report-only; they never decide: (1) each part's sub-window fraction within 1 ms (timing-subwin.json, read by its sha256 from the row's folder) printed beside G50 next to the whole-clip lags; (2) a descriptive Spearman of D_true against that fraction over the deciding parts (D_true_vs_subwin); (3) every bottleneck string ends '(timing and timbre not separated)', checked again in cmd_read_rec",
+    "code": "learn/scratch_loudar.py (TIMING_DIAGNOSTIC, NOT_SEPARATED, lags_beside_g50's sub_within_1ms, ranks, spearman, d_true_vs_subwin, subwin_of; bottleneck; read_body, cmd_read, cmd_read_rec); tests in tests/test_scratch_loudar.py. The build's inputs and rule are untouched",
+    "next": "renders wait for fs-notes (slots_refusal: fs-notes' report, or main's phase_nr_1_redo_ear verdict fault-content or fault-signal); then the start reads, the control and the searches. The decision record asks that the user see the timing decision before the row's renders start"
    }
   },
   {
