@@ -886,10 +886,13 @@ def speed_note(lists_body, go_read, limit=SIZE_SWITCH_S):
 def later_stage_size(lists_body):
     """(Pure.) The MuScriptor size for every later stage on this track (the reserved stems read among them): large,
     by the user's stance, unless large was measured worse (the size pick decided it worse) or could not run (its gate
-    stopped)."""
-    label = ((lists_body or {}).get("size_pick") or {}).get("label")
+    stopped), and only when large's own screen read lists-go (`picked_size`'s guard)."""
+    body = lists_body or {}
+    label = (body.get("size_pick") or {}).get("label")
     if label in ("large decided worse, medium kept", "large gate stopped, medium kept"):
         return "medium"
+    if ((body.get("sizes") or {}).get("large") or {}).get("screen") != "lists-go":
+        return "medium"                                  # as picked_size: never large on medium's screen
     return LATER_STAGE_SIZE
 
 
@@ -1478,9 +1481,11 @@ def bp_note(kind, key, want_sha, pair):
 
 
 def stage_b_context(m):
-    """The truth listing (main's `phase_nr_1_redo_truth`), the truth report, the 27 windows and their items."""
+    """The truth listing (main's `phase_nr_1_redo_truth`), the truth report (refused when its hum guard stopped it,
+    unless main's `note-rebuild` entry holds the user's go naming this file's sha256, `phase_nr_1_redo_go_hum`, as
+    the redo reads it), the 27 windows and their items."""
     listing = T.require_truth(m)
-    report = T.require_truth_report()
+    report = T.require_truth_report(m.get(NR_ID))
     excl, tn, z, _ = T._dev_context()
     dev = T.dev_windows(z, excl, tn["items"])
     return listing, report, z, dev, [w["item"] for w in dev]
