@@ -54,6 +54,7 @@ SECTION = 11
 PHASE = "phase_scratch_tone"             # this declaration (the fit's version and sha256, the user's go)
 PHASE_SPLIT = "phase_scratch_tone_split" # the audited outcome
 PHASE_GENTLE = "phase_scratch_tone_gentle"   # the gentle-fix CPU check (zero renders), declared with the outcome
+PHASE_GENTLE_OUTCOME = "phase_scratch_tone_gentle_outcome"   # its audited result (GV-caps)
 PHASE_BESIDE = "phase_scratch_tone_beside"   # the clip-free re-score beside new rows (declared; coded later)
 KEY_PREFIX = "phase_scratch_tone"
 HELD_KEYS = ("phase_scratch_tone_hook", "phase_scratch_tone_answers", "phase_scratch_tone_outcome")  # held: fs-tone

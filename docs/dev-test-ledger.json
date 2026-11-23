@@ -4142,6 +4142,45 @@
      "fs-codec": "row (b): each round trip goes through song_bank.measure (section 12), so the codec's dry guitar keeps the clip offset like the coded true DI, measured alike (as D_true is the clean one in the coded read); against row (c) through true-noclip its pairing is biased against the codec by about +0.15 (row (b)'s +0.161 less row (c)'s -0.011), said so wherever shown"
     },
     "dry_guitar": "it keeps true-noclip: if the gentle-fix check reads GV-pass, this side read still re-scores through true-noclip; switching it to the passing variant needs its own declaration"
+   },
+   "phase_scratch_tone_gentle_outcome": {
+    "date": "2026-11-23",
+    "results": "docs/scratch-search-results.md, 'The gentle-fix check (plan 11f)'; plan section 11f",
+    "run": "once, from a frozen detached worktree of main at b7423252 (#556), beside the codec row's render shards (no render slot used); 65.6 s wall, 51.4 s of compute, 47 parts",
+    "renders": 0,
+    "output": {
+     "file": "PF/fs/tone/gentle-v1.json",
+     "sha256": "88cbd3c672c5b662d47557402044ffcff1140506b811d8d8d0034448e651a439",
+     "fit_sha256": "630d849fd35f5a0342b48303755e8a39e82a2d071d1147a815a166fb45771e00"
+    },
+    "checks": "no non-finite value; the coded DI matched fit v1 on every part; the coded DI and true-noclip, computed beside, reproduce the fit exactly",
+    "code": "GV-caps",
+    "bars": {
+     "wide24": "distance 1.49 (max 3.24); above 8 kHz +2.79 (max +8.68); peak +1.39 (max +7.60); below 80 Hz max +7.86: the mean distance bar only",
+     "centred24": "distance 1.41 (max 4.67); above 8 kHz +3.16 (max +13.37); peak +1.51 (max +8.68); below 80 Hz max +12.32: the mean distance bar only",
+     "band-open": "distance 1.26 (max 2.05); above 8 kHz +3.12 (max +13.37); peak +1.63 (max +9.82); below 80 Hz max +12.32: both distance bars, no cap",
+     "references": "coded 2.81 (max 7.14); true-noclip 1.26 (max 2.05), above 8 kHz +3.14 (max +13.40), peak +1.64 (max +9.82), below 80 Hz max +8.36"
+    },
+    "audit": {
+     "verdict": "CONFIRMED WITH CORRECTIONS",
+     "report": "handover/2026-11-23/audit-tone-split/GENTLE-REPORT.md (local)",
+     "reproduced": "every measure with the auditor's own gain code: difference 0 on every part, variant and measure; the coded DI bit-identical to note_replay.di_section on 47 of 47",
+     "corrections": [
+      "peak: mostly re-levelling (without it the variants' peaks change by -1.4 to -1.65 dB on average), but band-open's in-band change alone lifts some parts' peak by up to +6.1 dB; below 80 Hz not a pure scalar (interpolation at the 80 Hz edge)",
+      "the rise above 8 kHz is the average balance itself at fixed loudness, not a side effect: it equals the extra level of the -22.9 LUFS correction (r 1.0000, max difference 0.000 dB); the variants' highs land on the target (+0.04 to +0.11 dB) where the coded DI sat 0.6 dB under; caps against the coded DI penalise the balance fix as such, so GV-caps was close to inevitable. The balance fix's lift is inherent at fixed loudness; the coded clip avoided it only by leaving the balance off",
+      "the quiet-frame hiss figure is identical to the overall one by construction for these variants (above 8 kHz each is the coded DI times one scalar); it still shows the highs rise between notes too, +3.1 dB mean, +13.4 dB max, relative to the playing loudness: the hiss risk",
+      "the lift is uneven: median +1.3 dB, 18 of 47 parts above +3 dB; by set panel +5.4, BKS +3.4, GOAT +2.3; by style clean +3.9, crunch +2.3"
+     ]
+    },
+    "in_band_loudness": "matching loudness on in-band (80 Hz to 8 kHz) energy only is not a fix: the same lift (mean +3.18, max +13.7), correlated with the LUFS lift at 0.998",
+    "answers": "no variant that changes only 80 Hz to 8 kHz fixes the balance without lifting the highs and the noise floor by up to about 13 dB at -22.9 LUFS; only a listen could say whether that is heard as hiss",
+    "consequence": "GV-caps changes nothing. The user's standing decision (2026-11-23, in chat, phase_scratch_tone_split) holds: song_bank.measure stays as it is, rows (b) and (c) are not redone, and the clip-free re-score beside new rows (phase_scratch_tone_beside) keeps true-noclip",
+    "possible_later_steps": {
+     "status": "notes only, not requests",
+     "listen": "a short listen to the worst lifted parts: the only way to learn whether the lift is heard as hiss",
+     "target": "a target question: should the balance above 8 kHz and below 80 Hz be applied relative to the in-band level at all, given that a raw DI's highs may be largely noise? It would need its own declaration"
+    },
+    "public_repo": "no part keys, settings values, audio or song paths in git"
    }
   },
   {

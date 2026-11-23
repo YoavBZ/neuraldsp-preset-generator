@@ -16,6 +16,9 @@ from the 47 per-part score records, and each came back PASS WITH CORRECTIONS; al
   - So rows (b) and (c) stand as self-consistent and, by the user's decision, are not redone.
   - [Its section](#the-tone-split-the-measure-steps-clip-priced-track-4) covers the numbers, the user's decision and
     the two declared follow-ups.
+  - The gentle-fix check (plan 11f, `phase_scratch_tone_gentle_outcome`) ran and was audited: **`GV-caps`**. The
+    lift above 8 kHz is the balance fix itself at fixed loudness, so it changes nothing: the measure step stays as it
+    is.
 
 Every number is **by the score** (J0, ln(d_row / d_against) on the held half against the clean record; below zero is
 closer), never heard. 90% cluster t intervals. "Passes" = decided better with the mean at −0.10 or beyond.
@@ -397,6 +400,71 @@ Declared with this outcome:
   deciding).
 
 The measure step (`song_bank.measure`, `direc_check.eq_to`) is unchanged. `fs-tone` stays held.
+
+### The gentle-fix check (plan 11f): `GV-caps`
+
+**Ran 2026-11-23 and audited** (an independent recompute with its own gain code, every measure equal on every part:
+CONFIRMED WITH CORRECTIONS, all four taken below). Ledger `phase_scratch_tone_gentle_outcome`. Zero renders; every
+figure is a property of the dry guitar, not a score.
+- **The run:** once, from a frozen worktree of main at `b7423252`, in 65.6 s on the 47 parts.
+- **Output:** `PF/fs/tone/gentle-v1.json`, sha256 `88cbd3c6…a439`.
+- **Checks:** no non-finite value; the coded DI matched fit v1 on every part; the two references reproduced the fit.
+
+**The bars** (mean / max over the 47 parts, dB):
+
+| Bar | `wide24` | `centred24` | `band-open` |
+|---|---|---|---|
+| Distance from the average, mean ≤ 1.5 | 1.49 ✓ | 1.41 ✓ | 1.26 ✓ |
+| Distance from the average, max ≤ 2.5 | 3.24 ✗ | 4.67 ✗ | 2.05 ✓ |
+| Energy above 8 kHz, mean ≤ 1 / max ≤ 3 | +2.79 / +8.68 ✗ | +3.16 / +13.37 ✗ | +3.12 / +13.37 ✗ |
+| Peak, mean ≤ 1 / max ≤ 3 | +1.39 / +7.60 ✗ | +1.51 / +8.68 ✗ | +1.63 / +9.82 ✗ |
+| Energy below 80 Hz, max ≤ 3 | +7.86 ✗ | +12.32 ✗ | +12.32 ✗ |
+
+**`GV-caps`:** no variant meets every bar. Only `band-open` meets both distance bars, and every variant fails all five
+caps.
+
+**What the rise above 8 kHz is: the average balance itself at fixed loudness, not a side effect.**
+- Each variant keeps the coded gain out of band. Above 8 kHz its rise is exactly the extra level the −22.9 LUFS
+  correction adds (correlation 1.0000, largest difference 0.000 dB).
+- The deeper in-band cuts flatten the strong resonances that carried the loudness, so at the same loudness everything
+  else rises, the noise floor above 8 kHz included.
+- Against the target's shape the variants' highs land on the target (+0.04 to +0.11 dB), where the coded DI sat 0.6 dB
+  under it.
+- So caps measured against the coded DI penalise the balance fix as such, and `GV-caps` was close to inevitable.
+- **The balance fix's lift is inherent at fixed loudness; the coded clip avoided it only by leaving the balance off.**
+
+**The peak rise is mostly re-levelling, but not all.** Without the level correction the variants' peaks change by
+−1.4 to −1.65 dB on average. `band-open`'s in-band change alone still lifts some parts' peak by up to +6.1 dB. Below
+80 Hz the rise is not a pure scalar, because the bins at the 80 Hz edge interpolate across it, where a guitar's low E
+sits.
+
+**The quiet-frame hiss figure is identical to the overall figure by construction for these variants.**
+- Above 8 kHz each variant is the coded DI times one scalar, so it adds no information here.
+- It still shows something real: the highs rise between notes too, by +3.1 dB on average and up to +13.4 dB, relative to
+  the playing loudness. That is the hiss risk.
+- It would matter for a variant that changes the shape above 8 kHz.
+
+**The lift is uneven** (`band-open`'s extra level):
+- **Overall:** median +1.3 dB, mean +3.1; 18 of 47 parts above +3 dB, up to +13.4.
+- **By set:** panel +5.4 dB on average, BKS +3.4, GOAT +2.3.
+- **By style:** clean +3.9, crunch +2.3.
+
+**Matching loudness on in-band energy only is not a fix.** It gives the same lift (mean +3.18, max +13.7): its lift
+correlates with the LUFS lift at 0.998, because in-band energy is what drives the loudness.
+
+**The consequence: `GV-caps` changes nothing.** The user's standing decision holds:
+- the measure step (`song_bank.measure`) stays as it is;
+- rows (b) and (c) are not redone;
+- the clip-free re-score beside new rows (11g) keeps `true-noclip`.
+
+The check answers its question: no variant that changes only the 80 Hz to 8 kHz band fixes the balance without lifting
+the highs and the noise floor by up to about 13 dB at −22.9 LUFS. Only a listen could say whether that is heard as
+hiss.
+
+**Possible later steps, recorded as notes only, not requests:**
+- a short listen to the worst lifted parts, the only way to learn whether the lift is heard as hiss;
+- a target question: should the balance above 8 kHz and below 80 Hz be applied relative to the in-band level at all,
+  given that a raw DI's highs may be largely noise? This would need its own declaration.
 
 ### What the split does not say
 

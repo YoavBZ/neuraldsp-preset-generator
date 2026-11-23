@@ -445,7 +445,30 @@ def test_the_ledger_holds_the_declaration_and_holds_fs_tone_back():
     assert rec["renders"] == 846 == T.PARTS * T.RENDERS_PER_PART
     for k in T.HELD_KEYS:
         assert k not in e                                          # fs-tone stays held
-    assert set(T.tone_keys(e)) == {T.PHASE, T.PHASE_SPLIT, T.PHASE_GENTLE, T.PHASE_BESIDE}
+    assert set(T.tone_keys(e)) == {T.PHASE, T.PHASE_SPLIT, T.PHASE_GENTLE, T.PHASE_BESIDE, T.PHASE_GENTLE_OUTCOME}
+
+
+def test_the_ledger_holds_the_gentle_checks_audited_outcome():
+    o = _ladder()[T.PHASE_GENTLE_OUTCOME]
+    assert o["code"] == "GV-caps" and o["code"] in T.GV_CODES and o["renders"] == 0
+    assert re.fullmatch(r"[0-9a-f]{64}", o["output"]["sha256"])
+    assert o["output"]["fit_sha256"] == _ladder()[T.PHASE]["fit"]["sha256"]
+    assert o["audit"]["verdict"] == "CONFIRMED WITH CORRECTIONS" and len(o["audit"]["corrections"]) == 4
+    text = json.dumps(o)
+    assert "the coded clip avoided it only by leaving the balance off" in text
+    assert "GV-caps changes nothing" in o["consequence"] and "true-noclip" in o["consequence"]
+    assert o["possible_later_steps"]["status"] == "notes only, not requests"
+    assert "0.998" in o["in_band_loudness"]
+
+
+def test_the_gentle_output_is_the_recorded_one():
+    pytest.importorskip("numpy")
+    if not T.gentle_path().exists():
+        pytest.skip("no stored gentle output")
+    o = _ladder()[T.PHASE_GENTLE_OUTCOME]
+    assert S.file_sha(T.gentle_path()) == o["output"]["sha256"]
+    g = json.loads(T.gentle_path().read_text())
+    assert g["code"]["code"] == o["code"] == T.gv_code({v: g["stats"][v] for v in T.GENTLE})["code"]
 
 
 def test_the_ledger_holds_the_audited_outcome_and_the_users_decision():
