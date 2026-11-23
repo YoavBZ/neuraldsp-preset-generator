@@ -551,6 +551,14 @@ Otherwise each code goes to the user on its own line. A formal redo of both rows
 
 ### 11f. The gentle-fix CPU check (declared 2026-11-23; ledger `phase_scratch_tone_gentle`; zero renders)
 
+**Run 2026-11-23 and audited** ([results](scratch-search-results.md#the-gentle-fix-check-plan-11f-gv-caps),
+`phase_scratch_tone_gentle_outcome`): **`GV-caps`**.
+- Only `band-open` meets both distance bars, and every variant fails all five caps.
+- The rise above 8 kHz is the average balance itself at fixed loudness: the balance fix's lift is inherent at fixed
+  loudness; the coded clip avoided it only by leaving the balance off. So caps against the coded DI made `GV-caps` close
+  to inevitable.
+- It changes nothing: the measure step stays as it is, rows (b) and (c) are not redone, and 11g keeps `true-noclip`.
+
 **Why.** The clip-free DI fixes the balance (1.26 dB from the average on the 47, max 2.05; coded 2.81, max 7.14). But
 it adds up to +13.4 dB of energy above 8 kHz and +9.8 dB of peak, a hiss risk (the user's decision, item 2). The
 check prices gentler versions on CPU before anything else.
