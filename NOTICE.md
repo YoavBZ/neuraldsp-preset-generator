@@ -48,6 +48,11 @@ for their own copy.
   description needed to read and write presets for a licensed copy. It carries
   no Neural DSP code, audio, impulse responses, preset content, or values taken
   from factory presets.
+- **One development tool is credited here, not included:** MuScriptor, by Kyutai and
+  Mirelo (code MIT; weights CC BY-NC 4.0, gated), is used only as a development
+  yardstick for the note rebuild's transcriber (`docs/note-transcriber-plan.md`).
+  None of its code, weights or output is in this repository or in the product, and
+  it is never shipped.
 
 ## Format documentation
 
