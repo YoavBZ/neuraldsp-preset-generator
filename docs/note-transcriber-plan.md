@@ -637,7 +637,7 @@ Both ran once from main at `1461bce1`, in a frozen detached worktree. Zero rende
 | | MPS | CPU |
 |---|---|---|
 | Three runs on four development windows | identical on all four | identical on all four |
-| Transcription, seconds per 10-s window | 1.97 | 10.51 |
+| Transcription, seconds per gate input (the 10.25-s window with up to 1 s either side, up to 12.25 s) | 1.97 | 10.51 |
 | Model load, seconds (timed apart) | 0.45 to 0.67 | 0.94 to 0.95 |
 | Stage b's 133 runs, projected | 0.07 h | 0.39 h |
 
@@ -645,14 +645,15 @@ The device rule picked MPS, and the size rule kept medium. As declared, the gate
 and with no mask: 20 note files on MPS. **No list has been scored.** The screen waits for the large-model amendment,
 so medium and large are scored together by the same declared measure.
 
-**Precision.** On MPS the transformer runs in float16 (304,948,224 parameters) and the conditioners in float32
-(1,555,456). This was read from the loaded model's parameters and agrees with 0.4.0's `load_model`. The plan's float16
+**Precision.** On MPS the language model runs in float16 and the conditioners in float32 (1,555,456 parameters).
+The language model's 304,948,224 parameters include its embeddings and output layers; the transformer layers alone
+are 302,088,192. This was read from the loaded model's parameters and agrees with 0.4.0's `load_model`. The plan's float16
 expectation was right. The note files' `dtype` field reads `torch.float32` on MPS only because `tx_run`'s probe reads
 the first parameter, which is a conditioner's. That is a mislabel, not the run's precision. The files are not
 rewritten.
 
-**Instrument labels.** These are counts, not a score.
-- Masked: 666 notes, of which `acoustic_guitar` 417 and `clean_electric_guitar` 249.
-- No mask: 736 notes, of which `acoustic_guitar` 391 and `distorted_electric_guitar` 345.
+**Instrument groups.** The masked arm's guitar groups include `acoustic_guitar`, which MuScriptor uses. The list
+notes' counts and labels stay inside the hashed note files until both sizes are scored, since the lists' true note
+counts are on disk.
 
-The masked arm's guitar groups include `acoustic_guitar`.
+Medium's raw note counts were seen before the large-model amendment was declared, so that amendment changes only the weights: the measure, the mask, the clean-up and the pairing stay frozen exactly as declared.

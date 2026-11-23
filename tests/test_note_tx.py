@@ -560,7 +560,9 @@ def test_the_ledger_holds_the_declaration_and_the_go():
     inst = e[X.PHASE_INSTALL]                                     # the hash PR: the shape `require_install` reads
     assert inst["size"] == "medium" and inst["device"] == "mps"
     assert inst["weights_sha256"] == X.WEIGHTS["medium"]["sha256"]
-    assert all(len(inst[k]) == 64 for k in ("lock_sha256", "gate_sha256", "list_notes_listing_sha256"))
+    assert all(re.fullmatch(r"[0-9a-f]{64}", inst[k]) for k in ("lock_sha256", "weights_sha256", "gate_sha256",
+                                                                 "list_notes_listing_sha256"))
+    assert "labels" not in inst and "frozen" in inst["note"]      # no counts before both sizes are scored
     assert "No list has been scored" in inst["note"] and X.private_keys(inst) == []
     go = e[X.PHASE_GO]
     assert go["answer"] == "Go, I'll get access" and len(go["key_terms"]) == 4
