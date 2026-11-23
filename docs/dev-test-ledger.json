@@ -4430,9 +4430,23 @@
      "goat": 27
     },
     "build_seconds": 2.284,
-    "run": "2026-11-23, `versions` once from main at aaf97a2d in a frozen worktree, zero renders, 1,145 s wall (808 s CPU) beside other sessions' jobs; the build rate timed on 3 real windows first",
-    "recompute": "independent recompute from the per-window records (plan 12m's text, scipy's t quantile): code, readings, guard, turned-down shares and every lists and GOAT interval agree; the real set's 28 interval ends differ by about 2% because `pipeline_fix.t95` falls back to 1.6449 past 30 degrees of freedom (43 clusters; t is 1.682); the real set is reported only, so no reading moves",
-    "note": "NV-none: C's interval on the lists reaches zero (+0.56 [-0.14, +1.26], 10 lists) because nv-hand is farther from the DI than nv-asis on `bend` (-1.70) and `triads-and-singles` (-0.88); on the other 8 lists C is +0.22 to +2.03 except `chords-six` (-0.14). Loudness moves the rebuild closer than as is on the lists (nv-loud - nv-asis -0.33 [-0.53, -0.12]), but the soft-note guard fails at both gammas (gamma 1: 7 of 10 soft notes found on nv-asis, 0 of 10 on nv-loud) and the chord guard fails at gamma 2. A code other than NV-loud goes to the user (phase_nr_1_redo_go_versions)."
+    "run": "2026-11-23, `versions` once from main at aaf97a2d in a frozen worktree, zero renders, 1,145 s wall (808 s CPU) beside other sessions' jobs; the build rate timed on 3 real windows first; 2.28 s a build is the first 3 windows' rate under load (load average about 20); the run's own mean is about 0.85 s (1,230 builds in 1,040 s, the independent audit)",
+    "recompute": "the implementer's recompute from the per-window records (plan 12m's text, scipy's t quantile): code, readings, guard, turned-down shares and every lists and GOAT interval agree; the real set's 28 interval ends differ by about 2% because `pipeline_fix.t95` falls back to 1.6449 past 30 degrees of freedom (43 clusters; t is 1.682); the real set is reported only, so no reading moves; the independent check is the audit (2026-11-23, CONFIRMED WITH CORRECTIONS): every stored number agrees to 5e-6 with the t95 fallback emulated",
+    "note": "NV-none under the declared table. 'Cost not shown' means the set is too quiet or too noisy to say, not 'no effect': the lists' test is underpowered (SE 0.38 with 10 clusters; C +0.56 [-0.14, +1.26], one-sided p 0.087). Premise caveat: the distance's own instrument check failed (ghost-ladder, chords-four) and the work went on by the user's go (phase_nr_1_redo_go_ladder). The mechanism (the audit): nv-hand drops same-pitch re-finds, and ring-soft then cuts the held note 150 ms after the kept piece's early end (bend: C -1.70, triads-and-singles -0.88); its 50-ms pairing also misses real chord notes in strums. Side figure only, entering no reading: hand-merge (each paired note extended over its re-finds) reads C +1.18 [+0.43, +1.92] on the lists. Loudness moves the rebuild closer than as is on the lists (nv-loud - nv-asis -0.33 [-0.53, -0.12]), about a quarter to a third of a fair C. The chord and soft-note guard fails at both gammas: at gamma 1 Basic Pitch no longer re-finds 10 of 10 soft notes (7 of 10 on nv-asis); in the audio they are 3-5 dB down on their own string. E is dominated by early note ends together with the re-finds (ring-soft truncation) and by spurious bends; loudness is not part of it (hand-loud - hand +0.06 on the lists, 0.00 on the real DIs). A code other than NV-loud goes to the user (phase_nr_1_redo_go_versions)."
+   },
+   "phase_nr_1_redo_go_versions": {
+    "date": "2026-11-23",
+    "by": "the user",
+    "asked_key_terms": "(the question's key terms, as relayed; not verbatim) The note-versions read is NV-none: the extra notes' cost is not shown on the 10 lists (an underpowered test, the distance's own check passed only on the user's go); loudness moves the rebuild closer but fails the soft-note guard; the audit names held notes cut short by re-finds and spurious bends as the dry-domain bottleneck. Run as is, adopt loudness, or fix the held notes and bends first?",
+    "how": "AskUserQuestion",
+    "answer": "Run as is (Recommended)",
+    "option_description": "Rebuild with the tool's notes unchanged and no loudness, then the decisive 47-recording preset-search row (~13,450 renders, ~2 h). The fix for held notes and bends is recorded as the next step, taken up if the row shows the rebuild limits the search.",
+    "relayed_by": "the coordinating session, 2026-11-23",
+    "loud": null,
+    "go": true,
+    "versions_sha256": "8f77f5d7bd2b380b989f44c958fb2bacd2303d85379b9cd57996a399ae59386f",
+    "next_fix": "merge re-found held notes (a same-pitch merge over a held note's re-finds) and gate spurious bends, zero renders, under its own later declaration; taken up only if the fs-notes row shows the rebuild limits the search",
+    "effect": "`build` reads loud null (versions_loud): tr-di and tr-plain as declared, no loudness"
    }
   },
   {
