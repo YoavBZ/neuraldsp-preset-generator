@@ -17,6 +17,10 @@ asks where row (c)'s loss is made, is declared in
 [section 11](#11-the-tone-split-2026-11-23-ledger-phase_scratch_tone) (ledger `phase_scratch_tone`) on the user's go.
 It re-scores stored answers only (846 renders) and touches no shared code. The search row `fs-tone` is held, not
 declared. Not run.
+**2026-11-23:** the codec ceiling, row `fs-codec`, is declared in [section 12](#12-the-fs-codec-row) (ledger
+`phase_scratch_codec`): the true DI after a latent codec's round trip (`rt-m2l`, LOUDAR's latent; `rt-dac`) drives a
+50-evaluation search, read per part against rows (b) and (c) on the full pool. It does not touch rows (b) and (c),
+`OUTCOME_TABLE` or `fs-notes`. Not run.
 
 **The user's rule.** No action rests on a gap under 0.05. "Passes" means decided better with the mean at −0.10 or
 beyond. An interval inside ±0.05 reads "not readable by the score". Undecided is not failed.
@@ -533,3 +537,241 @@ Otherwise each code goes to the user on its own line. A formal redo of both rows
 
     $MAIN -m learn.scratch_tone split --shard 0/3    # and 1/3, 2/3: 846 renders in all
     $MAIN -m learn.scratch_tone split-read           # zero renders, once -> raw hand-back, audit, results PR
+
+## 12. The `fs-codec` row
+
+Declared 2026-11-23, before anything in it runs (research track 2, "the codec ceiling"), on the user's go of
+2026-11-23 ("Go as planned"), after an independent review (approve with changes; all six required items and the nits
+taken) and its diff check (approve; its two text fixes are in 12d). Ledger `preset-ladder` `phase_scratch_codec`.
+Code: `learn/scratch_codec.py` (the row) and `learn/codec_roundtrip.py` (the round trips, run in each codec's own
+interpreter, importing nothing from this project); tests: `tests/test_scratch_codec.py`, `tests/test_codec_roundtrip.py`.
+Data: `PF/fs/codec/`. Section 11 is track 4's.
+
+**The question.** Before LOUDAR is downloaded or any latent DI rebuild is built: does a dry guitar that has only passed
+through the codec still drive the search? One short search row per codec, driven by the **true DI after a codec round
+trip**, read against row (b) (the true DI) and row (c) (avg+mild).
+
+**What a result can and cannot say. A fail is a strong no-go; a pass is only a weak go.** On LOUDAR's own guitar test
+(Fx-Encoder++ distance from the clean DI) the codec round trip scores 0.105, LOUDAR's output 0.308 and its distorted
+input 0.381: most of LOUDAR's loss is in the generation, which this test does not see. The round trip is also only an
+approximate ceiling: encoding the true DI does not give the decoder's best latent; the decoder's noise differs on every
+sample; the prior's bias, the fitted operator, the stem and a second guitar are outside it. So a pass means "not ruled
+out", and LOUDAR's second test still has to earn its result. A fail means even a perfect input does not get through;
+it is final only after the full row (12b) confirms it.
+
+### 12a. The dry guitars
+
+| Name | Codec and setting | Role |
+|---|---|---|
+| `rt-m2l` | `linear-cae` 0.1.4, model `m2l` (Apache-2.0; a Music2Latent retrained by Torres et al.), **48 kHz in as it is** (LOUDAR's use), 1 denoising step, decode seed a | **Short row; decides for LOUDAR** |
+| `rt-dac` | DAC 44.1 kHz, 8 kbps, 9 codebooks (weights on disk), its own venv | **Short row:** a DAC-rate latent (track 3's option, EG-VAE's family) |
+| `rt-m2l-b` | as `rt-m2l`, decode seed b | Start read only: does the decoder's noise matter? |
+| `rt-id` | no codec | Must equal the true DI byte for byte: the build wraps only the codec |
+| `rt-rs` | 48 → 44.1 → 48 kHz, no codec | Zero-render figures only: what the resampling alone costs `rt-dac` |
+
+`rt-sony` (GuitarFlow's SonyCSL codec) is dropped: a start read decides nothing, and its loader uses
+`weights_only=False`.
+
+- **Input.** `prep` writes per part the raw DI section (48 kHz mono, 492,000 samples with the 0.25 s before it,
+  exactly `pretrain_set.section_audio`'s), then the DI file's own next second (540,000 in all), so the codec sees no
+  hard end where half B stops. Measured at declaration: the 16 BKS parts get a full real next second; the 31 GOAT and
+  panel DI files are 10.25-s section files that end with the section, so theirs is zeros. BKS's files are 44.1 kHz,
+  and a longer read moves the section's last 10 samples by the resampling edge (by up to 0.002), so the section is kept
+  from its own read and the next second taken from the longer one (`with_next_second`; a test checks all 47).
+- **`rt-m2l`.** LOUDAR's level rule in (`loudar_gain`: the loudest 400-ms frame, hop 100 ms, `unfold` with the tail
+  dropped, RMS floored at 1e-8, brought to −18 dB; one gain, read on the section only, undone after decoding); zero-padded
+  to the least 4,096 k + 1,536 samples (542,208); `encode`, then `decode(z, full_length=542208)` with
+  `torch.manual_seed(20261601 + 1000 s + j)` just before it (s is 0 for seed a and 1 for seed b; j is the part's index
+  in sorted keys); cut to 492,000. CPU, 4 threads.
+- **`rt-dac`.** As `learn/dac_roundtrip.py`: peak 0.5 in (over the input the codec sees) and restored,
+  48 → 44.1 → 48 kHz by `resample_poly` (147/160, 160/147), 9 codebooks, cut to 492,000.
+- **Level, and the measuring asymmetry (named, kept).** `build` applies the usual measure step to each round trip
+  (`song_bank.measure`: the average-guitar balance, then −22.9 LUFS). That is how `note_replay.di_section` makes the
+  true DI, and how a rebuilt DI would enter the product. It removes the codec's long-term spectral error by
+  construction. avg+mild was made from the measured DI and only level-matched, so its ±3 dB tilt and its move to the
+  average balance stay in row (c). The measure step's ±15 dB clip leaves a measured DI 2.7 dB on average (max 7.1)
+  off the average balance (track 4's review; reproduced by a test here). The true DI and the codec DI keep that offset;
+  avg+mild loses it. So **`D_blur` is biased in the codec's favour and partly credits the measure step; `D_true` is
+  clean** (both sides are measured alike). Every code says which number it rests on.
+- **No unsafe load.** Each weight file's sha256 is checked against `manifest.json` and the declared value before any
+  load, and `TORCH_FORCE_WEIGHTS_ONLY_LOAD=1` is set before torch is imported. Nothing is loaded with
+  `weights_only=False`.
+
+### 12b. The row and the reading
+
+**`fs-codec`** = (the codec's dry guitar, `xlnoG`). Same draw (`phase_fs_draw`, 47 parts), Cen, halves and stored lag
+as rows (b) and (c). The codec DI is the dry guitar of every render and the judge's DI; the reference is `xlnoG@-3`
+with everything outside the search half zeros (`load_ref_blank`).
+
+- **Search:** `scratch_search.run_part(budget=50, step1_only=True)`: 1 priming render and exactly the first 50
+  evaluations of a 200-evaluation search (`coord_search` uses its budget only as a cap; a test shows it on all 3 amps).
+  The start check's reference is the part's start read (12c). The dry guitar's sha256 is measured from the audio
+  handed to the search and must be the hashed build's. `budget_used: 50` is recorded (`run_part` writes `budget: 200`).
+- **The answer:** the 50-evaluation incumbent `cp50` (`best_index` under the peak bound), as rows (b) and (c) define
+  it. `answers` reads checkpoint `"50"` only: in a short record `"100"` and `"200"` equal it and are refused.
+- **Score:** `scratch_search.score_row_part` unchanged: Cen and `cp50` through the **true DI**, each primed alone,
+  judged on the **held half** against the **clean record**, with the scoring control (Cen within 0.005 of its stored
+  value). 4 renders a part.
+- **`G50`** = ln(cp50 / Cen) on the held half; a non-finite cp50 reads as Cen, counted. Paired per part (Cen is the
+  same render in all three rows): **`D_true`** = G50(`fs-codec`) − G50(`fs-stem`), what the codec costs against the
+  true DI (zero is transparent); **`D_blur`** = G50(`fs-codec`) − G50(`fs-both`), the ceiling against avg+mild as
+  measured (below zero, the ceiling is above the blur). Rows (b) and (c)'s G50 come from their hashed answers' score
+  files. A test reproduces (c) less (b) at the checkpoint, +0.141 [+0.102, +0.180] on the pool and +0.157 [+0.108,
+  +0.206] on BKS+GOAT, and G50 of −0.271 and −0.130.
+
+**The checkpoint, and what it understates.** It was chosen because, of the stored reads, it separated (c) from (b)
+most sharply on these same held halves. It compresses differences: (c) less (b) grows from +0.141 at 50 evaluations to
++0.167 at the final answer, **+0.026** (row (b) gains −0.044 after the checkpoint, row (c) −0.018), so a weaker dry
+guitar falls further behind later. It leans `D_true` toward `FK-clear`, and `D_blur` toward `FK-shut` or undecided.
+Every report carries this note. The calibration rests on one pair of rows.
+
+**`FK_TABLE`** (on the full pool; the first that holds):
+
+| Code | When | Reading | What follows (a recommendation; nothing continues on its own, except the full row) |
+|---|---|---|---|
+| `FK-clear` | `D_true`'s upper end under +0.10 and its mean under +0.05 | At the checkpoint, a cost of 0.10 or more against the true DI is ruled out; a cost of 0.05 to 0.10 is not. Rests on `D_true` | **The route is not ruled out by its codec.** A weak go: LOUDAR's second test may be proposed, under its own declaration, timed on one clip first |
+| `FK-above` | `D_blur`'s whole interval below zero and its mean at −0.05 or beyond | The ceiling is above the blur **as measured**, at the cost `D_true` shows; "by a heard size" only at −0.10 or beyond. Rests on `D_blur`, with the measure caveat | **Not ruled out, with little room.** A weak go, weaker than `FK-clear`: a rebuild that loses more than the room left lands at the blur |
+| `FK-shut` | `D_blur`'s lower end at −0.05 or above | Even a perfect input leaves no readable gain over the blur, although `D_blur` favours the codec. Rests on `D_blur`, with the measure caveat | **The full row runs first.** If it confirms, the route is **parked**, not closed; audited adversarially before any park is written |
+| `FK-undecided` | anything else | Not decided; undecided is not failed | To the user with the interval and what it rules out |
+
+`FK-above` and `FK-shut` cannot both hold (a test on a grid of intervals). The window is narrow: at the checkpoint the
+true DI reads G50 −0.271 and the blur −0.130 on the pool, so a codec has 0.141 of room. `FK-clear` needs it to keep
+about 82% of row (b)'s gain, `FK-above` about 66%.
+
+**What each codec's code covers** (`covers`, printed with every code):
+
+| | `rt-m2l` | `rt-dac` |
+|---|---|---|
+| Covers | `m2l` fed 48 kHz: LOUDAR as released, and anything built in that latent used that way (GuitarFlow retrained on `m2l` included) | A rebuild in DAC's latent at 8 kbps: track 3's DAC option, and a codec of EG-VAE's family |
+| Does not cover | GuitarFlow as published (SonyCSL weights at 44.1 kHz); `m2l` fed at its trained 44.1 kHz; any other codec | DAC at fewer codebooks; DAC-VAE itself; any 12-Hz latent |
+| A weak go means | LOUDAR's second test may be proposed | Track 3 may consider DAC's latent, once `fs-notes` and its own gate say a guided rebuild is wanted |
+| A park means | No LOUDAR download; no rebuild in `m2l` at 48 kHz | Track 3 stays in the waveform |
+
+**The full row, only after `FK-shut`** (either codec; declared and coded now, so nothing is designed after a result).
+`search-full`, `answers-full`, `score-full` and `read-full` refuse unless that codec's short report reads `FK-shut`
+from answers hashed on main. The codec's dry guitar runs the whole search from scratch (step 1 at 200, then step 2)
+through `search_row_part`, `answer_parts`, `score_row_part` and `read_row_parts` unchanged. Its first 50 evaluations
+must equal the short row's exactly (`answers-full` refuses otherwise). Each arm (the answer and the shrunk answer) is
+read by the same table against rows (b) and (c)'s same arm. **The park stands only if both arms read `FK-shut`**;
+otherwise the more favourable arm's code (clear, above, undecided, shut, in that order) is the row's code, said as
+coming from the full row (`park_code`). About 13,260 renders, about 2 hours. A full row is not proposed for the other
+codes: its paired interval was wider than the checkpoint's in rows (b) and (c).
+
+**The park, and its lift.** `FK-shut` compares with avg+mild, which itself needs the true DI; a song gives no such
+blur. So a confirmed `FK-shut` parks the route: nothing is downloaded or built for it now. **The park lifts, to the
+user,** when `fs-notes` is read and its best arm is 0.05 or more worse than the codec's best arm (paired on the pool,
+BKS+GOAT beside; zero renders; `park_lifts`).
+
+**The deciding set: the full pool** (BKS, GOAT and the panel weighted equally), for both codecs, with BKS+GOAT beside
+and the same table read there. A code that holds on one and not the other goes to the user.
+- `rt-m2l`: no overlap with the pool is known. The retrain's default data config lists Jamendo, M4Singer, MoisesDB, DNS
+  clean speech and E-GMD; whether the released weights used exactly that config is not checkable without downloads.
+- `rt-dac`: DAC trains on MUSDB18's train split, Jamendo and AudioSet. **The split was checked at declaration.** The
+  `musdb` package holds no train or test list (only its `validation_tracks`), so it was read from sigsep's own
+  published files: the 150-track list and the SiSEC 2018 test submissions (50 tracks, the same in all 31
+  submissions). "BKS - Bulldozer" and "BKS - Too Much" are in **test**; "BigTroubles - Phantom" is in **train**, and not
+  among `validation_tracks`. That is as expected. MUSDB holds only mixes and four stems, so DAC heard that guitar
+  processed inside "other", never its DI. `rt-dac` keeps the full pool; beside it, the pool with the Phantom part left
+  out (the panel on its two other DI files), and BKS+GOAT. Switching to BKS+GOAT would be wrong: BKS is in MUSDB18 too.
+- The pool rule stays: a lost panel DI file stops the row, to the user (on G50, `D_true` and `D_blur`). The refusal
+  stop is 3 of 47.
+
+**Beside in every report, never deciding:** the compression note; the measure caveat; `covers`; G50 by set and class;
+the share of row (b)'s G50 kept (row (c) keeps 48% on the pool); `D_true` and `D_blur` by class, with each cluster left
+out; for `rt-dac`, the Phantom-left-out pool; `D_blur` against the true DI's clip residual (Spearman); the parts at
++0.10 or worse than Cen; the start read per dry guitar (ln(start value / the draw's true-DI value); avg+mild's is
++0.293 and ranks its per-part cost at +0.70, post hoc); Spearman of `D_true` against each zero-render figure and the
+start read; the search-half gain against held G50.
+
+**The zero-render figures** (`figures.json`, from `build`; descriptive, never deciding), per part and dry guitar
+against the true DI, whole and per half, each paired against avg+mild's: the floored log-mel distance at 256 and 2,048
+samples, the 5-ms envelope distance and the crest change (the planner's probe's definitions; a test reproduces
+avg+mild's anchors of 2.486, 3.050, 1.995 and −0.686 dB); before the measure step, the long-term spectral distance of
+each raw codec output from the raw section; the measured DIs' offset from the average balance (the true DI, each codec
+DI, avg+mild); `rt-m2l-b` against `rt-m2l`; and `rt-rs`. No zero-render check decides: within avg+mild a floored
+log-mel distance ranks the per-part cost at +0.52 to +0.56, and a codec errs differently.
+
+### 12c. Guards, steps and cost
+
+- **Guards** (every command): `scratch_search.on_main` (`learn/scratch_search.py` and the `phase_fs*` keys equal
+  main's); `learn/scratch_codec.py` and `learn/codec_roundtrip.py` equal main's; the `phase_scratch_codec*` keys equal
+  main's; main's blob of `learn/scratch_search.py` is `2420043a4483a482925bed5b87e54692619a305d`, the one `fs-notes`'
+  checks passed on (otherwise an amendment first); main holds `phase_fs`, `phase_fs_draw`, `phase_scratch_both_outcome`
+  and `phase_scratch_codec`; `fs-notes`' two checks passed, their result files' sha256 `727fda89…` (score) and
+  `172e1c9f…` (search). Render commands also: `no_separation_beside`, the render-slot cap, the disk guard before every
+  part, C3r's state equal to the draw's, `never_overwrite` on every output. `start`, `control` and `search` need
+  `phase_scratch_codec_dry`; `search` needs the control passed; `score` and `read` need the answers' phase. This row
+  edits neither `learn/scratch_search.py` nor `learn/scratch_notes.py`. Its keys sit outside `phase_fs*`,
+  `phase_scratch_notes*` and `phase_nr*`, so no other row's guard sees them.
+- **Steps:**
+  1. Unit 0, install and smoke (no repo change, CPU): both venvs, the weights, one part round-tripped twice per codec
+     with the same seed (byte-equal), seconds a part recorded.
+  2. `prep` → the round trips in each venv → `build`: `rt-id` equal to the true DI on 47 of 47; finite, 492,000
+     samples, −22.9 LUFS; the timing offset by the 1-ms envelope within 1 ms (3 or more parts beyond it stop the
+     build) → hash PR `phase_scratch_codec_dry`, with unit 0's measured seconds a part.
+  3. `start` (`rt-m2l`, `rt-m2l-b`, `rt-dac` on all 47; `rt-id` on the 2 check parts) → `control`: `rt-id` at a budget
+     of 10 through this row's search path must equal row (b)'s stored curves, and its start values the draw's true-DI
+     values within 0.005.
+  4. `search --name rt-m2l` (3 shards, `--first 2` first to re-time) → `answers` → hash PR
+     `phase_scratch_codec_answers_m2l`; meanwhile `rt-dac`'s search and answers → hash PR `..._answers_dac`; `score`
+     and `read` for each once its hash is on main.
+  5. On an `FK-shut`: that codec's full row (`..._answers_<m2l or dac>_full`).
+  6. Raw hand-back, the audit (an `FK-shut` adversarially, before any park is written), results PR
+     `phase_scratch_codec_outcome`.
+- **Cost (measured rates):** start reads 282, controls 26, each short search 47 × 51 = 2,397 (1.51 process-s a render,
+  about 20 minutes on 3 processes), each short score 188: **5,478 renders for both codecs, about 50 minutes of slot
+  time**. Only after an `FK-shut`: about 13,260 for that full row, about 2 hours. Codec CPU time is not measured on this
+  Mac until unit 0 times one part; nothing is promised before that.
+- **Slots:** first ready, first run; a search in flight keeps its 3 slots. This row goes first if `fs-notes` is not
+  ready; if it is, `fs-notes` goes first and the codec pieces fill its hash-merge gaps. Against track 4, whichever is
+  declared and reviewed first runs first. The CPU round trips use no render slot and run when no render job runs.
+- **Repeat use.** The 47 held halves were read by rows (b) and (c), and `fs-notes` will read them. Nothing here is
+  chosen on the new row's held values: codec, setting, seed, level rule, checkpoint and table are fixed now. The
+  checkpoint was chosen from rows (b) and (c)'s stored reads because it was the sharpest of them, on these same held
+  halves. That is a choice made on the comparators, and it is declared.
+
+### 12d. Downloads and environments (named; under the user's standing approval, confirmed 2026-11-23)
+
+**`codec-venv`** (`~/ndsp-presets/tools/codec-venv`, CPython 3.12 from pyenv; `rt-m2l`, and LOUDAR later):
+
+| What | Size | sha256 | Licence |
+|---|---|---|---|
+| `torch-2.10.0-2-cp312-none-macosx_11_0_arm64.whl` (pinned by file; the plain cp312 build has another hash) | 79,498,202 B | `13ec4add8c3faaed8d13e0574f5cd4a323c11655546f91fbe6afa77b57423574` | BSD |
+| `numpy-1.26.4-cp312-cp312-macosx_11_0_arm64.whl` | 13,685,868 B | `03a8c78d01d9781b28a6989f6fa1bb2c4f2d51201cf99d3dd875df6fbd96b23b` | BSD |
+| `linear_cae-0.1.4-py3-none-any.whl` (needs `PyYAML`, `huggingface_hub`, `matplotlib>=3.10.1`, `soundfile>=0.13.1`) | 29,437 B | `29e5e9d41fa110eeb94d0867625ebeb75eb19ceafabd8419ed59ba36fb0dd69e` | Apache-2.0 |
+| `m2l` weights `1511f18a_weights/autoencoder_inference_model_last.pth` (+ 3 YAML files of 187, 88 and 639 B) | 232,976,270 B | `405499f959fbbe38496fa2c0cc5663b495058a353157304006bff5bfced5b20b` | Apache-2.0 |
+
+**`dac-venv`** (`~/ndsp-presets/tools/dac-venv`, the system Python 3.9.6 with torch 2.8, the combination step 0c ran
+on; its own venv, so a clash cannot cost `codec-venv`):
+
+| What | Size | sha256 | Licence |
+|---|---|---|---|
+| `torch-2.8.0-cp39-none-macosx_11_0_arm64.whl` | 73,610,795 B | `e9f071f5b52a9f6970dc8a919694b27a91ae9dc08898b2b988abbef5eddfd1ae` | BSD |
+| `torchaudio-2.8.0-cp39-cp39-macosx_11_0_arm64.whl` | 1,853,118 B | `522289e2cd57e79401fd5ccae9b1bc0ff2e47f3529092adf5acf57427ea0c6a9` | BSD |
+| `descript_audio_codec-1.0.0-py3-none-any.whl` | 26,933 B | `7ecd1883040613d143494f27f199c11c7053a8a7f9fd2120568c5a98db926e61` | MIT |
+| `descript_audiotools-0.7.2-py2.py3-none-any.whl` | 106,704 B | `bb7a4e837f92395e43894d99a89406485325b88c6f158caf59e18876cf5b06ea` | MIT |
+| The rest of DAC's set: about 88 packages, about 207 MB by a walk of PyPI's metadata; fixed by the resolver's report | | at install | mixed open |
+| DAC weights, already on disk (`~/.cache/descript/dac/weights_44khz_8kbps_0.0.1.pth`) | 306,717,287 B | `a88eed82a7024ccc1facdb1e605c4c2f99281c8118c22c9895ffa846d8fb61aa` | MIT |
+
+- **The `tensorboard` constraint.** `descript-audiotools` needs `protobuf<3.20` and `tensorboard`; importing `dac`
+  imports `torch.utils.tensorboard`, so `tensorboard` cannot be dropped. Only the newest `tensorboard`, 2.21.0, needs
+  `protobuf>=6.31.1`; 2.20.0 and 2.19.0 need only `protobuf>=3.19.6,!=4.24.0`, on Python 3.9 or later. So the dry run
+  pins **`tensorboard==2.20.0` and `protobuf==3.19.6` as constraints**, which makes it deterministic: in the empty
+  `dac-venv`, `pip install --dry-run --ignore-installed --report dac-resolve.json -c dac-constraints.txt torch==2.8.0
+  torchaudio==2.8.0 descript-audio-codec==1.0.0`, with `dac-constraints.txt` holding those two lines.
+- **DAC's exact package list goes to the user before its install** (the user's go: DAC gets its own setup, its list
+  first). A DAC install failure drops `rt-dac` (reported); `rt-m2l` does not wait for it.
+- `~/ndsp-presets/tools/codec-models/manifest.json` names every file as `{"files": {key: {url, size, sha256,
+  licence}}}`, with keys `m2l/<file name>` and `dac/<file name>`. The round trips refuse a weight file whose sha256 is
+  not both the manifest's and the declared one. `m2l`'s four files are fetched with `hf_hub_download` under
+  `HF_HOME=~/ndsp-presets/tools/codec-models/hf`, checked before any load, then used with `HF_HUB_OFFLINE=1`.
+- Not in this plan: LOUDAR's `GuitarFx-175000.pt` (1,083,089,737 B), only after a go and under its own declaration;
+  `music2latent` 0.1.8 and SonyCSL's weights (dropped).
+
+### 12e. What it can't say
+
+- How LOUDAR, GuitarFlow or any rebuild itself performs: a pass leaves the route open and proves nothing about its
+  generator.
+- GuitarFlow as published, `m2l` at its trained rate, or any codec, bitrate or latent rate but the two read.
+- Anything from a stem, a mix, a released record, or by ear.
+- The final answer after 262 renders, unless the full row ran.
