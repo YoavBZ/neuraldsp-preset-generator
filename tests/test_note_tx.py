@@ -58,8 +58,9 @@ def test_the_declared_settings():
     assert (X.PAIR_ONSET_S, X.END_SHARE, X.END_MIN_S) == (0.050, 0.20, 0.050) and X.VETO_INTERVALS == (12, 19, 24)
     assert X.RECALL_GUARD == 0.05 and X.CHECK_SLACK == 1 and X.UNPAIRED_LOOKUP == 0.05
     assert X.GUARDED_CHECKS == ("playing-covered", "judge-accepts", "ring-kept", "chords-kept")
-    assert set(X.NOTE_KINDS) == {"list", "list-free", "truth", "goat", "goat-free"}
-    assert all(X.NOTE_KINDS[k] == R.FREE for k in ("list-free", "goat-free"))
+    assert set(X.NOTE_KINDS) == {"list", "list-free", "truth", "goat", "goat-free", "list-large", "list-large-free"}
+    assert all(X.NOTE_KINDS[k] == R.FREE for k in ("list-free", "goat-free", "list-large-free"))
+    assert X.NOTE_KINDS["list-large"] == R.MASKED
 
 
 def test_the_names():
@@ -473,7 +474,93 @@ def test_the_weights_check():
     assert "sha256" in X.weights_refusal("medium", w["bytes"], "0" * 64, 126)
     assert "config.json" in X.weights_refusal("medium", w["bytes"], w["sha256"], 124)
     assert X.weights_refusal("small", X.WEIGHTS["small"]["bytes"], X.WEIGHTS["small"]["sha256"], 124) is None
-    assert "declared size" in X.weights_refusal("large", 0, "", 0)
+    assert "declared size" in X.weights_refusal("huge", 0, "", 0)
+    big = X.WEIGHTS["large"]
+    assert (big["revision"], big["bytes"], big["config_bytes"]) == (
+        "8809fdfbed2affa7ade94a7059e746e3880720e7", 5465642136, 125)
+    assert big["sha256"] == "ac4eb6ea87dfc26b6ca6b954c6b967ab87ad4c7d08e078b25214f13ed051f397" == R.WEIGHTS["large"][0]
+    good = "16bedd02b18770e43740419b0d5777f231047e96e8987f498e8a1123c39c9852"
+    assert big["config_sha256"] == good
+    assert X.weights_refusal("large", big["bytes"], big["sha256"], 125, good) is None
+    assert "config.json is not" in X.weights_refusal("large", big["bytes"], big["sha256"], 125, "0" * 64)
+    assert X.weights_refusal("medium", w["bytes"], w["sha256"], 126, "0" * 64) is None   # medium's recorded at install
+
+
+def _size_rows(fs):
+    """Ten made-up list rows whose tx-ms note F is fs[k]."""
+    return [_row(f"l{k}", {"tx-bp": _fig(10, 10, 16), "tx-ms": dict(_fig(10, 10, 12), f=f)}) for k, f in enumerate(fs)]
+
+
+def test_the_size_pick_reads_accuracy_and_reports_speed_beside():
+    med = _size_rows([0.80] * 10)
+    up = _size_rows([0.80 + 0.01 * (k % 3) for k in range(10)])     # large's F a little higher on average
+    down = _size_rows([0.79] * 10)
+    p = X.size_pick({"rows": {"medium": med, "large": up}, "projections": {"medium": 262.0, "large": 9000.0}})
+    assert p["size"] == "large" and p["diff_large_less_medium"]["lo90"] > 0 and p["diff_large_less_medium"][
+        "clusters"] == 10 and p["label"] == "large decided better" and not p["large_open_for_user"]
+    mixed = _size_rows([0.80 + (0.03 if k % 2 else -0.02) for k in range(10)])   # mean above zero, interval not
+    u = X.size_pick({"rows": {"medium": med, "large": mixed}, "projections": {"medium": 262.0, "large": 300.0}})
+    assert u["diff_large_less_medium"]["mean"] > 0 and u["diff_large_less_medium"]["lo90"] <= 0
+    assert u["size"] == "medium" and u["label"] == "undecided, medium kept" and u["large_open_for_user"]
+    assert p["over_two_hours"] and p["projections"] == {"medium": 262.0, "large": 9000.0}   # speed never picks
+    worse = X.size_pick({"rows": {"medium": med, "large": down}, "projections": {}})
+    assert worse["size"] == "medium" and worse["label"] == "large decided worse, medium kept"
+    tie = X.size_pick({"rows": {"medium": med, "large": _size_rows([0.80] * 10)}, "projections": {"large": 100.0}})
+    assert tie["size"] == "medium" and not tie["over_two_hours"]      # a tie keeps medium
+    alone = X.size_pick({"rows": {"medium": med}, "projections": {"medium": 262.0}})
+    assert alone["size"] == "medium" and alone["diff_large_less_medium"] is None   # large's gate stopped
+    assert X.SCREENED_SIZES == ("medium", "large") and (X.PICK_ARM, X.PICK_FIELD) == ("tx-ms", "f")
+    assert X.LIST_KINDS == {"medium": ("list", "list-free"), "large": ("list-large", "list-large-free")}
+
+
+def test_a_slow_pick_goes_to_the_user_and_never_to_small():
+    slow = {"size": "large", "size_pick": {"over_two_hours": True, "projections": {"large": 9000.0}}}
+    assert "to the user" in X.slow_refusal(slow, {"go": "yes"})
+    assert X.slow_refusal(slow, {"go": "yes", "slow_ok": True}) is None
+    assert X.slow_refusal({"size": "medium", "size_pick": {"over_two_hours": False}}, None) is None
+    assert X.picked_size(slow) == "large" and X.picked_size({}) == "medium"   # a screen before the amendment
+    open_ = {"size": "medium", "size_pick": {"large_open_for_user": True, "projections": {"large": 9000.0}}}
+    assert X.picked_size(open_, {"size": "large"}) == "large"     # the user may take large on an undecided pick
+    assert X.picked_size({"size": "medium", "size_pick": {"large_open_for_user": False}}, {"size": "large"}) == "medium"
+    assert "large's stage b" in X.slow_refusal(open_, {"size": "large"})
+    assert X.slow_refusal(open_, {"size": "large", "slow_ok": True}) is None and X.slow_refusal(open_, {}) is None
+    assert not X.large_stopped({"note-transcriber": {X.PHASE_INSTALL_LARGE: {"gate_sha256": "g"}}})
+    stop = {"stopped": "no repeat", "gate_sha256": "g"}
+    assert X.large_stop_refusal(stop, "g", {"size": "large", "device": None}) is None
+    assert "no gate_sha256" in X.large_stop_refusal({"stopped": "no repeat"}, "g", {"size": "large", "device": None})
+    assert "not the file" in X.large_stop_refusal(stop, "h", {"size": "large", "device": None})
+    assert "device null" in X.large_stop_refusal(stop, "g", {"size": "large", "device": "mps"})
+
+
+def test_a_stop_needs_its_gate_file(monkeypatch, tmp_path):
+    monkeypatch.setattr(X, "OUT", tmp_path)
+    m = {"note-transcriber": {X.PHASE_INSTALL_LARGE: {"stopped": "no repeat", "gate_sha256": "0" * 64}}}
+    with pytest.raises(SystemExit, match="gate-large.json is missing"):
+        X.large_stopped(m)
+    X.gate_path("large").write_text(json.dumps({"body": {"size": "large", "device": None}}))
+    with pytest.raises(SystemExit, match="not the file the stop names"):
+        X.large_stopped(m)
+    m["note-transcriber"][X.PHASE_INSTALL_LARGE]["gate_sha256"] = T.NR.file_sha(X.gate_path("large"))
+    assert X.large_stopped(m)
+
+
+def test_require_install_refuses_another_size(monkeypatch, tmp_path):
+    monkeypatch.setattr(X, "MANIFEST", tmp_path / "manifest.json")
+    (tmp_path / "manifest.json").write_text(json.dumps({"lock_sha256": "l", "weights": {"sha256": "w"}}))
+    m = {"note-transcriber": {X.PHASE_INSTALL: {"size": "medium"}, X.PHASE_INSTALL_LARGE: {"size": "medium"}}}
+    with pytest.raises(SystemExit, match="names size 'medium', not 'large'"):
+        X.require_install(m, "large")
+    m["note-transcriber"][X.PHASE_INSTALL] = {"size": "small"}
+    with pytest.raises(SystemExit, match="names size 'small', not 'medium'"):
+        X.require_install(m, "medium")
+
+
+def test_the_large_install_record_binds_large_weights():
+    man = {"lock_sha256": "l", "weights": {"sha256": X.WEIGHTS["medium"]["sha256"]}}
+    rec = {"lock_sha256": "l", "weights_sha256": X.WEIGHTS["large"]["sha256"], "gate_sha256": "g",
+           "list_notes_listing_sha256": "n"}
+    assert X.install_record_refusal(rec, man, "g", "n", X.WEIGHTS["large"]["sha256"]) is None
+    assert "another lock or weights" in X.install_record_refusal(rec, man, "g", "n")   # not medium's weights
 
 
 def test_the_install_record_holds_no_account_name_email_or_token():
@@ -564,6 +651,10 @@ def test_the_ledger_holds_the_declaration_and_the_go():
                                                                  "list_notes_listing_sha256"))
     assert "labels" not in inst and "frozen" in inst["note"]      # no counts before both sizes are scored
     assert "No list has been scored" in inst["note"] and X.private_keys(inst) == []
+    amend = e[X.PHASE_SIZE_AMEND]                                 # declared before large is gated or a list scored
+    assert X.PHASE_INSTALL_LARGE not in e and "no switch to small" in amend["gate"].lower()
+    assert "tx-ms's note F" in amend["pick"] and "slow_ok" in amend["slow"] and X.private_keys(amend) == []
+    assert "changes only the weights" in amend["frozen"]
     go = e[X.PHASE_GO]
     assert go["answer"] == "Go, I'll get access" and len(go["key_terms"]) == 4
     terms = " ".join(go["key_terms"])
@@ -586,7 +677,8 @@ def test_every_command_refuses_off_main(monkeypatch, cmd):
         X.COMMANDS[cmd](argparse.Namespace(size=None, interpreter=None))
 
 
-NEEDS = {"install": (X.PHASE_GO,), "gate": (X.PHASE_GO,), "lists": (X.PHASE_GO, X.PHASE_INSTALL),
+NEEDS = {"install": (X.PHASE_GO,), "gate": (X.PHASE_GO,),
+         "lists": (X.PHASE_GO, X.PHASE_INSTALL, X.PHASE_SIZE_AMEND, X.PHASE_INSTALL_LARGE),
          "transcribe": (X.PHASE_GO, X.PHASE_INSTALL, X.PHASE_LISTS, X.PHASE_GO_READ),
          "read": (X.PHASE_GO, X.PHASE_INSTALL, X.PHASE_LISTS, X.PHASE_GO_READ, X.PHASE_NOTES),
          "bridge": (X.PHASE_GO, X.PHASE_INSTALL, X.PHASE_LISTS, X.PHASE_GO_READ, X.PHASE_NOTES, X.PHASE_READ)}
@@ -613,6 +705,14 @@ def test_stage_b_refuses_after_txr_none_and_the_bridge_without_a_bridge_code(mon
         X.cmd_transcribe(None)
     with pytest.raises(SystemExit, match="no bridge"):
         X.cmd_bridge(None)
+
+
+@pytest.mark.parametrize("missing", ["phase_tx_size_amend", "phase_tx_install"])
+def test_the_large_gate_waits_for_the_amendment_and_medium_bound(monkeypatch, missing):
+    tx = {k: {"declared": True} for k in (X.PHASE, X.PHASE_GO, X.PHASE_SIZE_AMEND, X.PHASE_INSTALL) if k != missing}
+    monkeypatch.setattr(X, "tx_on_main", lambda: ({"note-transcriber": tx, "note-rebuild": {T.PHASE_TRUTH: {}}}, None))
+    with pytest.raises(SystemExit, match=missing):
+        X.cmd_gate(argparse.Namespace(size="large"))
 
 
 def test_the_small_gate_runs_only_after_the_size_switch(monkeypatch, tmp_path):
