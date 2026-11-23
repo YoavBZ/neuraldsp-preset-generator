@@ -4979,6 +4979,161 @@
     "file": "PF/note-rebuild/redo/transcribe.json",
     "ear_items_sha256": "40913a1be9fd0b8df61bc129c73cba5d10feca49fcc7e237e9aa4a5aa5307943",
     "note": "2026-11-23, from main at e21cae26 in a frozen worktree, zero renders, 115 s: 47 parts and 8 ear items transcribed (47 and 8 note files, each naming the install's lock and model); note-check refusals 0 (no blocking check); onsets-found flags 31 of the 40 deciding parts and 4 of the panel, reported by phase_nr_1_redo_go_flags; playing-covered holds on 15 of 47 (median playing share 0.92), reported; the ear items as amended (phase_nr_1_ear_kinds): chord-led item_77, single-note item_49 (annotation), bends item_39, let-ring item_5 (nearest, not filled)"
+   },
+   "phase_nr_1_redo_ear": {
+    "verdict": "fault-content",
+    "read_sha256": "faec1082ba5fa31c4da3c03a5c220e7a876972573352f8e8b664c9a7edd0fc91",
+    "read_file": "PF/note-rebuild/redo/ear-read-2.json",
+    "answers_sha256": "af97933dc4693c8cc01908bcd44279dfd17a397c487942a68769767dc794e838",
+    "answers_file": "listening/note-rebuild-ear-page-2/export/answers/114b862b18b3.json (db version 107)",
+    "build": "114b862b18b3",
+    "key_sha256": "070290bed00cdb9e8d9a17b6522ebd3edc5b1bf778e67a37c73402ec648ca0f3",
+    "dry_build_sha256": "46e485a22c5f925457ebb89905aa2fc16c853e58c694791cbde77c14831fbf5b",
+    "read": "2026-11-23, `note_rebuild_ear redo-read` once from main at 881acc74 in a frozen worktree, from the page's stored answers (never from chat); all 13 cards answered by the user",
+    "content": [
+     {
+      "card": 1,
+      "item": "item_46",
+      "cls": "clean",
+      "heard": [
+       "extra"
+      ],
+      "note": ""
+     },
+     {
+      "card": 3,
+      "item": "item_39",
+      "cls": "crunch",
+      "heard": [
+       "missing"
+      ],
+      "note": "Pretty accurate but bends turned into separated notes"
+     },
+     {
+      "card": 4,
+      "item": "item_39",
+      "cls": "clean",
+      "heard": [
+       "extra"
+      ],
+      "note": "Very accurate, a few extra notes"
+     },
+     {
+      "card": 5,
+      "item": "item_49",
+      "cls": "clean",
+      "heard": [
+       "extra"
+      ],
+      "note": "Pretty accurate, turned pull-offs and hammer-ons into separated notes"
+     },
+     {
+      "card": 6,
+      "item": "item_160",
+      "cls": "clean",
+      "heard": [
+       "extra"
+      ],
+      "note": "The guitar sounds good, only the ending has a few extra very high notes"
+     },
+     {
+      "card": 9,
+      "item": "item_77",
+      "cls": "clean",
+      "heard": [
+       "chords"
+      ],
+      "note": "Sounds like chords are harder for the model"
+     },
+     {
+      "card": 12,
+      "item": "item_102",
+      "cls": "clean",
+      "heard": [
+       "missing"
+      ],
+      "note": "A sound of two strings - one bending and one regular picking, turned into two separated notes not even played together"
+     }
+    ],
+    "signal": [
+     {
+      "card": 1,
+      "item": "item_46",
+      "cls": "clean",
+      "heard": [
+       "tune"
+      ],
+      "note": ""
+     },
+     {
+      "card": 9,
+      "item": "item_77",
+      "cls": "clean",
+      "heard": [
+       "tune"
+      ],
+      "note": "Sounds like chords are harder for the model"
+     },
+     {
+      "card": 10,
+      "item": "item_77",
+      "cls": "crunch",
+      "heard": [
+       "tune"
+      ],
+      "note": "Pretty accurate, the slide in the beginning turned into two notes and the second is out of tune"
+     }
+    ],
+    "unanswered": [
+     11
+    ],
+    "cant_judge": [
+     2
+    ],
+    "control": {
+     "card": 13,
+     "item": "item_39",
+     "same": true,
+     "faults": [],
+     "note": "Perfect"
+    },
+    "notes_without_fault": [
+     {
+      "card": 2,
+      "item": "item_5",
+      "cls": "crunch",
+      "note": "Bad DI, don't use it"
+     },
+     {
+      "card": 11,
+      "item": "item_5",
+      "cls": "clean",
+      "note": "Bad DI, don't use it"
+     }
+    ],
+    "what_follows": "fault-content: content faults on 7 real cards (missing 2, extra 4, chords 1) stop the step before any read (12h's stop rule: one declared fix; a second fault goes to the user with stop recommended). ear_refusal refuses answers, score and read; fs-notes's search does not open as declared. Cards 11 (only a note) and 2 (can't judge) are the user's bad-DI cards (phase_nr_1_redo_bad_di); without them the verdict is the same",
+    "fault_kinds_in_the_users_words": [
+     "bends turned into separated notes (card 3)",
+     "turned pull-offs and hammer-ons into separated notes (card 5)",
+     "the slide in the beginning turned into two notes and the second is out of tune (card 10)",
+     "Sounds like chords are harder for the model (card 9)",
+     "only the ending has a few extra very high notes (card 6)",
+     "A sound of two strings - one bending and one regular picking, turned into two separated notes not even played together (card 12)",
+     "Very accurate, a few extra notes (card 4)"
+    ]
+   },
+   "phase_nr_1_redo_bad_di": {
+    "date": "2026-11-23",
+    "by": "the user, on the ear page (build 114b862b18b3)",
+    "instruction": "Bad DI, don't use it",
+    "where": "the user's note on card 2 (crunch; also marked can't judge) and card 11 (clean; the note alone), both GOAT item_5",
+    "mapping": "key.json 070290be: c2 and c11 are GOAT item_5, the let-ring ear item (the nearest; none met 0.50), window from 10 s; its DI is the item's dataset DI (GOAT metadata: downtuned, strat, player1, split train, fine alignment F 0.947)",
+    "in_the_47_parts": "no: item_5 is in neither the row's 47-part draw (BKS, GOAT, panel) nor the replay's 122",
+    "records_with_it": "the 27 development windows (the first, in item order): the install gates (repeat windows), both calibrations, the truth report's GOAT set and the versions read's GOAT set; stage P's true notes and probe; the note transcriber's (track 1) gates; the ear page (cards 2 and 11); the GOAT pilot units 1 and 2 (pipeline-fix phase_5c, item_5@5.0); in GOAT's unit pool it is out already (no window)",
+    "records_without_it": "rows (b) and (c), fs-codec, fs-loudar, the tone split and the stage-1 subset: none includes item_5",
+    "trusted_data_rule": "the user's standing rule: dirty data is excluded, not flagged",
+    "proposed": "a declared amendment (note-rebuild-plan 12p, drafted, not applied): item_5 out of fs-notes and every later read, on both sides of every paired comparison; the development windows 26, not 27; the records already made stay as they are, read beside without item_5 where a later read uses them. To apply only after its review and merge",
+    "sealed": "item_5 is GOAT development material, not a sealed set; titles and unit ids only in git"
    }
   },
   {

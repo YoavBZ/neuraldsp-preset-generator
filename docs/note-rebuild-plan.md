@@ -1203,3 +1203,48 @@ Run once each from main at e21cae26 in a frozen worktree, zero renders, after th
   clip-free re-score is reported beside this row under track 4's declaration; it is not run here.
 
 Next: `clips` and the 13-card page (52 renders); the user listens before the row's search.
+
+### 12p. The ear page's read: `fault-content`, and a DI the user ruled out (2026-11-23; ledger `phase_nr_1_redo_ear`, `phase_nr_1_redo_bad_di`)
+
+The user answered all 13 cards (build 114b862b18b3). `redo-read` read the page's stored answers once, never from chat,
+and the verdict is **`fault-content`**: content faults on 7 real cards (2 missing notes, 4 extra notes, 1 chords). By
+12h's stop rule the step stops before any read: answers, score and read refuse (`ear_refusal`), and **fs-notes's search
+does not open as declared**. One declared fix is allowed; a second fault goes to the user with "stop" recommended. The
+hidden control (card 13) was heard "Same notes and timing", with the note "Perfect".
+
+The user's notes, as they wrote them (card, item, class):
+
+| Card | Item | Class | Heard | Note |
+|---|---|---|---|---|
+| 1 | item_46 | clean | extra; tune | — |
+| 3 | item_39 | crunch | missing | Pretty accurate but bends turned into separated notes |
+| 4 | item_39 | clean | extra | Very accurate, a few extra notes |
+| 5 | item_49 | clean | extra | Pretty accurate, turned pull-offs and hammer-ons into separated notes |
+| 6 | item_160 | clean | extra | The guitar sounds good, only the ending has a few extra very high notes |
+| 9 | item_77 | clean | chords; tune | Sounds like chords are harder for the model |
+| 10 | item_77 | crunch | tune | Pretty accurate, the slide in the beginning turned into two notes and the second is out of tune |
+| 12 | item_102 | clean | missing | A sound of two strings - one bending and one regular picking, turned into two separated notes not even played together |
+| 2 | item_5 | crunch | can't judge | Bad DI, don't use it |
+| 11 | item_5 | clean | (no answer) | Bad DI, don't use it |
+
+The fault kinds the notes name are bends, hammer-ons and pull-offs, and a slide each split into separate notes (the
+slide's second note out of tune); chords harder; a few extra very high notes at an ending. They match the bottleneck
+the versions audit named: held notes cut short, then re-found, and spurious bends. Its fix is the target recorded in
+`phase_nr_1_redo_go_versions`.
+
+**The user's instruction on cards 2 and 11: "Bad DI, don't use it".** Both cards are GOAT `item_5`, the let-ring ear
+item (the nearest; none met 0.50). Its DI is the item's dataset DI; GOAT's metadata calls it downtuned.
+- It is not among the row's 47 parts (BKS, GOAT or panel) and not in the replay's 122.
+- Rows (b) and (c), fs-codec, fs-loudar, the tone split and the stage-1 subset do not include it.
+- It is in: the 27 development windows (the first, in item order), so the install gates' repeat windows, both
+  calibrations, the truth report's and the versions read's GOAT sets; stage P's true notes and probe; the note
+  transcriber's gates; this page; and the GOAT pilot units 1 and 2. In GOAT's unit pool it is out already (no window).
+- Without cards 2 and 11 the verdict is the same.
+
+**Proposed amendment (drafted, not applied; to apply only after its review and merge).** By the user's standing rule
+(dirty data is excluded, not flagged), `item_5` leaves fs-notes and every later read:
+- the development windows become 26 (every rate on them counted over 26, its bar unchanged as a share);
+- every paired comparison drops `item_5` on both sides (a version against another, a check against its control);
+- the ear items: if a later page is built, `item_5` is not a candidate;
+- the note transcriber's later reads drop it the same way;
+- the records already made are not rewritten: where a later read uses one, it is read beside without `item_5`.
