@@ -92,7 +92,7 @@ SCREENED_SIZES = ("medium", "large")     # the amendment: both screened on the t
 LIST_KINDS = {"medium": ("list", "list-free"), "large": ("list-large", "list-large-free")}
 PICK_ARM, PICK_FIELD = "tx-ms", "f"      # the size pick: MuScriptor's own note F on the lists, paired per list
 PICK_UNDECIDED = "undecided, medium kept"   # large not decided better: medium kept, large open for the user
-PICK_NO_SHARED = "no shared list, medium kept"   # the two sizes share fewer than two lists: no interval to read
+PICK_NO_SHARED = "fewer than two shared lists, medium kept"   # no interval to read
 REQUIREMENTS = ("torch>=2.3", "numpy>=2", "einops>=0.4", "mido>=1.3", "packaging>=20.0", "safetensors>=0.4",
                 "huggingface_hub>=0.13", "soundfile>=0.14.0")   # what `transcribe()` needs; no server, no beat tracker
 NOT_NEEDED = ("beat-this", "fastapi", "typer", "uvicorn")   # the server and beat-tracking parts: never in the lock

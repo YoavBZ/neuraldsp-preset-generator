@@ -509,7 +509,7 @@ def test_the_size_pick_reads_accuracy_and_reports_speed_beside():
     assert tie["size"] == "medium" and not tie["over_two_hours"]      # a tie keeps medium
     apart = [dict(r, cluster=f"x{k}") for k, r in enumerate(up)]     # no list in common
     nos = X.size_pick({"rows": {"medium": med, "large": apart}, "projections": {}})
-    assert nos["size"] == "medium" and nos["label"] == "no shared list, medium kept" and not nos["large_open_for_user"]
+    assert nos["size"] == "medium" and nos["label"] == "fewer than two shared lists, medium kept" and not nos["large_open_for_user"]
     alone = X.size_pick({"rows": {"medium": med}, "projections": {"medium": 262.0}})
     assert alone["size"] == "medium" and alone["diff_large_less_medium"] is None   # large's gate stopped
     assert X.SCREENED_SIZES == ("medium", "large") and (X.PICK_ARM, X.PICK_FIELD) == ("tx-ms", "f")
@@ -648,7 +648,7 @@ def test_the_ledger_holds_the_declaration_and_the_go():
     e = X.tx_entries(LEDGER.read_text())["note-transcriber"]
     assert e["plan"] == X.PLAN and (REPO / X.PLAN).exists()
     assert X.PHASE in e and X.PHASE_GO in e
-    for later in (X.PHASE_LISTS, X.PHASE_GO_READ, X.PHASE_NOTES, X.PHASE_READ, X.PHASE_BRIDGE) + X.RESERVED_PHASES:
+    for later in (X.PHASE_GO_READ, X.PHASE_NOTES, X.PHASE_READ, X.PHASE_BRIDGE) + X.RESERVED_PHASES:
         assert later not in e                                     # each comes with its own PR
     inst = e[X.PHASE_INSTALL]                                     # the hash PR: the shape `require_install` reads
     assert inst["size"] == "medium" and inst["device"] == "mps"
@@ -667,6 +667,10 @@ def test_the_ledger_holds_the_declaration_and_the_go():
     assert "No list of either size has been scored" in big["note"] and X.private_keys(big) == []
     assert "tx-ms's note F" in amend["pick"] and "slow_ok" in amend["slow"] and X.private_keys(amend) == []
     assert "changes only the weights" in amend["frozen"]
+    lists = e[X.PHASE_LISTS]                                      # the screen's result: the shape stage b reads
+    assert X.lists_go_refusal(lists) is None and lists["size"] == X.picked_size(lists) == "medium"
+    assert re.fullmatch(r"[0-9a-f]{64}", lists["sha256"]) and lists["size_pick"]["label"] == X.PICK_UNDECIDED
+    assert lists["size_pick"]["large_open_for_user"] and set(lists["screens"]) == set(X.SCREENED_SIZES)
     go = e[X.PHASE_GO]
     assert go["answer"] == "Go, I'll get access" and len(go["key_terms"]) == 4
     terms = " ".join(go["key_terms"])
