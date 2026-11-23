@@ -865,3 +865,9 @@ it".
 - The gates' repeat runs on `item_5` stay as recorded: they tested repeatability, not accuracy.
 
 `read` waits for 12p on main.
+
+**The ruled-out DI (2026-11-24; note-rebuild-plan 12p, ledger `note-rebuild` `phase_nr_1_redo_item5_out`).** The user
+ruled GOAT `item_5` out on the redo's ear page: "Bad DI, don't use it". Stage b's note files stay as made, bound by
+`phase_tx_notes` with all 27 windows (`DEV_RUNS` stays 54). `read` drops `item_5`'s GOAT rows for every arm, so the checks
+count over 26 windows, and `CHECK_SLACK` stays one window. The bridge drops `item_5` from versions.json's GOAT windows on
+both the stored and the built side. `read` and the bridge refuse until 12p's key is on main; `read` runs once.

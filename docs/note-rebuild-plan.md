@@ -1248,3 +1248,36 @@ item (the nearest; none met 0.50). Its DI is the item's dataset DI; GOAT's metad
 - the ear items: if a later page is built, `item_5` is not a candidate;
 - the note transcriber's later reads drop it the same way;
 - the records already made are not rewritten: where a later read uses one, it is read beside without `item_5`.
+
+**12p's exclusion, declared and coded (2026-11-24; ledger `phase_nr_1_redo_item5_out`).** This is the user's
+instruction, in their words: "Bad DI, don't use it". `item_5` leaves fs-notes and every later read, on both sides of
+every paired comparison. The records already made are not rewritten. One owner keeps the exclusion consistent across
+the redo and track 1: this key.
+- **Its records** (completing `phase_nr_1_redo_bad_di`'s list):
+  - the made records of the development windows: the install gates, both calibrations, and the truth report's and the
+    versions read's GOAT sets;
+  - the redo's `transcribe.json` and `build.json` (an ear item, under `ear`), `ear-items.json`, the ear page, its clips
+    and its read;
+  - stage P's true notes and probe;
+  - track 1's gates and stage b's note files;
+  - the GOAT pilot units 1 and 2.
+
+| Bar on the development windows | Under 12p |
+|---|---|
+| `DEV_COUNT` = 27 and `dev_windows`' refusal | Stays 27 for made records; a later read takes `read_dev_windows`, which refuses unless 26 |
+| `CALIBRATION_PASS`, `playing-covered` on 25 of 27 | A count of windows allowed to fail, kept at 2: 24 of 26 on any later calibration read (reported this run) |
+| The positive control's rule (one failing window) | Unchanged: one window of 26 |
+| `annotated-found` (a report), the ring variant | Their tertile edges, medians and floors over 26; shares unchanged |
+| The calibrations' clip rules (the six rejected clips) | Unaffected: those clips are other items, not development windows |
+| `REPEAT_WINDOWS` (the gate's first 4 windows) | Made gates keep theirs; a later gate takes the first 4 of the 26 |
+| The truth report's and the versions read's GOAT sets | As made over 27; a later read (the track-1 bridge) uses 26 clusters, both sides |
+| `note_tx.CHECK_SLACK` = 1 | A count, kept: 1 window of the 26 |
+| `note_tx.DEV_RUNS` = 54 | Stays: stage b's note files keep all 27, masked and free (`phase_tx_notes`); the read and the bridge use 26 |
+
+- **Code:**
+  - `note_transcribe` gains `RULED_OUT`, `DEV_READ_COUNT`, `CALIBRATION_FAIL_ALLOWED`, `ruled_out_refusal`,
+    `read_dev_windows` and `read_version_windows`. `row_parts` refuses a draw holding a ruled-out item, and the ear
+    pool drops it.
+  - `scratch_notes.notes_draw` refuses fs-notes's draw the same way. Today's draw holds none.
+  - `note_tx read` drops `item_5`'s GOAT rows for every arm, and the bridge drops them on both its stored and built
+    sides. Both refuse until this key is on main; `read` runs once.

@@ -417,6 +417,16 @@ def check_dir(kind):
 
 # --- the guards ---------------------------------------------------------------------------------------------------------------
 
+def notes_draw():
+    """The from-scratch draw this row reads (`scratch_search.require_draw`), refused when it holds a DI the user
+    ruled out (12p, `note_transcribe.ruled_out_refusal`)."""
+    draw = S.require_draw()
+    why = NT.ruled_out_refusal([p["unit"] for p in draw["parts"]], "fs-notes's draw")
+    if why:
+        raise SystemExit(why)
+    return draw
+
+
 def require_row(*nr_phases, ladder=()):
     """Refuse unless this checkout runs main's redo and main holds this row's declaration, row (c)'s audited outcome,
     the redo's declaration and `nr_phases` / `ladder`. -> {ledger id: main's entry}."""
@@ -485,7 +495,7 @@ def cmd_score_check(_args):
     from learn import pipeline_fix as P
 
     R.no_separation_beside()
-    draw = S.require_draw()
+    draw = notes_draw()
     ans = comparator_answers()
     sd = R.Stored()
     if sd.st["sha256"] != draw["c3r_sha256"]:
@@ -522,7 +532,7 @@ def cmd_search_check(_args):
     from learn import pipeline_fix as P
 
     R.no_separation_beside()
-    draw = S.require_draw()
+    draw = notes_draw()
     sd = R.Stored()
     if sd.st["sha256"] != draw["c3r_sha256"]:
         raise SystemExit("C3r's state changed since the draw")
@@ -616,7 +626,7 @@ def cmd_search(args):
     from learn import trusted_data as T
 
     R.no_separation_beside()
-    draw = S.require_draw()
+    draw = notes_draw()
     sd = R.Stored()
     if sd.st["sha256"] != draw["c3r_sha256"]:
         raise SystemExit("C3r's state changed since the draw")
@@ -667,7 +677,7 @@ def cmd_answers(_args):
     NT.never_overwrite(answers_path())
     from learn import pipeline_fix as P
 
-    draw = S.require_draw()
+    draw = notes_draw()
     recs = {}
     for p in draw["parts"]:
         sp = search_path(p["pkey"])
@@ -708,7 +718,7 @@ def cmd_score(args):
     from learn import trusted_data as T
 
     R.no_separation_beside()
-    draw = S.require_draw()
+    draw = notes_draw()
     sd = R.Stored()
     if sd.st["sha256"] != draw["c3r_sha256"]:
         raise SystemExit("C3r's state changed since the draw")
@@ -773,7 +783,7 @@ def cmd_read(_args):
     from learn import note_replay as R
     from learn import pipeline_fix as P
 
-    draw = S.require_draw()
+    draw = notes_draw()
     sd = R.Stored()
     rby = {p["pkey"]: p for p in R.require_draw()["parts"]}
     sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}

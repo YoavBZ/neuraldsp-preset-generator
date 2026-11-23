@@ -116,7 +116,8 @@ NOTE_KINDS = {"list": MS_SETTINGS, "list-free": MS_FREE_SETTINGS, "truth": MS_SE
               "goat-free": MS_FREE_SETTINGS, "list-large": MS_SETTINGS, "list-large-free": MS_FREE_SETTINGS}
 DEVICE_DTYPE = {"mps": "float16", "cpu": "float32"}
 REPEAT_WINDOWS = T.REPEAT_WINDOWS        # the gate's four development windows, three runs each per device
-DEV_RUNS = 2 * T.DEV_COUNT               # stage b's 27 development windows, masked and with no mask (tx-ms-free)
+DEV_RUNS = 2 * T.DEV_COUNT               # stage b's 27 development windows, masked and with no mask (tx-ms-free);
+                                         # the note files keep all 27 (phase_tx_notes), the read and the bridge use 26
 SIZE_SWITCH_S = 2 * 3600.0               # reported only (`over_two_hours`): speed never decides a MuScriptor size
                                          # (the user's stance, phase_tx_go_read; the switch to small and the slow
                                          # refusal are retired)
@@ -129,7 +130,8 @@ END_SHARE, END_MIN_S = 0.20, 0.050       # a note end within max(20% of the true
 VETO_INTERVALS = (12, 19, 24)            # the ghost shape: an octave, a twelfth, two octaves above a paired note
 SOUNDING_LEAD_S = 0.050                  # an extra sorted against the truth notes sounding at its onset (50 ms lead)
 RECALL_GUARD = 0.05                      # recall and chord-note recall at most this under tx-bp's (PR #547's size)
-CHECK_SLACK = 1                          # each check on the 27 windows passes on at most one window fewer
+CHECK_SLACK = 1                          # each check on the read's windows passes on at most one window fewer (a
+                                         # count: 1 of the 26 the read uses since 12p, as of the 27 before)
 UNPAIRED_LOOKUP = 0.05                   # TXR-ms with more of its notes unpaired: a loudness and bend lookup first
 GUARDED_CHECKS = ("playing-covered", "judge-accepts", "ring-kept", "chords-kept")   # onsets-found is a report
 DECIDING_RING, BESIDE_RING = NV.DECIDING_RING, NV.BESIDE_RING
@@ -1605,7 +1607,8 @@ def cmd_read(_args):
     truth; on the 27 windows the checks per arm (`goat_checks`; the detector's attacks with `attacks-report`'s
     offset). Asserts tx-bp reproduces truth-report.json's matched, ref and est per window. -> tx/read.json (raw
     hand-back, audit, then phase_tx_read)."""
-    m = require_tx(PHASE_GO, PHASE_INSTALL, PHASE_LISTS, PHASE_GO_READ, PHASE_NOTES, nr=(T.PHASE_TRUTH,))
+    m = require_tx(PHASE_GO, PHASE_INSTALL, PHASE_LISTS, PHASE_GO_READ, PHASE_NOTES,
+                   nr=(T.PHASE_TRUTH, T.PHASE_ITEM5_OUT))         # 12p's exclusion on main first (the order guard)
     inst = require_install(m, picked_size(T.require_file_hash(m.get(LEDGER_ID), PHASE_LISTS, lists_path())["body"],
                                           (m.get(LEDGER_ID) or {}).get(PHASE_GO_READ)))
     rec = (m.get(LEDGER_ID) or {}).get(PHASE_NOTES) or {}
@@ -1638,7 +1641,7 @@ def cmd_read(_args):
     offset = T.require_attacks()["offset_s"]
     work = OUT / "work" / "read"
     ins = []
-    for w in dev:
+    for w in T.read_dev_windows(dev):                         # 12p: item_5 out, for every arm
         sec, inp, pre = T.window_audio(T.goat_audio(z, w["item"]), w["start_s"])
         ins.append((w, SB.measure(sec), (inp, "goat", pre)))
     att = NA.run_attacks([x for _, _, x in ins], work / "attacks")
@@ -1715,7 +1718,7 @@ def cmd_bridge(_args):
     and reads them against the stored nv-hand, nv-asis and nv-loud per window with the stored clusters
     (`bridge_body`). -> tx/bridge.json."""
     m = require_tx(PHASE_GO, PHASE_INSTALL, PHASE_LISTS, PHASE_GO_READ, PHASE_NOTES, PHASE_READ,
-                   nr=(T.PHASE_TRUTH, T.PHASE_VERSIONS))
+                   nr=(T.PHASE_TRUTH, T.PHASE_VERSIONS, T.PHASE_ITEM5_OUT))
     rd = (m.get(LEDGER_ID) or {}).get(PHASE_READ)
     why = read_bridge_refusal(rd)
     if why:
@@ -1752,8 +1755,9 @@ def cmd_bridge(_args):
     byk = {w["key"]: w for w in T.usable_windows(listing)}
     sha_of = {r["key"]: r["note_file_sha256"] for r in report["windows"]}
     starts = {w["item"]: w["start_s"] for w in dev}
+    vwindows = T.read_version_windows(versions["windows"])   # 12p: item_5 out on both sides
     todo = []
-    for vw in versions["windows"]:
+    for vw in vwindows:
         k = vw["key"]
         if vw["set"] == "lists":
             di = SB.measure(T.known_audio(k, bank))
@@ -1771,7 +1775,7 @@ def cmd_bridge(_args):
     built = bridge_builds(txr, loud, todo, bank, SB.measure)
     nv = vrec.get("code")
     body = {"txr": txr, "nv_code": nv, "loud_gamma": loud, "reproduced": {"window": first, "stored": stored0},
-            "built": built, **bridge_body(versions["windows"], built, nv, loud, txr,
+            "built": built, **bridge_body(vwindows, built, nv, loud, txr,
                                           versions.get("real_reported_only")),
             "versions_sha256": NR.file_sha(T.versions_path()), "read_sha256": NR.file_sha(read_path())}
     NR.write_once(bridge_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}",

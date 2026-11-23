@@ -664,6 +664,35 @@ def test_the_kind_figures():
     assert T.kind_figures([]) == {}
 
 
+def test_the_ruled_out_di_leaves_every_later_read():
+    """12p (2026-11-24): the user's "Bad DI, don't use it" takes item_5 out of fs-notes and every later read; the
+    made records keep their 27 development windows; the count of windows allowed to fail stays a count."""
+    assert T.RULED_OUT == ("item_5",) and T.DEV_READ_COUNT == 26 and T.DEV_COUNT == 27
+    assert T.CALIBRATION_FAIL_ALLOWED == 2 and T.DEV_READ_COUNT - T.CALIBRATION_FAIL_ALLOWED == 24
+    assert T.ruled_out_items(["goat/item_5@10.0#amp_3", "goat/item_50@5.0#amp_1", "item_5", "set5/x.wav@1"]) == \
+        ["item_5"]
+    assert T.ruled_out_items(["goat/item_50@5.0#amp_1", "item_55", "goat/item_15@1"]) == []
+    assert "ruled out" in T.ruled_out_refusal(["goat/item_5@10.0#amp_3"], "a draw")
+    assert T.ruled_out_refusal(["goat/item_0@140.0#amp_3"], "a draw") is None
+    wins = [{"item": f"item_{k}", "start_s": 1.0} for k in [5] + list(range(10, 36))]
+    assert len(wins) == 27
+    got = T.read_dev_windows(wins)
+    assert len(got) == 26 and all(w["item"] != "item_5" for w in got)
+    with pytest.raises(SystemExit, match="not the declared 26"):
+        T.read_dev_windows(wins[:-1])                           # a window short: 25 left after item_5, refused
+    vw = [{"set": "goat", "key": "item_5"}, {"set": "goat", "key": "item_14"}, {"set": "lists", "key": "item_5"},
+          {"set": "real", "key": "P1|chords|x@10"}]
+    assert T.read_version_windows(vw) == vw[1:]                  # only GOAT's item_5, on both sides of a read
+
+
+def test_the_exclusion_on_main():
+    e = T.entries((REPO / "docs" / "dev-test-ledger.json").read_text())["note-rebuild"]
+    rec = e[T.PHASE_ITEM5_OUT]
+    assert rec["instruction"] == "Bad DI, don't use it" and rec["ruled_out"] == list(T.RULED_OUT)
+    assert "transcribe.json and build.json" in rec["records_with_it"]
+    assert {"note_tx.CHECK_SLACK = 1", "note_tx.DEV_RUNS = 54"} <= set(rec["bars"])
+
+
 def test_the_old_pages_expected_failure_table():
     """`phase_nr_1_ear_old` (step 2): the stored read, the user's words, and which check must fail which rejected
     clip, ledgered before any check runs on them; the table is the shape `calibrate` reads."""

@@ -5134,6 +5134,38 @@
     "trusted_data_rule": "the user's standing rule: dirty data is excluded, not flagged",
     "proposed": "a declared amendment (note-rebuild-plan 12p, drafted, not applied): item_5 out of fs-notes and every later read, on both sides of every paired comparison; the development windows 26, not 27; the records already made stay as they are, read beside without item_5 where a later read uses them. To apply only after its review and merge",
     "sealed": "item_5 is GOAT development material, not a sealed set; titles and unit ids only in git"
+   },
+   "phase_nr_1_redo_item5_out": {
+    "declared": "2026-11-24, 12p's exclusion as declared in phase_nr_1_redo_bad_di, reviewed in PR #578, with that review's gaps; the code in this PR",
+    "instruction": "Bad DI, don't use it",
+    "by": "the user, on the ear page's cards 2 and 11 (2026-11-23)",
+    "ruled_out": [
+     "item_5"
+    ],
+    "rule": "item_5 leaves fs-notes and every later read, on both sides of every paired comparison; the records already made are not rewritten",
+    "records_with_it": "the 27 development windows' made records: install-gate.json (and the failed one set aside), both calibrations, truth-report.json's GOAT set, versions.json's GOAT set; the redo's transcribe.json and build.json (an ear item, under `ear`), ear-items.json, the ear page and its clips (cards 2 and 11), ear-read-2.json; stage P's true-notes.json and probe.json; track 1's gates (tx/gate-large.json, tx/gate-medium.json) and stage b's note files; the GOAT pilot units 1 and 2 (pipeline-fix phase_5c)",
+    "records_without_it": "rows (b) and (c), fs-codec, fs-loudar, the tone split and the stage-1 subset; GOAT's unit pool (item_5: no window)",
+    "bars": {
+     "DEV_COUNT and dev_windows' refusal": "stays 27: dev_windows refuses unless 27 and every made record keeps its 27 (the gates, both calibrations, the truth report, the versions read, stage b's note files); a later read takes read_dev_windows, which refuses unless 26 (DEV_READ_COUNT)",
+     "CALIBRATION_PASS (playing-covered on 25 of 27)": "a count of windows allowed to fail, kept: 2 (CALIBRATION_FAIL_ALLOWED), so 24 of 26 on any later calibration read; reported, not a stop, this run (phase_nr_1_redo_go_calib)",
+     "the positive control's rule (one failing window makes a check report-only)": "unchanged: one window of 26",
+     "annotated-found (a report)": "its tertile edges and its median and floor recalls over 26; shares, unchanged",
+     "the ring variant (ring_choice)": "the medians over 26; the tie unchanged",
+     "the calibrations' clip rules (the six rejected clips)": "unaffected: the clips are item_102, item_160 and item_46, not development windows",
+     "REPEAT_WINDOWS (the install gate's first 4 development windows)": "made gates keep theirs (item_5 was the first); a later gate takes the first 4 of the 26",
+     "the truth report's GOAT set": "27 note files as made; a later read uses 26",
+     "the versions read's GOAT set (goat_not_worse, the interval over the windows)": "as made over 27; a later read (the track-1 bridge) uses 26 clusters, both sides",
+     "note_tx.CHECK_SLACK = 1": "a count, kept: 1 window of the 26 the read uses",
+     "note_tx.DEV_RUNS = 54": "stays: stage b's note files keep all 27 windows, masked and free (phase_tx_notes); the read and the bridge use 26",
+     "note_tx.RECALL_GUARD and the list and real-DI bars": "shares, and not on the development windows: unchanged"
+    },
+    "code": {
+     "note_transcribe": "RULED_OUT, DEV_READ_COUNT (26), CALIBRATION_FAIL_ALLOWED (2), ruled_out_items, ruled_out_refusal, read_dev_windows, read_version_windows; row_parts refuses a draw holding a ruled-out item; the ear pool drops it",
+     "scratch_notes": "notes_draw: fs-notes's draw refused when it holds a ruled-out item (it holds none)",
+     "note_tx": "read uses read_dev_windows (item_5's GOAT rows out for every arm); the bridge uses read_version_windows on both the stored and the built side; read and bridge refuse until this key is on main (the order guard); read runs once"
+    },
+    "track_1": "one owner keeps the exclusion consistent: this key. Stage b's note files stay as made, bound by phase_tx_notes with all 27 windows",
+    "renders": "zero"
    }
   },
   {

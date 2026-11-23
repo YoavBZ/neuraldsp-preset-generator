@@ -788,7 +788,8 @@ NEEDS = {"install": (X.PHASE_GO,), "gate": (X.PHASE_GO,),
          "transcribe": (X.PHASE_GO, X.PHASE_INSTALL, X.PHASE_LISTS, X.PHASE_GO_READ),
          "read": (X.PHASE_GO, X.PHASE_INSTALL, X.PHASE_LISTS, X.PHASE_GO_READ, X.PHASE_NOTES),
          "bridge": (X.PHASE_GO, X.PHASE_INSTALL, X.PHASE_LISTS, X.PHASE_GO_READ, X.PHASE_NOTES, X.PHASE_READ)}
-NEEDS_NR = {"gate": (T.PHASE_TRUTH,), "transcribe": (T.PHASE_TRUTH,), "read": (T.PHASE_TRUTH,), "bridge": (T.PHASE_TRUTH, T.PHASE_VERSIONS)}
+NEEDS_NR = {"gate": (T.PHASE_TRUTH,), "transcribe": (T.PHASE_TRUTH,), "read": (T.PHASE_TRUTH, T.PHASE_ITEM5_OUT),
+            "bridge": (T.PHASE_TRUTH, T.PHASE_VERSIONS, T.PHASE_ITEM5_OUT)}
 
 
 @pytest.mark.parametrize("cmd,missing", [(c, k) for c, ks in NEEDS.items() for k in (X.PHASE,) + ks]
@@ -807,6 +808,11 @@ def test_stage_b_refuses_after_txr_none_and_the_bridge_without_a_bridge_code(mon
     tx[X.PHASE_READ] = {"sha256": "x", "code": "TXR-undecided"}
     nr = {T.PHASE_TRUTH: {}, T.PHASE_VERSIONS: {}}
     monkeypatch.setattr(X, "tx_on_main", lambda: ({"note-transcriber": tx, "note-rebuild": nr}, None))
+    with pytest.raises(SystemExit, match=T.PHASE_ITEM5_OUT):      # 12p's order guard: its key on main first
+        X.cmd_bridge(None)
+    with pytest.raises(SystemExit, match=T.PHASE_ITEM5_OUT):
+        X.cmd_read(None)
+    nr[T.PHASE_ITEM5_OUT] = {}
     with pytest.raises(SystemExit, match="TXR-none"):
         X.cmd_transcribe(None)
     with pytest.raises(SystemExit, match="no bridge"):
@@ -865,3 +871,17 @@ def test_the_stored_list_events_give_the_plans_counts():
     stored = json.loads(T.gate_path().read_text())["body"]["known"] if T.gate_path().exists() else None
     if stored is not None:
         assert X.gate_list_refusal(stored, X.gate_figures(known)) is None
+
+
+def test_the_read_and_the_bridge_drop_the_ruled_out_di():
+    """12p (2026-11-24): stage b's note files keep all 27 windows; the read and the bridge use 26 (item_5 out for every
+    arm, on both sides), refuse until 12p's key is on main, and the check slack stays one window."""
+    import inspect
+
+    assert X.DEV_RUNS == 54 and X.CHECK_SLACK == 1
+    for fn in (X.cmd_read, X.cmd_bridge):
+        src = inspect.getsource(fn)
+        assert "T.PHASE_ITEM5_OUT" in src
+    assert "T.read_dev_windows(dev)" in inspect.getsource(X.cmd_read)
+    assert "T.read_version_windows(versions[\"windows\"])" in inspect.getsource(X.cmd_bridge)
+    assert "bridge_body(vwindows," in inspect.getsource(X.cmd_bridge)
