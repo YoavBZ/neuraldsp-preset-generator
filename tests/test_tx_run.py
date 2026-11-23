@@ -29,7 +29,29 @@ def test_the_declared_settings():
     assert R.SOURCE_KINDS == ("list", "truth", "goat-dev") and R.DEVICES == ("mps", "cpu") and R.THREADS == 4
     assert R.WEIGHTS == {
         "medium": ("ac80adbdf85d87231735fd948af7013441c0afced316c4e9067fd5d8a7fb97ec", 1228144472),
-        "small": ("bbd482c786b895cf7d8f44185073d951adae2ebb8a66f82ca84cd1f84569549c", 411888600)}
+        "small": ("bbd482c786b895cf7d8f44185073d951adae2ebb8a66f82ca84cd1f84569549c", 411888600),
+        "large": ("ac4eb6ea87dfc26b6ca6b954c6b967ab87ad4c7d08e078b25214f13ed051f397", 5465642136)}
+
+
+def test_the_dtype_probe_reads_the_transformer_not_the_first_parameter():
+    named = [("condition_provider.conditioners.self_wav.output_proj.weight", "torch.float32"),
+             ("condition_provider.conditioners.instrument_group.embed.weight", "torch.float32"),
+             ("transformer.layers.0.self_attn.in_proj_weight", "torch.float16"),
+             ("linears.0.weight", "torch.float16")]
+    assert R.transformer_dtype(named) == "torch.float16"           # the first gate read the conditioner: float32
+    assert R.transformer_dtype(named[:2]) == "unknown"
+
+    class P:
+        def __init__(self, dt):
+            self.dtype = dt
+
+    class LM:
+        def named_parameters(self):
+            return iter([(n, P(d)) for n, d in named])
+
+    class Model:
+        model = LM()
+    assert R._dtype_name(Model()) == "torch.float16"
 
 
 def test_the_module_level_is_the_standard_library():

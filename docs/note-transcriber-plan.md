@@ -657,3 +657,63 @@ notes' counts and labels stay inside the hashed note files until both sizes are 
 counts are on disk.
 
 Medium's raw note counts were seen before the large-model amendment was declared, so that amendment changes only the weights: the measure, the mask, the clean-up and the pairing stay frozen exactly as declared.
+
+## 14. The amendment: large screened beside medium (2026-11-23; ledger `phase_tx_size_amend`)
+
+Declared before large is gated and before any list is scored. The user wants MuScriptor's large model tested for
+accuracy and accepted its gated terms; MuScriptor's model card calls large the best quality. The orchestrator
+sequenced it: medium's hash PR (`phase_tx_install`) first, then this amendment, with the screen kept blind until it
+merges.
+
+**The weights.** `MuScriptor/muscriptor-large` at `8809fdfbed2affa7ade94a7059e746e3880720e7`, downloaded by the user
+into `~/ndsp-presets/tools/muscriptor-weights/large/`, with no token:
+- `model.safetensors`: 5,465,642,136 bytes, sha256 `ac4eb6ea…f397` (the HF API's LFS sha256);
+- `config.json`: 125 bytes, sha256 `16bedd02…9852`.
+
+**Large's own gate** (`gate --size large`). It uses the same venv and lock, and refuses without this amendment and
+medium's `phase_tx_install` on main.
+- It checks the weights' and `config.json`'s size and sha256.
+- It runs the same three-run repeat on the four development windows, on MPS and the CPU, and times transcription
+  per window.
+- It applies the device rule and projects stage b's 133 runs on both devices.
+- **No size rule and no switch to small.** The ten lists, masked and with no mask, are transcribed whatever the
+  projection, under their own kinds `list-large` and `list-large-free`. A projection over two hours is recorded
+  (`over_two_hours`).
+- If large repeats on neither device, the gate stops with no list notes, and `phase_tx_install_large` records the
+  stop with the gate file's sha256. `lists` takes the stop only when `gate-large.json` hashes to it and records
+  `device: null`, so a stop cannot be recorded without its evidence. The screen then reads medium alone.
+- `require_install` refuses an install record whose `size` is not the size asked for.
+- Its hash PR, `phase_tx_install_large`, binds the gate file, the device and the list notes' listing.
+
+**The screen and the pick.** `lists` runs once, for both sizes alike: the same rows, readings and screen per size.
+- **The size is picked by accuracy.** The measure is the per-list difference large − medium in `tx-ms`'s note F
+  (onset and pitch, 50 ms: MuScriptor's own notes against the lists' exact truth). The mean over the ten lists is
+  taken with its 90% t interval.
+  - Large is picked only when that interval is clear of zero above (`lo90 > 0`, by `note_versions.clear_of_zero`:
+    the repo's meaning of decided).
+  - Otherwise medium is kept, labelled "undecided, medium kept" (or "large decided worse, medium kept"), with both
+    sizes' figures reported. Large then stays open for the user at the stage-b go: `phase_tx_go_read` with
+    `"size": "large"`, honoured only on an undecided pick.
+  - This rule is the orchestrator's technical call on PR #573's review, not the user's. It was declared after
+    medium's raw counts were seen. The reason: the pick and the screen read the same ten lists, so a pick on the
+    point estimate would inflate the screen.
+- Speed is reported beside the pick and never picks.
+- The picked size's screen is the stage-a result, and stage b runs that size.
+- **A stage-b size over two hours goes to the user.** `transcribe` refuses unless `phase_tx_go_read` holds
+  `slow_ok`.
+  Whether a slower, more accurate reader is worth it is the user's call.
+
+**Only the weights change.** Medium's raw note counts were seen before this amendment was declared, so it changes only the weights: the measure (note F, onset and pitch, 50 ms), the mask, the clean-up and the pairing stay frozen exactly as declared. The size pick reads that declared measure, and no note count, total or label tally is published before both sizes are scored.
+
+**Blind and bound.**
+- Medium's 20 list note files keep their names and stay bound by `phase_tx_install`'s listing.
+- Large's are bound by `phase_tx_install_large`'s.
+- Neither size is scored before this amendment and large's hash PR merge. Then both are scored together, once, by
+  the same declared measure, so the pick cannot be steered by a peek.
+
+**The dtype probe.** `tx_run` now reads the transformer's parameters (the first parameter outside
+`condition_provider`) rather than the first parameter of all. Medium's files read `torch.float32` on MPS, though its
+transformer ran float16 (section 13). They are not rewritten.
+
+**Order.** This PR, then `gate --size large` from merged code, then the hash PR `phase_tx_install_large`, then
+`lists` (both sizes, once), then the results PR `phase_tx_lists`, which gains `size` and the `size_pick`.

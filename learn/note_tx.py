@@ -7,6 +7,7 @@ training. "Transcriber" and the prefix `tx`, because "reader" already means the 
     $MAIN -m learn.note_tx install      # phase 2: the hashed venv, the user's weights checked (a declared download)
     $MAIN -m learn.note_tx gate         # phase 2: repeat and speed on MPS and the CPU; the device, the size; then the
                                         #          ten lists transcribed with that model (`--size small` after a switch)
+    $MAIN -m learn.note_tx gate --size large   # the amendment (phase_tx_size_amend): large's own gate and lists
     $MAIN -m learn.note_tx lists        # phase 3a, once: the list screen (TXR-none or lists-go)
     $MAIN -m learn.note_tx transcribe   # phase 3b: MuScriptor on the consistent truth windows and the 27 windows
     $MAIN -m learn.note_tx read         # phase 3b, once: the read and its code (TXR-vote, TXR-ms, TXR-ends,
@@ -58,6 +59,8 @@ PHASE_GO_READ = "phase_tx_go_read"       # the user's go on stage b, after Basic
 PHASE_NOTES = "phase_tx_notes"           # stage b's note files' listing, hashed before any scoring
 PHASE_READ = "phase_tx_read"             # the read's code
 PHASE_BRIDGE = "phase_tx_bridge"         # the bridge's deciding difference
+PHASE_SIZE_AMEND = "phase_tx_size_amend" # the amendment: large screened beside medium, the size picked by the lists
+PHASE_INSTALL_LARGE = "phase_tx_install_large"   # large's gate file, device and list notes' listing (or its stop)
 RESERVED_PHASES = ("phase_tx_stems", "phase_tx_stem_read")   # the stems declaration's, not this one's
 RESERVED_SEEDS = (20261411, 20261412)
 RESERVED_CODE_PREFIX = "TXS-"
@@ -81,7 +84,14 @@ WEIGHTS = {
                "sha256": TR.WEIGHTS["medium"][0], "bytes": TR.WEIGHTS["medium"][1], "config_bytes": 126},
     "small": {"repo": "MuScriptor/muscriptor-small", "revision": "8c127f603b807520fa465c838e9bfee8a91ada4e",
               "sha256": TR.WEIGHTS["small"][0], "bytes": TR.WEIGHTS["small"][1], "config_bytes": 124},
+    "large": {"repo": "MuScriptor/muscriptor-large", "revision": "8809fdfbed2affa7ade94a7059e746e3880720e7",
+              "sha256": TR.WEIGHTS["large"][0], "bytes": TR.WEIGHTS["large"][1], "config_bytes": 125,
+              "config_sha256": "16bedd02b18770e43740419b0d5777f231047e96e8987f498e8a1123c39c9852"},
 }
+SCREENED_SIZES = ("medium", "large")     # the amendment: both screened on the ten lists, the size picked by accuracy
+LIST_KINDS = {"medium": ("list", "list-free"), "large": ("list-large", "list-large-free")}
+PICK_ARM, PICK_FIELD = "tx-ms", "f"      # the size pick: MuScriptor's own note F on the lists, paired per list
+PICK_UNDECIDED = "undecided, medium kept"   # large not decided better: medium kept, large open for the user
 REQUIREMENTS = ("torch>=2.3", "numpy>=2", "einops>=0.4", "mido>=1.3", "packaging>=20.0", "safetensors>=0.4",
                 "huggingface_hub>=0.13", "soundfile>=0.14.0")   # what `transcribe()` needs; no server, no beat tracker
 NOT_NEEDED = ("beat-this", "fastapi", "typer", "uvicorn")   # the server and beat-tracking parts: never in the lock
@@ -99,7 +109,7 @@ MS_PEAK_DBFS = -1.0
 MS_SETTINGS = TR.MASKED                  # tx-ms: greedy, guidance 1.0, the guitar groups only
 MS_FREE_SETTINGS = TR.FREE               # tx-ms-free: no instrument mask, drums dropped
 NOTE_KINDS = {"list": MS_SETTINGS, "list-free": MS_FREE_SETTINGS, "truth": MS_SETTINGS, "goat": MS_SETTINGS,
-              "goat-free": MS_FREE_SETTINGS}
+              "goat-free": MS_FREE_SETTINGS, "list-large": MS_SETTINGS, "list-large-free": MS_FREE_SETTINGS}
 DEVICE_DTYPE = {"mps": "float16", "cpu": "float32"}
 REPEAT_WINDOWS = T.REPEAT_WINDOWS        # the gate's four development windows, three runs each per device
 DEV_RUNS = 2 * T.DEV_COUNT               # stage b's 27 development windows, masked and with no mask (tx-ms-free)
@@ -728,8 +738,9 @@ def lock_refusal(text):
     return None
 
 
-def weights_refusal(size, model_bytes, model_sha, config_bytes):
-    """(Pure.) Why the user's weights folder is not the declared checkpoint, or None."""
+def weights_refusal(size, model_bytes, model_sha, config_bytes, config_sha=None):
+    """(Pure.) Why the user's weights folder is not the declared checkpoint, or None (config.json's sha256 too where
+    it was declared: large)."""
     w = WEIGHTS.get(size)
     if w is None:
         return f"{size}: not a declared size"
@@ -739,6 +750,8 @@ def weights_refusal(size, model_bytes, model_sha, config_bytes):
         return "model.safetensors is not the declared sha256"
     if config_bytes != w["config_bytes"]:
         return f"config.json is {config_bytes} bytes, not {w['config_bytes']}"
+    if w.get("config_sha256") and config_sha != w["config_sha256"]:
+        return "config.json is not the declared sha256"
     return None
 
 
@@ -772,12 +785,14 @@ def install_manifest(interp, python, lock_sha, resolve_sha, weights, files, free
     return man
 
 
-def install_record_refusal(rec, man, gate_sha, listing_sha):
-    """(Pure.) Why main's `phase_tx_install` does not hold this install's facts, or None: the lock's and weights'
-    sha256, the gate file's sha256 and the list notes' listing sha256."""
+def install_record_refusal(rec, man, gate_sha, listing_sha, weights_sha=None):
+    """(Pure.) Why main's `phase_tx_install` (or `phase_tx_install_large`) does not hold this install's facts, or
+    None: the lock's and weights' sha256 (`weights_sha`: the size's declared one; default the install's medium), the
+    gate file's sha256 and the list notes' listing sha256."""
     if not isinstance(rec, dict):
         return f"main's {PHASE_INSTALL} names no install"
-    if rec.get("lock_sha256") != man["lock_sha256"] or rec.get("weights_sha256") != man["weights"]["sha256"]:
+    want = weights_sha or man["weights"]["sha256"]
+    if rec.get("lock_sha256") != man["lock_sha256"] or rec.get("weights_sha256") != want:
         return f"main's {PHASE_INSTALL} names another lock or weights"
     if rec.get("gate_sha256") != gate_sha:
         return f"the gate file is not main's {PHASE_INSTALL} gate_sha256"
@@ -817,6 +832,58 @@ def projections_s(seconds, runs):
 def projection_s(projections, device):
     """(Pure.) The projection the size rule reads: the chosen device's (both are recorded), or None without one."""
     return projections.get(device) if device is not None else None
+
+
+def size_pick(by_size, arm=PICK_ARM, field=PICK_FIELD, limit=SIZE_SWITCH_S):
+    """(Pure.) The amendment's size pick from the screened sizes' list rows ({size: rows}) and their gates' stage-b
+    projections ({size: seconds or None}, under "projections"): the per-list difference large - medium in tx-ms's
+    note F (onset and pitch, 50 ms; MuScriptor's own accuracy against the lists' exact truth), the mean over the ten
+    lists with its 90% t interval. Large is picked only when that interval is clear of zero above (`lo90 > 0`, by
+    `note_versions.clear_of_zero`: the repo's meaning of decided); otherwise medium is kept, "undecided, medium kept"
+    (or "large decided worse, medium kept"), and large stays open for the user at the stage-b go (`picked_size`).
+    The orchestrator's technical call on the review of PR #573, declared after medium's raw counts were seen: the
+    pick and the screen read the same ten lists, so a point-estimate pick would inflate the screen. With no large rows
+    (its gate stopped) medium is kept. Speed never picks: the projections are reported beside, and a stage-b size over
+    two hours goes to the user (`slow_refusal`); no switch to small. -> {size, label, diff, over_two_hours, ...}."""
+    rows, proj = by_size["rows"], by_size.get("projections") or {}
+    if not rows.get("large"):
+        size, iv, label = "medium", None, "large gate stopped, medium kept"
+    else:
+        med = {r["cluster"]: r for r in rows["medium"]}
+        d = [(r["cluster"], {"d": r["figures"][arm][field] - med[r["cluster"]]["figures"][arm][field]})
+             for r in rows["large"] if r["cluster"] in med and r["figures"][arm][field] is not None
+             and med[r["cluster"]]["figures"][arm][field] is not None]
+        iv = NV.set_numbers(d, "d")
+        if NV.clear_of_zero(iv) and iv["lo90"] > 0:
+            size, label = "large", "large decided better"
+        elif NV.clear_of_zero(iv):
+            size, label = "medium", "large decided worse, medium kept"
+        else:
+            size, label = "medium", PICK_UNDECIDED
+    p = proj.get(size)
+    return {"size": size, "label": label, "arm": arm, "field": field, "diff_large_less_medium": iv,
+            "projections": proj, "over_two_hours": p is not None and p > limit,
+            "large_open_for_user": label == PICK_UNDECIDED}
+
+
+def slow_refusal(lists_body, go_read, limit=SIZE_SWITCH_S):
+    """(Pure.) Why stage b may not run, or None: the stage-b size's (`picked_size`) projection is over two hours and
+    the user's go (`phase_tx_go_read`) does not say `slow_ok` (a slower, more accurate reader is the user's call)."""
+    size = picked_size(lists_body, go_read)
+    p = ((lists_body or {}).get("size_pick") or {}).get("projections", {}).get(size)
+    if p is not None and p > limit and not (go_read or {}).get("slow_ok"):
+        return (f"{size}'s stage b projects over two hours: to the user first (phase_tx_go_read with "
+                "slow_ok)")
+    return None
+
+
+def picked_size(lists_body, go_read=None):
+    """(Pure.) The size stage b runs: the list screen's pick (medium for a screen made before the amendment); on an
+    undecided pick (large open for the user) the user's go may name large (`phase_tx_go_read` "size": "large")."""
+    pick = (lists_body or {}).get("size_pick") or {}
+    if pick.get("large_open_for_user") and (go_read or {}).get("size") == "large":
+        return "large"
+    return (lists_body or {}).get("size", "medium")
 
 
 def size_choice(projected, limit=SIZE_SWITCH_S):
@@ -1004,14 +1071,15 @@ def load_manifest():
 
 
 def weights_file(size, man=None):
-    """The user's weights of `size`, refused unless they are the declared checkpoint (medium: the install's)."""
+    """The user's weights of `size`, refused unless they are the declared checkpoint (medium: the install's; large:
+    config.json's declared sha256 too)."""
     d = WEIGHTS_DIR / size
     p, c = d / "model.safetensors", d / "config.json"
     if not p.exists() or not c.exists():
         raise SystemExit(f"{d}: model.safetensors and config.json missing (the user's browser download)")
     if man is not None and size == "medium" and man["weights"]["sha256"] != WEIGHTS["medium"]["sha256"]:
         raise SystemExit("the install names other weights")
-    why = weights_refusal(size, p.stat().st_size, NR.file_sha(p), c.stat().st_size)
+    why = weights_refusal(size, p.stat().st_size, NR.file_sha(p), c.stat().st_size, NR.file_sha(c))
     if why:
         raise SystemExit(f"{d}: {why}")
     return p
@@ -1078,17 +1146,20 @@ def load_ms(kind, key, install):
     return rec
 
 
-def require_install(m):
-    """The install's manifest and the gate's record, refused unless main's `phase_tx_install` names them (the lock,
-    the weights, the gate file and the list notes' listing). -> {lock_sha256, weights_sha256, device, size, gate}."""
+def require_install(m, size="medium"):
+    """The install's manifest and `size`'s gate record, refused unless main's `phase_tx_install` (medium) or
+    `phase_tx_install_large` (large) names them (the lock, the weights, the gate file and the list notes' listing).
+    -> {lock_sha256, weights_sha256, device, size, gate}."""
     man = load_manifest()
-    rec = (m.get(LEDGER_ID) or {}).get(PHASE_INSTALL)
-    size = (rec or {}).get("size", "medium")
+    rec = (m.get(LEDGER_ID) or {}).get(PHASE_INSTALL_LARGE if size == "large" else PHASE_INSTALL)
+    if isinstance(rec, dict) and rec.get("size") != size:
+        raise SystemExit(f"main's install record names size {rec.get('size')!r}, not {size!r}")
     gp = gate_path(size)
     if not gp.exists():
         raise SystemExit(f"{gp.name} missing: run `gate` first")
-    _, listing = notes_listing(("list", "list-free"))
-    why = install_record_refusal(rec, man, NR.file_sha(gp), listing)
+    _, listing = notes_listing(LIST_KINDS.get(size, LIST_KINDS["medium"]))
+    why = install_record_refusal(rec, man, NR.file_sha(gp), listing,
+                                 WEIGHTS["large"]["sha256"] if size == "large" else None)
     if why:
         raise SystemExit(why)
     gate = json.loads(gp.read_text())["body"]
@@ -1181,9 +1252,13 @@ def cmd_gate(args):
     each note file written once, their listing sha256 printed. If the rule calls for small, it stops with no list
     notes written; after the user installs the small weights, `gate --size small` runs the repeat and speed tests
     again on small, then the lists. Refuses while another MPS user or a render runs.
-    -> tx/gate-<size>.json (its sha256 goes into phase_tx_install)."""
+    `gate --size large` (the amendment, `phase_tx_size_amend`): large's own gate, the same venv, the same repeat and
+    speed tests, then the ten lists under their own kinds (`list-large`, `list-large-free`) whatever its projection:
+    no size rule, no switch to small; the projection is reported (`over_two_hours`) and a pick over two hours goes to
+    the user. Refuses without the amendment and medium's `phase_tx_install` on main.
+    -> tx/gate-<size>.json (its sha256 goes into phase_tx_install, or phase_tx_install_large)."""
     size = getattr(args, "size", None) or "medium"
-    m = require_tx(PHASE_GO, nr=(T.PHASE_TRUTH,))
+    m = require_tx(PHASE_GO, *((PHASE_SIZE_AMEND, PHASE_INSTALL) if size == "large" else ()), nr=(T.PHASE_TRUTH,))
     man = load_manifest()
     if size == "small":
         prior = gate_path("medium")
@@ -1218,22 +1293,25 @@ def cmd_gate(args):
     device = device_choice(repeat)
     projections = projections_s(secs, runs)
     proj = projection_s(projections, device)
-    rule = size_choice(proj) if size == "medium" else "small"
+    rule = size_choice(proj) if size == "medium" else size           # large and small: no size rule
     body = {"size": size, "weights_sha256": wsha, "repeat": repeat, "seconds_per_window": secs, "load_s": loads,
             "dtype": dtypes, "device": device, "stage_b_runs": runs, "projections_s": projections,
             "projection_s": proj, "size_rule": rule, "lists_written": False,
+            "over_two_hours": proj is not None and proj > SIZE_SWITCH_S,
+            "config_sha256": NR.file_sha(weights.parent / "config.json"),
             "manifest_sha256": NR.file_sha(MANIFEST), "lock_sha256": man["lock_sha256"]}
+    kinds = LIST_KINDS["large"] if size == "large" else LIST_KINDS["medium"]
     if device is not None and rule == size:
         bank = NR.Bank(NR.load_notes_doc(), excl=excl)
         names = sorted(T.KNOWN_NOTES)
         audio = [(T.known_audio(nm, bank), f"list:{nm}") for nm in names]
-        for kind, st in (("list", MS_SETTINGS), ("list-free", MS_FREE_SETTINGS)):
+        for kind, st in zip(kinds, (MS_SETTINGS, MS_FREE_SETTINGS)):
             for nm in names:
                 never_overwrite(note_path(kind, nm))
             recs = run_ms(audio, work / kind, weights, device, st, dev_items=items)
             for nm, r in zip(names, recs):
                 NR.write_once(note_path(kind, nm), ms_note_record(r, 0.0, man, kind))
-        rows, body["list_notes_listing_sha256"] = notes_listing(("list", "list-free"))
+        rows, body["list_notes_listing_sha256"] = notes_listing(kinds)
         body["list_note_files"] = len(rows)
         body["lists_written"] = True
     NR.write_once(gate_path(size), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}",
@@ -1294,14 +1372,44 @@ def list_rows(known, ms, ms_free, dis, truths=None):
     return rows
 
 
+def large_stop_refusal(rec, gate_sha, gate_body):
+    """(Pure.) Why main's `phase_tx_install_large` stop may not be taken, or None: the stopped form must carry the
+    gate file's sha256, and that file (gate-large.json) must hash to it and record `device: null` (no repeat on
+    either device), so a stop cannot be recorded without its evidence."""
+    if not rec.get("gate_sha256"):
+        return f"main's {PHASE_INSTALL_LARGE} records a stop with no gate_sha256"
+    if gate_sha != rec["gate_sha256"]:
+        return "gate-large.json is not the file the stop names"
+    if (gate_body or {}).get("size") != "large" or (gate_body or {}).get("device") is not None:
+        return "gate-large.json does not record large stopping (device null)"
+    return None
+
+
+def large_stopped(m):
+    """Main's `phase_tx_install_large` records large's gate stopping (no repeat on either device), checked against
+    gate-large.json (`large_stop_refusal`): the screen then reads medium alone."""
+    rec = (m.get(LEDGER_ID) or {}).get(PHASE_INSTALL_LARGE) or {}
+    if not rec.get("stopped"):
+        return False
+    gp = gate_path("large")
+    if not gp.exists():
+        raise SystemExit("main records large's stop but gate-large.json is missing")
+    why = large_stop_refusal(rec, NR.file_sha(gp), json.loads(gp.read_text())["body"])
+    if why:
+        raise SystemExit(why)
+    return True
+
+
 def cmd_lists(_args):
-    """Phase 3a (zero renders), once: refuses without `phase_tx_install` on main. Loads Basic Pitch's list events from
-    the gate's stored files; first recomputes the gate's own figures (the clean-up, then `match_notes`, no offset, no
-    snap) and requires each list's matched, ref and est to equal install-gate.json's; then the deciding figures
-    through `timed_notes`; the screen (`summarise_screen`). -> tx/lists.json (its sha256 and the screen go into
-    phase_tx_lists)."""
-    m = require_tx(PHASE_GO, PHASE_INSTALL)
-    inst = require_install(m)
+    """Phase 3a (zero renders), once: refuses without `phase_tx_install`, `phase_tx_size_amend` and
+    `phase_tx_install_large` on main. Loads Basic Pitch's list events from the gate's stored files; first recomputes
+    the gate's own figures (the clean-up, then `match_notes`, no offset, no snap) and requires each list's matched,
+    ref and est to equal install-gate.json's; then, for medium and large alike, the deciding figures through
+    `timed_notes` and the screen (`summarise_screen`); the size by `size_pick` (accuracy; speed beside); the picked
+    size's screen is the result. -> tx/lists.json (its sha256, the screen and the size go into phase_tx_lists)."""
+    m = require_tx(PHASE_GO, PHASE_INSTALL, PHASE_SIZE_AMEND, PHASE_INSTALL_LARGE)
+    sizes = ("medium",) if large_stopped(m) else SCREENED_SIZES
+    insts = {s: require_install(m, s) for s in sizes}
     never_overwrite(lists_path())
     known = gate_known()
     stored = json.loads(T.gate_path().read_text())["body"]["known"]
@@ -1313,17 +1421,36 @@ def cmd_lists(_args):
     bank = NR.Bank(NR.load_notes_doc(), excl=NR.load_exclusion())
     names = sorted(T.KNOWN_NOTES)
     dis = {nm: SB.measure(T.known_audio(nm, bank)) for nm in names}
-    ms = {nm: load_ms("list", nm, inst) for nm in names}
-    free = {nm: load_ms("list-free", nm, inst) for nm in names}
-    rows = list_rows(known, ms, free, dis)
-    body = {"rows": rows, **summarise_screen(rows), "input_check": "tx-bp equals install-gate.json on every list",
-            "gate_sha256": NR.file_sha(gate_path(inst["size"])), "install_gate_sha256": NR.file_sha(T.gate_path()),
-            "device": inst["device"], "size": inst["size"]}
+    by = {}
+    for s, inst in insts.items():
+        mk, fk = LIST_KINDS[s]
+        rows = list_rows(known, {nm: load_ms(mk, nm, inst) for nm in names},
+                         {nm: load_ms(fk, nm, inst) for nm in names}, dis)
+        g = inst["gate"]
+        by[s] = {"rows": rows, **summarise_screen(rows), "gate_sha256": NR.file_sha(gate_path(s)),
+                 "speed": {"device": g["device"], "seconds_per_window": g["seconds_per_window"],
+                           "projections_s": g["projections_s"], "projection_s": g["projection_s"]}}
+    pick = size_pick({"rows": {s: v["rows"] for s, v in by.items()},
+                      "projections": {s: v["speed"]["projection_s"] for s, v in by.items()}})
+    chosen = by[pick["size"]]
+    rec = dict(chosen["recommendation"])
+    if pick["large_open_for_user"]:
+        rec["text"] += ("; the size pick reads undecided, medium kept: large stays open for the user at the stage-b "
+                        "go (phase_tx_go_read with size large), both sizes' figures beside")
+    if pick["over_two_hours"]:
+        rec["text"] += ("; the picked size's stage b projects over two hours: a slower, more accurate reader is the "
+                        "user's call (phase_tx_go_read with slow_ok)")
+    body = {"sizes": by, "size_pick": pick, "size": pick["size"], "rows": chosen["rows"],
+            "numbers": chosen["numbers"], "readings": chosen["readings"], "screen": chosen["screen"],
+            "recommendation": rec, "input_check": "tx-bp equals install-gate.json on every list",
+            "install_gate_sha256": NR.file_sha(T.gate_path()), "device": insts[pick["size"]]["device"]}
     NR.write_once(lists_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}",
                                  "made": time.strftime("%Y-%m-%d %H:%M:%S"), "body": body})
     d = body["numbers"]["lists"]["diff"]
-    print(f"LISTS {body['screen']}: precision tx-vote {d['tx-vote']['precision']}, tx-ms {d['tx-ms']['precision']}; "
-          f"recommendation: {body['recommendation']['text']}; sha256 {NR.file_sha(lists_path())}")
+    print(f"LISTS {body['screen']} on {pick['size']} (large - medium tx-ms F {pick['diff_large_less_medium']}; "
+          f"projections {pick['projections']}): precision tx-vote {d['tx-vote']['precision']}, tx-ms "
+          f"{d['tx-ms']['precision']}; recommendation: {body['recommendation']['text']}; "
+          f"sha256 {NR.file_sha(lists_path())}")
 
 
 def bp_note(kind, key, want_sha, pair):
@@ -1353,8 +1480,11 @@ def cmd_transcribe(_args):
     why = lists_go_refusal((m.get(LEDGER_ID) or {}).get(PHASE_LISTS))
     if why:
         raise SystemExit(why)
-    inst = require_install(m)
-    T.require_file_hash(m.get(LEDGER_ID), PHASE_LISTS, lists_path())
+    lists = T.require_file_hash(m.get(LEDGER_ID), PHASE_LISTS, lists_path())["body"]
+    why = slow_refusal(lists, (m.get(LEDGER_ID) or {}).get(PHASE_GO_READ))
+    if why:
+        raise SystemExit(why)
+    inst = require_install(m, picked_size(lists, (m.get(LEDGER_ID) or {}).get(PHASE_GO_READ)))
     never_overwrite(transcribe_path())
     listing, report, z, dev, items = stage_b_context(m)
     weights = weights_file(inst["size"], inst["manifest"])
@@ -1431,7 +1561,8 @@ def cmd_read(_args):
     offset). Asserts tx-bp reproduces truth-report.json's matched, ref and est per window. -> tx/read.json (raw
     hand-back, audit, then phase_tx_read)."""
     m = require_tx(PHASE_GO, PHASE_INSTALL, PHASE_LISTS, PHASE_GO_READ, PHASE_NOTES, nr=(T.PHASE_TRUTH,))
-    inst = require_install(m)
+    inst = require_install(m, picked_size(T.require_file_hash(m.get(LEDGER_ID), PHASE_LISTS, lists_path())["body"],
+                                          (m.get(LEDGER_ID) or {}).get(PHASE_GO_READ)))
     rec = (m.get(LEDGER_ID) or {}).get(PHASE_NOTES) or {}
     _, sha = notes_listing(("truth", "goat", "goat-free"))
     if rec.get("listing_sha256") != sha:
@@ -1552,7 +1683,9 @@ def cmd_bridge(_args):
     loud, why = T.versions_loud(m.get(NR_ID))
     if why:
         raise SystemExit(why)
-    inst = require_install(m)
+    size = picked_size(T.require_file_hash(m.get(LEDGER_ID), PHASE_LISTS, lists_path())["body"],
+                       (m.get(LEDGER_ID) or {}).get(PHASE_GO_READ))
+    inst = require_install(m, size)
     T.require_file_hash(m.get(LEDGER_ID), PHASE_READ, read_path())
     never_overwrite(bridge_path())
     from learn import song_bank as SB
@@ -1580,7 +1713,7 @@ def cmd_bridge(_args):
         if vw["set"] == "lists":
             di = SB.measure(T.known_audio(k, bank))
             bp, _ = T.timed_notes({"events": known[k], "pre_s": 0.0}, di)
-            ms, _ = T.timed_notes(ms_events(load_ms("list", k, inst)), di)
+            ms, _ = T.timed_notes(ms_events(load_ms(LIST_KINDS[size][0], k, inst)), di)
         elif vw["set"] == "real":
             di, _, _, _ = ta.window(byk[k])
             bp, _ = T.timed_notes(bp_note("truth", k, sha_of.get(k), pair), di)

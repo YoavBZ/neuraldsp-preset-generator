@@ -42,6 +42,7 @@ SOURCE_KINDS = ("list", "truth", "goat-dev")               # the declared materi
 WEIGHTS = {                                                # size: (sha256, bytes) of model.safetensors
     "medium": ("ac80adbdf85d87231735fd948af7013441c0afced316c4e9067fd5d8a7fb97ec", 1228144472),
     "small": ("bbd482c786b895cf7d8f44185073d951adae2ebb8a66f82ca84cd1f84569549c", 411888600),
+    "large": ("ac4eb6ea87dfc26b6ca6b954c6b967ab87ad4c7d08e078b25214f13ed051f397", 5465642136),   # phase_tx_size_amend
 }
 DEVICES = ("mps", "cpu")
 THREADS = 4
@@ -197,15 +198,21 @@ def notes_from_events(events, end_s):
     return notes, cnt
 
 
+def transformer_dtype(named):
+    """(Pure.) The transformer's dtype from [(parameter name, dtype)]: the first parameter outside the conditioners
+    (`condition_provider.*`, kept in float32 on MPS). The first parameter of all is a conditioner's, which is why the
+    first gate's files read float32 on MPS while the transformer ran float16 (phase_tx_install)."""
+    for name, dt in named:
+        if not name.startswith("condition_provider"):
+            return str(dt)
+    return "unknown"
+
+
 def _dtype_name(model):
-    for a in ("dtype", "_dtype"):
-        v = getattr(model, a, None)
-        if v is not None:
-            return str(v)
     for a in ("model", "_model", "lm", "_lm"):
         m = getattr(model, a, None)
-        if m is not None and hasattr(m, "parameters"):
-            return str(next(m.parameters()).dtype)
+        if m is not None and hasattr(m, "named_parameters"):
+            return transformer_dtype((n, p.dtype) for n, p in m.named_parameters())
     return "unknown"
 
 
