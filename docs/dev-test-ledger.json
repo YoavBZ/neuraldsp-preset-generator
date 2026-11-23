@@ -5265,6 +5265,17 @@
     "side_figure": "declared report-only addition: read reports, beside every arm's precision and extras, the same figures counting only found notes that start inside the window, by the redo's own definition (phase_nr_1_redo_go_hum's precision_starting_inside: on >= 0; and beside it the guard's 50-ms lead, on >= -0.05 s), per window and pooled per group (note_tx.side_report, read.json's side_inside). The truth is unchanged. It never gates, never enters a reading and never decides a code",
     "why": "the hum go's own finding: chords ringing in from before each window and notes in the transcriber's 1-s lead-in inflate every arm's extras alike",
     "guard": "later_stage_size returns large only when large's own screen read lists-go (picked_size's guard)"
+   },
+   "phase_tx_notes": {
+    "listing_sha256": "fd40b61bfb4f9013fa00fae92c9eee510279a843e93b0990df8d2c55464b3a53",
+    "note_files": 133,
+    "kinds": "PF/note-rebuild/tx/notes/{truth (79), goat (27), goat-free (27)}/",
+    "transcribe_sha256": "0036e80666bb6defb25cd456a09c70e12ea840bc0e3a59a09d4d7844bbd66666",
+    "transcribe_file": "PF/note-rebuild/tx/transcribe.json",
+    "size": "large",
+    "device": "mps",
+    "note": "2026-11-24, `transcribe` run once from main at bf12feea (PR #577's squash) in a frozen detached worktree, zero renders, one MPS job: MuScriptor large (the user's go, phase_tx_go_read) on the 79 consistent Guitar-TECHS P1 and P2 truth windows and the 27 GOAT development windows, masked, and on the 27 with no mask; the truth report read with the user's hum go (phase_tx_inside_amend). 133 note files, float16 on MPS, transcription 15.2 min in all, 6.86 s a run on average (the gate's 4.91 s was read on its 4 development windows; the projection 0.18 h, the measured about 0.25 h). Hashed before any scoring: nothing of stage b has been read",
+    "item_5": "GOAT item_5, the DI behind the listening page's cards c2 and c11 that the user marked 'Bad DI, don't use it', is the first of stage b's 27 GOAT development windows (it is in no Guitar-TECHS truth window). Its two note files (goat, goat-free) are kept as made and stay in this listing; the redo's exclusion amendment 12p (separate PR, which also covers this track's read and bridge) drops it at read. The gates' repeat runs on item_5 stay as recorded: they tested repeatability, not accuracy"
    }
   }
  ],
