@@ -4050,6 +4050,40 @@
     "sha256": "3056dcbcd26f6c025c3c1b5fc72f02484a3324aec2c8ffa8166fdb641c85f7e8",
     "file": "PF/note-rebuild/redo/truth.json",
     "note": "2026-11-23, `truth` run once from main at 0228d98b (PR #547's squash) in a frozen worktree, zero Basic Pitch runs, zero renders, 26 s: 85 Guitar-TECHS files (P1 and P2 only; P3 not read), 16,078 MIDI notes, 14,847 after the clean-up (1,210 under 58 ms dropped, 21 merged); 238 declared windows, 79 consistent (P1 chords 15 of 76, P1 scales 30 of 36, P2 chords 10 of 76, P2 scales 24 of 36, P2 techniques 0 of 14); the consistent windows' median offset -29 ms (P1 chords), -28 ms (P1 scales), -21 ms (P2 chords and scales). Recorded before any run reads a truth window."
+   },
+   "phase_nr_1_redo_go_ladder": {
+    "date": "2026-11-23",
+    "by": "the user",
+    "asked": "The instrument check (ghost-ladder) failed one list: chords-four falls at every step, but at -20 dB it lands 0.6% below the plain rebuild, where the rule demanded \"not below\" with no tolerance. 9 of 10 lists pass cleanly. 3 of 6 real clips fail, so the real set is report-only and the read rests on the 10 lists.",
+    "how": "AskUserQuestion",
+    "answer": "Continue, record why",
+    "relayed_by": "the coordinating session, 2026-11-23",
+    "go": true,
+    "why": "chords-four still falls at every step (3.215, 2.320, 1.787, 1.713 at 0, -6, -12, -20 dB); its 0.6% at -20 dB (1.7128 against the plain rebuild's 1.7235) is within noise; no rule is changed after the fact; the real set is reported only",
+    "failing_lists": [
+     "chords-four"
+    ],
+    "failing_real": [
+     "P1|chords|Set1_Maj7@70",
+     "P1|chords|Set1_m7@70",
+     "P2|chords|Set1_dim@130"
+    ],
+    "real_reported_only": true,
+    "ladder_sha256": "15894262bac3f9c63df691440244345972906d8f125e8ca7718ef56f0f186053",
+    "ladder_file": "PF/note-rebuild/redo/ghost-ladder.json",
+    "ladder_run": "2026-11-23, from main at 7697c48e in a frozen worktree, 19 s, zero renders, zero Basic Pitch runs",
+    "code": "`versions` reads past the ladder's go false only with this key naming that file's sha256 (note_transcribe.ladder_refusal); the ladder rule and every threshold unchanged. Plan 12m, dated note"
+   },
+   "phase_nr_1_redo_go_flags": {
+    "date": "2026-11-23",
+    "by": "the user",
+    "asked": "The detector fires about 2.4 times per real note, so even the true notes fail onsets-found on all 79 real clips (median 0.42 on P1 scales, 0.45 on P2 scales, 0.67 and 0.62 on P1 and P2 chords); the 3-of-40 flagged-parts trigger would fire whatever the transcription. The trigger becomes a reported figure, and the listening page remains the guard for missed notes.",
+    "how": "AskUserQuestion",
+    "answer": "Report it, don't stop",
+    "relayed_by": "the coordinating session, 2026-11-23",
+    "go": true,
+    "given": "before transcription, from attacks-report (attacks.json sha256 d58ab25660f42e91b3c137a842d9541b5bcd4de1f2b28273dcc734c0eae66121)",
+    "effect": "`build` reads this key and does not refuse on the flagged-parts count (flags_go_refusal, unchanged); the flagged parts are still listed and the row is still read beside without them; the listening page's \"missing notes\" button is the guard"
    }
   }
  ],

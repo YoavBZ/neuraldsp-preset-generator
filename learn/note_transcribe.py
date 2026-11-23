@@ -66,6 +66,8 @@ PHASE_GO_CHORDS = "phase_nr_1_redo_go_chords"   # the user's go when P2's chord 
 PHASE_GO_FLAGS = "phase_nr_1_redo_go_flags"     # ... when onsets-found flags 3 or more of the 40 deciding parts
 PHASE_GO_CLIPS = "phase_nr_1_redo_go_clips"     # ... when a rejected clip is caught by no check
 PHASE_GO_VERSIONS = "phase_nr_1_redo_go_versions"   # ... the user's decision after a code other than NV-loud
+PHASE_GO_LADDER = "phase_nr_1_redo_go_ladder"     # ... the user's go after the instrument check failed a list
+                                                #     (2026-11-23; bound to that ghost-ladder.json by its sha256)
 
 REDO = NR.OUT / "redo"                   # PF/note-rebuild/redo/
 STAGE1 = NR.OUT / "stage1"
@@ -447,6 +449,20 @@ def versions_loud(nr_main):
     if not isinstance(go, dict) or "loud" not in go:
         return None, f"the read is {rec['code']}: to the user first ({PHASE_GO_VERSIONS})"
     return go["loud"], None
+
+
+def ladder_refusal(ladder, nr_main, ladder_sha):
+    """(Pure.) Whether `versions` may read with the instrument check's distance, and whether the real set is reported
+    only. The check's own outcome when it let the work go; when a list failed, only the user's go on main
+    (`PHASE_GO_LADDER`, naming this ghost-ladder.json's sha256), and then the real set is reported only (their
+    recorded reason, 2026-11-23). The ladder rule itself is unchanged. -> (refusal or None, real_reported_only)."""
+    if ladder["go"]:
+        return None, ladder["real_reported_only"]
+    go = (nr_main or {}).get(PHASE_GO_LADDER)
+    if not isinstance(go, dict) or go.get("ladder_sha256") != ladder_sha:
+        return ("the instrument check failed on a list: nothing is read with that distance (to the user, "
+                f"{PHASE_GO_LADDER})"), None
+    return None, True
 
 
 def content_shares(notes):
@@ -2078,8 +2094,9 @@ def cmd_versions(_args):
     if not ladder_path().exists():
         raise SystemExit("the instrument check has not run (`ghost-ladder` first)")
     ladder = json.loads(ladder_path().read_text())["body"]
-    if not ladder["go"]:
-        raise SystemExit("the instrument check failed on a list: nothing is read with that distance (to the user)")
+    why, real_only = ladder_refusal(ladder, m.get(LEDGER_ID), NR.file_sha(ladder_path()))
+    if why:
+        raise SystemExit(why)
     require_truth_report()
     pair = install_pair(load_manifest())
     from learn import note_versions as NV
@@ -2141,14 +2158,14 @@ def cmd_versions(_args):
                              "soft": (len(asis & set(soft)), len(loud & set(soft)), len(soft))}
         w["round_trip_precision"] = {v: match_notes(truth, n)["precision"] for v, n in trips[i].items()}
         w["pitch_class_cosine"] = pitch_class_cosine(truth, est)
-    read = NV.summarise_read(windows, ladder["real_reported_only"])
+    read = NV.summarise_read(windows, real_only)
     shares = {}
     for grp in ("P1", "P2", "goat"):
         for g in NR.LOUD_GAMMA:
             v = [w["turned_down"][str(g)] for w in windows if w["group"] == grp]
             shares.setdefault(grp, {})[str(g)] = NV.pooled_share(v)      # pooled over the set's paired notes
     body = {"windows": windows, "read": read, "turned_down_shares": shares, "build_seconds": rate_s if timed >= 3
-            else None, "real_reported_only": ladder["real_reported_only"],
+            else None, "real_reported_only": real_only, "ladder_by_user_go": not ladder["go"],
             "ladder_sha256": NR.file_sha(ladder_path()), "truth_sha256": NR.file_sha(truth_path()),
             "truth_report_sha256": NR.file_sha(truth_report_path()), "gate_sha256": NR.file_sha(gate_path())}
     NR.write_once(versions_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_CALIB}",
