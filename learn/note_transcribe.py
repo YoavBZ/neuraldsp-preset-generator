@@ -571,6 +571,16 @@ def chords_go_refusal(p2_chord_recall, nr_main, trigger=P2_CHORD_TRIGGER):
     return None
 
 
+def flags_note(flagged_deciding, nr_main, trigger=FLAG_TRIGGER):
+    """(Pure.) `transcribe`'s word on the flagged-parts count: to the user before any build while the trigger holds
+    and main holds no go of the user's (`flags_go_refusal`); reported under the go; nothing under the trigger."""
+    if len(flagged_deciding) < trigger:
+        return ""
+    if flags_go_refusal(flagged_deciding, nr_main, trigger):
+        return " (TO THE USER before any build)"
+    return f" (reported: the user's go {PHASE_GO_FLAGS})"
+
+
 def flags_go_refusal(flagged_deciding, nr_main, trigger=FLAG_TRIGGER):
     """(Pure.) Why nothing may be built after transcription, or None: `onsets-found` flags on `trigger` or more of the
     40 deciding parts go to the user first (their go on main, `PHASE_GO_FLAGS`)."""
@@ -1844,7 +1854,7 @@ def cmd_transcribe(_args):
     print(f"TRANSCRIBE: {len(out['parts'])} parts, {len(out['ear'])} ear items; note-check refusals deciding "
           f"{len(dec)} {sorted(dec)}{' (STOPPED: no render)' if stop else ''}, panel {sorted(pan)}; ear failing "
           f"{out['ear_failing']}; onsets-found flags deciding {len(fl[0])}"
-          f"{' (TO THE USER before any build)' if out['flags_trigger'] else ''}, panel {len(fl[1])}; "
+          f"{flags_note(fl[0], m.get(LEDGER_ID))}, panel {len(fl[1])}; "
           f"sha256 {NR.file_sha(transcribe_path())}")
 
 

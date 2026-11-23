@@ -364,6 +364,9 @@ def test_the_two_triggers_and_the_versions_loudness():
     assert T.flags_go_refusal(["a", "b"], {}) is None
     assert "3 of the 40" in T.flags_go_refusal(["a", "b", "c"], {})
     assert T.flags_go_refusal(["a", "b", "c"], {T.PHASE_GO_FLAGS: {}}) is None
+    assert T.flags_note(["a", "b"], {}) == ""                                     # under the trigger
+    assert T.flags_note(["a", "b", "c"], {}) == " (TO THE USER before any build)"
+    assert T.flags_note(["a", "b", "c"], {T.PHASE_GO_FLAGS: {}}) == f" (reported: the user's go {T.PHASE_GO_FLAGS})"
     parts = {"a": {"figures": {"onsets-found": {"flag": True}}}, "b": {"figures": {"onsets-found": {"flag": False}}},
              "p": {"figures": {"onsets-found": {"flag": True}}}}
     assert T.flagged_parts(parts, {"a": "goat", "b": "bks", "p": "panel"}) == (["a"], ["p"])
