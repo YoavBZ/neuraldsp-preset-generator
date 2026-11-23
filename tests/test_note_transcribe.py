@@ -513,9 +513,14 @@ def test_the_ledger_holds_the_declarations():
     assert truth["sha256"].startswith("3056dcbc") and truth["file"] == "PF/note-rebuild/redo/truth.json"
     for later in (T.PHASE_GO_CHORDS, T.PHASE_GO_CLIPS):
         assert later not in e["note-rebuild"]
-    for later in (T.PHASE_INSTALL, T.PHASE_NOTES, T.PHASE_EAR):
-        assert later not in e["note-rebuild"]                  # each comes with its own PR
-    assert T.PHASE_DRY not in e["preset-ladder"]
+    assert T.PHASE_EAR not in e["note-rebuild"]                # the ear verdict comes with its own PR
+    # step 7's hash PR (2026-11-23): the install's facts, the transcription and the build, each bound by sha256
+    inst, notes, dry = e["note-rebuild"][T.PHASE_INSTALL], e["note-rebuild"][T.PHASE_NOTES], e["preset-ladder"][T.PHASE_DRY]
+    assert T.install_record_refusal(inst, inst["gate_sha256"], inst["calibration_sha256"],
+                                    (inst["lock_sha256"], inst["model_sha256"])) is None
+    assert inst["calibration_sha256"].startswith("3ca85566") and inst["gate_sha256"].startswith("23251597")
+    assert notes["sha256"].startswith("cbd1f4fb") and dry["sha256"].startswith("46e485a2")
+    assert dry["transcribe_sha256"] == notes["sha256"]
 
 
 def test_the_ladder_refusal_and_the_users_go():

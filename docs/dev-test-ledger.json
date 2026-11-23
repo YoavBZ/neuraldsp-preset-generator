@@ -4212,6 +4212,12 @@
      "5_reads_once": "11g reads once, after the row's read, as declared; if a full row runs (on FK-shut), 11g's full-row arm keeps the same frozen summary"
     },
     "phase_scratch_tone_beside": "unchanged (append-only); this key adds the departure beside it"
+   },
+   "phase_scratch_notes_dry": {
+    "sha256": "46e485a22c5f925457ebb89905aa2fc16c853e58c694791cbde77c14831fbf5b",
+    "file": "PF/note-rebuild/redo/build.json",
+    "transcribe_sha256": "cbd1f4fb0e92ec53a058538d236daaafd5ae62eccdb7c07689edf115a37c18ab",
+    "note": "2026-11-23, from main at e21cae26 in a frozen worktree, zero renders, 268 s: tr-di (deciding) and tr-plain (beside) for the 47 parts and the 8 ear items; ring-soft, no loudness; refused 0 of the 40 deciding and 0 of the panel, no ear item failing (no blocking content check: every check reported). Reported failures on tr-di: chords-kept 47, onsets-found 35, playing-covered 32, ring-kept 29, judge-accepts 24 of 47; ear items: chords-kept 8, onsets-found 8, playing-covered 6, ring-kept 5, judge-accepts 4 of 8. The listening page is the guard. Beside, stem-preview (stem-preview.json 7636e2dd...350d): Basic Pitch's note F on the xlnoG stems against the DI's notes, BKS 0.614, GOAT 0.639, panel 0.572. The dry guitars' DIs pass through song_bank.measure, whose +-15 dB EQ clip track 4 found: its clip-free re-score is reported beside this row (track 4's declaration), not run here"
    }
   },
   {
@@ -4763,6 +4769,28 @@
     "unchanged": "the 13 cards, the 4 crunch repeats (the nearest let-ring item included), the hidden control, the buttons, redo_verdict's reading, the exclusion list, no other GOAT items; the kind is not shown on the cards",
     "code": "note_transcribe kind_figures, ear_kinds_of, nearest_fill, choose_ear_kinds, annotated_notes; pick_ear_items unchanged; transcribe writes ear_kinds",
     "plan": "docs/note-rebuild-plan.md 12n"
+   },
+   "phase_nr_1_redo_install": {
+    "lock_sha256": "ea700e7edc927e7a58a35b1152df5f314546807b1de1efeb2c2f17d543961de1",
+    "model_sha256": "2c3c1d144bfa61ad236e92e169c13535c880469a12a047d4e73451f2c059a0ec",
+    "resolve_sha256": "55ef2f4029cc302d1f0782a5c2f5d777e70bf5ae5f9672e7715304a1f313a226",
+    "manifest_sha256": "8b2dbe289227bf44594a6578eb51883e47d7ed1f978964c79ac3eb233560a0c2",
+    "gate_sha256": "23251597973813f76534a5539c8730bec77fe3a82f3fdad2b163ed7d7e8030da",
+    "calibration_sha256": "3ca85566b60650b925fefaa190aeee27f4459e05687fbf6a28093fae84f1dfe1",
+    "attacks_sha256": "d58ab25660f42e91b3c137a842d9541b5bcd4de1f2b28273dcc734c0eae66121",
+    "truth_report_sha256": "425f3fd11515b364ab1e70cb3f68132d4ae21818834cda0528ef6197a7f2f16f",
+    "versions_sha256": "8f77f5d7bd2b380b989f44c958fb2bacd2303d85379b9cd57996a399ae59386f",
+    "gate": "repeatable (repeat_ok); known-notes F 0.751, reported (12m); 1.24 s a 10-s window",
+    "calibration": "the rerun under phase_nr_1_redo_calib_fix: ok; report-only checks chords-kept, judge-accepts, ring-kept (phase_nr_1_redo_go_guard); no blocking content check; playing-covered reported (phase_nr_1_redo_go_calib), 8 of 27; ring-soft; no loudness (phase_nr_1_redo_go_versions); the six rejected clips caught by a report only; the first run a18ec73c set aside",
+    "detector": "attacks-report: P1 offset -14.1 ms; recall P1 0.943, P2 0.989, lists 0.987 (reported)",
+    "truth_report": "P2 chord recall 0.955 (the 0.85 trigger not fired); hum guard stopped, gone on by phase_nr_1_redo_go_hum",
+    "note": "2026-11-23, from main at e21cae26 in a frozen worktree, zero renders"
+   },
+   "phase_nr_1_redo_notes": {
+    "sha256": "cbd1f4fb0e92ec53a058538d236daaafd5ae62eccdb7c07689edf115a37c18ab",
+    "file": "PF/note-rebuild/redo/transcribe.json",
+    "ear_items_sha256": "40913a1be9fd0b8df61bc129c73cba5d10feca49fcc7e237e9aa4a5aa5307943",
+    "note": "2026-11-23, from main at e21cae26 in a frozen worktree, zero renders, 115 s: 47 parts and 8 ear items transcribed (47 and 8 note files, each naming the install's lock and model); note-check refusals 0 (no blocking check); onsets-found flags 31 of the 40 deciding parts and 4 of the panel, reported by phase_nr_1_redo_go_flags; playing-covered holds on 15 of 47 (median playing share 0.92), reported; the ear items as amended (phase_nr_1_ear_kinds): chord-led item_77, single-note item_49 (annotation), bends item_39, let-ring item_5 (nearest, not filled)"
    }
   },
   {
