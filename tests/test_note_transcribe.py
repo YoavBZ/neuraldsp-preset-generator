@@ -413,7 +413,7 @@ def test_the_ledger_holds_the_declarations():
     assert T.PHASE_CALIB in e["note-rebuild"] and "Measure first" in str(e["note-rebuild"][T.PHASE_CALIB])
     truth = e["note-rebuild"][T.PHASE_TRUTH]                   # step 2's listing, ledgered before any run reads it
     assert truth["sha256"].startswith("3056dcbc") and truth["file"] == "PF/note-rebuild/redo/truth.json"
-    for later in (T.PHASE_VERSIONS, T.PHASE_GO_CHORDS, T.PHASE_GO_CLIPS, T.PHASE_GO_VERSIONS):
+    for later in (T.PHASE_GO_CHORDS, T.PHASE_GO_CLIPS, T.PHASE_GO_VERSIONS):
         assert later not in e["note-rebuild"]
     for later in (T.PHASE_INSTALL, T.PHASE_NOTES, T.PHASE_EAR):
         assert later not in e["note-rebuild"]                  # each comes with its own PR
@@ -471,6 +471,18 @@ def test_the_users_hum_go_of_2026_11_23():
     assert hum["answer"] == "Continue, record why" and hum["go"] is True
     assert hum["truth_report_sha256"].startswith("425f3fd1") and len(hum["stopping_windows"]) == 18
     assert T.truth_report_refusal({"stopped": [["k", 0.2]]}, e, hum["truth_report_sha256"]) is None
+
+
+def test_the_note_versions_read_on_main():
+    """12m step 5: the read's sha256 and code, ledgered; NV-none is not NV-loud, so `build` refuses until the user's
+    decision is recorded (`versions_loud`)."""
+    e = T.entries((REPO / "docs" / "dev-test-ledger.json").read_text())["note-rebuild"]
+    rec = e[T.PHASE_VERSIONS]
+    assert rec["sha256"].startswith("8f77f5d7") and rec["file"] == "PF/note-rebuild/redo/versions.json"
+    assert rec["code"] == "NV-none" and rec["gamma"] is None and rec["real_reported_only"] is True
+    assert "not the J0 judge" in rec["distance"]
+    loud, why = T.versions_loud(e)
+    assert loud is None and T.PHASE_GO_VERSIONS in why
 
 
 def test_the_old_pages_expected_failure_table():
