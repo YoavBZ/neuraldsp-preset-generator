@@ -17,14 +17,20 @@ list, a weights file whose sha256 is not a declared one, and `HF_HUB_OFFLINE` un
 
 Each output holds the notes (start, end, MIDI pitch, instrument group; times to 0.1 ms; a note with no end event ends
 at the input's end, counted), the settings it ran with, the weights' sha256, the package, torch and Python versions,
-the device and dtype, the input's sha256 and source, and the counts (unfinished notes, drums dropped, end events with
-no start, notes per instrument group).
+the device and dtype, the input's sha256 and source, the model's load seconds and the input's transcription seconds
+(timed apart, so the gate's speed is transcription only), and the counts (unfinished notes, drums dropped, end events
+with no start, notes per instrument group).
+
+The runner trusts the manifest's labels: it checks that each input's sha256 is listed and that each label's kind is
+declared material, but it cannot tell what audio a label names. The real guard is `note_tx.declared_input`, which
+`note_tx.run_ms` applies to every source before it writes the inputs and the manifest.
 """
 
 import hashlib
 import json
 import os
 import sys
+import time
 
 SETTING_KEYS = ("use_sampling", "cfg_coef", "instruments", "batch_size", "beam_size", "prelude_forcing")
 GUITAR_GROUPS = ("acoustic_guitar", "clean_electric_guitar", "distorted_electric_guitar")
@@ -226,14 +232,17 @@ def main(argv=None):
     from muscriptor import TranscriptionModel
 
     torch.set_num_threads(THREADS)
+    t0 = time.perf_counter()
     model = TranscriptionModel.load_model(args["weights"], device=args["device"], dtype=None)
-    meta = {"weights_sha256": wsha, "weights_size": size, "device": args["device"], "dtype": _dtype_name(model),
+    meta = {"load_s": time.perf_counter() - t0,"weights_sha256": wsha, "weights_size": size, "device": args["device"], "dtype": _dtype_name(model),
             "muscriptor": md.version("muscriptor"), "torch": torch.__version__, "threads": THREADS,
             "python": sys.version.split()[0], "settings": args["settings"]}
     for src, dst, sha in plan:
+        t1 = time.perf_counter()
         events = [d for d in (event_dict(e) for e in model.transcribe(src, **args["settings"])) if d]
+        secs = time.perf_counter() - t1                  # transcription only: the gate's speed reads this
         notes, counts = notes_from_events(events, sf.info(src).duration)
-        out = dict(meta, input_sha256=sha, source=sources[sha], notes=notes, counts=counts)
+        out = dict(meta, input_sha256=sha, source=sources[sha], seconds=secs, notes=notes, counts=counts)
         with open(dst, "w") as f:
             json.dump(out, f, indent=1)
         print(f"tx_run: {len(notes)} notes ({sources[sha]}) -> {dst}", flush=True)

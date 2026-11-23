@@ -102,7 +102,7 @@ NOTE_KINDS = {"list": MS_SETTINGS, "list-free": MS_FREE_SETTINGS, "truth": MS_SE
               "goat-free": MS_FREE_SETTINGS}
 DEVICE_DTYPE = {"mps": "float16", "cpu": "float32"}
 REPEAT_WINDOWS = T.REPEAT_WINDOWS        # the gate's four development windows, three runs each per device
-STAGE_B_WINDOWS = 265                    # at most 238 truth windows and the 27 development windows
+DEV_RUNS = 2 * T.DEV_COUNT               # stage b's 27 development windows, masked and with no mask (tx-ms-free)
 SIZE_SWITCH_S = 2 * 3600.0               # over this projected for stage b: every MuScriptor arm moves to small
 
 # --- the comparison (plan sections 4 and B0) ----------------------------------------------------------------------------
@@ -120,11 +120,13 @@ BESIDE_ARMS = ("tx-veto", "tx-ms-free")
 ALL_ARMS = ARMS + BESIDE_ARMS
 BUILT_ARMS = ("tx-bp", "tx-ms", "tx-vote", "tx-veto")   # the dry guitars built on the 27 windows (tx-ms-free: notes only)
 BRIDGE_VERSIONS = ("bv-asis", "bv-loud", "bv-ends")
-FIELDS = ("precision", "recall", "f", "end_f", "chord_recall")
+FIELDS = ("precision", "recall", "f", "end_f", "end_accuracy", "chord_recall")
 SETS = ("lists", "real")                 # the deciding sets; P1, P2 and each kind are reported apart
 SCREEN = ("TXR-none", "lists-go")
 CODES = ("TXR-vote", "TXR-ms", "TXR-ends", "TXR-undecided")
 FLAG_VETO = "veto-holds"
+AUDIO_LEVELS = ("the read's audio checks on the 27 windows are at today's levels (no loudness weighting); the bridge "
+                "carries loudness")       # said in the results (PR #553's review, on departure 5)
 RECOMMENDATION = {
     "TXR-none": "stop: stage b does not run and the route stays on Basic Pitch with whatever 'Measure first' "
                 "decides; Basic Pitch's P1 and P2 precision is copied into the results once truth-report.json "
@@ -148,9 +150,14 @@ LOOKUP_FIRST = ("more than 5% of tx-ms's notes have no Basic Pitch partner: any 
 
 def declared_input(source, listing, dev_items):
     """(Pure.) The only way an input manifest row is made: `list:<name>` (a key of `note_transcribe.KNOWN_NOTES`),
-    `truth:<window key>` (a P1 or P2 window of the hashed listing whose file passes `note_truth.refuse_path`) or
-    `goat-dev:<item>` (one of the 27 development windows, clear of the exclusion list). Refuses anything else: a row
-    part, a replay part, a stem, a song, a P3 path, a GOAT item outside the 27, any path. -> {source, kind, key}."""
+    `truth:<window key>` (a consistent P1 or P2 window of the hashed listing whose file passes
+    `note_truth.refuse_path`) or `goat-dev:<item>` (one of the 27 development windows, clear of the exclusion list).
+    Refuses anything else: a row part, a replay part, a stem, a song, a P3 path, an inconsistent window, a GOAT item
+    outside the 27, any path. -> {source, kind, key}.
+
+    This is the real guard. tx_run trusts the manifest's labels (it checks each input's sha256 is listed and each
+    label's kind is declared, but cannot tell what audio a label names), so only manifests written by `run_ms`, after
+    this check, may ever be passed to it."""
     why = TR.source_refusal(source)
     if why:
         raise SystemExit(f"not declared material: {why}")
@@ -164,6 +171,8 @@ def declared_input(source, listing, dev_items):
             raise SystemExit(f"{source}: not a window of the hashed truth listing")
         if win.get("player") not in ("P1", "P2"):
             raise SystemExit(f"{source}: only P1 and P2 are declared (P3 is never read)")
+        if win.get("consistent") is not True:
+            raise SystemExit(f"{source}: not a consistent window (only the consistent ones are read)")
         fk = f"{win['player']}|{win['kind']}|{win['name']}"
         f = next((x for x in listing.get("files") or [] if f"{x['player']}|{x['kind']}|{x['name']}" == fk), None)
         if f is None:
@@ -332,16 +341,20 @@ def bend_figures(truth, notes, bp):
 
 def window_figures(truth, est):
     """(Pure.) One window's figures for one arm against the truth: matched, ref, est, precision, recall, F; note-end
-    F (a pair also needs its end, `end_match`); chord-note recall (`note_versions.chord_indices`); the recall of a
-    pitch struck again while it rings (underpowered on the lists: a report); the extras sorted."""
+    F (a pair also needs its end, `end_match`; a report: it falls with extra notes too); the end accuracy (of the
+    onset pairs, the share whose end is right: what "ends better" reads, since it carries no precision); chord-note
+    recall (`note_versions.chord_indices`); the recall of a pitch struck again while it rings (underpowered on the
+    lists: a report); the extras sorted."""
     pairs = pair_notes(truth, est)
     m, me = len(pairs), len(pair_notes(truth, est, ends=True))
+    right = sum(end_match(truth[i], est[j]) for i, j in pairs)
     nr, ne = len(truth), len(est)
     found = {i for i, _ in pairs}
     ch, rs = NV.chord_indices(truth), restruck_indices(truth)
     return {"matched": m, "ref": nr, "est": ne, "precision": m / ne if ne else None, "recall": m / nr if nr else None,
             "f": 2 * m / (nr + ne) if nr + ne else None, "end_matched": me,
-            "end_f": 2 * me / (nr + ne) if nr + ne else None,
+            "end_f": 2 * me / (nr + ne) if nr + ne else None, "ends_right": right,
+            "end_accuracy": right / m if m else None,
             "chord_notes": len(ch), "chord_found": sum(i in found for i in ch),
             "chord_recall": NV.recall_of(found, ch), "restruck_notes": len(rs), "restruck_found": sum(i in found for i in rs),
             "extras": extras_sorted(truth, est, {j for _, j in pairs})}
@@ -364,13 +377,15 @@ def window_row(st, cluster, key, group, kind, truth, notes, reps=None, timing=No
 def pooled(figs):
     """(Pure.) Figures pooled over windows: precision, recall, F, note-end F, chord-note recall, the re-struck
     recall, the extras."""
-    s = {k: sum(f[k] for f in figs) for k in ("matched", "ref", "est", "end_matched", "chord_notes", "chord_found",
+    s = {k: sum(f[k] for f in figs) for k in ("matched", "ref", "est", "end_matched", "ends_right", "chord_notes",
+                                              "chord_found",
                                               "restruck_notes", "restruck_found")}
     d = s["ref"] + s["est"]
     ex = {k: sum(f["extras"][k] for f in figs) for k in ("harmonic", "re-find", "other")}
     return {**s, "windows": len(figs), "precision": s["matched"] / s["est"] if s["est"] else None,
             "recall": s["matched"] / s["ref"] if s["ref"] else None, "f": 2 * s["matched"] / d if d else None,
             "end_f": 2 * s["end_matched"] / d if d else None,
+            "end_accuracy": s["ends_right"] / s["matched"] if s["matched"] else None,
             "chord_recall": s["chord_found"] / s["chord_notes"] if s["chord_notes"] else None,
             "restruck_recall": s["restruck_found"] / s["restruck_notes"] if s["restruck_notes"] else None,
             "extras": ex}
@@ -469,14 +484,17 @@ def recall_held(arm, bp, guard=RECALL_GUARD, checks=None, checks_bp=None, slack=
 
 
 def ends_better(lists_iv, real_iv=None):
-    """(Pure.) Note-end F clear of zero above tx-bp on the lists and, where the real DIs are read, not decided worse
-    there."""
+    """(Pure.) The end accuracy (of each arm's onset pairs, the share with the right end; paired per window against
+    tx-bp) clear of zero above on the lists and, where the real DIs are read, not decided worse there. Not note-end F:
+    that falls with extra notes, so an arm with fewer extras and the same ends would read better (PR #553's review,
+    Q2); note-end F stays a report."""
     return clear_above(lists_iv) and not decided_worse(real_iv)
 
 
 def arm_reading(summaries, arm, checks=None):
     """(Pure.) One arm's reading on the deciding sets. summaries: {set: set_summary}; checks: {arm: {check: windows
-    passing}} on the 27 windows (stage b) or None. -> {set: {precision, f, end_f, recall_held, ...}, ends_better}."""
+    passing}} on the 27 windows (stage b) or None.
+    -> {set: {precision, f, end_f, end_accuracy, recall_held, ...}, ends_better}."""
     out = {}
     for st, s in summaries.items():
         d = (s.get("diff") or {}).get(arm) or {}
@@ -484,11 +502,13 @@ def arm_reading(summaries, arm, checks=None):
         held = recall_held((s.get("pooled") or {}).get(arm), (s.get("pooled") or {}).get("tx-bp"),
                            checks=ck, checks_bp=(checks or {}).get("tx-bp") if ck is not None else None)
         out[st] = {"precision": d.get("precision"), "f": d.get("f"), "end_f": d.get("end_f"),
+                   "end_accuracy": d.get("end_accuracy"),
                    "recall": d.get("recall"), "chord_recall": d.get("chord_recall"),
                    "precision_raised": precision_raised(d.get("precision")),
                    "precision_not_better": precision_not_better(d.get("precision")),
                    "f_not_worse": f_not_worse(d.get("f")), "recall_held": held}
-    out["ends_better"] = ends_better((out.get("lists") or {}).get("end_f"), (out.get("real") or {}).get("end_f"))
+    out["ends_better"] = ends_better((out.get("lists") or {}).get("end_accuracy"),
+                                     (out.get("real") or {}).get("end_accuracy"))
     return out
 
 
@@ -506,9 +526,9 @@ def veto_holds(reading, sets=SETS):
 
 def lists_screen(readings):
     """(Pure.) Stage a's result: `TXR-none` only when, on the lists, both tx-vote and tx-ms read their precision
-    difference decided not better (mean or upper end at or below zero) and neither's ends are better (note-end F clear
-    of zero above); anything else, an undecided screen included, is `lists-go`. readings: {arm: arm_reading}."""
-    ok = all(readings[a]["lists"]["precision_not_better"] and not clear_above(readings[a]["lists"]["end_f"])
+    difference decided not better (mean or upper end at or below zero) and neither's ends are better (end accuracy
+    clear of zero above); anything else, an undecided screen included, is `lists-go`. readings: {arm: arm_reading}."""
+    ok = all(readings[a]["lists"]["precision_not_better"] and not clear_above(readings[a]["lists"]["end_accuracy"])
              for a in ("tx-vote", "tx-ms"))
     return "TXR-none" if ok else "lists-go"
 
@@ -776,10 +796,27 @@ def device_choice(repeat):
     return None
 
 
-def projection_s(seconds, repeat, windows=STAGE_B_WINDOWS):
-    """(Pure.) Stage b's projected seconds on the faster repeatable device (seconds per window times 265), or None."""
-    ok = [seconds[d] for d in seconds if (repeat.get(d) or {}) and all(repeat[d].values())]
-    return min(ok) * windows if ok else None
+def stage_b_runs(listing, dev_runs=DEV_RUNS):
+    """(Pure.) Stage b's MuScriptor runs: the listing's consistent P1 and P2 windows (`usable_windows`), and the 27
+    development windows twice (masked, and with no mask for tx-ms-free)."""
+    return len(T.usable_windows(listing)) + dev_runs
+
+
+def transcription_seconds(records):
+    """(Pure.) Seconds per window, transcription only: the mean of tx_run's per-input `seconds` (the process start and
+    the model load, recorded apart as `load_s`, are left out)."""
+    s = [r["seconds"] for r in records]
+    return sum(s) / len(s) if s else None
+
+
+def projections_s(seconds, runs):
+    """(Pure.) Stage b's projected seconds on each device: seconds per window times the runs."""
+    return {d: (v * runs if v is not None else None) for d, v in seconds.items()}
+
+
+def projection_s(projections, device):
+    """(Pure.) The projection the size rule reads: the chosen device's (both are recorded), or None without one."""
+    return projections.get(device) if device is not None else None
 
 
 def size_choice(projected, limit=SIZE_SWITCH_S):
@@ -1137,14 +1174,15 @@ def repeat_table(one, fresh, n):
 
 def cmd_gate(args):
     """Phase 2 (zero renders): per device, REPEAT_WINDOWS development windows, three runs each (two in one process, one
-    fresh), identical notes; seconds per window; the device by `device_choice`; stage b's projection on the faster
-    repeatable device; the size by `size_choice`. If the size stays (medium, or small after a switch), the ten lists
+    fresh), identical notes; seconds per window, transcription only (tx_run's per-input seconds; the load apart);
+    the device by `device_choice`; stage b's projection on each device for its real run count (`stage_b_runs`: the
+    listing's consistent windows plus 2 x 27), the chosen device's read by `size_choice`. If the size stays (medium, or small after a switch), the ten lists
     are transcribed with it (the guitar groups, and no mask for tx-ms-free), each note file written once, their
     listing sha256 printed. If the rule calls for small, it stops with no list notes written; after the user installs
     the small weights, `gate --size small` runs the repeat and speed tests again on small, then the lists. Refuses
     while another MPS user or a render runs. -> tx/gate-<size>.json (its sha256 goes into phase_tx_install)."""
     size = getattr(args, "size", None) or "medium"
-    require_tx(PHASE_GO)
+    m = require_tx(PHASE_GO, nr=(T.PHASE_TRUTH,))
     man = load_manifest()
     if size == "small":
         prior = gate_path("medium")
@@ -1157,6 +1195,7 @@ def cmd_gate(args):
         raise SystemExit(why)
     weights = weights_file(size, man)
     wsha = NR.file_sha(weights)
+    runs = stage_b_runs(T.require_truth(m))
     excl, tn, z, _ = T._dev_context()
     dev = T.dev_windows(z, excl, tn["items"])
     items = [w["item"] for w in dev]
@@ -1166,20 +1205,22 @@ def cmd_gate(args):
         _, inp, _ = T.window_audio(T.goat_audio(z, w["item"]), w["start_s"])
         ins.append((inp, f"goat-dev:{w['item']}"))
     work = gate_work(size)
-    repeat, secs, dtypes = {}, {}, {}
+    repeat, secs, loads, dtypes = {}, {}, {}, {}
     for d in TR.DEVICES:
-        t0 = time.perf_counter()
         a = run_ms([j for j in ins for _ in (0, 1)], work / d / "one-process", weights, d, MS_SETTINGS,
                    dev_items=items)
-        secs[d] = (time.perf_counter() - t0) / (2 * len(ins))
         b = run_ms(ins, work / d / "fresh", weights, d, MS_SETTINGS, dev_items=items)
+        secs[d] = transcription_seconds(a + b)
+        loads[d] = [a[0]["load_s"], b[0]["load_s"]]
         repeat[d] = dict(zip([w["item"] for w in wins], repeat_table(a, b, len(wins))))
         dtypes[d] = a[0]["dtype"]
     device = device_choice(repeat)
-    proj = projection_s(secs, repeat)
+    projections = projections_s(secs, runs)
+    proj = projection_s(projections, device)
     rule = size_choice(proj) if size == "medium" else "small"
-    body = {"size": size, "weights_sha256": wsha, "repeat": repeat, "seconds_per_window": secs, "dtype": dtypes,
-            "device": device, "projection_s": proj, "size_rule": rule, "lists_written": False,
+    body = {"size": size, "weights_sha256": wsha, "repeat": repeat, "seconds_per_window": secs, "load_s": loads,
+            "dtype": dtypes, "device": device, "stage_b_runs": runs, "projections_s": projections,
+            "projection_s": proj, "size_rule": rule, "lists_written": False,
             "manifest_sha256": NR.file_sha(MANIFEST), "lock_sha256": man["lock_sha256"]}
     if device is not None and rule == size:
         bank = NR.Bank(NR.load_notes_doc(), excl=excl)
@@ -1199,13 +1240,15 @@ def cmd_gate(args):
     if device is None:
         msg = "STOP: the notes repeat on neither MPS nor the CPU (stop rule 2)"
     elif rule != size:
-        msg = (f"STOP: projected {proj / 3600:.2f} h for stage b on the faster repeatable device; the size rule calls "
-               f"for small (no list notes written): the user accepts and downloads muscriptor-small, then "
-               f"`gate --size small`")
+        msg = (f"STOP: projected {proj / 3600:.2f} h for stage b's {runs} runs on {device}; the size rule calls "
+               f"for small (no list notes written): the user accepts muscriptor-small's own gated terms and downloads "
+               f"it, then `gate --size small`")
     else:
-        msg = (f"PASS on {device} ({size}); projected {proj / 3600:.2f} h; list notes listing sha256 "
-               f"{body['list_notes_listing_sha256']}")
-    print(f"GATE {msg}; repeat {repeat}; {json.dumps({d: round(s, 2) for d, s in secs.items()})} s a window; "
+        msg = (f"PASS on {device} ({size}); projected {proj / 3600:.2f} h for stage b's {runs} runs; list notes "
+               f"listing sha256 {body['list_notes_listing_sha256']}")
+    print(f"GATE {msg}; repeat {repeat}; transcription {json.dumps({d: round(s, 2) for d, s in secs.items()})} s a "
+          f"window, model load {json.dumps(loads)} s; projections "
+          f"{json.dumps({d: round(v / 3600, 2) for d, v in projections.items()})} h; "
           f"sha256 {NR.file_sha(gate_path(size))}")
 
 
@@ -1440,13 +1483,13 @@ def cmd_read(_args):
                          timing={"tx-bp": rb, "tx-ms": rm, "tx-ms-free": rf})
         row["checks"] = goat_checks(notes, di, bank, a, offset, round_trip, SB.measure)
         goat.append(row)
-    body = {"lists_rows": len(lists["rows"]), "real": real, "goat": goat,
+    body = {"lists_rows": len(lists["rows"]), "real": real, "goat": goat, "audio_levels": AUDIO_LEVELS,
             **summarise_read(lists["rows"], real, goat), "detector_offset_s": offset,
             "lists_sha256": NR.file_sha(lists_path()), "truth_report_sha256": NR.file_sha(T.truth_report_path()),
             "notes_listing_sha256": sha, "device": inst["device"], "size": inst["size"]}
     NR.write_once(read_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}",
                                 "made": time.strftime("%Y-%m-%d %H:%M:%S"), "body": body})
-    print(f"READ {body['code']} {body['flags']}: recommendation: {body['recommendation']['text']}; "
+    print(f"READ {body['code']} {body['flags']}: recommendation: {body['recommendation']['text']}; {AUDIO_LEVELS}; "
           f"sha256 {NR.file_sha(read_path())}")
 
 

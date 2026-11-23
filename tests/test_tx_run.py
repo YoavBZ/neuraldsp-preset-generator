@@ -36,7 +36,7 @@ def test_the_module_level_is_the_standard_library():
     tree = ast.parse((REPO / "learn" / "tx_run.py").read_text())
     top = {a.name.split(".")[0] for n in tree.body if isinstance(n, ast.Import) for a in n.names}
     top |= {n.module.split(".")[0] for n in tree.body if isinstance(n, ast.ImportFrom)}
-    assert top <= {"hashlib", "json", "os", "sys"}
+    assert top <= {"hashlib", "json", "os", "sys", "time"}
     r = subprocess.run([sys.executable, "-c", "import sys; sys.modules['numpy'] = None; import learn.tx_run, "
                         "learn.note_tx; print(sorted(m for m in ('torch', 'muscriptor', 'numpy', 'soundfile') "
                         "if sys.modules.get(m) is not None))"], capture_output=True, text=True, cwd=REPO)

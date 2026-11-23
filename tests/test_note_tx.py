@@ -54,7 +54,7 @@ def test_the_declared_settings():
     assert X.MS_SETTINGS["use_sampling"] is False and X.MS_SETTINGS["cfg_coef"] == 1.0
     assert X.MS_SETTINGS["batch_size"] == X.MS_SETTINGS["beam_size"] == 1 and X.MS_SETTINGS["prelude_forcing"]
     assert X.DEVICE_DTYPE == {"mps": "float16", "cpu": "float32"} and R.THREADS == 4
-    assert X.REPEAT_WINDOWS == 4 and X.STAGE_B_WINDOWS == 265 == 238 + 27 and X.SIZE_SWITCH_S == 7200.0
+    assert X.REPEAT_WINDOWS == 4 and X.DEV_RUNS == 54 == 2 * 27 and X.SIZE_SWITCH_S == 7200.0
     assert (X.PAIR_ONSET_S, X.END_SHARE, X.END_MIN_S) == (0.050, 0.20, 0.050) and X.VETO_INTERVALS == (12, 19, 24)
     assert X.RECALL_GUARD == 0.05 and X.CHECK_SLACK == 1 and X.UNPAIRED_LOOKUP == 0.05
     assert X.GUARDED_CHECKS == ("playing-covered", "judge-accepts", "ring-kept", "chords-kept")
@@ -88,9 +88,10 @@ LISTING = {"files": [{"player": "P1", "kind": "chords", "name": "c1",
                       "di": "/x/elsewhere/directinput_s1.wav", "midi": "/x/elsewhere/midi_s1.mid"},
                      {"player": "P3", "kind": "music", "name": "m1",
                       "di": "/x/guitar-techs/P3_music/directinput_m1.wav", "midi": "/x/P3_music/m.mid"}],
-           "windows": [{"key": "P1|chords|c1@10", "player": "P1", "kind": "chords", "name": "c1"},
-                       {"key": "P2|scales|s1@10", "player": "P2", "kind": "scales", "name": "s1"},
-                       {"key": "P3|music|m1@10", "player": "P3", "kind": "music", "name": "m1"}]}
+           "windows": [{"key": "P1|chords|c1@10", "player": "P1", "kind": "chords", "name": "c1", "consistent": True},
+                       {"key": "P1|chords|c1@70", "player": "P1", "kind": "chords", "name": "c1", "consistent": False},
+                       {"key": "P2|scales|s1@10", "player": "P2", "kind": "scales", "name": "s1", "consistent": True},
+                       {"key": "P3|music|m1@10", "player": "P3", "kind": "music", "name": "m1", "consistent": True}]}
 DEV = [f"item_{k}" for k in range(1, 28)]
 
 
@@ -105,6 +106,7 @@ def test_declared_input_passes_the_declared_material():
     ("list:chords-seven", "ten known lists"),
     ("truth:P1|chords|c9@10", "not a window"),
     ("truth:P3|music|m1@10", "P3"),                              # a P3 window is never read
+    ("truth:P1|chords|c1@70", "not a consistent window"),        # an inconsistent window of the listing
     ("truth:P2|scales|s1@10", "outside"),                        # its file sits outside the P1/P2 folders
     ("goat-dev:item_99", "27 development"),                      # a GOAT item outside the 27
     ("part:bks|unit-1", "not declared material"),                # a row part
@@ -238,8 +240,9 @@ def _row(cluster, figs, st="lists", group="lists", kind=None):
 
 
 def _fig(m, ref, est, me=None, chord=(0, 0)):
+    me = m if me is None else me
     return {"matched": m, "ref": ref, "est": est, "precision": m / est, "recall": m / ref, "f": 2 * m / (ref + est),
-            "end_matched": m if me is None else me, "end_f": 2 * (m if me is None else me) / (ref + est),
+            "end_matched": me, "end_f": 2 * me / (ref + est), "ends_right": me, "end_accuracy": me / m if m else None,
             "chord_notes": chord[1], "chord_found": chord[0], "chord_recall": chord[0] / chord[1] if chord[1] else None,
             "restruck_notes": 0, "restruck_found": 0, "extras": {"harmonic": est - m, "re-find": 0, "other": 0}}
 
@@ -282,7 +285,7 @@ def test_the_reading_rules():
 
 def _reading(p_l, f_l, e_l, held_l=True, p_r=None, f_r=None, e_r=None, held_r=True):
     def one(p, f, e, h):
-        return {"precision": p, "f": f, "end_f": e, "precision_raised": X.precision_raised(p),
+        return {"precision": p, "f": f, "end_f": e, "end_accuracy": e, "precision_raised": X.precision_raised(p),
                 "precision_not_better": X.precision_not_better(p), "f_not_worse": X.f_not_worse(f), "recall_held": h}
     out = {"lists": one(p_l, f_l, e_l, held_l)}
     if p_r is not None:
@@ -303,6 +306,25 @@ def test_the_screen():
     assert X.recommendation("TXR-none")["text"].startswith("stop") and "phase_tx_go_read" in X.recommendation(
         "lists-go")["text"]
 
+
+def test_fewer_extras_with_the_same_ends_never_read_as_better_ends():
+    """PR #553's review, Q2: note-end F falls with extra notes, so it is a report; "ends better" reads end accuracy."""
+    rows = []
+    for k in range(5):
+        bp = _fig(10, 10, 20 + k, me=7)                            # 7 of 10 ends right, many extras
+        vote = _fig(10, 10, 11, me=7)                              # the same 7 ends, the extras gone
+        better = _fig(10, 10, 20 + k, me=9)                        # the same extras, 9 of 10 ends right
+        rows.append(_row(f"l{k}", {"tx-bp": bp, "tx-vote": vote, "tx-ms": better}))
+    s = {"lists": X.set_summary(rows, "lists")}
+    d = s["lists"]["diff"]
+    assert d["tx-vote"]["end_f"]["lo90"] > 0 and d["tx-vote"]["end_accuracy"]["mean"] == 0  # end F up, ends the same
+    vote, ms = X.arm_reading(s, "tx-vote"), X.arm_reading(s, "tx-ms")
+    assert not vote["ends_better"] and ms["ends_better"]
+    nb = X.arm_reading({"lists": X.set_summary([dict(r, figures={"tx-bp": r["figures"]["tx-bp"],
+                                                                "tx-vote": r["figures"]["tx-bp"],
+                                                                "tx-ms": r["figures"]["tx-vote"]})
+                                                for r in rows], "lists")}, "tx-ms")
+    assert not nb["ends_better"]                                   # fewer extras alone: never TXR-ends
 
 def test_every_code_and_flag_is_reachable():
     win = _reading(UP, FLAT, FLAT, True, UP, FLAT, FLAT, True)
@@ -477,9 +499,17 @@ def test_the_device_and_size_rules():
     ok, bad = {"a": True, "b": True}, {"a": True, "b": False}
     assert X.device_choice({"mps": ok, "cpu": ok}) == "mps" and X.device_choice({"mps": bad, "cpu": ok}) == "cpu"
     assert X.device_choice({"mps": bad, "cpu": bad}) is None and X.device_choice({}) is None
-    assert X.projection_s({"mps": 20.0, "cpu": 30.0}, {"mps": ok, "cpu": ok}) == 20.0 * 265
-    assert X.projection_s({"mps": 20.0, "cpu": 30.0}, {"mps": bad, "cpu": ok}) == 30.0 * 265   # repeatable only
-    assert X.projection_s({"mps": 1.0}, {"mps": bad}) is None
+    listing = {"windows": [{"player": "P1", "consistent": True}] * 79 + [{"player": "P1", "consistent": False}] * 159
+               + [{"player": "P3", "consistent": True}] * 5}
+    runs = X.stage_b_runs(listing)
+    assert runs == 79 + 2 * 27                                   # the real count, not 265
+    recs = [{"seconds": 2.0, "load_s": 40.0}, {"seconds": 4.0, "load_s": 40.0}]
+    assert X.transcription_seconds(recs) == 3.0 and X.transcription_seconds([]) is None   # the load left out
+    pr = X.projections_s({"mps": 20.0, "cpu": 30.0}, runs)
+    assert pr == {"mps": 20.0 * 133, "cpu": 30.0 * 133}           # both recorded and printed
+    assert X.projection_s(pr, "cpu") == 30.0 * 133 and X.projection_s(pr, "mps") == 20.0 * 133   # the chosen one
+    assert X.projection_s(pr, None) is None
+    assert X.size_choice(X.projection_s(pr, "mps")) == "medium"  # at a made-up 20 s: 44 min on 133 runs, not 88 on 265
     assert X.size_choice(7200.0) == "medium" and X.size_choice(7200.1) == "small" and X.size_choice(None) == "medium"
     one = [{"notes": [1]}, {"notes": [1]}, {"notes": [2]}, {"notes": [2]}]
     assert X.repeat_table(one, [{"notes": [1]}, {"notes": [3]}], 2) == [True, False]
@@ -554,7 +584,7 @@ NEEDS = {"install": (X.PHASE_GO,), "gate": (X.PHASE_GO,), "lists": (X.PHASE_GO, 
          "transcribe": (X.PHASE_GO, X.PHASE_INSTALL, X.PHASE_LISTS, X.PHASE_GO_READ),
          "read": (X.PHASE_GO, X.PHASE_INSTALL, X.PHASE_LISTS, X.PHASE_GO_READ, X.PHASE_NOTES),
          "bridge": (X.PHASE_GO, X.PHASE_INSTALL, X.PHASE_LISTS, X.PHASE_GO_READ, X.PHASE_NOTES, X.PHASE_READ)}
-NEEDS_NR = {"transcribe": (T.PHASE_TRUTH,), "read": (T.PHASE_TRUTH,), "bridge": (T.PHASE_TRUTH, T.PHASE_VERSIONS)}
+NEEDS_NR = {"gate": (T.PHASE_TRUTH,), "transcribe": (T.PHASE_TRUTH,), "read": (T.PHASE_TRUTH,), "bridge": (T.PHASE_TRUTH, T.PHASE_VERSIONS)}
 
 
 @pytest.mark.parametrize("cmd,missing", [(c, k) for c, ks in NEEDS.items() for k in (X.PHASE,) + ks]
@@ -580,7 +610,8 @@ def test_stage_b_refuses_after_txr_none_and_the_bridge_without_a_bridge_code(mon
 
 
 def test_the_small_gate_runs_only_after_the_size_switch(monkeypatch, tmp_path):
-    monkeypatch.setattr(X, "tx_on_main", lambda: ({"note-transcriber": {X.PHASE: 1, X.PHASE_GO: 1}}, None))
+    monkeypatch.setattr(X, "tx_on_main", lambda: ({"note-transcriber": {X.PHASE: 1, X.PHASE_GO: 1},
+                                                   "note-rebuild": {T.PHASE_TRUTH: {}}}, None))
     monkeypatch.setattr(X, "MANIFEST", tmp_path / "manifest.json")
     monkeypatch.setattr(X, "OUT", tmp_path / "tx")
     (tmp_path / "manifest.json").write_text("{}")
@@ -612,6 +643,13 @@ def test_the_stored_list_events_give_the_plans_counts():
     assert p["end_matched"] == 216 and figs["let-ring-arpeggio"]["matched"] - figs["let-ring-arpeggio"][
         "end_matched"] == 19
     assert p["restruck_notes"] == 4                                       # underpowered: a report only
+    assert p["ends_right"] == 216 and p["end_accuracy"] == pytest.approx(216 / 259)
+    # Q2: with only the extras removed (every end the same), note-end F rises from 0.626 to 0.834; end accuracy does not
+    hand = {nm: X.window_figures([dict(n) for n in T.KNOWN_NOTES[nm]], [T.clean_transcribed(T.notes_from_events(ev))[0][j]
+                                 for _, j in X.pair_notes(T.KNOWN_NOTES[nm], T.clean_transcribed(
+                                     T.notes_from_events(ev))[0])]) for nm, ev in known.items()}
+    q = X.pooled(list(hand.values()))
+    assert round(p["end_f"], 3) == 0.626 and round(q["end_f"], 3) == 0.834 and q["end_accuracy"] == p["end_accuracy"]
     stored = json.loads(T.gate_path().read_text())["body"]["known"] if T.gate_path().exists() else None
     if stored is not None:
         assert X.gate_list_refusal(stored, X.gate_figures(known)) is None

@@ -180,8 +180,10 @@ refused. A later declaration can widen the list only after the user's yes.
   subset of Basic Pitch's notes, so its precision rises almost by construction; this line stops a gain that was
   bought with lost notes (precision 0.61 with recall 0.95 is F 0.743, under Basic Pitch's 0.751). It is a direction,
   not a threshold.
-- *Ends better:* note-end F clear of zero above `tx-bp` on the lists, and not decided worse on the real DIs (the
-  pickup tracker's note-offs are the weaker truth).
+- *Ends better:* end accuracy (of the notes each arm pairs, the share whose end is right) clear of zero above
+  `tx-bp` on the lists, and not decided worse on the real DIs (the pickup tracker's note-offs are the weaker truth).
+  Changed after PR #553's review from note-end F, which falls with extra notes; note-end F stays a report (section 11,
+  "Changed after the PR review").
 
 *Stage a (the lists alone):*
 
@@ -404,9 +406,10 @@ transcription, if MPS is the device.
 | Disk | 53 GB free against the 31 GB guard | — | `df`, 2026-11-22 |
 
 **To measure first, in this order:** (1) does the minimal install resolve and import on 3.14.6; (2) seconds per
-window, medium, MPS and CPU; (3) do the notes repeat on each. The gate prints the projected time for stage b's 265
-windows. Over 2 hours on the faster repeatable device switches every MuScriptor arm, `tx-ms-free` included, to the
-small model (411,888,600 bytes). **The size is decided before any list is transcribed:** on a switch the gate stops
+window, medium, MPS and CPU; (3) do the notes repeat on each. The gate prints the projected time for stage b's real
+run count (the listing's consistent windows plus 2 × 27) on both devices, transcription only. Over 2 hours on the
+device the rule chose switches every MuScriptor arm, `tx-ms-free` included, to the small model (411,888,600 bytes).
+(Changed after PR #553's review; section 11.) **The size is decided before any list is transcribed:** on a switch the gate stops
 with no list notes written, the user accepts and downloads the small model (its own gated page), the gate's repeat
 and speed tests run again on it, and only then are the lists transcribed. So the hash PR never carries notes from a
 model that was dropped, and no accuracy number exists when the size is chosen.
@@ -472,10 +475,16 @@ The plan left the details below open. Each is now in code and held by a test.
   `note_truth.refuse_path`;
 - `goat-dev:<item>`, one of the 27 development windows (`note_transcribe.dev_windows`, clear of the exclusion list).
 
-Everything else is refused. `run_ms` checks every source before it writes a file. It then writes the manifest (each
+A truth window must also be consistent, as every caller reads only consistent windows. Everything else is refused.
+`run_ms` checks every source before it writes a file. It then writes the manifest (each
 input's sha256 and source) beside the inputs. `tx_run` refuses a manifest that names any other kind of source, and any
 input whose sha256 is not in it, before the model loads. The tests cover a row part, a replay part, a stem, a song, a
-P3 window, a path outside the P1 and P2 folders, a GOAT item outside the 27, and a bare path.
+P3 window, an inconsistent window, a path outside the P1 and P2 folders, a GOAT item outside the 27, and a bare path.
+
+**`declared_input` is the real guard.** `tx_run` trusts the manifest's labels. It checks that every input's sha256 is
+listed and that every label names a declared kind, but it cannot tell what audio a label stands for. A hand-written
+manifest could label any file `list:x`. So only manifests written by `run_ms`, after `declared_input`, may ever be
+passed to the runner; nothing else in the repo writes one.
 
 **The runner.** `tx_run` reads MuScriptor's events (`NoteStartEvent`: pitch, start time, index, instrument;
 `NoteEndEvent`: its start event and end time) and pairs them by the start's index. A start with no end ends at the
@@ -497,7 +506,8 @@ events Basic Pitch has 216 of 259 ends right, 19 of the 43 misses on `let-ring-a
 **Which notes and ends each arm is read with.**
 - `tx-vote` and `tx-veto` are read with Basic Pitch's own note-offs. `tx-vote` carries MuScriptor's beside, for
   `bv-ends`.
-- "Ends better", and so `TXR-ends`, reads `tx-ms`'s own note-end F against `tx-bp`'s.
+- "Ends better", and so `TXR-ends`, reads `tx-ms`'s own end accuracy against `tx-bp`'s (see "Changed after the PR
+  review" below).
 - The pitch struck again while it rings: 4 list notes, a report only.
 
 **The sets.**
@@ -512,7 +522,8 @@ events Basic Pitch has 216 of 259 ends right, 19 of the 43 misses on `let-ring-a
 **The builds on the 27 windows.** `tr-di` is built by `note_rebuild.rebuild_redo` with levels as today (no loudness
 weighting; the bridge carries loudness). It is finished by `song_bank.measure`, as `calibrate` finishes its
 development windows. Basic Pitch's round trip (for `chords-kept`) runs on the deciding ring only, so 108 round trips
-as costed.
+as costed. The read's results must say that its audio checks are at today's levels: `read.json` carries the sentence
+(`AUDIO_LEVELS`), and the results PR repeats it.
 
 **Borrowed loudness.** An unpaired `tx-ms` note gets the median of the window's Basic Pitch amplitudes. With no Basic
 Pitch note in the window it gets none, so `note_weights` counts it as 1.
@@ -523,10 +534,10 @@ they are Basic Pitch's own bent notes, by `bend_curve`. Per arm the figures are:
 - the mean share of each one's span still carrying a bend track in the kept note (0 where dropped).
 
 **The gate.**
-- Seconds per window come from the one-process run (each window twice, model load included), as Basic Pitch's gate
-  counts them.
-- The device is MPS if its three runs repeat on all four windows, else the CPU. The projection is read on the faster
-  repeatable device, as written, even when the device rule picks MPS.
+- Seconds per window are transcription only: the mean of tx_run's per-input seconds over all three runs. The model
+  load is timed apart (`load_s`) and recorded.
+- The device is MPS if its three runs repeat on all four windows, else the CPU. Both devices' projections are recorded
+  and printed; the size rule reads the chosen device's.
 - A switch to small writes `gate-medium.json` with no list notes and stops. `gate --size small` refuses unless that
   file called for small. It checks the small weights against their declared size and sha256, then repeats the repeat
   and speed tests. On small the lists are transcribed whatever its projection, since no smaller model is declared.
@@ -570,6 +581,30 @@ they are Basic Pitch's own bent notes, by `bend_curve`. Per arm the figures are:
 
 **NOTICE.md** credits MuScriptor: code MIT, weights CC BY-NC 4.0, Kyutai and Mirelo; a development tool, never
 shipped.
+
+### Changed after the PR review (PR #553, 2026-11-23; nothing had run)
+
+**Q1. The projection.** It was seconds per window times a fixed 265, with the process start and the 1.2 GB model load
+in the seconds. Both push towards the two-hour switch to small, a quality cut made before any accuracy number exists.
+Now:
+- `tx_run` records the model's load seconds and each input's transcription seconds apart;
+- the gate reads transcription seconds only (`transcription_seconds`);
+- the count is stage b's real one (`stage_b_runs`): the listing's consistent windows plus the 27 development windows
+  twice. On main's listing that is 79 + 54 = 133 runs, not 265;
+- both devices' projections are recorded and printed, and the rule reads the chosen device's. This replaces "the
+  faster repeatable device" (departure 6).
+
+**Q2. "Ends better".** Note-end F (2 × ends right / (true + found)) falls when extra notes are found, so it carries
+precision. On the stored list events Basic Pitch reads 0.626; with only its extras removed, every end the same, it
+reads 0.834. An arm with fewer extras would have read "ends better", and could have set `TXR-ends`. Now:
+- "ends better", the screen's "ends not better", `TXR-ends` and the `ends_better` flag all read **end accuracy**:
+  of each arm's onset pairs, the share whose end is right (`ends_right / matched`), paired per window against `tx-bp`;
+- note-end F stays a report;
+- a test holds that fewer extras with the same ends never read as better ends, and that better ends do. On the stored
+  events end accuracy is 216 / 259 with or without the extras.
+
+**Nits.** `declared_input` now refuses an inconsistent truth window. The doc says plainly that it is the real guard
+(above). The read carries the sentence that its audio checks are at today's levels.
 
 ## 12. The user's go (2026-11-23; ledger `phase_tx_go`)
 
