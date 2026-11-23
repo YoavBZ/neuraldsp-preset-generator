@@ -68,6 +68,8 @@ PHASE_GO_CLIPS = "phase_nr_1_redo_go_clips"     # ... when a rejected clip is ca
 PHASE_GO_VERSIONS = "phase_nr_1_redo_go_versions"   # ... the user's decision after a code other than NV-loud
 PHASE_GO_LADDER = "phase_nr_1_redo_go_ladder"     # ... the user's go after the instrument check failed a list
                                                 #     (2026-11-23; bound to that ghost-ladder.json by its sha256)
+PHASE_GO_HUM = "phase_nr_1_redo_go_hum"           # ... the user's go after the hum guard stopped the truth report
+                                                #     (2026-11-23; bound to that truth-report.json by its sha256)
 
 REDO = NR.OUT / "redo"                   # PF/note-rebuild/redo/
 STAGE1 = NR.OUT / "stage1"
@@ -459,7 +461,7 @@ def ladder_refusal(ladder, nr_main, ladder_sha):
     if ladder["go"]:
         return None, ladder["real_reported_only"]
     go = (nr_main or {}).get(PHASE_GO_LADDER)
-    if not isinstance(go, dict) or go.get("ladder_sha256") != ladder_sha:
+    if not isinstance(go, dict) or go.get("go") is not True or go.get("ladder_sha256") != ladder_sha:
         return ("the instrument check failed on a list: nothing is read with that distance (to the user, "
                 f"{PHASE_GO_LADDER})"), None
     return None, True
@@ -781,13 +783,27 @@ def require_attacks():
     return json.loads(attacks_path().read_text())["body"]
 
 
-def require_truth_report():
-    """The truth report (`truth-report`), refused when its hum guard stopped it."""
+def truth_report_refusal(body, nr_main, report_sha):
+    """(Pure.) Why the truth report may not be used, or None: refused when its hum guard stopped it, unless main holds
+    the user's go (`PHASE_GO_HUM`, its `go` true, naming this truth-report.json's sha256; 2026-11-23: the stopping
+    notes were chords ringing in from before each window, not hum). The guard's rule itself is unchanged."""
+    if not body.get("stopped"):
+        return None
+    go = (nr_main or {}).get(PHASE_GO_HUM)
+    if not isinstance(go, dict) or go.get("go") is not True or go.get("truth_report_sha256") != report_sha:
+        return f"the truth report stopped on its hum guard ({body['stopped']}): to the user ({PHASE_GO_HUM})"
+    return None
+
+
+def require_truth_report(nr_main=None):
+    """The truth report (`truth-report`), refused when its hum guard stopped it without the user's go on main
+    (`truth_report_refusal`)."""
     if not truth_report_path().exists():
         raise SystemExit("no truth report (run `truth-report` first)")
     body = json.loads(truth_report_path().read_text())["body"]
-    if body.get("stopped"):
-        raise SystemExit(f"the truth report stopped on its hum guard ({body['stopped']})")
+    why = truth_report_refusal(body, nr_main, NR.file_sha(truth_report_path()))
+    if why:
+        raise SystemExit(why)
     return body
 
 
@@ -1550,8 +1566,8 @@ def cmd_transcribe(_args):
     m = require_redo(PHASE_CALIB, PHASE_TRUTH)
     _, cal = require_install_facts()
     pair = install_pair(load_manifest())
-    why = ledger_pair_refusal(m.get(LEDGER_ID), pair) or chords_go_refusal(p2_chord_recall(require_truth_report()),
-                                                                           m.get(LEDGER_ID))
+    report = require_truth_report(m.get(LEDGER_ID))
+    why = ledger_pair_refusal(m.get(LEDGER_ID), pair) or chords_go_refusal(p2_chord_recall(report), m.get(LEDGER_ID))
     if why:
         raise SystemExit(why)
     never_overwrite(transcribe_path())
@@ -2097,7 +2113,7 @@ def cmd_versions(_args):
     why, real_only = ladder_refusal(ladder, m.get(LEDGER_ID), NR.file_sha(ladder_path()))
     if why:
         raise SystemExit(why)
-    require_truth_report()
+    report = require_truth_report(m.get(LEDGER_ID))
     pair = install_pair(load_manifest())
     from learn import note_versions as NV
     from learn import song_bank as SB
@@ -2166,6 +2182,7 @@ def cmd_versions(_args):
             shares.setdefault(grp, {})[str(g)] = NV.pooled_share(v)      # pooled over the set's paired notes
     body = {"windows": windows, "read": read, "turned_down_shares": shares, "build_seconds": rate_s if timed >= 3
             else None, "real_reported_only": real_only, "ladder_by_user_go": not ladder["go"],
+            "truth_report_by_user_go": bool(report.get("stopped")),
             "ladder_sha256": NR.file_sha(ladder_path()), "truth_sha256": NR.file_sha(truth_path()),
             "truth_report_sha256": NR.file_sha(truth_report_path()), "gate_sha256": NR.file_sha(gate_path())}
     NR.write_once(versions_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_CALIB}",
