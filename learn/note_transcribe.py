@@ -390,13 +390,16 @@ def positive_failing(checks, controls=("avg+mild", "true")):
                    for k, v in (r.get("passes") or {}).items() if v is False and k in declared_blocking()})
 
 
-def positive_report_only(failing, nr_main):
+def positive_report_only(failing, nr_main, first_sha):
     """(Pure.) The calibration fix's rule (12m, 2026-11-23): a check the positive control fails becomes report-only
-    for the row only when main holds the user's go on that effect (`PHASE_GO_GUARD`, its `go` true, naming the check
-    in `report_only_checks`); otherwise it stays blocking (and its failure stops the calibration). -> (report-only
-    checks, checks the positive control fails that stay blocking)."""
+    for the row only when main holds the user's go on that effect (`PHASE_GO_GUARD`, its `go` true, its
+    `calibration_sha256` the first record's, `first_sha`, and naming the check in `report_only_checks`); otherwise it
+    stays blocking (and its failure stops the calibration). -> (report-only checks, checks the positive control fails
+    that stay blocking)."""
     go = (nr_main or {}).get(PHASE_GO_GUARD)
-    named = set(go.get("report_only_checks") or []) if isinstance(go, dict) and go.get("go") is True else set()
+    valid = (isinstance(go, dict) and go.get("go") is True and bool(first_sha)
+             and go.get("calibration_sha256") == first_sha)
+    named = set(go.get("report_only_checks") or []) if valid else set()
     return sorted(k for k in failing if k in named), sorted(k for k in failing if k not in named)
 
 
@@ -1561,7 +1564,7 @@ def cmd_calibrate(_args):
                     "chords-kept": chords_kept(got, notes_of[it])}
             checks.setdefault(d, {})[it] = {"figures": figs, **check_verdict(figs, AUDIO_CHECKS)}
     positive = {d: sorted(it for it, r in checks[d].items() if r["failed"]) for d in ("avg+mild", "true")}
-    report_only, still_blocking = positive_report_only(positive_failing(checks), m.get(LEDGER_ID))
+    report_only, still_blocking = positive_report_only(positive_failing(checks), m.get(LEDGER_ID), NR.file_sha(aside))
     blocking = effective_blocking({"report_only_checks": report_only}, m.get(LEDGER_ID))
     neg = negative_control(expected, bank, z, meta, excl, offset, work)
     results = {c: r["passes"] for c, r in neg.items()}

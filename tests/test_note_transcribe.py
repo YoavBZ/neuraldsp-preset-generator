@@ -261,14 +261,19 @@ def test_the_positive_controls_rule_and_the_blocking_set():
     assert T.positive_failing(checks) == ["chords-kept", "ring-kept"]
     assert T.positive_failing({"true": {"w": {"passes": {"onsets-found": False}}}}) == []        # already a report
     failing = ["chords-kept", "ring-kept"]
-    assert T.positive_report_only(failing, {}) == ([], failing)                  # no go: they stay blocking
-    named = {"go": True, "report_only_checks": ["chords-kept", "judge-accepts", "ring-kept"]}
-    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: named}) == (failing, [])
-    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: {**named, "go": False}}) == ([], failing)
-    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: {"go": True}}) == ([], failing)
-    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: "yes"}) == ([], failing)
-    part = {"go": True, "report_only_checks": ["ring-kept"]}                  # a check the go does not name
-    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: part}) == (["ring-kept"], ["chords-kept"])
+    assert T.positive_report_only(failing, {}, "s") == ([], failing)             # no go: they stay blocking
+    named = {"go": True, "calibration_sha256": "s", "report_only_checks": ["chords-kept", "judge-accepts", "ring-kept"]}
+    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: named}, "s") == (failing, [])
+    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: {**named, "go": False}}, "s") == ([], failing)
+    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: {"go": True, "calibration_sha256": "s"}}, "s") == \
+        ([], failing)
+    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: "yes"}, "s") == ([], failing)
+    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: named}, "other") == ([], failing)   # another first run
+    nosha = {k: v for k, v in named.items() if k != "calibration_sha256"}
+    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: nosha}, "s") == ([], failing)
+    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: nosha}, None) == ([], failing)      # no sha binds nothing
+    part = {"go": True, "calibration_sha256": "s", "report_only_checks": ["ring-kept"]}   # a check the go does not name
+    assert T.positive_report_only(failing, {T.PHASE_GO_GUARD: part}, "s") == (["ring-kept"], ["chords-kept"])
     full = T.declared_blocking()
     assert full == {"playing-covered", "judge-accepts", "ring-kept", "chords-kept"}
     assert T.effective_blocking(None, {}) == full
@@ -291,8 +296,9 @@ def test_with_no_blocking_check_the_six_clips_are_caught_by_a_report_only():
     failing what its line names (as on the first run), is caught by a report only (not by no check)."""
     e = T.entries((REPO / "docs" / "dev-test-ledger.json").read_text())["note-rebuild"]
     failing = ["chords-kept", "judge-accepts", "ring-kept"]                    # the first run's positive failures
-    report_only, still = T.positive_report_only(failing, e)
+    report_only, still = T.positive_report_only(failing, e, e[T.PHASE_GO_CALIB]["calibration_sha256"])
     assert report_only == failing and still == []
+    assert e[T.PHASE_GO_GUARD]["calibration_sha256"] == e[T.PHASE_GO_CALIB]["calibration_sha256"]
     blocking = T.effective_blocking({"report_only_checks": report_only}, e)
     assert blocking == set()
     table = T.ear_old_table(e)
