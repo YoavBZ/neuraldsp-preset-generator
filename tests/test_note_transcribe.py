@@ -364,6 +364,9 @@ def test_the_two_triggers_and_the_versions_loudness():
     assert T.flags_go_refusal(["a", "b"], {}) is None
     assert "3 of the 40" in T.flags_go_refusal(["a", "b", "c"], {})
     assert T.flags_go_refusal(["a", "b", "c"], {T.PHASE_GO_FLAGS: {}}) is None
+    assert T.flags_note(["a", "b"], {}) == ""                                     # under the trigger
+    assert T.flags_note(["a", "b", "c"], {}) == " (TO THE USER before any build)"
+    assert T.flags_note(["a", "b", "c"], {T.PHASE_GO_FLAGS: {}}) == f" (reported: the user's go {T.PHASE_GO_FLAGS})"
     parts = {"a": {"figures": {"onsets-found": {"flag": True}}}, "b": {"figures": {"onsets-found": {"flag": False}}},
              "p": {"figures": {"onsets-found": {"flag": True}}}}
     assert T.flagged_parts(parts, {"a": "goat", "b": "bks", "p": "panel"}) == (["a"], ["p"])
@@ -513,9 +516,14 @@ def test_the_ledger_holds_the_declarations():
     assert truth["sha256"].startswith("3056dcbc") and truth["file"] == "PF/note-rebuild/redo/truth.json"
     for later in (T.PHASE_GO_CHORDS, T.PHASE_GO_CLIPS):
         assert later not in e["note-rebuild"]
-    for later in (T.PHASE_INSTALL, T.PHASE_NOTES, T.PHASE_EAR):
-        assert later not in e["note-rebuild"]                  # each comes with its own PR
-    assert T.PHASE_DRY not in e["preset-ladder"]
+    assert T.PHASE_EAR not in e["note-rebuild"]                # the ear verdict comes with its own PR
+    # step 7's hash PR (2026-11-23): the install's facts, the transcription and the build, each bound by sha256
+    inst, notes, dry = e["note-rebuild"][T.PHASE_INSTALL], e["note-rebuild"][T.PHASE_NOTES], e["preset-ladder"][T.PHASE_DRY]
+    assert T.install_record_refusal(inst, inst["gate_sha256"], inst["calibration_sha256"],
+                                    (inst["lock_sha256"], inst["model_sha256"])) is None
+    assert inst["calibration_sha256"].startswith("3ca85566") and inst["gate_sha256"].startswith("23251597")
+    assert notes["sha256"].startswith("cbd1f4fb") and dry["sha256"].startswith("46e485a2")
+    assert dry["transcribe_sha256"] == notes["sha256"]
 
 
 def test_the_ladder_refusal_and_the_users_go():

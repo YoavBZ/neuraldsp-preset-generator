@@ -1180,3 +1180,26 @@ all caught by a blocking check.
 - **Code:** `kind_figures`, `ear_kinds_of`, `nearest_fill`, `choose_ear_kinds` beside `pick_ear_items` (which stays
   pure and unchanged) and `annotated_notes`. `transcribe` writes the chosen items, sources and figures to
   `ear-items.json` and `transcribe.json` (`ear_kinds`).
+
+### 12o. Steps 5 to 7 run: the transcription, the build and its hash (2026-11-23; ledger `phase_nr_1_redo_install`, `phase_nr_1_redo_notes`, `preset-ladder` `phase_scratch_notes_dry`)
+
+Run once each from main at e21cae26 in a frozen worktree, zero renders, after the calibration's rerun passed
+(`calibration.json` `3ca85566…dfe1`).
+- **`transcribe`** (115 s): 47 parts and 8 ear items. The P2 chord recall is re-read and passes (0.955). With no
+  blocking content check, no part is refused. Reported only:
+  - `onsets-found` flags 31 of the 40 deciding parts and 4 of the panel (the user's go `_go_flags`);
+  - `playing-covered` holds on 15 of 47 parts (median playing share 0.92).
+  The ear items are as amended in 12n: `item_77`, `item_49`, `item_39` and `item_5` (nearest, not filled), beside the
+  4 old ones.
+- **`build`** (268 s): `tr-di` (deciding) and `tr-plain` (beside) for every part and ear item, `ring-soft`, no
+  loudness. Refused: none. Reported failures on `tr-di`, of 47 parts: `chords-kept` 47, `onsets-found` 35,
+  `playing-covered` 32, `ring-kept` 29, `judge-accepts` 24. On the 8 ear items: 8, 8, 6, 5 and 4. The listening page
+  is the guard.
+- **`stem-preview`** (beside; gates nothing): Basic Pitch's note F on the `xlnoG` stems against the DI's notes, BKS
+  0.61, GOAT 0.64, panel 0.57.
+- **The hash PR** holds the install's facts (the lock, the model, the gate, the calibration, the detector's and the
+  truth report's and the versions read's sha256), the transcription record and the build.
+- **The clip fault:** the dry guitars' DIs pass through `song_bank.measure`, whose ±15 dB EQ clip track 4 found. Its
+  clip-free re-score is reported beside this row under track 4's declaration; it is not run here.
+
+Next: `clips` and the 13-card page (52 renders); the user listens before the row's search.
