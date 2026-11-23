@@ -873,15 +873,49 @@ def test_the_stored_list_events_give_the_plans_counts():
         assert X.gate_list_refusal(stored, X.gate_figures(known)) is None
 
 
-def test_the_read_and_the_bridge_drop_the_ruled_out_di():
-    """12p (2026-11-24): stage b's note files keep all 27 windows; the read and the bridge use 26 (item_5 out for every
-    arm, on both sides), refuse until 12p's key is on main, and the check slack stays one window."""
-    import inspect
-
+def test_the_read_and_the_bridge_drop_the_ruled_out_di(monkeypatch, tmp_path):
+    """12p, behavioural: stage b's note files keep all 27 windows (DEV_RUNS 54, the slack one window); `read` reads
+    GOAT's audio first for item_10, never item_5; the bridge builds versions.json's GOAT windows without item_5."""
+    pytest.importorskip("numpy")
     assert X.DEV_RUNS == 54 and X.CHECK_SLACK == 1
-    for fn in (X.cmd_read, X.cmd_bridge):
-        src = inspect.getsource(fn)
-        assert "T.PHASE_ITEM5_OUT" in src
-    assert "T.read_dev_windows(dev)" in inspect.getsource(X.cmd_read)
-    assert "T.read_version_windows(versions[\"windows\"])" in inspect.getsource(X.cmd_bridge)
-    assert "bridge_body(vwindows," in inspect.getsource(X.cmd_bridge)
+    wins = [{"item": f"item_{k}", "start_s": 1.0} for k in [5] + list(range(10, 36))]
+
+    class First(Exception):
+        pass
+
+    def first(z, item):
+        raise First(item)
+    m = {"note-transcriber": {}, "note-rebuild": {}}
+    for name, val in (("require_tx", lambda *a, **k: m), ("require_install", lambda *a: {"device": "cpu", "size": "large"}),
+                      ("picked_size", lambda *a: "large"), ("notes_listing", lambda *a: ({}, "S")),
+                      ("never_overwrite", lambda *a: None), ("lists_path", lambda: tmp_path / "lists.json"),
+                      ("stage_b_context", lambda m: ({}, {"windows": [], "goat": {}}, None, list(wins), [])),
+                      ("truth_report_refusal", lambda *a: None), ("read_bridge_refusal", lambda rd: None),
+                      ("gate_known", lambda: {"a": []}), ("reproduce_refusal", lambda *a: None)):
+        monkeypatch.setattr(X, name, val)
+    m["note-transcriber"][X.PHASE_NOTES] = {"listing_sha256": "S"}
+    m["note-transcriber"][X.PHASE_READ] = {"code": "TXR-vote"}
+    m["note-rebuild"][T.PHASE_VERSIONS] = {"sha256": "V", "code": "NV-none"}
+    versions = {"windows": [{"set": "goat", "key": "item_5"}, {"set": "goat", "key": "item_14"}]}
+    monkeypatch.setattr(T, "require_file_hash", lambda e, ph, p: {"body": versions if ph == T.PHASE_VERSIONS
+                                                                  else {"rows": []}})
+    for name, val in (("goat_audio", first), ("install_pair", lambda *a: ("L", "M")), ("load_manifest", lambda: {}),
+                      ("usable_windows", lambda *a: []), ("TruthAudio", lambda listing: None),
+                      ("require_attacks", lambda: {"offset_s": 0.0}), ("versions_loud", lambda m: (None, None)),
+                      ("known_audio", lambda nm, bank: [0.0]), ("timed_notes", lambda *a: ([], {})),
+                      ("KNOWN_NOTES", {"a": []})):
+        monkeypatch.setattr(T, name, val)
+    monkeypatch.setattr(X.NR, "Bank", lambda *a, **k: None)
+    monkeypatch.setattr(X.NR, "load_notes_doc", lambda: None)
+    monkeypatch.setattr(X.NR, "rebuild_redo", lambda *a, **k: ([0.0], {}))
+    monkeypatch.setattr(X.NV, "floored_logmel", lambda *a: 0.0)
+    from learn import note_attacks as NA
+    from learn import song_bank as SB
+    monkeypatch.setattr(NA, "run_attacks", lambda jobs, work: [[] for _ in jobs])
+    monkeypatch.setattr(SB, "measure", lambda y: y)
+    with pytest.raises(First) as got:
+        X.cmd_read(None)
+    assert str(got.value) == "item_10"
+    with pytest.raises(First) as got:
+        X.cmd_bridge(None)
+    assert str(got.value) == "item_14"

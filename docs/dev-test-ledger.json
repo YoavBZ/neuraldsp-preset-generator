@@ -5160,7 +5160,7 @@
      "note_tx.RECALL_GUARD and the list and real-DI bars": "shares, and not on the development windows: unchanged"
     },
     "code": {
-     "note_transcribe": "RULED_OUT, DEV_READ_COUNT (26), CALIBRATION_FAIL_ALLOWED (2), ruled_out_items, ruled_out_refusal, read_dev_windows, read_version_windows; row_parts refuses a draw holding a ruled-out item; the ear pool drops it",
+     "note_transcribe": "RULED_OUT, DEV_READ_COUNT (26), CALIBRATION_FAIL_ALLOWED (2), ruled_out_items, ruled_out_refusal, read_dev_windows, read_version_windows; row_parts refuses a draw holding a ruled-out item; the ear pool drops it; install-gate, calibrate (need DEV_READ_COUNT - CALIBRATION_FAIL_ALLOWED = 24), truth-report and versions read the development windows through read_dev_windows, so a rerun of any of them leaves item_5 out (behavioural tests on made-up windows)",
      "scratch_notes": "notes_draw: fs-notes's draw refused when it holds a ruled-out item (it holds none)",
      "note_tx": "read uses read_dev_windows (item_5's GOAT rows out for every arm); the bridge uses read_version_windows on both the stored and the built side; read and bridge refuse until this key is on main (the order guard); read runs once"
     },

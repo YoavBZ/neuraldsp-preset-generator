@@ -1501,7 +1501,7 @@ def cmd_install_gate(_args):
     never_overwrite(gate_path())
     never_overwrite(gate_work_dir())
     excl, tn, z, _ = _dev_context()
-    wins = dev_windows(z, excl, tn["items"])[:REPEAT_WINDOWS]
+    wins = read_dev_windows(dev_windows(z, excl, tn["items"]))[:REPEAT_WINDOWS]   # 12p: item_5 out
     bank = NR.Bank(NR.load_notes_doc(), excl=excl)
     work = gate_work_dir()
     ins = []
@@ -1602,7 +1602,7 @@ def cmd_calibrate(_args):
 
     excl, tn, z, meta = _dev_context()
     bank = NR.Bank(NR.load_notes_doc(), excl=excl)
-    wins = dev_windows(z, excl, tn["items"])
+    wins = read_dev_windows(dev_windows(z, excl, tn["items"]))   # 12p: item_5 out, 26 windows
     work = REDO / "work" / "calibrate"
     dis, ins = {}, []
     for w in wins:
@@ -1670,6 +1670,7 @@ def cmd_calibrate(_args):
             "first_run_sha256": NR.file_sha(aside),
             "gate_sha256": NR.file_sha(gate_path()), "attacks_sha256": NR.file_sha(attacks_path())}
     body["ok"] = calibration_ok(covered, cases, PHASE_GO_CLIPS in (m.get(LEDGER_ID) or {}),
+                                need=DEV_READ_COUNT - CALIBRATION_FAIL_ALLOWED,       # 24 of 26 (12p)
                                 covered_reported=body["playing_covered_reported"], positive_blocking=still_blocking)
     NR.write_once(calibration_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_CALIB}",
                                        "made": time.strftime("%Y-%m-%d %H:%M:%S"), "body": body})
@@ -2293,7 +2294,7 @@ def cmd_truth_report(_args):
         di, inp, pre, truth = ta.window(w)
         jobs.append((inp, w["player"]))
         meta.append(("truth", w["key"], pre, w, di, truth))
-    for w in dev_windows(z, excl, tn["items"]):
+    for w in read_dev_windows(dev_windows(z, excl, tn["items"])):   # 12p: item_5 out
         never_overwrite(note_path("goat", w["item"]))
         sec, inp, pre = window_audio(goat_audio(z, w["item"]), w["start_s"])
         jobs.append((inp, "goat"))
@@ -2370,7 +2371,7 @@ def cmd_versions(_args):
         di = SB.measure(known_audio(nm, bank))
         est, _ = timed_notes({"events": json.loads(known[nm].read_text())["events"], "pre_s": 0.0}, di)
         todo.append(("lists", nm, nm, di, KNOWN_NOTES[nm], est, "lists"))
-    for w in dev_windows(z, excl, tn["items"]):
+    for w in read_dev_windows(dev_windows(z, excl, tn["items"])):   # 12p: item_5 out
         di = SB.measure(window_audio(goat_audio(z, w["item"]), w["start_s"])[0])
         est, _ = timed_notes(load_note("goat", w["item"], pair), di)
         todo.append(("goat", w["item"], w["item"], di, dev_true_notes(w["item"], w["start_s"], di), est, "goat"))
