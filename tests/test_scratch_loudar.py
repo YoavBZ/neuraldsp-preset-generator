@@ -103,10 +103,15 @@ def test_the_bottleneck_rule():
 
 
 def test_the_slot_rule():
-    assert "has not been read" in SL.slots_refusal(False, {"verdict": "ok"})
-    assert "not 'ok'" in SL.slots_refusal(True, None)
-    assert "not 'ok'" in SL.slots_refusal(True, {"verdict": "fault-content"})
-    assert SL.slots_refusal(True, {"verdict": "ok"}) is None
+    # waiting: no report while fs-notes may still run (the verdict missing, unreadable, or "ok")
+    for ear in (None, {}, "ok", {"verdict": None}, {"verdict": "ok"}):
+        assert "renders wait" in SL.slots_refusal(False, ear)
+    # path 1: fs-notes' report exists, whatever the verdict
+    for ear in (None, {"verdict": "ok"}, {"verdict": "fault-content"}):
+        assert SL.slots_refusal(True, ear) is None
+    # path 2: no report, but the verdict is recorded as anything but "ok": fs-notes will not run
+    for v in ("fault-content", "fault-signal", "ask", "incomplete"):
+        assert SL.slots_refusal(False, {"verdict": v}) is None
     assert SL.rec_refusal(None) and SL.rec_refusal({"fl": {"code": "FL-reach"}})
     assert SL.rec_refusal({"fl": {"code": "FL-short"}}) is None and SL.rec_refusal({"fl": {"code": "FL-null"}}) is None
 
@@ -254,12 +259,19 @@ def _built(monkeypatch, tmp_path, report_ok=True, ear="ok", control=None):
 
 @pytest.mark.parametrize("cmd", SL.RENDER_COMMANDS)
 def test_every_render_command_waits_for_fs_notes(monkeypatch, tmp_path, cmd):
-    _built(monkeypatch, tmp_path, report_ok=False)
-    with pytest.raises(SystemExit, match="fs-notes' 47-part row has not been read"):
+    for ear in ("ok", None):                          # no report, fs-notes may still run: wait
+        _built(monkeypatch, tmp_path, report_ok=False, ear=ear)
+        with pytest.raises(SystemExit, match="fs-notes may still run"):
+            SL.COMMANDS[cmd](_args())
+
+
+@pytest.mark.parametrize("cmd", SL.RENDER_COMMANDS)
+@pytest.mark.parametrize("report_ok, ear", [(True, "ok"), (False, "ask"), (False, "fault-content")])
+def test_every_render_command_passes_the_slot_gate_on_either_path(monkeypatch, tmp_path, cmd, report_ok, ear):
+    _built(monkeypatch, tmp_path, report_ok=report_ok, ear=ear)
+    with pytest.raises(SystemExit) as e:    # past the gate, a later guard stops it (the draw's hash is a stand-in)
         SL.COMMANDS[cmd](_args())
-    _built(monkeypatch, tmp_path, ear="ask")
-    with pytest.raises(SystemExit, match="not 'ok'"):
-        SL.COMMANDS[cmd](_args())
+    assert "fs-notes may still run" not in str(e.value)
 
 
 def test_search_waits_for_the_control(monkeypatch, tmp_path):

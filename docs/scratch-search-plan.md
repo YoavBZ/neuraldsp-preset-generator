@@ -26,7 +26,7 @@ check (11f, `phase_scratch_tone_gentle`, zero renders) and the clip-free re-scor
 `OUTCOME_TABLE` or `fs-notes`. Ran and audited: both codecs `FK-clear`.
 **2026-11-23:** LOUDAR's second test, row `fs-loudar`, is declared in [section 13](#13-the-fs-loudar-row) (ledger
 `phase_scratch_loudar`): a dry guitar LOUDAR rebuilds from the stem's search half alone drives the same 50-evaluation
-search, read against row (c)'s blurred DI on BKS and the panel. Its renders wait for `fs-notes`' row. Not run.
+search, read against row (c)'s blurred DI on BKS and the panel. Its renders wait while `fs-notes` might still run. Not run.
 
 **The user's rule.** No action rests on a gap under 0.05. "Passes" means decided better with the mean at −0.10 or
 beyond. An interval inside ±0.05 reads "not readable by the score". Undecided is not failed.
@@ -1054,16 +1054,18 @@ beside `ld-stem`'s), descriptive, never deciding.
   and `learn/codec_roundtrip.py` equal main's; the `phase_scratch_loudar*` keys equal main's; the `scratch_search.py`
   blob and `fs-notes`' two checks as the codec row; main holds `phase_fs`, `phase_fs_draw`,
   `phase_scratch_both_outcome`, `phase_scratch_codec_outcome` and `phase_scratch_loudar`. **Every render command**
-  (`start`, `control`, `search`, `score`) also refuses until `fs-notes`' report exists **and** main's
-  `phase_nr_1_redo_ear` verdict is "ok"; then the render-slot cap, the disk guard before every part, C3r's state, no
-  separation beside, `never_overwrite`. `search` needs the control passed; `score` and `read` the answers' keys;
+  (`start`, `control`, `search`, `score`) also **waits while `fs-notes` might still run**: it refuses until
+  `fs-notes`' report exists, **or** main's `phase_nr_1_redo_ear` verdict is recorded as anything other than "ok" (then
+  `fs-notes` will not run). The gate keeps the render slots free for `fs-notes`; it is not a dependency on `fs-notes`
+  passing. Then the render-slot cap, the disk guard before every part, C3r's state, no separation beside,
+  `never_overwrite`. `search` needs the control passed; `score` and `read` the answers' keys;
   `ld-rec`'s commands an `FL-short` or `FL-null` report and their own build hash (`phase_scratch_loudar_dry_rec`).
 - **The pool rule:** BKS and the panel both read, the panel on its 3 DI files; a lost panel DI file stops the row, to
   the user. The refusal stop is 3 of the 23.
 - **Steps:** unit 0 (13d) → `prep` (the search halves LOUDAR hears; each equal to the blanked reference's span) →
   LOUDAR's runs (the 23 `ld-stem` clips, then GOAT's 24, then `ld-stem-b`'s 23, while under the cost stop; never beside
-  a render job) → `build` (every check before anything is written) → hash PR `phase_scratch_loudar_dry` → after
-  `fs-notes`' row: `start` → `control` → `search --name ld-stem` (`--first 2` first) → `answers` → hash PR → `di-cut`'s
+  a render job) → `build` (every check before anything is written) → hash PR `phase_scratch_loudar_dry` → once
+  `fs-notes`' row is read (or its ear verdict is not "ok"): `start` → `control` → `search --name ld-stem` (`--first 2` first) → `answers` → hash PR → `di-cut`'s
   and `stem-in`'s searches and hash PRs → each `score` → `read` → on `FL-short` or `FL-null`: `ld-rec`'s runs →
   `build-rec` → its hash PR → its short row → `read-rec` → hand-back, audit, results PR `phase_scratch_loudar_outcome`.
 - **Cost (renders, measured rates):** start reads 186, control 22, short searches 4,743 (`ld-stem` 47, `di-cut` 23,

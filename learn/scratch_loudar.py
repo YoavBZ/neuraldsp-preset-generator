@@ -28,7 +28,8 @@ read beside, and only if it fits the cost stop.
 Every command refuses unless this checkout runs main's code and keys (this module, `learn/loudar_run.py`,
 `learn/scratch_codec.py`, `learn/codec_roundtrip.py`; the `phase_scratch_loudar*` keys; `scratch_search.on_main`),
 main's blob of `learn/scratch_search.py` is the checked one, and `fs-notes`' two checks stand. Every render command
-also refuses until `fs-notes`' report exists and main's `phase_nr_1_redo_ear` verdict is "ok". It edits none of
+also waits while `fs-notes` might still run: until its report exists, or main's `phase_nr_1_redo_ear` verdict is
+recorded as anything but "ok" (then `fs-notes` will not run). It edits none of
 `scratch_search.py`, `scratch_notes.py`, `note_transcribe.py`, `scratch_codec.py` or `codec_roundtrip.py`.
 """
 
@@ -228,13 +229,17 @@ def bottleneck(rec_code, goat):
 
 
 def slots_refusal(report_exists, ear_record):
-    """(Pure.) Why a render command refuses on `fs-notes`, or None: its report must exist, and main's
-    phase_nr_1_redo_ear verdict must be recorded as "ok"."""
-    if not report_exists:
-        return "fs-notes' 47-part row has not been read (no PF/fs/notes/report.json): renders wait for it"
-    if not isinstance(ear_record, dict) or ear_record.get("verdict") != "ok":
-        return f"main's phase_nr_1_redo_ear verdict is not 'ok' ({(ear_record or {}).get('verdict')}): no render"
-    return None
+    """(Pure.) Why a render command waits for `fs-notes`, or None. The gate keeps the render slots free while
+    `fs-notes` might still run; it is not a dependency on `fs-notes` passing. Renders may go once `fs-notes`' report
+    exists, or once main's phase_nr_1_redo_ear verdict is recorded as anything but "ok" (then `fs-notes` will not
+    run). They wait while there is no report and the verdict is missing or "ok"."""
+    if report_exists:
+        return None
+    verdict = ear_record.get("verdict") if isinstance(ear_record, dict) else None
+    if verdict is not None and verdict != "ok":
+        return None
+    return (f"fs-notes may still run (no PF/fs/notes/report.json; main's phase_nr_1_redo_ear verdict "
+            f"{verdict!r}): renders wait for its row")
 
 
 def pool_refusal(rows):
