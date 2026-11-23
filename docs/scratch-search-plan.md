@@ -23,7 +23,10 @@ check (11f, `phase_scratch_tone_gentle`, zero renders) and the clip-free re-scor
 **2026-11-23:** the codec ceiling, row `fs-codec`, is declared in [section 12](#12-the-fs-codec-row) (ledger
 `phase_scratch_codec`): the true DI after a latent codec's round trip (`rt-m2l`, LOUDAR's latent; `rt-dac`) drives a
 50-evaluation search, read per part against rows (b) and (c) on the full pool. It does not touch rows (b) and (c),
-`OUTCOME_TABLE` or `fs-notes`. Not run.
+`OUTCOME_TABLE` or `fs-notes`. Ran and audited: both codecs `FK-clear`.
+**2026-11-23:** LOUDAR's second test, row `fs-loudar`, is declared in [section 13](#13-the-fs-loudar-row) (ledger
+`phase_scratch_loudar`): a dry guitar LOUDAR rebuilds from the stem's search half alone drives the same 50-evaluation
+search, read against row (c)'s blurred DI on BKS and the panel. Its renders wait for `fs-notes`' row. Not run.
 
 **The user's rule.** No action rests on a gap under 0.05. "Passes" means decided better with the mean at −0.10 or
 beyond. An interval inside ±0.05 reads "not readable by the score". Undecided is not failed.
@@ -942,3 +945,168 @@ on; its own venv, so a clash cannot cost `codec-venv`):
 - GuitarFlow as published, `m2l` at its trained rate, or any codec, bitrate or latent rate but the two read.
 - Anything from a stem, a mix, a released record, or by ear.
 - The final answer after 262 renders, unless the full row ran.
+
+## 13. The `fs-loudar` row
+
+Declared 2026-11-23, before anything in it runs (research track 2, LOUDAR's second test, the step the codec ceiling's
+audit recorded). The independent review came back APPROVE WITH CHANGES, with no blockers; its six required changes
+and its nits are built in below. Ledger `preset-ladder` `phase_scratch_loudar`. Code: `learn/scratch_loudar.py` (the
+row) and `learn/loudar_run.py` (LOUDAR's runs, in its own venv, importing nothing from this project); tests:
+`tests/test_scratch_loudar.py`, `tests/test_loudar_run.py`. Data: `PF/fs/loudar/`.
+
+**The question.** Does LOUDAR, as released, turn a song's separated guitar into a dry guitar that drives the preset
+search at least as well as the blurred true DI (avg+mild, row (c), the bar), on guitars its prior never saw? This is
+the first row with **no true DI anywhere in its input**: LOUDAR hears only the stem `xlnoG@-3`. If it reaches the bar,
+it is the first dry guitar from the song alone to do so. If it does not, `ld-rec` names the bottleneck.
+
+**A pass here is still on a stem from a mix with no other guitar.** Said to the user with any result.
+
+### 13a. The dry guitars
+
+| Name | What it is | Parts | Role |
+|---|---|---|---|
+| `ld-stem` | LOUDAR's output from the stem's search half, measured on the clip, placed on the DI's timeline | BKS 16 and the panel 7; GOAT 24 beside, only if it fits the cost stop | **Short row; decides** |
+| `di-cut` | The raw true DI cut to the same span, then measured on that clip (the same way as `ld-stem`) | BKS and the panel, 23 | Short row: the cut's own cost |
+| `stem-in` | The stem's search half itself, measured, as the dry guitar | 23 | Short row: the null (does LOUDAR beat its own input?) |
+| `ld-rec` | LOUDAR's output from the clean record's search half (no separation) | 23 | Short row, **only after `FL-short` or `FL-null`**: is the stem the bottleneck? |
+| `ld-stem-b` | As `ld-stem`, second sampling seed | 23 | Start read only, and only if the cost stop allows |
+| `di-whole` | The true DI, uncut | the 2 check parts | The control's only |
+
+- **LOUDAR hears only the search half** (216,000 samples: 1.0 to 5.5 s or 5.5 to 10.0 s, the span `blank_plan` leaves
+  the search). The held half of the stem never leaves the main environment. In the product LOUDAR would hear the
+  whole window, so this test is slightly hard on it; `di-cut` measures by how much. (The delegated decision agent's
+  choice under the user's standing rule of 2026-11-23, not the user's: yes, confidence 0.65.)
+- **LOUDAR as released:** its guitar checkpoint and code at commit `9f3bd165`, unchanged: the `m2l` latent, the DiT
+  prior, the low-rank causal operator fitted per clip, 300 steps, on the CPU at 4 threads. LOUDAR's own level rule in
+  (the loudest 400-ms frame at −18 dB), zero-padded to 218,624 samples (not the stem's next audio, which is the held
+  half), the output cut back. `WANDB_MODE=disabled`, `ENABLE_TORCH_COMPILE=0`.
+- **Seeded per clip:** the operator's seed is set before the operator is built, then the run's before sampling, then
+  the decode's before decoding (`loudar_run.seeds`); a rerun gives the same bytes.
+- **The setting** (released: 1 operator update a step, AdamW 1e-3, weight decay 0.1; or the paper's: 10 updates, 1e-4,
+  1, re-read from arXiv 2608.01972 section 3.1) is chosen in unit 0 on the authors' examples (13d).
+- **Out:** each clip goes through the measure step on the clip (`song_bank.measure`), then is placed on the DI's
+  timeline: record sample t goes to DI sample t − lag − 52 + 12,000 (the stored lag, the plugin's latency and the
+  section's 0.25 s before), cut at the section's ends, zeros elsewhere. The stored lag was estimated against the true
+  DI, which a song would not have; it is used as every row uses it. No timing is read from the true DI.
+- **The timing check** (the codec row's rule, as a check, never as a correction): the 1-ms envelope's lag of each placed
+  dry guitar against the true DI inside its span. Over 1 ms on 3 or more deciding parts for any name: the build stops,
+  and the question goes to the user before any render.
+- **The deciding sets: BKS and the panel** (23 parts, 11 DI files), weighted equally. LOUDAR's prior trained on GOAT's
+  DI, so GOAT is read beside, marked in-sample, and never decides.
+
+### 13b. The row and the reading
+
+The codec row's short row with another dry guitar: `scratch_codec.start_value`, `short_search`
+(`run_part(budget=50, step1_only=True)`), `short_answers`, `scratch_search.score_row_part`, the comparators'
+loaders and every guard, against `xlnoG@-3` with the held half zeros. Cen and `cp50` are scored through the **true DI**
+on the **held half** against the **clean record**.
+
+| Number | Definition | Says |
+|---|---|---|
+| `D_blur` | G50(`ld-stem`) − G50(`fs-both`) | LOUDAR against the bar. Below zero: above the blur |
+| `D_true` | G50(`ld-stem`) − G50(`fs-stem`) | The whole cost against the true DI. Beside only: it does not gate, since per part `D_blur` = `D_true` − ((c) − (b)) |
+| `D_cut` | G50(`di-cut`) − G50(`fs-stem`) | What cutting the dry guitar to the search half costs by itself |
+| `D_bar` | `D_blur` − `D_cut` | LOUDAR against the bar with the cut's own cost taken out |
+| `D_null` | G50(`ld-stem`) − G50(`stem-in`) | LOUDAR against its own input |
+
+**References on BKS and the panel** (stored; a test reproduces them): (c) − (b) +0.125 [+0.076, +0.173]; `rt-m2l`'s
+`D_true` +0.012 [−0.006, +0.030]; `rt-dac`'s +0.000 [−0.017, +0.017]; G50 of row (b) −0.242 and row (c) −0.118 (whose
+interval reaches above zero: the bar is itself level with Cen here). On BKS alone row (c) reads −0.000.
+
+**The deciding number** is `D_blur`, unless the cut itself costs something: if `D_cut`'s upper end is above +0.05, the
+table reads `D_bar` and says so.
+
+| Code (first that holds) | When | Reading | What follows (a recommendation; nothing continues on its own, except `ld-rec`) |
+|---|---|---|---|
+| `FL-null` | `D_null`'s lower end at −0.05 or above | LOUDAR's dry guitar is not readably better than the stem it was made from | `ld-rec` runs. LOUDAR is parked. If `stem-in` itself reaches the bar, that goes to the user as its own finding |
+| `FL-above` | The deciding number's whole interval below zero, its mean at −0.05 or beyond, **and G50(`ld-stem`)'s upper end below zero on BKS+panel** | From the song's stem alone, LOUDAR's dry guitar beats the blurred true DI at the checkpoint, and beats Cen. "By a heard size" only at −0.10 or beyond | The route leads. Proposed next, each under its own declaration: its full row, a stem from a mix with other guitars, a listen |
+| `FL-reach` | Its upper end under +0.10 and its mean under +0.05 | Level with the blurred true DI: a heard-size loss is ruled out. Where row (c)'s G50 interval reaches zero (as here), it reads "level with a bar that is itself level with Cen here" | To the user with `fs-notes` beside: the two routes are compared before either goes on |
+| `FL-short` | Its whole interval above zero, its mean at +0.05 or beyond | Below the bar | `ld-rec` runs and names the bottleneck. The route is parked, not closed |
+| `FL-undecided` | anything else | Not decided; undecided is not failed | To the user with the intervals |
+
+`FL-above` and `FL-reach` cannot hold with `FL-short` (a test on a grid). A pass on the deciding number without G50's
+gate reads `FL-reach` and says the gate failed.
+
+**Naming the bottleneck** (after `FL-short` or `FL-null`; coded now, `bottleneck`):
+- `ld-rec`'s row (its null against `stem-in`; `di-cut` reused) is read by the same table. At or above the
+  bar (`FL-above` or `FL-reach`): **the stem**, and LOUDAR becomes a yardstick for separator work.
+- Otherwise GOAT's beside read splits the rest. GOAT at the bar while BKS and the panel are short: **the prior's
+  coverage, or memorisation**. GOAT short as well: **the generator or its operator**. GOAT not run (outside the cost
+  stop): **generator against prior: not split**.
+- A failing part is a research target. Nothing is closed by this test.
+
+**Against `fs-notes`** (zero renders, `versus-notes`, once both rows are read): G50(`ld-stem`) − G50(`fs-notes`) at the
+checkpoint, paired, and against `fs-notes`' best arm (answer or shrunk), said with it that that arm had 212 more
+renders a part. **On BKS first**, the only set clean for both (the panel's songs were in `fs-notes`' transcriber's
+training, GOAT in LOUDAR's): **16 parts from 2 songs**, so a narrow read. BKS and the panel together beside. The inputs
+differ and the read says so: `fs-notes` reads its notes from the true DI; `ld-stem` hears only the stem.
+
+**Beside in the report:** which number decided; G50 by set, with "upper end below zero on BKS: yes or no"; the room
+kept, 1 − `D_true` / ((c) − (b)); `D_true` against the codec ceiling (`rt-m2l`); GOAT's read, marked in-sample; `D` by
+class and with each DI file left out; parts at +0.10 or worse than Cen; the start reads (`ld-stem-b` less `ld-stem`
+as the seed gauge, if built); the compression note (the checkpoint understates late losses by about +0.026); the
+zero-render figures (`figures.json`: log-mel, envelope, crest, timing, the before-measure spectral distance; `stem-in`'s
+beside `ld-stem`'s), descriptive, never deciding.
+
+### 13c. Guards, steps and cost
+
+- **Guards** (every command): `scratch_search.on_main`; this module, `learn/loudar_run.py`, `learn/scratch_codec.py`
+  and `learn/codec_roundtrip.py` equal main's; the `phase_scratch_loudar*` keys equal main's; the `scratch_search.py`
+  blob and `fs-notes`' two checks as the codec row; main holds `phase_fs`, `phase_fs_draw`,
+  `phase_scratch_both_outcome`, `phase_scratch_codec_outcome` and `phase_scratch_loudar`. **Every render command**
+  (`start`, `control`, `search`, `score`) also refuses until `fs-notes`' report exists **and** main's
+  `phase_nr_1_redo_ear` verdict is "ok"; then the render-slot cap, the disk guard before every part, C3r's state, no
+  separation beside, `never_overwrite`. `search` needs the control passed; `score` and `read` the answers' keys;
+  `ld-rec`'s commands an `FL-short` or `FL-null` report and their own build hash (`phase_scratch_loudar_dry_rec`).
+- **The pool rule:** BKS and the panel both read, the panel on its 3 DI files; a lost panel DI file stops the row, to
+  the user. The refusal stop is 3 of the 23.
+- **Steps:** unit 0 (13d) → `prep` (the search halves LOUDAR hears; each equal to the blanked reference's span) →
+  LOUDAR's runs (the 23 `ld-stem` clips, then GOAT's 24, then `ld-stem-b`'s 23, while under the cost stop; never beside
+  a render job) → `build` (every check before anything is written) → hash PR `phase_scratch_loudar_dry` → after
+  `fs-notes`' row: `start` → `control` → `search --name ld-stem` (`--first 2` first) → `answers` → hash PR → `di-cut`'s
+  and `stem-in`'s searches and hash PRs → each `score` → `read` → on `FL-short` or `FL-null`: `ld-rec`'s runs →
+  `build-rec` → its hash PR → its short row → `read-rec` → hand-back, audit, results PR `phase_scratch_loudar_outcome`.
+- **Cost (renders, measured rates):** start reads 186, control 22, short searches 4,743 (`ld-stem` 47, `di-cut` 23,
+  `stem-in` 23, at 51 a part), scores 372: **5,323**, about 53 minutes, up to about 1.5 hours under load; 3,955
+  without GOAT. `ld-rec`, only after a fail: 1,311.
+- **The cost stop** (CPU; the delegated decision agent's choice under the user's standing rule: yes, confidence 0.8):
+  everything that runs without asking must fit **8 wall hours at 4 threads**: the gate's 18 runs and the 23 deciding
+  clips. GOAT's 24 clips, then `ld-stem-b`'s 23, are added in that order only while the total stays under 8 hours (GOAT
+  placed before `ld-stem-b`). If the gate and the 23 do not fit: stop and ask. Fewer steps would be another method and
+  is not offered. The time for one 10-s window is reported either way.
+- **`stem-in` always, `ld-rec` only after a fail** (the delegated decision agent's choice: yes, confidence 0.75).
+- **Repeat use.** These held halves were read by rows (b), (c), `fs-codec` and soon `fs-notes`. Nothing here is chosen
+  on a held value: the setting is chosen on the authors' examples; the checkpoint, table and sets are fixed now.
+- **11g**, the clip-free re-score beside new rows, is declared but not coded; when it is, this row's answers join it
+  under 11g's own amendment, reported only. This row does not wait for it.
+
+### 13d. Unit 0, after this declaration merges (no repo change; CPU; none of our audio)
+
+1. **Downloads** (under the standing approval; each in `codec-models/manifest.json` with size and sha256, a line in
+   `MANIFEST-HISTORY.md`): LOUDAR's `GuitarFx-175000.pt` (Hugging Face `msvento/loudar`, 1,083,089,737 B, sha256
+   `d86e08bbb94bb12cef0b907dd7f3fd67ba112cc463c8ee0e964855155985c297`, MIT tag); LOUDAR's `src/` at commit
+   `9f3bd1659991b584afcfa7a3ac395c0512f24237` and the authors' 18 gate files (`distorted`, `original`, `LOUDAR` × 6) by
+   a sparse checkout into `~/ndsp-presets/tools/loudar/`; 16 packages at LOUDAR's `uv.lock` versions (about 28 MB) into
+   `~/ndsp-presets/tools/loudar-venv`, beside `requirements-codec.lock`'s 36 unchanged, `--require-hashes --no-deps`,
+   after a resolver dry run.
+2. **The checkpoint loads weights-only.** Its pickle's globals are listed by `pickletools` (nothing is executed); it
+   loads with `weights_only=True` inside `torch.serialization.safe_globals([...])` naming only the omegaconf classes it
+   holds, and `state["ema"]` is taken. Any other global stops, to the user.
+3. **The gate's reference figures, zero runs:** the floored log-mel distance from the original (the mean of the 256-
+   and 2,048-sample frames) for the authors' own LOUDAR outputs and for the distorted inputs, and the authors' gain
+   (their difference). The 1.0-dB tolerance is reported as a fraction of that gain.
+4. **One clip timed first** (`distorted_0`, whole and cut to 4.5 s, released) and the cost stop applied.
+5. **Two checks:** a second seeded run, and a run with the reference set to zeros, are byte-equal.
+6. **The gate:** the six examples with both settings; the setting with the lower mean distance (within 0.1 dB, the
+   released) is chosen; then the six cut to 4.5 s with it. Pass: our output closer to the original than the distorted
+   input on at least 5 of 6; our mean within 1.0 dB of the authors' outputs' mean; the cut no more than 1.0 dB worse
+   than the same 4.5 s of the full run. Otherwise stop and ask.
+7. Its facts (the setting, the gate's figures, the measured seconds a clip and the projected build time) go into
+   `phase_scratch_loudar_dry`.
+
+### 13e. What it can't say
+
+- Anything with other guitars in the mix (the stem here comes from a mix with none), on released records, or by ear.
+- LOUDAR hearing the whole window, as the product would.
+- The final answer after 262 renders, or long-term tone colour (the measure step removes it).
+- LOUDAR with a wider prior, more steps, or another operator.
