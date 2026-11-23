@@ -717,3 +717,28 @@ transformer ran float16 (section 13). They are not rewritten.
 
 **Order.** This PR, then `gate --size large` from merged code, then the hash PR `phase_tx_install_large`, then
 `lists` (both sizes, once), then the results PR `phase_tx_lists`, which gains `size` and the `size_pick`.
+
+## 15. Large's gate (2026-11-23; ledger `phase_tx_install_large`)
+
+It ran once from main at `2c5d748c`, in a frozen detached worktree, with the same venv and lock as medium. Zero
+renders. The user's large weights and `config.json` matched their declared size and sha256.
+
+| | large, MPS | large, CPU | medium, MPS | medium, CPU |
+|---|---|---|---|---|
+| Three runs on four development windows | identical | identical | identical | identical |
+| Transcription, seconds per gate input (up to 12.25 s) | 4.91 | 33.56 | 1.97 | 10.51 |
+| Stage b's 133 runs, projected | 0.18 h | 1.24 h | 0.07 h | 0.39 h |
+
+- Large's model load takes 2.3 to 3.1 s on MPS and 4.1 s on the CPU.
+- The device rule picked MPS. Large has no size rule, and both devices project under two hours.
+- The fixed probe records float16 on MPS (the transformer) and float32 on the CPU.
+- As declared, the gate then transcribed the ten lists under `list-large` and `list-large-free`: 20 note files on
+  MPS. Medium's list notes are untouched.
+
+**No list of either size has been scored.** `lists` scores both together, once, after this hash PR merges.
+
+**The review's two nits on PR #573**, folded in here; they are guards and reports only:
+- `picked_size` honours the user's large override only when large's own screen read `lists-go`, so stage b never
+  runs large on medium's screen.
+- `size_pick` labels a comparison with no shared list "no shared list, medium kept" rather than "undecided", and
+  leaves large closed then.
