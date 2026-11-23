@@ -4396,6 +4396,16 @@
     "reported_only_additions": "folded in from the independent review of #569, all report-only; they never decide: (1) each part's sub-window fraction within 1 ms (timing-subwin.json, read by its sha256 from the row's folder) printed beside G50 next to the whole-clip lags; (2) a descriptive Spearman of D_true against that fraction over the deciding parts (D_true_vs_subwin); (3) every bottleneck string ends '(timing and timbre not separated)', checked again in cmd_read_rec",
     "code": "learn/scratch_loudar.py (TIMING_DIAGNOSTIC, NOT_SEPARATED, lags_beside_g50's sub_within_1ms, ranks, spearman, d_true_vs_subwin, subwin_of; bottleneck; read_body, cmd_read, cmd_read_rec); tests in tests/test_scratch_loudar.py. The build's inputs and rule are untouched",
     "next": "renders wait for fs-notes (slots_refusal: fs-notes' report, or main's phase_nr_1_redo_ear verdict fault-content or fault-signal); then the start reads, the control and the searches. The decision record asks that the user see the timing decision before the row's renders start"
+   },
+   "phase_scratch_loudar_read_nits": {
+    "declared": "2026-11-23, after #570 (main ee84a339), from the independent review's nits on 1987eb31; report-only, nothing that decides the row changes",
+    "protected_input": "PF/fs/loudar/timing-subwin.json (sha256 d7f2f8ec8a2dd19e3f012f4e952fdef92b184ae43b569d3d7f40a9dfa882b8b0) is a hard, sha-bound input to both reads (read and read-rec, through subwin_of): a missing or changed file stops them. It must not be moved, renamed, rewritten or cleaned; the handover copy (2026-11-23 loudar-unit0) is its source",
+    "changes": {
+     "check_before_report": "cmd_read_rec checks that the bottleneck ends NOT_SEPARATED before saving report-rec.json, so a failing check leaves no report behind (rows-rec.json is still saved first, as declared)",
+     "no_subwin_note": "for a name the diagnostic holds on no part (ld-rec), lags_beside_g50 and d_true_vs_subwin say 'no sub-window diagnostic for ld-rec' instead of blank fractions and rho None with n 0; it reaches rows-rec.json, report-rec.json and the printed read"
+    },
+    "unchanged": "the deciding number, FL_TABLE and its codes, the sets, the comparators, the stops, the build and its hash, and the fs-notes render wait (slots_refusal)",
+    "code": "learn/scratch_loudar.py (no_subwin, lags_beside_g50, print_lags, d_true_vs_subwin, cmd_read_rec); tests in tests/test_scratch_loudar.py"
    }
   },
   {

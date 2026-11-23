@@ -84,6 +84,11 @@ TIMING_CAVEAT = ("the row prices LOUDAR's timing and timbre together: an FL-shor
                  "decide (phase_scratch_loudar_timing_amend)")
 TIMING_DIAGNOSTIC = "timing-subwin.json"           # in loudar_dir(), bound by TIMING_DIAGNOSTIC_SHA256 (report only)
 NOT_SEPARATED = " (timing and timbre not separated)"   # on every bottleneck (phase_scratch_loudar_dry)
+
+
+def no_subwin(name):
+    """What the reads say for a name the timing diagnostic does not hold (ld-rec), in place of blanks."""
+    return f"no sub-window diagnostic for {name}"
 OPEN_VERDICTS = ("fault-content", "fault-signal")  # a recorded ear verdict that rules fs-notes out (not "ask")
 CHECK_SHA256 = SC.CHECK_SHA256
 COMPRESSION_NOTE = SC.COMPRESSION_NOTE
@@ -902,17 +907,24 @@ def numbers(g, comp, gcut=None, gin=None):
 def lags_beside_g50(g, fig_parts, names, subwin=None):
     """(Pure.) Per part, the G50 with the placed names' whole-clip lags (ms, from the build's figures) and their
     sub-window fraction within 1 ms (from the timing diagnostic) beside it: {pkey: {"G50": value, "lag_ms": {name:
-    lag or None}, "sub_within_1ms": {name: fraction or None}}}. Reported only; never decides."""
+    lag or None}, "sub_within_1ms": {name: fraction or None}}}. A name the given diagnostic holds on no part (ld-rec)
+    reads `no_subwin(name)` instead of blanks. Reported only; never decides."""
     sub = subwin or {}
+    held = {n for r in sub.values() if isinstance(r, dict) for n in r}
+
+    def frac(k, n):
+        if subwin is not None and n not in held:
+            return no_subwin(n)
+        return ((sub.get(k) or {}).get(n) or {}).get("sub_frac_within1")
     return {k: {"G50": v, "lag_ms": {n: ((fig_parts.get(k) or {}).get(n) or {}).get("lag_ms") for n in names},
-                "sub_within_1ms": {n: ((sub.get(k) or {}).get(n) or {}).get("sub_frac_within1") for n in names}}
+                "sub_within_1ms": {n: frac(k, n) for n in names}}
             for k, v in sorted(g.items())}
 
 
 def print_lags(beside):
     for k, r in beside.items():
         lags = ", ".join(f"{n} {v:+.0f} ms" if v is not None else f"{n} -" for n, v in r["lag_ms"].items())
-        subs = ", ".join(f"{n} {v:.2f}" if v is not None else f"{n} -"
+        subs = ", ".join(f"{n} {v:.2f}" if isinstance(v, (int, float)) else (v if isinstance(v, str) else f"{n} -")
                          for n, v in (r.get("sub_within_1ms") or {}).items())
         print(f"  {k[-56:]}: G50 {r['G50']:+.3f} | lag {lags} | sub-windows within 1 ms {subs}")
 
@@ -945,8 +957,11 @@ def spearman(a, b):
 
 def d_true_vs_subwin(d_true, subwin, sets_of, name):
     """(Pure.) Descriptive only, never decides: Spearman of D_true against `name`'s sub-window fraction within 1 ms
-    over the deciding parts holding both. -> {"name", "n", "rho", "reported_only"}."""
+    over the deciding parts holding both. -> {"name", "n", "rho", "reported_only"}; for a name the diagnostic holds
+    on no part (ld-rec): {"name", "note": no_subwin(name), "reported_only"}, never a blank rho."""
     sub = subwin or {}
+    if not any(isinstance(r, dict) and name in r for r in sub.values()):
+        return {"name": name, "note": no_subwin(name), "reported_only": True}
     keys = sorted(k for k, v in d_true.items() if sets_of.get(k) in DECIDING and v is not None
                   and ((sub.get(k) or {}).get(name) or {}).get("sub_frac_within1") is not None)
     rho = spearman([d_true[k] for k in keys], [sub[k][name]["sub_frac_within1"] for k in keys])
@@ -1055,10 +1070,10 @@ def cmd_read_rec(_args):
     fl = fl_code(rows["D_null"]["bp"], rows["D_blur"]["bp"], rows["D_cut"]["bp"], rows["D_bar"]["bp"],
                  rows["G50"]["bp"], rows["G50_rows_b_c"]["fs-both"]["bp"])
     bn = bottleneck(fl["code"], main_rep.get("goat"))
+    if not bn["bottleneck"].endswith(NOT_SEPARATED):                     # before the report: none is left behind
+        raise SystemExit("the bottleneck must say timing and timbre are not separated")
     P.save(report_path(True), dict(out, rows=rows, fl=fl, bottleneck=bn, caveat=NO_PRIOR_IMPROVEMENT_NOTE,
                                    timing_caveat=TIMING_CAVEAT))
-    if not bn["bottleneck"].endswith(NOT_SEPARATED):
-        raise SystemExit("the bottleneck must say timing and timbre are not separated")
     print(f"ld-rec: {fl['code']} ({REC_NULL_NOTE}); bottleneck: {bn['bottleneck']}. Caveat: {TIMING_CAVEAT}")
     print_lags(rows["lag_beside_g50"])
     print(f"D_true against the sub-window fraction (descriptive, never decides): {rows['D_true_vs_subwin']}")
