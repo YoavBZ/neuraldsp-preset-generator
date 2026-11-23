@@ -94,8 +94,8 @@ PICK_ARM, PICK_FIELD = "tx-ms", "f"      # the size pick: MuScriptor's own note 
 INSIDE_LEADS = {"inside": 0.0, "inside_lead": 0.050}   # the side figure: found notes starting at or after -lead s
                                          # (the redo's own definition, phase_nr_1_redo_go_hum: on >= 0, and the guard's
                                          # 50-ms lead beside); report only, never a gate or a code
-PICK_UNDECIDED = "undecided, medium kept"   # large not decided better: medium kept, large open for the user
-PICK_NO_SHARED = "fewer than two shared lists, medium kept"   # no interval to read
+PICK_UNDECIDED = "undecided, large kept"   # T2: large is the default (the user's stance), kept unless decided worse
+PICK_NO_SHARED = "fewer than two shared lists, large kept"   # no interval to read: the default stands
 REQUIREMENTS = ("torch>=2.3", "numpy>=2", "einops>=0.4", "mido>=1.3", "packaging>=20.0", "safetensors>=0.4",
                 "huggingface_hub>=0.13", "soundfile>=0.14.0")   # what `transcribe()` needs; no server, no beat tracker
 NOT_NEEDED = ("beat-this", "fastapi", "typer", "uvicorn")   # the server and beat-tracking parts: never in the lock
@@ -129,11 +129,12 @@ PAIR_ONSET_S = 0.050                     # same MIDI pitch, onsets within 50 ms,
 END_SHARE, END_MIN_S = 0.20, 0.050       # a note end within max(20% of the true note, 50 ms)
 VETO_INTERVALS = (12, 19, 24)            # the ghost shape: an octave, a twelfth, two octaves above a paired note
 SOUNDING_LEAD_S = 0.050                  # an extra sorted against the truth notes sounding at its onset (50 ms lead)
-RECALL_GUARD = 0.05                      # recall and chord-note recall at most this under tx-bp's (PR #547's size)
-CHECK_SLACK = 1                          # each check on the read's windows passes on at most one window fewer (a
-                                         # count: 1 of the 26 the read uses since 12p, as of the 27 before)
-UNPAIRED_LOOKUP = 0.05                   # TXR-ms with more of its notes unpaired: a loudness and bend lookup first
-GUARDED_CHECKS = ("playing-covered", "judge-accepts", "ring-kept", "chords-kept")   # onsets-found is a report
+RETIRED_BARS = {"RECALL_GUARD": 0.05, "CHECK_SLACK": 1, "UNPAIRED_LOOKUP": 0.05}   # T1 (phase_tx_bars_amend): the
+                                         # made-up bars, now reported effect sizes; kept here only as the record of what
+                                         # the list screen was first read under
+GUARDED_CHECKS = ("playing-covered", "judge-accepts", "ring-kept", "chords-kept")   # reported per window (T1: no
+                                         # check gates a code; onsets-found was always a report), over the read's
+                                         # windows: 26 since 12p, as of the 27 before
 DECIDING_RING, BESIDE_RING = NV.DECIDING_RING, NV.BESIDE_RING
 ARMS = ("tx-bp", "tx-ms", "tx-vote")
 BESIDE_ARMS = ("tx-veto", "tx-ms-free")
@@ -162,8 +163,9 @@ RECOMMENDATION = {
     "TXR-undecided": "reported with effect sizes; no change to the route",
 }
 VETO_CANDIDATE = "veto-holds: the veto is put to the user as the candidate (an open rule in its shape, section 7)"
-LOOKUP_FIRST = ("more than 5% of tx-ms's notes have no Basic Pitch partner: any amendment first adds a loudness and "
-                "bend lookup from Basic Pitch's own frame output for those notes")
+LOOKUP_ALWAYS = ("on TXR-ms the lookup (loudness and bends for tx-ms's unpaired notes) is always built, and kept only "
+                 "if it brings tr-di closer to the DI on the development windows (zero renders); the unpaired share is "
+                 "reported beside, and no share gates it (T1)")
 
 
 # --- the input guard (pure) ---------------------------------------------------------------------------------------------
@@ -494,21 +496,12 @@ def f_not_worse(iv):
     return not decided_worse(iv)
 
 
-def recall_held(arm, bp, guard=RECALL_GUARD, checks=None, checks_bp=None, slack=CHECK_SLACK):
-    """(Pure.) "No loss the checks can see": pooled recall and chord-note recall each at most `guard` under tx-bp's
-    (no chord notes: holds); with the 27 windows' check counts ({check: windows passing}), each guarded check passes on
-    at most `slack` windows fewer than tx-bp."""
-    for k in ("recall", "chord_recall"):
-        a, b = (arm or {}).get(k), (bp or {}).get(k)
-        if b is None:
-            continue
-        if a is None or a < b - guard:
-            return False
-    if checks is not None:
-        for c in GUARDED_CHECKS:
-            if (checks.get(c) or 0) < (checks_bp or {}).get(c, 0) - slack:
-                return False
-    return True
+def recall_held(recall_iv, chord_iv):
+    """(Pure.) A direction, like `f_not_worse` (T1, the decision agent's call under the user's no-made-up-bars rule,
+    replacing PR #547's borrowed 0.05): the paired recall difference against tx-bp is not decided worse, and the paired
+    chord-note recall difference is not decided worse. Both intervals are reported (`sizes_text`). No window-count
+    slack: the 27 windows' checks are reported per window (`check_window_report`)."""
+    return not decided_worse(recall_iv) and not decided_worse(chord_iv)
 
 
 def ends_better(lists_iv, real_iv=None):
@@ -519,16 +512,13 @@ def ends_better(lists_iv, real_iv=None):
     return clear_above(lists_iv) and not decided_worse(real_iv)
 
 
-def arm_reading(summaries, arm, checks=None):
-    """(Pure.) One arm's reading on the deciding sets. summaries: {set: set_summary}; checks: {arm: {check: windows
-    passing}} on the 27 windows (stage b) or None.
+def arm_reading(summaries, arm):
+    """(Pure.) One arm's reading on the deciding sets. summaries: {set: set_summary}.
     -> {set: {precision, f, end_f, end_accuracy, recall_held, ...}, ends_better}."""
     out = {}
     for st, s in summaries.items():
         d = (s.get("diff") or {}).get(arm) or {}
-        ck = (checks or {}).get(arm) if st == "real" and checks is not None else None
-        held = recall_held((s.get("pooled") or {}).get(arm), (s.get("pooled") or {}).get("tx-bp"),
-                           checks=ck, checks_bp=(checks or {}).get("tx-bp") if ck is not None else None)
+        held = recall_held(d.get("recall"), d.get("chord_recall"))
         out[st] = {"precision": d.get("precision"), "f": d.get("f"), "end_f": d.get("end_f"),
                    "end_accuracy": d.get("end_accuracy"),
                    "recall": d.get("recall"), "chord_recall": d.get("chord_recall"),
@@ -541,7 +531,8 @@ def arm_reading(summaries, arm, checks=None):
 
 
 def arm_wins(reading, sets=SETS):
-    """(Pure.) Precision raised, recall held and F not decided worse, on every deciding set."""
+    """(Pure.) Precision raised (clear of zero above), with recall, chord-note recall and F each not decided worse, on
+    every deciding set (T1). The bridge then decides on the measured distance to the DI."""
     return all(s in reading and reading[s]["precision_raised"] and reading[s]["recall_held"]
                and reading[s]["f_not_worse"] for s in sets)
 
@@ -580,16 +571,41 @@ def txr_code(readings):
 
 
 def recommendation(code, flags=None, unpaired_share=None):
-    """(Pure.) The declared recommendation for a screen result or a code. -> {text, veto_candidate, lookup_first}."""
+    """(Pure.) The declared recommendation for a screen result or a code. On TXR-ms the lookup is always built and
+    measured (`LOOKUP_ALWAYS`), the unpaired share reported beside. -> {text, veto_candidate, build_lookup,
+    unpaired_share}."""
     flags = flags or {}
     text = RECOMMENDATION[code]
     veto = code == "TXR-undecided" and bool(flags.get(FLAG_VETO))
-    lookup = code == "TXR-ms" and unpaired_share is not None and unpaired_share > UNPAIRED_LOOKUP
+    lookup = code == "TXR-ms"
     if veto:
         text += "; " + VETO_CANDIDATE
     if lookup:
-        text += "; " + LOOKUP_FIRST
-    return {"text": text, "veto_candidate": veto, "lookup_first": lookup}
+        text += "; " + LOOKUP_ALWAYS + (f" (unpaired share {unpaired_share:.3f})" if unpaired_share is not None else "")
+    return {"text": text, "veto_candidate": veto, "build_lookup": lookup, "unpaired_share": unpaired_share}
+
+
+def _iv_text(v):
+    if not v or v.get("mean") is None:
+        return "n/a"
+    if v.get("lo90") is None:
+        return f"{v['mean']:+.3f}"
+    return f"{v['mean']:+.3f} [{v['lo90']:+.3f}, {v['hi90']:+.3f}]"
+
+
+def sizes_text(readings, sets=SETS):
+    """(Pure.) The sizes printed beside the code (T1): per arm and deciding set, the paired recall, chord-note recall,
+    precision and F differences against tx-bp with their 90% intervals."""
+    parts = []
+    for a in ("tx-vote", "tx-ms", "tx-veto"):
+        r = readings.get(a) or {}
+        for st in sets:
+            x = r.get(st)
+            if x:
+                parts.append(f"{a} {st}: recall {_iv_text(x.get('recall'))}, chord-note recall "
+                             f"{_iv_text(x.get('chord_recall'))}, precision {_iv_text(x.get('precision'))}, F "
+                             f"{_iv_text(x.get('f'))}")
+    return "; ".join(parts)
 
 
 def summarise_screen(rows):
@@ -614,19 +630,51 @@ def check_counts(goat_rows, ring=DECIDING_RING):
     return out
 
 
+def check_window_report(goat_rows, ring=DECIDING_RING, checks=GUARDED_CHECKS):
+    """(Pure.) The development windows' checks, paired per window against tx-bp (T1, replacing CHECK_SLACK): per arm
+    and check, the windows lost (tx-bp passes, the arm does not), gained (the reverse), and gained - lost. A report: it
+    gates nothing. goat_rows: [{"checks": {arm: {"notes": {check: pass}, ring: {check: pass}}}}]."""
+    def passes(by, c):
+        for src in ("notes", ring):
+            if c in (by.get(src) or {}):
+                return (by.get(src) or {})[c] is True
+        return None
+    out = {}
+    for r in goat_rows:
+        ck = r.get("checks") or {}
+        bp = ck.get("tx-bp") or {}
+        for a, by in ck.items():
+            if a == "tx-bp":
+                continue
+            for c in checks:
+                x, y = passes(by, c), passes(bp, c)
+                if x is None or y is None:
+                    continue
+                d = out.setdefault(a, {}).setdefault(c, {"windows": 0, "lost": 0, "gained": 0})
+                d["windows"] += 1
+                d["lost"] += y and not x
+                d["gained"] += x and not y
+    for a in out.values():
+        for d in a.values():
+            d["gained_less_lost"] = d["gained"] - d["lost"]
+    return out
+
+
 def summarise_read(list_rows, real_rows, goat_rows):
-    """(Pure.) Stage b's read, once: the lists' rows (from the screen), the real DIs' rows and the 27 windows' check
-    rows -> every group's numbers, the readings (recall held includes the checks' counts on the real set), the code,
-    its flags and recommendation."""
+    """(Pure.) Stage b's read, once: the lists' rows (from the screen), the real DIs' rows and the development windows'
+    check rows -> every group's numbers, the readings (T1: directions only, no made-up bar), the code, its flags, the
+    sizes printed beside, the checks paired per window (a report) and the recommendation."""
     rows = list(list_rows) + list(real_rows)
     numbers = {g: set_summary(rows, g) for g in report_groups(rows)}
-    checks = check_counts(goat_rows)
-    readings = {a: arm_reading({s: numbers[s] for s in SETS if s in numbers}, a, checks)
+    readings = {a: arm_reading({s: numbers[s] for s in SETS if s in numbers}, a)
                 for a in ("tx-ms", "tx-vote", "tx-veto", "tx-ms-free") if a in numbers.get("lists", {}).get("diff", {})}
     code = txr_code(readings)
     un = unpaired_share(rows, "tx-ms")
-    return {"numbers": numbers, "checks": checks, "readings": readings, **code,
-            "unpaired_share": un, "recommendation": recommendation(code["code"], code["flags"], un),
+    rec = recommendation(code["code"], code["flags"], un)
+    sizes = sizes_text(readings)
+    rec = dict(rec, text=rec["text"] + "; sizes: " + sizes)
+    return {"numbers": numbers, "checks": check_counts(goat_rows), "check_windows": check_window_report(goat_rows),
+            "readings": readings, **code, "sizes": sizes, "unpaired_share": un, "recommendation": rec,
             "side_inside": side_report(real_rows)}                    # report only: never read above
 
 
@@ -871,12 +919,11 @@ def size_pick(by_size, arm=PICK_ARM, field=PICK_FIELD, limit=SIZE_SWITCH_S):
     """(Pure.) The amendment's size pick from the screened sizes' list rows ({size: rows}) and their gates' stage-b
     projections ({size: seconds or None}, under "projections"): the per-list difference large - medium in tx-ms's
     note F (onset and pitch, 50 ms; MuScriptor's own accuracy against the lists' exact truth), the mean over the ten
-    lists with its 90% t interval. Large is picked only when that interval is clear of zero above (`lo90 > 0`, by
-    `note_versions.clear_of_zero`: the repo's meaning of decided); otherwise medium is kept, "undecided, medium kept"
-    (or "large decided worse, medium kept"), and large stays open for the user at the stage-b go (`picked_size`).
-    The orchestrator's technical call on the review of PR #573, declared after medium's raw counts were seen: the
-    pick and the screen read the same ten lists, so a point-estimate pick would inflate the screen. With no large rows
-    (its gate stopped) medium is kept. Speed never picks: the projections are reported beside (`speed_note`), and
+    lists with its 90% t interval. T2 (phase_tx_bars_amend): large is the default, by the user's stance
+    (`LATER_STAGE_SIZE`); medium is picked only when the interval is clear of zero below ("large decided worse, medium
+    kept"). Clear above reads "large decided better"; anything else keeps large ("undecided, large kept"). The first
+    screen was picked under the earlier rule (medium unless large was decided better; PR #573's review), and stage b
+    then ran large on the user's go. With no large rows (its gate stopped) medium is kept. Speed never picks: the projections are reported beside (`speed_note`), and
     nothing switches to small. -> {size, label, diff, over_two_hours, ...}."""
     rows, proj = by_size["rows"], by_size.get("projections") or {}
     if not rows.get("large"):
@@ -888,17 +935,17 @@ def size_pick(by_size, arm=PICK_ARM, field=PICK_FIELD, limit=SIZE_SWITCH_S):
              and med[r["cluster"]]["figures"][arm][field] is not None]
         iv = NV.set_numbers(d, "d")
         if iv["mean"] is None or iv["lo90"] is None:
-            size, label = "medium", PICK_NO_SHARED     # no comparison at all: not "undecided"
+            size, label = "large", PICK_NO_SHARED      # no comparison at all: not "undecided"; the default stands
         elif NV.clear_of_zero(iv) and iv["lo90"] > 0:
             size, label = "large", "large decided better"
         elif NV.clear_of_zero(iv):
             size, label = "medium", "large decided worse, medium kept"
         else:
-            size, label = "medium", PICK_UNDECIDED
+            size, label = "large", PICK_UNDECIDED
     p = proj.get(size)
     return {"size": size, "label": label, "arm": arm, "field": field, "diff_large_less_medium": iv,
             "projections": proj, "over_two_hours": p is not None and p > limit,
-            "large_open_for_user": label == PICK_UNDECIDED}
+            "large_open_for_user": False}         # T2: large is already the default; the flag stays for old screens
 
 
 def speed_note(lists_body, go_read, limit=SIZE_SWITCH_S):
@@ -922,6 +969,19 @@ def later_stage_size(lists_body):
     if ((body.get("sizes") or {}).get("large") or {}).get("screen") != "lists-go":
         return "medium"                                  # as picked_size: never large on medium's screen
     return LATER_STAGE_SIZE
+
+
+def list_rows_for(lists_body, size):
+    """(Pure.) The list screen's rows for the size stage b runs: that size's own rows (`sizes[size].rows`), so the
+    read never pools one size's list rows with another's real-DI rows (PR #582's review). A screen made before the
+    amendment has no per-size rows: its `rows` then."""
+    body = lists_body or {}
+    own = ((body.get("sizes") or {}).get(size) or {}).get("rows")
+    if own is not None:
+        return own
+    if body.get("sizes"):
+        raise SystemExit(f"the list screen holds no rows for {size}")
+    return body["rows"]
 
 
 def picked_size(lists_body, go_read=None):
@@ -1663,8 +1723,9 @@ def cmd_read(_args):
                          timing={"tx-bp": rb, "tx-ms": rm, "tx-ms-free": rf})
         row["checks"] = goat_checks(notes, di, bank, a, offset, round_trip, SB.measure)
         goat.append(row)
-    body = {"lists_rows": len(lists["rows"]), "real": real, "goat": goat, "audio_levels": AUDIO_LEVELS,
-            **summarise_read(lists["rows"], real, goat), "detector_offset_s": offset,
+    lrows = list_rows_for(lists, inst["size"])        # the stage-b size's own list rows
+    body = {"lists_rows": len(lrows), "lists_size": inst["size"], "real": real, "goat": goat,
+            "audio_levels": AUDIO_LEVELS, **summarise_read(lrows, real, goat), "detector_offset_s": offset,
             "lists_sha256": NR.file_sha(lists_path()), "truth_report_sha256": NR.file_sha(T.truth_report_path()),
             "notes_listing_sha256": sha, "device": inst["device"], "size": inst["size"]}
     NR.write_once(read_path(), {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}",
