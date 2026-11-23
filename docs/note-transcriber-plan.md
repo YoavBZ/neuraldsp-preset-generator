@@ -8,8 +8,8 @@ transcribed). Every item is taken. Ledger `note-transcriber`, phases `phase_tx` 
 `tests/test_tx_run.py` (pure, light CI) and `tests/test_note_tx_np.py` (numpy). Outputs under `PF/note-rebuild/tx/`,
 each written once and never overwritten.
 
-**Status, 2026-11-23:** declared; nothing has run. The user gave the go (section 12); the weights download is the
-user's own step.
+**Status, 2026-11-23:** declared, installed and gated (section 13). The user gave the go (section 12) and downloaded
+the weights. No list has been scored.
 
 **A word on names.** The user's phrase is "note reader". In this repo "reader" already means the knob reader
 (`phase_fx_reader_*`), so this track says **transcriber** and uses the prefix `tx`. Every name in section 9 was grepped
@@ -621,3 +621,38 @@ by browser into `~/ndsp-presets/tools/muscriptor-weights/medium/`. No token is c
 27 GOAT development windows. The Cambridge-MT and MedleyDB songs wait for a separate yes. Commercial songs never.
 
 **Privacy.** The account's name and email never go into git, the ledger or the install manifest.
+
+## 13. The install and the gate (2026-11-23; ledger `phase_tx_install`)
+
+Both ran once from main at `1461bce1`, in a frozen detached worktree. Zero renders.
+
+**The install.**
+- It ran on pyenv's Python 3.14.6, so the 3.13 fallback was not needed.
+- The lock has 30 hashed pins, among them muscriptor 0.4.0 at its declared hash and torch 2.15.0. The venv is 657 MB.
+- The user's medium weights matched their declared size and sha256, and `config.json` is 126 bytes.
+- The import passed.
+
+**The gate.**
+
+| | MPS | CPU |
+|---|---|---|
+| Three runs on four development windows | identical on all four | identical on all four |
+| Transcription, seconds per 10-s window | 1.97 | 10.51 |
+| Model load, seconds (timed apart) | 0.45 to 0.67 | 0.94 to 0.95 |
+| Stage b's 133 runs, projected | 0.07 h | 0.39 h |
+
+The device rule picked MPS, and the size rule kept medium. As declared, the gate then transcribed the ten lists, masked
+and with no mask: 20 note files on MPS. **No list has been scored.** The screen waits for the large-model amendment,
+so medium and large are scored together by the same declared measure.
+
+**Precision.** On MPS the transformer runs in float16 (304,948,224 parameters) and the conditioners in float32
+(1,555,456). This was read from the loaded model's parameters and agrees with 0.4.0's `load_model`. The plan's float16
+expectation was right. The note files' `dtype` field reads `torch.float32` on MPS only because `tx_run`'s probe reads
+the first parameter, which is a conditioner's. That is a mislabel, not the run's precision. The files are not
+rewritten.
+
+**Instrument labels.** These are counts, not a score.
+- Masked: 666 notes, of which `acoustic_guitar` 417 and `clean_electric_guitar` 249.
+- No mask: 736 notes, of which `acoustic_guitar` 391 and `distorted_electric_guitar` 345.
+
+The masked arm's guitar groups include `acoustic_guitar`.
