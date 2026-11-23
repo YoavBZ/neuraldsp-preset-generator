@@ -445,7 +445,8 @@ def test_the_ledger_holds_the_declaration_and_holds_fs_tone_back():
     assert rec["renders"] == 846 == T.PARTS * T.RENDERS_PER_PART
     for k in T.HELD_KEYS:
         assert k not in e                                          # fs-tone stays held
-    assert set(T.tone_keys(e)) == {T.PHASE, T.PHASE_SPLIT, T.PHASE_GENTLE, T.PHASE_BESIDE, T.PHASE_GENTLE_OUTCOME}
+    assert set(T.tone_keys(e)) == {T.PHASE, T.PHASE_SPLIT, T.PHASE_GENTLE, T.PHASE_BESIDE, T.PHASE_GENTLE_OUTCOME,
+                                   T.PHASE_BESIDE + "_departure"}                # 11g's departure (fs-codec read first)
 
 
 def test_the_ledger_holds_the_gentle_checks_audited_outcome():
