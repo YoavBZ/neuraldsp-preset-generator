@@ -5175,6 +5175,33 @@
     "kept": "the ear page itself: a listening check on whether the rebuilt notes are right; each build is heard on its own page and gets its own verdict",
     "code": "note_transcribe: listening_suffix, ear_key, FIRST_DRY_SHA; clips_dir and dry_path per build (`--build`, a build's `dry_root`); the build refusal's \"(one declared fix)\" dropped; a later page refuses ear items holding a ruled-out DI (12p). note_rebuild_ear: redo_page_dir per build, `redo-page` and `redo-read` take `--build-sha`, the read names the build's own key. scratch_notes.ear_refusal finds the verdict for the build asked about. No count of builds or fixes is kept",
     "not_changed_yet": "the other predefined bars and caps on the note-rebuild path are listed for the user's call in this PR's report; none is changed here"
+   },
+   "phase_nr_1_redo_fixes": {
+    "declared": "2026-11-24, from the delegated decisions rebuild-one-fix.md and bar-conversion.md R1-R5 (under the user's standing instruction; not the user's go); no pass/fail bars, no attempt caps (the user, 2026-11-24); zero renders",
+    "fixes": {
+     "F1": "the bend baseline: each note's bend track less its baseline (global -1 step, or the note's own median)",
+     "F2": "same-pitch re-finds joined into the sounding note: the DI's pitch-band rise now; MuScriptor and Basic Pitch's onset activation after track 1's read; the operating point read off the measured trade-off",
+     "F3": "glides: the next note continues the same sample along the bend path",
+     "F4": "tx-veto's harmonic ghosts, after track 1's stage-b read"
+    },
+    "isolation": "identity first (every fix off: build.json's sha256 byte for byte); each fix alone on L (the ten lists) and D (19 development windows outside the ear page), added only to fixes already verified; then together; then E (the 7 ear items, held out); item_5 in no set",
+    "offset_note": "every redo figure so far carries Basic Pitch's +1-step bend baseline (tr-di about 27 c sharp on D, 30 on L), the stored nv-* distances track 1's bridge reads included",
+    "muscriptor_note": "if MuScriptor enters the fs-notes build it replaces 12c's transcriber; the first build's search renders stay set aside unread (read later, R8)",
+    "bars": {
+     "R1": "every content check report-only; calibration, chord and flag triggers reports; the page built regardless; REFUSAL_STOP via S1",
+     "R2": "the versions GUARD unused by later reads",
+     "R3": "ring variant and loudness gamma picked on D after the kept fixes (step 6)",
+     "R4": "the synthesis clamps' binding reported; unchanged in build 2",
+     "R5": "the ear verdict a label; a frozen build answered, scored and read labelled 'ear pending'; the outcome code waits"
+    },
+    "later_build": "build --build-name/--fixes (build-NAME.json, dry-NAME/), ear-items --build-name (item_5 replaced per kind), fs-notes --build-name (phase_scratch_notes_dry_NAME), ear_refusal's key check",
+    "preliminary": {
+     "isolate_file": "PF/note-rebuild/redo/fixes/isolate-prelim-dd3d4aaa.json",
+     "isolate_sha256": "17105fb9dc07c822a944e77779a5acd70d1f4a3941543e26ef7d31cbc80f3c00",
+     "clamps_file": "PF/note-rebuild/redo/fixes/clamps-prelim-a75485fd.json",
+     "clamps_sha256": "9f3443871c42f0257e64d0438b2ce2245ac36f05e88e29b3b5a62f6dd8d988d1",
+     "note": "preliminary, from frozen worktrees of the branch; the declared run repeats from merged main. Identity 108 of 108; F1 D -0.093 [-0.152, -0.035], L -0.294 [-0.585, -0.002], tuning 27 c and 30 c to under 2 c; F3 on F1 D +0.174 [+0.059, +0.289]; F2 DI band on F1 farther on D at every operating point"
+    }
    }
   },
   {

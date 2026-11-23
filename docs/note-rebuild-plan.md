@@ -1292,3 +1292,71 @@ the redo and track 1: this key.
   for the build asked about. No count of builds or fixes is kept.
 - A later page never plays a ruled-out DI (12p): new ear items come first.
 - The path's other predefined bars and caps are listed for the user's call; none is changed here.
+
+### 12q. The rebuild's fixes F1 to F4, and the bars turned into reports (2026-11-24; ledger `phase_nr_1_redo_fixes`)
+
+Declared from two delegated decisions under the user's standing instruction (technical calls go to an isolated decision
+agent): `rebuild-one-fix.md` (the fixes) and `bar-conversion.md` R1 to R5. Neither is a go of the user's. Their rule,
+2026-11-24: no made-up bars and no attempt caps. Every effect is reported with its 90% interval, and a fix is kept
+when it measurably brings the rebuild closer to the DI. Zero renders. `item_5` is in no set (12p).
+
+**Every redo figure so far carries a bend offset.** Basic Pitch's bend track reads +1 step (a third of a semitone) on
+an in-tune note, so `tr-di` sits about 27 cents sharp of the DI on the development windows and 30 on the lists (measured
+below). That holds for the versions read, both calibrations, the build's checks and the stored `nv-*` distances track
+1's bridge reads.
+
+**The fixes**, each a pure transform of a window's timed notes before `rebuild_redo` (`learn/note_fixes.py`):
+
+| Fix | What it does | Candidates, picked by measurement |
+|---|---|---|
+| F1, the bend baseline | A note's bend is its track less its baseline | The global −1 step; each note's own median |
+| F2, same-pitch re-finds | A note re-found while its pitch still sounds extends that note instead of re-plucking it | The DI's pitch-band rise (now); MuScriptor's onsets and Basic Pitch's own onset activation (after track 1's read; the second only if a rerun reproduces the stored events exactly). The operating point is read off the measured trade-off |
+| F3, glides | When a note's re-zeroed bend moves toward the next note's pitch and the next starts as it ends, the next continues the same sample along the bend path | — |
+| F4, harmonic ghosts | `tx-veto` | After track 1's stage-b read |
+
+If MuScriptor enters the fs-notes build (F2, F4), it replaces the transcriber 12c froze. The first build's search
+renders stay set aside unread; they are read later, labelled "ear-faulty build" (R8).
+
+**The isolation check** (identity first; each fix alone, added only to fixes already verified; then the kept fixes
+together; then the held-out ear items):
+- Sets: L, the ten lists; D, the 19 development windows outside the ear page; E, the 7 ear items, held out and read
+  only after the combined rule is frozen.
+- Identity: with every fix off, `tr-di` and `tr-plain` equal `build.json`'s sha256 on the 47 parts and the 7 ear items.
+- F1 alone; then F2 and F3 each on top of F1; F4 on top of the verified fixes; each by `floored_logmel` to the DI
+  (F1 less as built, or the fix less F1), the tuning offset, and the note counts against the truth or the annotation.
+  `floored_logmel` failed its own ghost-ladder on `chords-four`, so the note counts are read beside it.
+- R3 at step 6, after the kept fixes, zero renders: the ring variant (`RING_TIE` retired) and the loudness γ picked on
+  D by the distance, with E read only after freezing.
+
+**The bars turned into reports (R1 to R5):**
+- R1: every content check is report-only. The calibration, the chord trigger and the flag trigger are reports. The ear
+  page is built whatever the checks read; their figures go into its key, never onto the page. `REFUSAL_STOP` goes
+  through S1 when it merges.
+- R2: the versions read's recall `GUARD` is unused by every later read; the fixes' keep rule is the measured
+  trade-off.
+- R4: how often each synthesis clamp acts, reported; the clamps stay as they are in build 2 so the fixes' isolation
+  stays clean.
+- R5: the ear verdict is a label, not a gate. A frozen build may be answered, scored and read, labelled "ear pending";
+  the row's outcome code waits for its ear verdict.
+
+**A later build** (#581's review): `build --build-name NAME --fixes JSON` writes `build-NAME.json` and its dry guitars
+under `dry-NAME/`, and refuses ear items that hold a ruled-out DI. `ear-items --build-name NAME` makes that page's ear
+items: the first page's items, each ruled-out DI replaced for its kind (the declared pass in the seeded order, else the
+nearest by the kind's own figure). fs-notes takes `--build-name` for that build's own hash key
+(`phase_scratch_notes_dry_NAME`) and folders, and `ear_refusal` refuses a verdict filed under any key but
+`ear_key(sha)`.
+
+**Preliminary figures** (from a frozen worktree of the branch; the declared run repeats from merged main):
+
+| Step | Set | Figure |
+|---|---|---|
+| Identity | 54 items × 2 arms | 108 of 108 files byte-identical |
+| F1 (median; global within 0.001) | D | distance −0.093 [−0.152, −0.035]; tuning +26.8 c → −0.7 c |
+| F1 | L | distance −0.294 [−0.585, −0.002]; tuning +30.5 c → −1.4 c; bent share on the nine bend-free lists 0.18 → 0.04 |
+| F3 on F1 | D | distance +0.174 [+0.059, +0.289] (farther); joins: 36 annotated plucks, 4 annotated glides, 28 unannotated |
+| F3 on F1 | L | distance +0.466 [−0.094, +1.025]; the `bend` list's 7 splits all joined |
+| F2 (DI band) on F1 | D | farther at every operating point (+0.18 at 0 dB to +0.96 joining all); annotated picks joined outnumber unannotated re-finds at every point |
+| F2 (DI band) on F1 | L | −0.06 to −0.24, every interval spanning zero |
+| R4 clamps, as built | parts / D / E | the 2-semitone clear rule acts on 38% / 42% / 42% of notes; the bend cap on none; the onset snap moves 89% / 90% / 91% of groups; MIDI range, octave-up and six-at-once under 1% |
+
+So far F1 brings the rebuild closer on both sets, and F3 and F2's DI-band candidate as defined move it farther on D.
