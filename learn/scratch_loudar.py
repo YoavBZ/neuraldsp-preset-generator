@@ -136,7 +136,9 @@ def place(clip, p):
 FL_TABLE = (    # (code, when, reading, what follows); the first that holds, on the deciding number
     ("FL-null", "D_null's lower end at -0.05 or above",
      "LOUDAR's dry guitar is not readably better than the stem it was made from",
-     "ld-rec runs. LOUDAR is parked. If stem-in itself reaches the bar, that goes to the user as its own finding"),
+     "recommend parking LOUDAR (the user's call); the next measurement is ld-rec's read, which names the bottleneck "
+     "(LOUDAR on the clean record against the stem). If stem-in itself reaches the bar, that goes to the user as its "
+     "own finding"),
     ("FL-above", "the deciding number's whole interval below zero, its mean at -0.05 or beyond, and G50(ld-stem)'s "
      "upper end below zero on BKS+panel",
      "from the song's stem alone, LOUDAR's dry guitar beats the blurred true DI at the checkpoint, and beats Cen",
@@ -146,11 +148,12 @@ FL_TABLE = (    # (code, when, reading, what follows); the first that holds, on 
      "level with the blurred true DI: a heard-size loss is ruled out",
      "to the user with fs-notes beside: the two routes are compared before either goes on"),
     ("FL-short", "its whole interval above zero, its mean at +0.05 or beyond", "below the bar",
-     "ld-rec runs and names the bottleneck. The route is parked, not closed"),
+     "recommend parking the route, not closing it (the user's call); the next measurement is ld-rec's read, which "
+     "names the bottleneck"),
     ("FL-undecided", "anything else", "not decided; undecided is not failed", "to the user with the intervals"),
 )
 FL_CODES = tuple(c for c, *_ in FL_TABLE)
-REC_CODES = ("FL-short", "FL-null")                # ld-rec runs after these
+REC_CODES = ("FL-short", "FL-null")                # the codes whose bottleneck ld-rec names (it runs after any code)
 REC_NULL_NOTE = "in ld-rec's read D_null is G50(ld-rec) - G50(stem-in): LOUDAR on the clean record against the stem"
 
 
@@ -229,13 +232,18 @@ def goat_reading(d_blur_goat, small=SMALL, big=BIG):
     return "at the bar" if d_blur_goat["hi90"] < big and d_blur_goat["mean"] < small else "short"
 
 
-def bottleneck(rec_code, goat):
-    """(Pure.) After FL-short or FL-null: ld-rec's code by the same table, and GOAT's beside read. ld-rec at or above
-    the bar: the stem. Else GOAT at the bar while BKS and the panel are short: the prior's coverage, or memorisation.
-    GOAT short too: the generator or its operator. GOAT not run (outside the cost stop): generator against prior: not
-    split. A failing part is a research target; nothing is closed."""
+def bottleneck(rec_code, goat, main_code=None):
+    """(Pure.) ld-rec's code by the same table, and GOAT's beside read. After FL-short or FL-null (or with no main code
+    given): ld-rec at or above the bar: the stem. Else GOAT at the bar while BKS and the panel are short: the prior's
+    coverage, or memorisation. GOAT short too: the generator or its operator. GOAT not run (outside the cost stop):
+    generator against prior: not split. After any other main code nothing fell short, so no bottleneck is named:
+    ld-rec reads beside as LOUDAR's ceiling without separation (L1). A failing part is a research target; nothing is
+    closed."""
     if rec_code not in FL_CODES:
         raise SystemExit(f"bottleneck needs ld-rec's FL code, not {rec_code!r}")
+    if main_code is not None and main_code not in REC_CODES:
+        return {"bottleneck": f"none named: the main row reads {main_code}" + NOT_SEPARATED,
+                "next": f"ld-rec reads {rec_code} beside: LOUDAR's ceiling without separation"}
     if rec_code in ("FL-above", "FL-reach"):
         return {"bottleneck": "the stem" + NOT_SEPARATED, "next": "LOUDAR becomes a yardstick for separator work"}
     if goat is None:
@@ -282,10 +290,11 @@ def deciding_stop(refused, sets_of):
 
 
 def rec_refusal(report):
-    """(Pure.) ld-rec runs only after the main read's FL-short or FL-null."""
+    """(Pure.) ld-rec runs after the main read, whatever its code (L1: an order, not a gate): it waits only for the
+    main read's report and its FL code."""
     code = ((report or {}).get("fl") or {}).get("code")
-    if code not in REC_CODES:
-        return f"the row reads {code}, not FL-short or FL-null: ld-rec does not run"
+    if code not in FL_CODES:
+        return "the main row is not read yet (no FL code in report.json): ld-rec runs after it"
     return None
 
 
@@ -429,7 +438,7 @@ def require_name(name, allowed, build=None):
 
 
 def require_rec(m):
-    """ld-rec's commands: the main read's report reads FL-short or FL-null, and ld-rec's build is hashed."""
+    """ld-rec's commands: the main read's report holds its FL code (any), and ld-rec's build is hashed."""
     p = report_path()
     why = rec_refusal(json.loads(p.read_text()) if p.exists() else None)
     if why:
@@ -672,8 +681,8 @@ def cmd_build(_args):
 
 
 def cmd_build_rec(_args):
-    """ld-rec's build, only after FL-short or FL-null: as `build`, for ld-rec alone. -> build-rec.json (its sha256
-    for phase_scratch_loudar_dry_rec)."""
+    """ld-rec's build, after the main read on any code (L1): as `build`, for ld-rec alone. -> build-rec.json (its
+    sha256 for phase_scratch_loudar_dry_rec)."""
     m = require_loudar(PHASE_DRY)
     p = report_path()
     why = rec_refusal(json.loads(p.read_text()) if p.exists() else None)
@@ -779,6 +788,10 @@ def cmd_search(args):
     total, t0 = 0, time.time()
     for p in mine:
         out = search_path(args.name, p["pkey"])
+        if getattr(args, "rerun", False):                # S1: a technical refusal, once more in this fresh process
+            if not out.exists() or not S.refused_record(json.loads(out.read_text())):
+                continue
+            out = S.rerun_path(out)
         if out.exists():
             continue
         SC.disk_guard()
@@ -807,23 +820,26 @@ def cmd_answers(args):
 
     draw = S.require_draw()
     parts = parts_of(draw, build, args.name)
-    recs = {}
     for p in parts:
-        sp = search_path(args.name, p["pkey"])
-        if not sp.exists():
+        if not search_path(args.name, p["pkey"]).exists():
             raise SystemExit(f"{p['pkey']}: not searched")
-        recs[p["pkey"]] = json.loads(sp.read_text())
+    recs, used, reruns = S.with_reruns([p["pkey"] for p in parts], lambda k: search_path(args.name, k))
+    why = S.rerun_refusal(reruns)                        # S1: a technical refusal is rerun once first
+    if why:
+        raise SystemExit(why)
     shas = {k: v["sha256"] for k, v in build["names"][args.name].items()}
-    ans, refused, _ = SC.short_answers(parts, recs, shas, lambda k: S.file_sha(search_path(args.name, k)))
-    dec, beside, stop = deciding_stop(refused, {p["pkey"]: p["set"] for p in parts})
+    ans, refused, _ = SC.short_answers(parts, recs, shas, lambda k: S.file_sha(used[k]))
+    sets_of = {p["pkey"]: p["set"] for p in parts}
+    dec, beside, stop = deciding_stop(refused, sets_of)
     out = {"plan": PLAN, "row": ROW, "dry": args.name, "ref": S.REF_NAME[REF], "checkpoint": SC.CHECKPOINT,
            "draw_sha256": S.file_sha(S.draw_path()), "build_sha256": S.file_sha(build_path(args.name == REC)),
            "renders": sum(r.get("renders", 0) for r in recs.values()), "refused": refused,
-           "refused_deciding": dec, "refused_beside": beside, "stopped": stop, "parts": ans,
+           "refused_deciding": dec, "refused_beside": beside, "stopped": stop, "reruns": reruns,
+           "refusal_report": S.refusal_report(refused, sets_of, DECIDING), "parts": ans,
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     P.save(answers_path(args.name), out)
-    print(f"FS-LOUDAR ANSWERS {args.name}: {len(ans)} parts, {len(refused)} refused ({len(dec)} deciding"
-          f"{', STOPPED' if stop else ''}); sha256 {S.file_sha(answers_path(args.name))} (into the ledger as "
+    print(f"FS-LOUDAR ANSWERS {args.name}: {len(ans)} parts, {len(refused)} refused ({len(dec)} deciding, each "
+          f"read at Cen); reruns {reruns}; sha256 {S.file_sha(answers_path(args.name))} (into the ledger as "
           f"{phase_answers(args.name)} before `score`)")
 
 
@@ -859,6 +875,10 @@ def cmd_score(args):
     total = 0
     for p in SC.shard_of([q for q in draw["parts"] if q["pkey"] in ans["parts"]], args.shard):
         out = score_path(args.name, p["pkey"])
+        if getattr(args, "rerun", False):                # S1: a scoring-control miss, once more in this process
+            if not out.exists() or json.loads(out.read_text())["scoring_control_ok"]:
+                continue
+            out = S.rerun_path(out)
         if out.exists():
             continue
         SC.disk_guard()
@@ -981,14 +1001,21 @@ def subwin_of():
 
 
 def read_body(sd, draw, m, name, gin=None):
-    """The rows of a read for `name` (ld-stem or ld-rec): G50, the five numbers, rows (b) and (c), rt-m2l."""
+    """The rows of a read for `name` (ld-stem or ld-rec): G50, the five numbers, rows (b) and (c), rt-m2l. Every part
+    is read, a refused one at Cen (S1); the passing-only rows and the refused parts' audit beside."""
+    from learn import note_replay as NR
+
     comp_full = SC.comparators()
     comp = {r: comp_full[r][0] for r in comp_full}
     per, refused, replaced, miss = g50_of(draw, name, m)
-    g = {k: v for k, v in per.items() if v is not None}
-    gcut = {k: v for k, v in g50_of(draw, "di-cut", m)[0].items() if v is not None}
-    if gin is None:
-        gin = {k: v for k, v in g50_of(draw, "stem-in", m)[0].items() if v is not None}
+    cut_per, cut_ref = g50_of(draw, "di-cut", m)[:2]
+    in_per, in_ref = g50_of(draw, "stem-in", m)[:2] if gin is None else (gin, {})
+
+    def kept(v):
+        return {k: x for k, x in v.items() if x is not None}
+    g_pass, gcut_pass, gin_pass = kept(per), kept(cut_per), kept(in_per)
+    g = kept(S.itt_values(per, refused))                 # S1: the deciding read on every part, a refused one at Cen
+    gcut, gin = kept(S.itt_values(cut_per, cut_ref)), kept(S.itt_values(in_per, in_ref))
     nums = numbers(g, comp, gcut, gin)
     ans_m2l = SC.require_answers(m, "rt-m2l")
     gm2l = SC.codec_g50(draw, ans_m2l, S.file_sha(SC.answers_path("rt-m2l")), lambda k: SC.score_path("rt-m2l", k))[0]
@@ -1009,8 +1036,32 @@ def read_body(sd, draw, m, name, gin=None):
                                              subwin)
     rows["D_true_vs_subwin"] = d_true_vs_subwin(nums["D_true"], subwin,
                                                 {p["pkey"]: p["set"] for p in draw["parts"]}, name)
-    head = {"refused": refused, "nonfinite_replaced": replaced, "scoring_control_misses": miss}
+    sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}
+    every = {**{k: v for k, v in cut_ref.items()}, **{k: v for k, v in in_ref.items()}, **refused}
+    if every:                                            # beside: the passing-only read, the audit
+        rows["passing_only"] = {q: bp_rows(sd, draw, v)
+                                for q, v in numbers(g_pass, comp, gcut_pass, gin_pass).items()}
+        rows["passing_only"]["G50"] = bp_rows(sd, draw, g_pass)
+        start = {p["pkey"]: json.loads(start_path(name, p["pkey"]).read_text())["value"] for p in draw["parts"]
+                 if start_path(name, p["pkey"]).exists()}             # Cen's search-half start value, this dry guitar
+        rows["refused_audit"] = S.refused_audit(draw["parts"], every, NR.lender_band(), start=start, values=g)
+    head = {"refused": refused, "refused_di_cut": cut_ref, "refused_stem_in": in_ref, "nonfinite_replaced": replaced,
+            "scoring_control_misses": miss, "refusal_report": S.refusal_report(every, sets_of, DECIDING)}
     return rows, head, g
+
+
+def read_codes(rows):
+    """(Pure.) FL_TABLE's code on the deciding (intent-to-treat) rows and, when any part refused, on the passing-only
+    rows beside; the `refusal-sensitive` label when they differ (S1). -> (fl, fl_passing, label)."""
+    fl = fl_code(rows["D_null"]["bp"], rows["D_blur"]["bp"], rows["D_cut"]["bp"], rows["D_bar"]["bp"],
+                 rows["G50"]["bp"], rows["G50_rows_b_c"]["fs-both"]["bp"])
+    po = rows.get("passing_only")
+    if not po:
+        return fl, fl, None
+    ok = all(_iv_ok((po.get(q) or {}).get("bp")) for q in ("D_null", "D_blur", "G50"))
+    fp = S.passing_code(lambda: fl_code(po["D_null"]["bp"], po["D_blur"]["bp"], po["D_cut"]["bp"], po["D_bar"]["bp"],
+                                        po["G50"]["bp"], rows["G50_rows_b_c"]["fs-both"]["bp"]), ok)
+    return fl, fp, S.refusal_label(fl["code"], fp["code"])
 
 
 def cmd_read(_args):
@@ -1035,11 +1086,12 @@ def cmd_read(_args):
         if why:
             P.save(report_path(), dict(out, rows=rows, fl=None, stopped=True, stop_reason=f"{q}: {why}"))
             raise SystemExit(f"{q}: {why}; to the user")
-    fl = fl_code(rows["D_null"]["bp"], rows["D_blur"]["bp"], rows["D_cut"]["bp"], rows["D_bar"]["bp"],
-                 rows["G50"]["bp"], rows["G50_rows_b_c"]["fs-both"]["bp"])
+    fl, fl_pass, label = read_codes(rows)
     goat = goat_reading((rows["D_blur"]["goat"] or None) if build.get("goat_built") else None)
-    rep = dict(out, rows=rows, fl=fl, goat=goat, caveat=NO_PRIOR_IMPROVEMENT_NOTE, timing_caveat=TIMING_CAVEAT,
-               next="ld-rec" if fl["code"] in REC_CODES else fl["next"],
+    rep = dict(out, rows=rows, fl=fl, fl_passing_only=fl_pass, label=label, goat=goat,
+               caveat=NO_PRIOR_IMPROVEMENT_NOTE, timing_caveat=TIMING_CAVEAT,
+               next=f"ld-rec (after any code); then {fl['next']}" + ("; refusal-sensitive: to the user with both "
+                                                                    "reads" if label else ""),
                bks_g50_below_zero=((rows["G50"]["bks"] or {}).get("hi90") or 0) < 0)
     if SN.report_path().exists():
         rep["versus_notes"] = "run `versus-notes` (zero renders, once)"
@@ -1067,13 +1119,12 @@ def cmd_read_rec(_args):
     out = {"plan": PLAN, "row": ROW + " (ld-rec)", **head, "answers_sha256": S.file_sha(answers_path(REC)),
            "d_null_is": REC_NULL_NOTE, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     P.save(rows_path(True), dict(out, rows=rows))
-    fl = fl_code(rows["D_null"]["bp"], rows["D_blur"]["bp"], rows["D_cut"]["bp"], rows["D_bar"]["bp"],
-                 rows["G50"]["bp"], rows["G50_rows_b_c"]["fs-both"]["bp"])
-    bn = bottleneck(fl["code"], main_rep.get("goat"))
+    fl, fl_pass, label = read_codes(rows)
+    bn = bottleneck(fl["code"], main_rep.get("goat"), (main_rep.get("fl") or {}).get("code"))
     if not bn["bottleneck"].endswith(NOT_SEPARATED):                     # before the report: none is left behind
         raise SystemExit("the bottleneck must say timing and timbre are not separated")
-    P.save(report_path(True), dict(out, rows=rows, fl=fl, bottleneck=bn, caveat=NO_PRIOR_IMPROVEMENT_NOTE,
-                                   timing_caveat=TIMING_CAVEAT))
+    P.save(report_path(True), dict(out, rows=rows, fl=fl, fl_passing_only=fl_pass, label=label, bottleneck=bn,
+                                   caveat=NO_PRIOR_IMPROVEMENT_NOTE, timing_caveat=TIMING_CAVEAT))
     print(f"ld-rec: {fl['code']} ({REC_NULL_NOTE}); bottleneck: {bn['bottleneck']}. Caveat: {TIMING_CAVEAT}")
     print_lags(rows["lag_beside_g50"])
     print(f"D_true against the sub-window fraction (descriptive, never decides): {rows['D_true_vs_subwin']}")
@@ -1135,6 +1186,8 @@ def main(argv=None):
     ap.add_argument("--name", choices=NAMES)
     ap.add_argument("--shard", type=S._shard, default=(0, 1))
     ap.add_argument("--first", type=int, default=0)
+    ap.add_argument("--rerun", action="store_true",
+                    help="search or score again, once, only the parts whose record refused (S1: then Cen)")
     args = ap.parse_args(argv)
     if args.cmd in NEEDS_NAME and not args.name:
         ap.error(f"{args.cmd} needs --name")

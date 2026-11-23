@@ -4431,6 +4431,22 @@
     "stored_readings": "rows (b) and (c), both codec rows and the tone split refused 0 parts: none of their stored readings changes (tests re-derive them from the stored reports where the data is present)",
     "code": "learn/scratch_search.py, learn/scratch_notes.py, learn/scratch_codec.py, learn/scratch_tone.py, learn/scratch_loudar.py, learn/note_transcribe.py (refusal_count only); tests/test_refusal_reports.py and the updated pins in the rows' tests; plan section 14",
     "next": "L1 (LOUDAR's intent-to-treat read, ld-rec on any code, the park text as a recommendation) before LOUDAR's answers"
+   },
+   "phase_scratch_loudar_l1": {
+    "declared": "2026-11-24, after S1 (phase_scratch_refusal_reports, rebased on main 9c031aa1), before LOUDAR's answers; the row's searches ran from main 7f40979a and are untouched",
+    "decided_by": "an isolated decision agent under the user's rule of 2026-11-24 ('no made up or random thresholds/limits'); not the user's own answer",
+    "decision_record": {
+     "file": "handover 2026-11-24 decisions/bar-conversion.md (the LOUDAR section and L1)",
+     "sha256": "2e598bca0ee1ea06435d2d0ebe74da3ff03a2c10c1fdb488f33533e08e45ddb2"
+    },
+    "changes": {
+     "s1": "answers reads each search record or its rerun (--rerun on search and score, once, in a fresh process) and waits while a technical refusal has not been rerun; refusals are reported (refusal_report), never a stop; the read is on every part, a refused part's G50 Cen's (0) in ld-stem, di-cut and stem-in alike; beside: the passing-only rows (with no interval: 'no passing-only interval', no label), refused_audit (Cen's search-half start value from each part's start record) and read_codes's refusal-sensitive label (to the user with both reads)",
+     "ld_rec": "rec_refusal no longer gates on FL-short or FL-null: ld-rec (1,311 renders) runs after the main read on any code, waiting only for the main read's report; after a pass or an undecided read bottleneck names none and reads ld-rec beside as LOUDAR's ceiling without separation",
+     "park_text": "FL-null and FL-short's 'what follows' say 'recommend parking' and name the next measurement (ld-rec's read, which names the bottleneck); parking is the user's call, nothing parks itself"
+    },
+    "unchanged": "FL_TABLE's conditions and codes, SMALL and BIG (the user's), the deciding number and its switch, the sets, the comparators, the timing and placement rules, the stem-in null and the fs-notes render wait",
+    "code": "learn/scratch_loudar.py (FL_TABLE's texts, bottleneck, rec_refusal, cmd_answers, cmd_search/cmd_score --rerun, read_body, read_codes, cmd_read, cmd_read_rec); tests in tests/test_scratch_loudar.py; plan 13f",
+    "next": "LOUDAR's answers for ld-stem, di-cut and stem-in from merged main, then the answers hash PR"
    }
   },
   {

@@ -970,7 +970,7 @@ it is the first dry guitar from the song alone to do so. If it does not, `ld-rec
 | `ld-stem` | LOUDAR's output from the stem's search half, measured on the clip, placed on the DI's timeline | BKS 16 and the panel 7; GOAT 24 beside, only if it fits the cost stop | **Short row; decides** |
 | `di-cut` | The raw true DI cut to the same span, then measured on that clip (the same way as `ld-stem`) | BKS and the panel, 23 | Short row: the cut's own cost |
 | `stem-in` | The stem's search half itself, measured, as the dry guitar | 23 | Short row: the null (does LOUDAR beat its own input?) |
-| `ld-rec` | LOUDAR's output from the clean record's search half (no separation) | 23 | Short row, **only after `FL-short` or `FL-null`**: is the stem the bottleneck? |
+| `ld-rec` | LOUDAR's output from the clean record's search half (no separation) | 23 | Short row, after the main read **on any code** (13f, L1): is the stem the bottleneck? |
 | `ld-stem-b` | As `ld-stem`, second sampling seed | 23 | Start read only, and only if the cost stop allows |
 | `di-whole` | The true DI, uncut | the 2 check parts | The control's only |
 
@@ -1047,10 +1047,10 @@ table reads `D_bar` and says so.
 
 | Code (first that holds) | When | Reading | What follows (a recommendation; nothing continues on its own, except `ld-rec`) |
 |---|---|---|---|
-| `FL-null` | `D_null`'s lower end at −0.05 or above | LOUDAR's dry guitar is not readably better than the stem it was made from | `ld-rec` runs. LOUDAR is parked. If `stem-in` itself reaches the bar, that goes to the user as its own finding |
+| `FL-null` | `D_null`'s lower end at −0.05 or above | LOUDAR's dry guitar is not readably better than the stem it was made from | Recommend parking LOUDAR (the user's call); the next measurement is `ld-rec`'s read, which names the bottleneck. If `stem-in` itself reaches the bar, that goes to the user as its own finding (13f) |
 | `FL-above` | The deciding number's whole interval below zero, its mean at −0.05 or beyond, **and G50(`ld-stem`)'s upper end below zero on BKS+panel** | From the song's stem alone, LOUDAR's dry guitar beats the blurred true DI at the checkpoint, and beats Cen. "By a heard size" only at −0.10 or beyond | The route leads. Proposed next, each under its own declaration: its full row, a stem from a mix with other guitars, a listen |
 | `FL-reach` | Its upper end under +0.10 and its mean under +0.05 | Level with the blurred true DI: a heard-size loss is ruled out. Where row (c)'s G50 interval reaches zero (as here), it reads "level with a bar that is itself level with Cen here" | To the user with `fs-notes` beside: the two routes are compared before either goes on |
-| `FL-short` | Its whole interval above zero, its mean at +0.05 or beyond | Below the bar | `ld-rec` runs and names the bottleneck. The route is parked, not closed |
+| `FL-short` | Its whole interval above zero, its mean at +0.05 or beyond | Below the bar | Recommend parking the route, not closing it (the user's call); the next measurement is `ld-rec`'s read, which names the bottleneck (13f) |
 | `FL-undecided` | anything else | Not decided; undecided is not failed | To the user with the intervals |
 
 `FL-above` and `FL-reach` cannot hold with `FL-short` (a test on a grid). A pass on the deciding number without G50's
@@ -1101,13 +1101,14 @@ beside `ld-stem`'s), descriptive, never deciding.
   `build-rec` → its hash PR → its short row → `read-rec` → hand-back, audit, results PR `phase_scratch_loudar_outcome`.
 - **Cost (renders, measured rates):** start reads 186, control 22, short searches 4,743 (`ld-stem` 47, `di-cut` 23,
   `stem-in` 23, at 51 a part), scores 372: **5,323**, about 53 minutes, up to about 1.5 hours under load; 3,955
-  without GOAT. `ld-rec`, only after a fail: 1,311.
+  without GOAT. `ld-rec`, after the read on any code (13f): 1,311.
 - **The cost stop** (CPU; the delegated decision agent's choice under the user's standing rule: yes, confidence 0.8):
   everything that runs without asking must fit **8 wall hours at 4 threads**: the gate's 18 runs, its 4 timing and
   check runs (the timed whole and cut clip, the seeded rerun, the zeros-reference run), and the 23 deciding clips. GOAT's 24 clips, then `ld-stem-b`'s 23, are added in that order only while the total stays under 8 hours (GOAT
   placed before `ld-stem-b`). If the gate and the 23 do not fit: stop and ask. Fewer steps would be another method and
   is not offered. The time for one 10-s window is reported either way.
 - **`stem-in` always, `ld-rec` only after a fail** (the delegated decision agent's choice: yes, confidence 0.75).
+  **Since 13f (L1): `ld-rec` runs after the main read on any code.**
 - **Repeat use.** These held halves were read by rows (b), (c), `fs-codec` and soon `fs-notes`. Nothing here is chosen
   on a held value: the setting is chosen on the authors' examples; the checkpoint, table and sets are fixed now.
 - **11g**, the clip-free re-score beside new rows, is declared but not coded; when it is, this row's answers join it
@@ -1186,6 +1187,27 @@ beside `ld-stem`'s), descriptive, never deciding.
      report-only, reads 9, 10 and 2 of 23 beyond for `ld-stem`, `ld-stem-b` and `stem-in`.
 
    Renders still wait for `fs-notes` (`slots_refusal`, in code).
+
+### 13f. L1: refusals as reports, `ld-rec` after any code, the park text (2026-11-24; ledger `phase_scratch_loudar_l1`)
+
+Decided by an isolated decision agent under the user's rule of 2026-11-24 (no made-up bars); not the user's own
+answer. The record is the handover's `decisions/bar-conversion.md` (sha256 `2e598bca…5ddb2`), its LOUDAR section
+and L1. It comes after section 14 (S1) and before LOUDAR's `answers`.
+
+- **S1 in this row.** `answers` reads each search record or its rerun (`--rerun` on `search` and `score`, once, in a
+  fresh process) and waits while a technical refusal has not been rerun. The refusals are reported
+  (`refusal_report`), never a stop. The read is on every part: a refused part's G50 is Cen's (0) in `ld-stem`,
+  `di-cut` and `stem-in` alike. Beside: the passing-only rows, `refused_audit` and `read_codes`'s
+  `refusal-sensitive` label, which sends the row to the user with both reads.
+- **`ld-rec` runs after the main read on any code** (1,311 renders). It is a diagnostic: LOUDAR's ceiling without
+  separation, and so whether the stem is the bottleneck. That is useful even on a pass. It waits only for the main
+  read's report (`rec_refusal`). After a pass or an undecided read, `bottleneck` names none and reads `ld-rec`
+  beside as the ceiling.
+- **The park text becomes a label plus a recommendation.** `FL-null` and `FL-short` now say "recommend parking" and
+  name the next measurement, `ld-rec`'s read. Parking is a route call and goes to the user; nothing parks itself.
+
+Nothing else changes: the table's conditions, the codes, the thresholds (the user's SMALL and BIG), the sets, the
+comparators, the timing and placement rules, and the `fs-notes` render wait.
 
 ### 13e. What it can't say
 
