@@ -5072,6 +5072,26 @@
      "manifest_sha256": "5de9ae94dab335dde4022820ee69f19e299fbfd02d526636b16ddc310e60d2b5"
     },
     "note": "2026-11-23, `gate --size large` run once from main at 2c5d748c (PR #573's squash) in a frozen detached worktree, zero renders, the same venv and lock as medium. The user's large weights (revision 8809fdfbed2affa7ade94a7059e746e3880720e7) and config.json matched their declared size and sha256. The three runs repeated exactly on all four development windows on MPS and on the CPU. Transcription per gate input (the 10.25-s window with up to 1 s either side, up to 12.25 s): large 4.91 s on MPS and 33.56 s on the CPU (medium 1.97 s and 10.51 s); model load 2.3 to 3.1 s on MPS, 4.1 s on the CPU. Stage b's 133 runs project to 0.18 h on MPS and 1.24 h on the CPU (medium 0.07 h and 0.39 h): under two hours on both. The device rule picked MPS; there is no size rule for large. As declared, the gate then transcribed the ten lists under list-large and list-large-free (20 note files on MPS). Medium's list notes are untouched (their listing is still phase_tx_install's). No list of either size has been scored: lists scores both together, once, after this PR merges. dtype: the fixed probe reads the transformer, float16 on MPS and float32 on the CPU"
+   },
+   "phase_tx_lists": {
+    "sha256": "664b3f0a510ad74bdbfb716905ab562acbe821f036673510442701d00069440e",
+    "file": "PF/note-rebuild/tx/lists.json",
+    "screen": "lists-go",
+    "size": "medium",
+    "screens": {
+     "medium": "lists-go",
+     "large": "lists-go"
+    },
+    "size_pick": {
+     "label": "undecided, medium kept",
+     "large_open_for_user": true,
+     "diff_large_less_medium": "tx-ms note F +0.010 [-0.019, +0.040], 10 lists",
+     "projections_h": {
+      "medium": 0.07,
+      "large": 0.18
+     }
+    },
+    "note": "2026-11-23, `lists` run once from main at 159fcc4e (PR #574's squash) in a frozen detached worktree, zero renders, CPU only; both sizes scored together in the one run. The input check passed (tx-bp equals install-gate.json on every list). By note counts on the ten made-up lists (259 true notes), medium / large: tx-bp P 0.601 R 1.000 F 0.751 (431 found); tx-ms P 0.892 / 0.890, R 0.923 / 0.938, F 0.907 / 0.914; tx-vote P 0.976 / 0.976, R 0.923 / 0.938, F 0.948 / 0.957, chord-note recall 0.881 / 0.909; tx-veto P 0.742 / 0.745, R 0.988 / 0.992, F 0.848 / 0.851; tx-ms-free F 0.920 / 0.810. Paired against tx-bp (90% intervals, 10 lists), medium: tx-vote precision +0.331 [+0.218, +0.444], recall -0.067 [-0.115, -0.020], F +0.191 [+0.081, +0.301]; tx-ms precision +0.250 [+0.113, +0.387], F +0.151 [+0.030, +0.272]; tx-veto precision +0.150 [+0.069, +0.230], recall -0.009 [-0.020, +0.002], F +0.100 [+0.048, +0.153]; end accuracy not better for any arm (tx-ms -0.268 [-0.456, -0.079]). Readings on the lists, both sizes: tx-vote and tx-ms raise precision with F not worse but do not hold recall (recall and chord-note recall more than 0.05 under tx-bp's); tx-veto raises precision, holds recall and F is not worse; no arm's ends are better. The screen reads lists-go on both sizes (not TXR-none). The size pick: tx-ms note F large - medium +0.010 [-0.019, +0.040], undecided, medium kept; large stays open for the user at the stage-b go. Speed beside: medium 1.97 s and large 4.91 s per gate input on MPS; stage b 0.07 h and 0.18 h. Basic Pitch's real-DI precision from truth-report.json: P1 0.454 (chords 0.228, scales 0.616), P2 0.610 (chords 0.431, scales 0.677). Stage b waits for the independent audit and the user's go (phase_tx_go_read). Lists-only readings decide no code"
    }
   }
  ],

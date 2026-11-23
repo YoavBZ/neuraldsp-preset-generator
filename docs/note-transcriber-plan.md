@@ -33,8 +33,10 @@ apart). So the goal is stated in two steps:
   scales apart, copied from `truth-report.json` into the plan doc). The user then says whether the real-DI stage is
   still worth running. This is a report and a go, not a numeric bar.
 
-> **Basic Pitch's real-DI precision, from `truth-report.json` (filled in the PR that records `phase_tx_lists`,
-> before the user is asked for the stage-b go):** P1 —; P2 — (chords and scales apart). Not measured yet.
+> **Basic Pitch's real-DI precision, from `truth-report.json` (sha256 `425f3fd1…f16f`; filled in the PR that records
+> `phase_tx_lists`, before the user is asked for the stage-b go):** P1 0.454 (chords 0.228, scales 0.616; 45
+> windows), P2 0.610 (chords 0.431, scales 0.677; 34 windows); recall P1 0.918, P2 0.991. On the made-up lists it is
+> 0.601. So on real DIs the extra-note fault is larger than on the lists, and largest on P1's chords.
 
 If no transcriber gives the gain, the track stops and the route stays on Basic Pitch.
 
@@ -740,5 +742,51 @@ renders. The user's large weights and `config.json` matched their declared size 
 **The review's two nits on PR #573**, folded in here; they are guards and reports only:
 - `picked_size` honours the user's large override only when large's own screen read `lists-go`, so stage b never
   runs large on medium's screen.
-- `size_pick` labels a comparison with no shared list "no shared list, medium kept" rather than "undecided", and
+- `size_pick` labels a comparison with fewer than two shared lists "fewer than two shared lists, medium kept" rather than "undecided", and
   leaves large closed then.
+
+## 16. The list screen (2026-11-23; ledger `phase_tx_lists`)
+
+It ran once from main at `159fcc4e`, in a frozen detached worktree: zero renders, CPU only. Both sizes were scored
+together in the one run. The input check passed: `tx-bp` equals `install-gate.json` on every list. `lists.json` has
+sha256 `664b3f0a…440e`.
+
+**By note counts on the ten made-up lists (259 true notes),** medium / large:
+
+| Arm | Found | Precision | Recall | Note F | Chord-note recall | End accuracy |
+|---|---|---|---|---|---|---|
+| `tx-bp` | 431 | 0.601 | 1.000 | 0.751 | 1.000 | 0.826 |
+| `tx-ms` | 268 / 273 | 0.892 / 0.890 | 0.923 / 0.938 | 0.907 / 0.914 | 0.881 / 0.909 | 0.577 / 0.790 |
+| `tx-vote` | 245 / 249 | 0.976 / 0.976 | 0.923 / 0.938 | 0.948 / 0.957 | 0.881 / 0.909 | 0.820 / 0.827 |
+| `tx-veto` | 345 / 345 | 0.742 / 0.745 | 0.988 / 0.992 | 0.848 / 0.851 | 0.979 / 0.986 | 0.832 / 0.833 |
+| `tx-ms-free` | 265 / 316 | 0.909 / 0.737 | 0.931 / 0.900 | 0.920 / 0.810 | 0.902 / 0.895 | 0.610 / 0.695 |
+
+**Paired against `tx-bp`, on medium** (90% intervals over the 10 lists):
+
+| Arm | Precision | Recall | Note F | End accuracy |
+|---|---|---|---|---|
+| `tx-vote` | +0.331 [+0.218, +0.444] | −0.067 [−0.115, −0.020] | +0.191 [+0.081, +0.301] | −0.003 [−0.010, +0.005] |
+| `tx-ms` | +0.250 [+0.113, +0.387] | −0.067 [−0.115, −0.020] | +0.151 [+0.030, +0.272] | −0.268 [−0.456, −0.079] |
+| `tx-veto` | +0.150 [+0.069, +0.230] | −0.009 [−0.020, +0.002] | +0.100 [+0.048, +0.153] | +0.005 [−0.005, +0.014] |
+
+Large reads alike, with `tx-vote` at +0.331 precision, −0.055 recall and +0.197 F.
+
+**The readings**, the same on both sizes:
+- `tx-vote` and `tx-ms` raise precision, and F is not worse. They do not hold recall: recall and chord-note recall
+  fall more than 0.05 under `tx-bp`'s.
+- `tx-veto` raises precision, holds recall, and its F is not worse.
+- No arm's ends are better.
+
+**The screen reads `lists-go` on both sizes,** not `TXR-none`.
+
+**The size pick.** `tx-ms` note F, large − medium, is +0.010 [−0.019, +0.040]: undecided, medium kept. Large stays
+open for the user at the stage-b go.
+
+**Speed, beside the pick.** Per gate input on MPS, medium takes 1.97 s and large 4.91 s. Stage b would take 0.07 h
+with medium and 0.18 h with large.
+
+**What the lists cannot say.** These are made-up lists cut at their note-offs. On real DIs, Basic Pitch's precision is
+0.454 on P1 and 0.610 on P2 (goal, section 1), so the fault there is larger and may be of another kind. Lists-only
+readings decide no code.
+
+**Next.** An independent audit, then the user's go on stage b (`phase_tx_go_read`), which may name large.
