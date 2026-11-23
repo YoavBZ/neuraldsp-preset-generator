@@ -4189,6 +4189,15 @@
     "about": "rt-dac's short row: 47 of 47 parts answered, 0 refused (each record's dry guitar the hashed build's, exactly 50 evaluations, budget_used 50, checkpoint '50' only); {select, cp50, borrowed: []} per part. Its start reads ran with rt-m2l's (94 renders) and the control was the same PASS; the search ran on 3 shards while rt-m2l's answers' hash PR was open, 2,397 renders. No held-half value is read before this hash is on main",
     "rates": "2,397 renders in 3,664 process-seconds (1.53 a render, the plan's rate), 23 minutes of wall on 3 processes",
     "next": "score --name rt-dac (3 shards, 188 renders) and read --name rt-dac once this hash is on main"
+   },
+   "phase_scratch_codec_answers_m2l": {
+    "sha256": "1b3b1135bcb3daccd59ca2950ffbdbe1beedb0962ac9fde15fb03e3845a308b8",
+    "file": "PF/fs/codec/answers-rt-m2l.json",
+    "made": "2026-11-23, from a frozen detached worktree of main at 1cd49f0a (PR #557's squash), every guard passed, zero renders",
+    "about": "rt-m2l's short row: 47 of 47 parts answered, 0 refused (each record's dry guitar the hashed build's, exactly 50 evaluations, budget_used 50, checkpoint '50' only); {select, cp50, borrowed: []} per part. Before it: start reads (rt-m2l, rt-m2l-b, rt-dac on 47, 282 renders; rt-id on the 2 check parts, 4), the control (22 renders: rt-id at a budget of 10 equal to row (b)'s stored curves on both check parts, its start values the draw's true-DI values within 0.005: PASS), the search (3 shards, --first 2 first, 2,397 renders). No held-half value is read before this hash is on main",
+    "rates": "the search's 2,397 renders took 6,620 process-seconds (2.76 a render; the re-timing's first 6 parts 4.05), 39 minutes of wall on 3 processes, against the plan's 1.51 from rows (b) and (c): a short search pays each part's start-up over 51 renders (the plan's caveat). The start reads: 94 renders in 223 to 227 s a process",
+    "manifest_history": "review-551's nit on PR #557: tools/codec-models/manifest.json was rewritten after the round trips (lock notes only; every file entry unchanged): the round trips and build.json name b99578dc5b6443febcd047c1d4f6474bc34e13d169d867eaa416638ce0164fc9, the file is now 65f746244b6c5f4ec3d7cb3db71ecb43c64de6ae2d1977e8eaa24adbc6e86f7d (tools/codec-models/MANIFEST-HISTORY.md)",
+    "next": "score --name rt-m2l (3 shards, 188 renders) and read --name rt-m2l once this hash is on main; rt-dac's search runs meanwhile"
    }
   },
   {
