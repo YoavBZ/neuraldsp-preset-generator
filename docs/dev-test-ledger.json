@@ -4406,6 +4406,31 @@
     },
     "unchanged": "the deciding number, FL_TABLE and its codes, the sets, the comparators, the stops, the build and its hash, and the fs-notes render wait (slots_refusal)",
     "code": "learn/scratch_loudar.py (no_subwin, lags_beside_g50, print_lags, d_true_vs_subwin, cmd_read_rec); tests in tests/test_scratch_loudar.py"
+   },
+   "phase_scratch_refusal_reports": {
+    "declared": "2026-11-24, from main 0595d88e (S1 of the bar conversion), before LOUDAR's answers and fs-notes build 2's hash",
+    "decided_by": "an isolated decision agent under the user's rule of 2026-11-24 ('no made up or random thresholds/limits'): the intent-to-treat refusal read as the primary, about 80% confidence; not the user's own answer",
+    "decision_record": {
+     "file": "handover 2026-11-24 decisions/bar-conversion.md (the refusals section and S1)",
+     "sha256": "2e598bca0ee1ea06435d2d0ebe74da3ff03a2c10c1fdb488f33533e08e45ddb2"
+    },
+    "rule": {
+     "no_stop": "no row stops on a count of refusals: scratch_search.stopped is always False, scratch_notes.deciding_stop and scratch_loudar.deciding_stop stop nothing, REFUSAL_STOP is gone from scratch_search, scratch_notes, scratch_codec, scratch_tone and scratch_loudar; the count and share are reported per set and pooled with a Clopper-Pearson 90% interval (refusal_report)",
+     "content": "a check against the true DI is never a refusal: fs-notes' search searches a content-failing part as built with content_label on its record; a count of content refusals no longer stops the build (build_refusal). The checks become report-only in the redo's amendment (R1); note_transcribe.refusal_count still writes its count and is read by nothing that stops",
+     "technical": "a technical refusal (start-check miss, non-finite audio, missing borrowed answer, scoring-control miss) is rerun once in a fresh process (--rerun on fs-notes' search and score into <dir>-rerun/; LOUDAR's in L1); answers and the reads wait for that rerun (with_reruns, rerun_refusal); if it still refuses, the part's answer is Cen and it is listed",
+     "itt": "the deciding read is on every part: a refused part reads at Cen (every ln(x / Cen) number 0: itt_per, itt_values), so in a paired difference it costs the row its partner's gain; I and the borrowed answer, which need the partners scored on the part, read on the passing parts; the passing-only read beside",
+     "audit": "refused_audit: set, amp, class, lender band and Cen's search-half start value, then after scoring the value at Cen against the passing parts' (a difference of means with its 90% interval)",
+     "label": "if the intent-to-treat and passing-only reads give different codes: refusal-sensitive, to the user with both"
+    },
+    "where": "rows (b) and (c)'s read (scratch_search.cmd_read), fs-notes' answers, score and read, the codec's short read (fk on both reads), the tone split and the codec's full row (no stop; they read on their passing parts if ever re-read with refusals, their intent-to-treat read to be coded first), LOUDAR (no stop here; its intent-to-treat read, the ld-rec order and the park text are L1)",
+    "scratch_search_blob": {
+     "from": "2420043a4483a482925bed5b87e54692619a305d",
+     "to": "3abd73be28aa2c947258ddc0917967b1b1d47167",
+     "why": "scratch_codec.SCRATCH_SEARCH_BLOB re-pinned by this amendment: the 60 functions of scratch_search.py that fs-notes' two checks ran through (search_row_part and score_row_part among them) keep their source exactly (tests/test_refusal_reports.py pins their combined sha256 7a6b3604...8e91); only the refusal path and the new helpers changed, so the checks' results stand"
+    },
+    "stored_readings": "rows (b) and (c), both codec rows and the tone split refused 0 parts: none of their stored readings changes (tests re-derive them from the stored reports where the data is present)",
+    "code": "learn/scratch_search.py, learn/scratch_notes.py, learn/scratch_codec.py, learn/scratch_tone.py, learn/scratch_loudar.py; tests/test_refusal_reports.py and the updated pins in the rows' tests; plan section 14",
+    "next": "L1 (LOUDAR's intent-to-treat read, ld-rec on any code, the park text as a recommendation) before LOUDAR's answers"
    }
   },
   {

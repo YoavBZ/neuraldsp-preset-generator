@@ -63,7 +63,6 @@ GATE = "phase_scratch_both_outcome"      # row (c)'s audited outcome on main
 ROWS = ("fs-stem", "fs-both")            # rows (b) and (c), whose stored answers are re-scored
 ROW_OF = {"b": "fs-stem", "c": "fs-both"}
 PARTS = sum(S.COUNTS.values())           # 47: every part of the draw
-REFUSAL_STOP = S.REFUSAL_STOP            # 3 refused of 47 stop the read
 SMALL, BIG = S.SMALL, S.BIG              # 0.05, 0.10 (the user's rule)
 CODED = "true"                           # the coded true DI: the judge's DI every time
 NOCLIP = "true-noclip"
@@ -1250,13 +1249,12 @@ def cmd_split_read(_args):
             continue
         recs[k] = r
     out = {"plan": PLAN, "section": SECTION, "ledger": f"{LEDGER_ID} {PHASE}", "fit": m[PHASE]["fit"],
-           "renders": renders, "refused": refused, "stopped": S.stopped(refused, REFUSAL_STOP),
-           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    if out["stopped"]:
-        out["stop_reason"] = f"{len(refused)} of {PARTS} refused (the stop is {REFUSAL_STOP})"
-        P.save(report_path(), dict(out, rows=None, codes="stopped"))
-        print(f"TONE SPLIT: STOPPED ({out['stop_reason']})")
-        return
+           "renders": renders, "refused": refused, "stopped": S.stopped(refused),
+           "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+           "refusal_report": S.refusal_report(refused, {p["pkey"]: p["set"] for p in draw["parts"]}, S.DECIDING)}
+    if refused:                                          # S1: never a stop; this finished row has no Cen fallback coded
+        out["refusal_note"] = ("read on the passing parts only: the tone split is finished and recorded (0 refused); "
+                               "a re-read with refusals needs its intent-to-treat read coded first")
     vals, phi_r = {n: {} for n in NUMBERS}, {}
     beside = {q: {} for q in ("G_c_noclip", "G_b_noclip", "cen_shift_noclip", "cen_shift_avg_mild",
                               "c_own_terms_avg_mild")}
