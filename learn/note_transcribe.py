@@ -153,7 +153,6 @@ CALIBRATION_PASS = 25                    # of the 27 development windows, playin
                                          # a report and not in the rate)
 P2_CHORD_TRIGGER = 0.85                  # P2's chord recall in the truth report under this: to the user before step 5
 FLAG_TRIGGER = 3                         # onsets-found flags on this many of the 40 deciding parts: to the user
-REFUSAL_STOP = 3                         # of the 40 deciding parts (BKS+GOAT)
 DECIDING = ("bks", "goat")               # the user's exception for this row only (2026-11-22, answer 3)
 
 # --- the install gate (plan section 12b) -----------------------------------------------------------------------------------
@@ -654,14 +653,15 @@ def ring_choice(corr_on, corr_soft, tie=RING_TIE):
 
 
 def refusal_count(build_parts, sets_of, deciding=DECIDING):
-    """(Pure.) The row's content refusals: {pkey: failed checks} of the deciding parts and of the panel (beside).
-    -> (deciding refused, panel refused, stops)."""
+    """(Pure.) The row's content-check failures: {pkey: failed checks} of the deciding parts and of the panel
+    (beside). A count of them stops nothing (S1, phase_scratch_refusal_reports): a check against the true DI is a label
+    on its part, so "stops" is always False and `cmd_build` builds on. -> (deciding failed, panel failed, stops)."""
     dec, pan = {}, {}
     for k, r in sorted(build_parts.items()):
         failed = r.get("failed") or []
         if failed:
             (dec if sets_of[k] in deciding else pan)[k] = failed
-    return dec, pan, len(dec) >= REFUSAL_STOP
+    return dec, pan, False
 
 
 def flagged_parts(parts, sets_of, deciding=DECIDING):

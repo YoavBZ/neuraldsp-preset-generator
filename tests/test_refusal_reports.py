@@ -10,6 +10,7 @@ import pathlib
 
 import pytest
 
+from learn import note_transcribe as NT
 from learn import scratch_codec as SC
 from learn import scratch_loudar as SL
 from learn import scratch_notes as SN
@@ -29,14 +30,23 @@ def _iv(values):
 
 
 def test_no_module_keeps_a_refusal_stop():
-    for mod in (S, SC, SN, T, SL):
+    for mod in (S, SC, SN, T, SL, NT):
         assert not hasattr(mod, "REFUSAL_STOP"), mod.__name__
     assert not S.stopped({k: {"search": "x"} for k in "abcdefghij"})
     assert SN.deciding_stop({"a": 1, "b": 1, "c": 1, "d": 1}, {k: "bks" for k in "abcd"})[2] is False
     assert SL.deciding_stop({"a": 1, "b": 1, "c": 1}, {k: "bks" for k in "abc"})[2] is False
     assert SN.build_refusal({"stopped": True, "ear_failing": []}) is None
+    three = {f"b{i}": {"failed": ["ring-kept"]} for i in range(4)}
+    assert NT.refusal_count(three, {k: "bks" for k in three})[2] is False          # cmd_build builds on
     src = (REPO / "learn" / "scratch_notes.py").read_text()
     assert '"refused": {"content"' not in src and 'rec["content_label"]' in src     # a content check is a label
+    assert src.count('content_labels') == 3                              # into answers.json and report.json
+    assert "D_refused_as_cen" not in src and "and k not in refused})" in src
+    assert "spath = S.rerun_path(spath)" in src                            # the rerun's own start reference
+    for mod in ("scratch_search", "scratch_notes"):                        # the audit gets Cen's start value
+        text = (REPO / "learn" / f"{mod}.py").read_text()
+        call = text[text.index('refused_audit(draw["parts"]'):][:260]
+        assert "start=" in call, mod
 
 
 def test_the_clopper_pearson_interval():
@@ -49,13 +59,16 @@ def test_the_clopper_pearson_interval():
 
 def test_the_refusal_report():
     sets_of = {"b1": "bks", "b2": "bks", "g1": "goat", "g2": "goat", "p1": "panel"}
-    r = S.refusal_report({"b1": {"search": "start"}, "p1": {"content": ["ring-kept"]}}, sets_of, ["bks", "goat"])
+    r = S.refusal_report({"b1": {"search": {"start": 1}}, "p1": {"search": {"content": ["ring-kept"]}}}, sets_of,
+                         ["bks", "goat"])
     assert r["stops"] is False and r["deciding"] == ["bks", "goat"]
     assert r["per_set"]["bks"]["refused"] == 1 and r["per_set"]["bks"]["share"] == 0.5
     assert r["pooled"]["refused"] == 1 and r["pooled"]["parts"] == 4 and r["pooled"]["keys"] == ["b1"]
     assert r["pooled"]["lo90"] == pytest.approx(S.clopper_pearson(1, 4)[0])
-    assert r["kinds"] == {"b1": "technical", "p1": "content"}
+    assert r["kinds"] == {"b1": {"kind": "technical", "reasons": ["start"]},          # unwrapped from "search"
+                          "p1": {"kind": "content", "reasons": ["content"]}}
     assert S.refusal_kind({"scoring_control": 1}) == "technical" and S.refusal_kind("x") == "technical"
+    assert S.refusal_reasons({"borrowed": "few"}) == {"borrowed": "few"} and S.refusal_reasons("x") == {"search": "x"}
 
 
 def test_a_synthetic_row_with_four_refusals_reads_on_at_cen():
@@ -68,6 +81,7 @@ def test_a_synthetic_row_with_four_refusals_reads_on_at_cen():
     itt = S.itt_per(per, refused)
     assert all(itt[k] == dict({f: 0.0 for f in S.G_FIELDS}, cen_fallback=True) for k in refused)
     assert itt[keys[5]] is per[keys[5]] and "I" not in itt[keys[0]]       # I needs the partners: not at Cen
+    assert "G_centre" not in itt[keys[0]] and "G_centre" not in S.G_FIELDS  # the row's centre is no part's fallback
     g_itt = [v["G"] for v in itt.values()]
     g_pass = [v["G"] for k, v in S.passing_only(per, refused).items() if v is not None]
     assert len(g_itt) == 47 and len(g_pass) == 43
@@ -84,6 +98,10 @@ def test_a_synthetic_row_with_four_refusals_reads_on_at_cen():
     c1, c2 = S.number_reading(_iv(ti)), S.number_reading(_iv(tp))
     assert c1 != c2 and S.refusal_label(c1, c2) == "refusal-sensitive"
     assert S.itt_values({"a": 0.2, "b": None, "c": None}, {"b": 1}) == {"a": 0.2, "b": 0.0, "c": None}
+    none = S.passing_code(lambda: {"code": "x"}, False)
+    assert none == {"code": None, "reading": "no passing-only interval"} and S.passing_code(lambda: {"code": "x"},
+                                                                                            True) == {"code": "x"}
+    assert S.refusal_label("passes", None) is None                         # nothing to compare: said, not labelled
     assert S.itt_per({"a": {"G": 1.0}}, {}) == {"a": {"G": 1.0}}
 
 
@@ -136,7 +154,7 @@ def test_the_shared_search_and_score_path_is_unchanged():
     changed = {"outcome", "stopped", "cmd_answers", "cmd_score", "read_row_parts", "report_body", "cmd_read",
                "_binom_cdf", "clopper_pearson", "itt_per", "itt_values", "mean_diff", "passing_only", "refusal_kind",
                "refusal_label", "refusal_report", "refused_audit", "refused_record", "rerun_path", "rerun_refusal",
-               "with_reruns"}
+               "with_reruns", "refusal_reasons", "passing_code"}
     text = (REPO / "learn" / "scratch_search.py").read_text()
     lines = text.splitlines()
     parts = sorted((n.name, "\n".join(lines[n.lineno - 1:n.end_lineno])) for n in ast.parse(text).body

@@ -566,13 +566,22 @@ def stopped(refused):
 
 TECHNICAL_REFUSALS = ("search", "borrowed", "scoring_control", "start", "nonfinite", "dry")
 CONTENT_REFUSALS = ("content",)          # a check against the true DI: a label on the part, never a refusal
-G_FIELDS = ("G", "G_cp50", "G_cp100", "G_cp200", "G_shrunk", "G_centre")   # each a ln(x / Cen): 0 at Cen
+G_FIELDS = ("G", "G_cp50", "G_cp100", "G_cp200", "G_shrunk")   # the part's own answers, ln(x / Cen): 0 at Cen
+#   (G_centre is not: the row's centre is no part's fallback, so a refused part's G_centre stays None)
 REFUSAL_SENSITIVE = "refusal-sensitive"
+
+
+def refusal_reasons(why):
+    """(Pure.) A refusal's own reasons, unwrapped from the row's "search" wrapper (`answer_parts` stores a search
+    record's refusal as {"search": {reason: ...}}). -> {reason: ...}."""
+    if isinstance(why, dict) and set(why) == {"search"} and isinstance(why["search"], dict):
+        return why["search"]
+    return why if isinstance(why, dict) else {"search": why}
 
 
 def refusal_kind(why):
     """(Pure.) "content" when every reason is a content check, else "technical". why: a refusal's {reason: ...}."""
-    kinds = set(why) if isinstance(why, dict) else {"search"}
+    kinds = set(refusal_reasons(why))
     return "content" if kinds and kinds <= set(CONTENT_REFUSALS) else "technical"
 
 
@@ -613,7 +622,8 @@ def refusal_report(refused, sets_of, deciding=None, conf=REFUSAL_CONF):
     pool = [k for k, v in sets_of.items() if deciding is None or v in deciding]
     return {"per_set": {st: cell([k for k, v in sets_of.items() if v == st]) for st in sets},
             "pooled": cell(pool), "deciding": list(deciding) if deciding is not None else sets,
-            "kinds": {k: refusal_kind(v) for k, v in sorted(refused.items())}, "stops": False}
+            "kinds": {k: {"kind": refusal_kind(v), "reasons": sorted(refusal_reasons(v))}
+                      for k, v in sorted(refused.items())}, "stops": False}
 
 
 def itt_per(per, refused, fields=G_FIELDS):
@@ -642,10 +652,22 @@ def passing_only(per, refused):
     return {k: (None if k in refused else v) for k, v in per.items()}
 
 
+NO_PASSING_INTERVAL = "no passing-only interval"
+
+
 def refusal_label(code_itt, code_passing):
     """(Pure.) "refusal-sensitive" when the intent-to-treat and the passing-only reads give different codes (the row
-    then goes to the user with both), else None."""
+    then goes to the user with both), else None; with no passing-only interval (`passing_code`'s None) the two reads
+    cannot be compared, and the report says so instead."""
+    if code_passing is None:
+        return None
     return REFUSAL_SENSITIVE if code_itt != code_passing else None
+
+
+def passing_code(code_fn, ok):
+    """(Pure.) The passing-only read's code, or {"code": None, "reading": "no passing-only interval"} when it has no
+    interval (ok False), never a silent fallback to the deciding read. code_fn() -> the code record."""
+    return code_fn() if ok else {"code": None, "reading": NO_PASSING_INTERVAL}
 
 
 def mean_diff(a, b, z=1.6448536269514722):
@@ -1472,6 +1494,8 @@ def cmd_read(args):
     sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}
     out["refusal_report"] = refusal_report(refused, sets_of, DECIDING)
     rows = summarise_row(sd, draw, itt_per(per, refused))           # the deciding read: every part (S1)
+    dry, ref = ROWS[row]
+    start = {p["pkey"]: ((p.get("start_ref") or {}).get(dry) or {}).get(ref) for p in draw["parts"]}
     rows_pass = summarise_row(sd, draw, passing_only(per, refused)) if refused else rows
     never_overwrite(rows_path(row))
     P.save(rows_path(row), dict(out, rows=rows, rows_passing_only=rows_pass))   # saved before the reading
@@ -1487,7 +1511,8 @@ def cmd_read(args):
         out["label"] = refusal_label((rows["reading"] or {}).get("reading"), (passing or {}).get("reading"))
         if refused:
             g_itt = {k: (v or {}).get("G") for k, v in itt_per(per, refused).items()}
-            out["refused_audit"] = refused_audit(draw["parts"], refused, NR.lender_band(), values=g_itt)
+            out["refused_audit"] = refused_audit(draw["parts"], refused, NR.lender_band(),
+                                                 start={k: v for k, v in start.items() if v is not None}, values=g_itt)
     out["rows"] = rows
     P.save(report_path(row), out)                        # one write: the report holds its reading or its stop
     m = require_on_main(PHASE)

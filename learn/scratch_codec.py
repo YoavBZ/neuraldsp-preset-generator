@@ -63,7 +63,7 @@ START_NAMES = ("rt-m2l", "rt-m2l-b", "rt-dac", "rt-id")
 SHORT = {"rt-m2l": "m2l", "rt-dac": "dac"}
 VENV_OF = {"rt-m2l": "codec", "rt-m2l-b": "codec", "rt-id": "codec", "rt-dac": "dac", "rt-rs": "dac"}
 CODE_FILES = ("learn/scratch_codec.py", "learn/codec_roundtrip.py")
-SCRATCH_SEARCH_BLOB = "3abd73be28aa2c947258ddc0917967b1b1d47167"   # S1's re-pin (fs-notes' checks ran on 2420043a;
+SCRATCH_SEARCH_BLOB = "b66af002f56242a6128a4719479c90f4d5abd319"   # S1's re-pin (fs-notes' checks ran on 2420043a;
 #   the search and score path they ran through is unchanged: tests/test_refusal_reports.py)
 CHECK_SHA256 = {"check-score": "727fda89a58afb45d6bf1ee923f7daaedcae70077a3556a3b3c714bb9d765b73",
                 "check-search": "172e1c9ff509cf05db4a1d4c343f6131bc01876a6e1b8deb807fd6725aa1c545"}
@@ -1359,9 +1359,8 @@ def cmd_read(args):
     fk = fk_code(rows["D_true"]["deciding_pool"], rows["D_blur"]["deciding_pool"])
     bt, bb = rows["D_true"]["bks_goat"]["all"], rows["D_blur"]["bks_goat"]["all"]
     bg = fk_code(bt, bb) if _iv_ok(bt) and _iv_ok(bb) else {"code": None, "reading": "no BKS+GOAT interval"}
-    fk_pass = fk_code(rows_pass["D_true"]["deciding_pool"], rows_pass["D_blur"]["deciding_pool"]) \
-        if refused and _iv_ok(rows_pass["D_true"]["deciding_pool"]) and _iv_ok(rows_pass["D_blur"]["deciding_pool"]) \
-        else fk
+    pt, pb = rows_pass["D_true"]["deciding_pool"], rows_pass["D_blur"]["deciding_pool"]
+    fk_pass = S.passing_code(lambda: fk_code(pt, pb), _iv_ok(pt) and _iv_ok(pb)) if refused else fk
     rep = dict(out, rows=rows, fk=fk, fk_bks_goat=bg, agree=fk["code"] == bg["code"],
                fk_passing_only=fk_pass, label=S.refusal_label(fk["code"], fk_pass["code"]),
                next="full row" if fk["code"] == "FK-shut" else fk["next"])

@@ -691,7 +691,10 @@ def cmd_search(args):
         if S.npy_sha(x32) != sha:                      # the audio itself, before any render
             raise SystemExit(f"{p['pkey']}: the loaded dry guitar is not the hashed build's {DRY}")
         ref_blank = S.load_ref_blank(sd, p, REF)
-        sref, used = start_reference(p, x32, ref_blank, CB.new_renderer, start_path(p["pkey"]), sha)
+        spath = start_path(p["pkey"])
+        if getattr(args, "rerun", False):                # the rerun recomputes the start reference (S1)
+            spath = S.rerun_path(spath)
+        sref, used = start_reference(p, x32, ref_blank, CB.new_renderer, spath, sha)
         rec = S.search_row_part(p, DRY, REF, x32, ref_blank, CB.new_renderer, lists, out, f"{LEDGER_ID} {PHASE}",
                                 start_ref=sref, dry_sha256=sha)
         if row["failed"]:
@@ -738,7 +741,9 @@ def cmd_answers(_args):
            "build_sha256": NT.NR.file_sha(NT.build_path()), "time": time.strftime("%Y-%m-%d %H:%M:%S"),
            "renders": sum(r.get("renders", 0) for r in recs.values()), "refused": refused,
            "refused_deciding": dec, "refused_panel": pan, "stopped": stop, "reruns": reruns,
-           "refusal_report": S.refusal_report(refused, sets_of, DECIDING), "parts": parts}
+           "refusal_report": S.refusal_report(refused, sets_of, DECIDING),
+           "content_labels": {k: r["content_label"] for k, r in sorted(recs.items()) if r.get("content_label")},
+           "parts": parts}
     P.save(answers_path(), out)
     print(f"FS-NOTES ANSWERS: {len(parts)} parts, {len(refused)} refused ({len(dec)} of the 40 deciding, each read "
           f"at Cen; panel {pan}); reruns {reruns}; sha256 {S.file_sha(answers_path())} (into the ledger as "
@@ -864,15 +869,12 @@ def cmd_read(_args):
         if rd is None or rg is None or rc is None:
             raise SystemExit(f"{arm}: no part carries both rows' numbers")
         arms[arm] = {"D": rd["bks_goat"], "G": rg["bks_goat"], "bar_fs_both": rc["bks_goat"]}
-        as_cen = dict(d, **{k: -per_c[k][f] for k in per_c if per_c.get(k) and per.get(k) is None})
         onsets = {k: (build["parts"][k]["arms"][DRY]["figures"].get("onsets-found") or {}).get("share")
                   for k in d if sets_of[k] in DECIDING}
         lower, upper = median_split(onsets)
         low, up = set_rows(sd, draw, d, set(lower)), set_rows(sd, draw, d, set(upper))
         names, diff = bottleneck((up or {}).get("bks_goat", {}).get("all"), (low or {}).get("bks_goat", {}).get("all"))
-        beside[arm] = {"D_rows": rd, "G_rows": rg, "D_refused_as_cen": (set_rows(sd, draw, as_cen) or {}).get(
-                           "bks_goat"),
-                       "parts_at_or_over_0.10": sorted(k for k, v in g.items() if v >= BIG),
+        beside[arm] = {"D_rows": rd, "G_rows": rg, "parts_at_or_over_0.10": sorted(k for k, v in g.items() if v >= BIG),
                        "bottleneck": {"names": names, "difference": diff, "lower": lower, "upper": upper,
                                       "by_figure": {}}}
         dec = {k: v for k, v in d.items() if sets_of[k] in DECIDING}
@@ -894,7 +896,8 @@ def cmd_read(_args):
                                                                 if per[k].get("G_shrunk") is not None})
                                             or {}).get("bks_goat")
     beside["answer_less_shrunk"] = (set_rows(sd, draw, {k: per[k]["G"] - per[k]["G_shrunk"] for k in scored
-                                                        if per[k].get("G_shrunk") is not None}) or {}).get("bks_goat")
+                                                        if per[k].get("G_shrunk") is not None and k not in refused})
+                                    or {}).get("bks_goat")                      # a refused part is not 0 - 0
     gb = set_rows(sd, draw, {k: per_b[k]["G"] for k in scored if per_b.get(k)})
     gn = beside["answer"]["G_rows"]
     beside["share_of_row_b_gain"] = share_of(((gn or {}).get("bks_goat") or {}).get("all"),
@@ -903,6 +906,8 @@ def cmd_read(_args):
     gain = {}
     for k in scored:
         sr = json.loads(search_path(k).read_text())
+        if "refused" in sr and S.rerun_path(search_path(k)).exists():    # the rerun's record where one exists
+            sr = json.loads(S.rerun_path(search_path(k)).read_text())
         if "step1" in sr and sr["step1"]["curve"]:
             gain[k] = math.log(sr["final_fresh"]["value"] / sr["step1"]["curve"][0]) \
                 if S.finite_pos(sr.get("final_fresh", {}).get("value")) else None
@@ -923,12 +928,15 @@ def cmd_read(_args):
             arms_pass[arm] = {"D": (rdp or {}).get("bks_goat"), "G": (rgp or {}).get("bks_goat"),
                               "bar_fs_both": (rcp or {}).get("bks_goat")}
         rows["arms_passing_only"] = arms_pass
-        rows["refused_audit"] = S.refused_audit(draw["parts"], refused, R.lender_band(),
+        start = {k: json.loads(start_path(k).read_text())["value"] for k in sets_of if start_path(k).exists()}
+        rows["refused_audit"] = S.refused_audit(draw["parts"], refused, R.lender_band(), start=start,
                                                 values=paired_values(per, per_c, "G"))
     P.save(rows_path(), dict(out, rows=rows))           # the rows are saved before the code is read
     fn = fn_code(arms)
-    fn_pass = fn_code(arms_pass) if arms_pass and all((a["D"] or {}).get("all") for a in arms_pass.values()) else fn
+    fn_pass = S.passing_code(lambda: fn_code(arms_pass), all((a["D"] or {}).get("all") for a in arms_pass.values())) \
+        if arms_pass else fn
     label = S.refusal_label(fn["code"], fn_pass["code"])
+    out["content_labels"] = ans.get("content_labels") or {}
     P.save(report_path(), dict(out, rows=rows, fn=fn, code=fn["code"], fn_passing_only=fn_pass, label=label,
                                next="to the user with both reads" if label else None))
     for arm in ARMS:
