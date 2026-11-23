@@ -149,19 +149,42 @@ def test_the_gates_reading():
          "cut": [3.9] * 6, "from_full": [3.5] * 6}
     r = LR.gate_reading(d)
     assert r["setting"] == "released"                 # within 0.1 dB: the released
-    assert r["passed"] and r["direction"] == 6 and r["reproduction_db"] == pytest.approx(0.5)
+    assert r["passed"] and r["direction_reported_only"] == 6 and r["reproduction_db"] == pytest.approx(0.5)
     assert r["authors_gain_db"] == pytest.approx(3.0) and r["tolerance_fraction_of_gain"] == pytest.approx(1 / 3)
+    assert r["reproduction_per_clip_db"] == pytest.approx([0.5] * 6) and r["reproduction_clips_beyond"] == []
     d["ours"]["paper"] = [3.2] * 6
     assert LR.gate_reading(d)["setting"] == "paper"
     d["ours"] = {"released": [4.2] * 6}
     assert not LR.gate_reading(d)["reproduction_ok"] and not LR.gate_reading(d)["passed"]
-    d["ours"] = {"released": [6.5, 6.5, 3, 3, 3, 3]}
-    assert LR.gate_reading(d)["direction"] == 4 and not LR.gate_reading(d)["direction_ok"]
+    d["ours"] = {"released": [3.0, 3.0, 3.0, 3.0, 3.0, 4.1]}             # the mean within 1.0, one clip not: stop
+    got = LR.gate_reading(d)
+    assert abs(got["reproduction_db"]) < 1.0 and got["reproduction_clips_beyond"] == [5] and not got["passed"]
+    d["ours"] = {"released": [6.5, 6.5, 3, 3, 3, 3]}                     # direction no longer gates (reported only)
+    got = LR.gate_reading(d)
+    assert got["direction_reported_only"] == 4 and "direction_ok" not in got
+    assert got["reproduction_clips_beyond"] == [0, 1] and not got["passed"]
     d = {"distorted": [6.0] * 6, "authors": [3.0] * 6, "ours": {"released": [3.0] * 6}, "cut": [4.1] * 6,
          "from_full": [3.0] * 6}
     assert not LR.gate_reading(d)["length_ok"]
     with pytest.raises(SystemExit):
         LR.gate_reading({"distorted": [1], "authors": [1], "ours": {}})
+
+
+# unit 0's stored gate record (2026-11-23, main bf484311): floored log-mel distances to the original, per example
+STORED_GATE = {
+    "distorted": [4.18130652801621, 3.608507853828278, 4.402654836795797, 3.949979938674983, 3.5138040133596466,
+                  4.502753539148539],
+    "authors": [6.287329154177563, 5.726776169342781, 5.849275764402504, 6.134666932501078, 6.05525566681113,
+                6.351480810711831]}
+
+
+def test_the_amended_gate_on_the_shape_of_the_stored_record():
+    """The authors' own outputs fail the old direction check 6 of 6 (their gain is negative), so it cannot gate; a
+    copy of ours that reproduces them clip by clip passes the amended rule."""
+    d = dict(STORED_GATE, ours={"released": list(STORED_GATE["authors"])}, cut=[6.0] * 6, from_full=[5.5] * 6)
+    r = LR.gate_reading(d)
+    assert r["authors_direction_reported_only"] == 0 and r["authors_gain_db"] == pytest.approx(-2.041, abs=1e-3)
+    assert r["tolerance_fraction_of_gain"] is None and r["passed"]
 
 
 def test_the_environment_is_set_in_code(tmp_path, monkeypatch):
