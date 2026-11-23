@@ -74,6 +74,7 @@ PHASE_GO_CALIB = "phase_nr_1_redo_go_calib"       # the user's go after the firs
                                                 #     playing-covered reported for this run; bound to its sha256)
 PHASE_GO_GUARD = "phase_nr_1_redo_go_guard"       # the user's go that the checks the positive control fails become
                                                 #     reports, the listening page the guard (2026-11-23; names them)
+PHASE_EAR_KINDS = "phase_nr_1_ear_kinds"          # the ear items' kinds, amended 2026-11-23 (the delegated decision)
 PHASE_GO_HUM = "phase_nr_1_redo_go_hum"           # ... the user's go after the hum guard stopped the truth report
                                                 #     (2026-11-23; bound to that truth-report.json by its sha256)
 
@@ -165,6 +166,8 @@ EAR_SEED = 20261401                      # the 4 new ear items' order
 CONTROL_SEED = 20261402                  # the hidden control card's item and the cards' order
 DEV_BLUR_SEED = 20261403                 # avg+mild on the development windows (the checks' positive control)
 KINDS = ("chord-led", "single-note", "bends", "let-ring")
+KIND_BARS = {"chord-led": 0.5, "single-note": 0.8, "bends": 3, "let-ring": 0.5}   # each kind's own figure's bar
+ANNOTATED_KINDS = ("single-note",)       # read from GOAT's annotated notes (the ear kinds' amendment, 2026-11-23)
 GRID_S = 5.0                             # an ear item's window: the 10 s with the most notes on a 5-s grid
 EAR_AMP = "ac20"
 EAR_LUFS = -23.0
@@ -280,6 +283,70 @@ def grid_window(notes, duration_s, length_s=10.0, grid_s=GRID_S, lead_s=0.25):
             best = (w, c)
         j += 1
     return None if best is None else best[0]
+
+
+def kind_figures(notes):
+    """(Pure.) Each kind's own figure on a window's notes (as `kind_flags` reads them): chord-led, the share of onset
+    groups holding 3 or more notes; single-note, the share holding one (None with a bent note: it cannot qualify);
+    bends, the count of bent notes; let-ring, the share of groups that are single notes still sounding 100 ms into the
+    next onset. -> {kind: figure} ({} with no groups)."""
+    gs = groups_of(notes)
+    if not gs:
+        return {}
+    bent = sum(any(NR.bend_curve(n, notes)) for n in notes)
+    ring = sum(1 for a, b in zip(gs, gs[1:]) if len(a) == 1 and a[0]["off"] >= b[0]["on"] + 0.100)
+    return {"chord-led": sum(len(g) >= 3 for g in gs) / len(gs),
+            "single-note": None if bent else sum(len(g) == 1 for g in gs) / len(gs),
+            "bends": bent, "let-ring": ring / len(gs)}
+
+
+def ear_kinds_of(kinds_tr, kinds_ann):
+    """(Pure.) The ear kinds' amendment (2026-11-23): `single-note` from GOAT's annotated notes (bend-free), the other
+    kinds from the transcription as declared. kinds_*: {item: set of kinds}. -> {item: set of kinds}."""
+    out = {}
+    for it in set(kinds_tr) | set(kinds_ann):
+        tr = {k for k in kinds_tr.get(it, set()) if k not in ANNOTATED_KINDS}
+        out[it] = tr | {k for k in kinds_ann.get(it, set()) if k in ANNOTATED_KINDS}
+    return out
+
+
+def nearest_fill(order, picked, figures, kind, bar=None):
+    """(Pure.) The ear kinds' fallback (2026-11-23): an unfilled kind takes the not-yet-picked item with the highest
+    figure of that kind's own (ties by `order`, the seeded order), recorded as not filled. figures: {item: {kind:
+    figure}}. -> {kind, item, filled: False, nearest: True, figure, bar, label} or None (no item has the figure)."""
+    used = set(picked.values())
+    best = None
+    for it in order:
+        f = (figures.get(it) or {}).get(kind)
+        if it in used or f is None:
+            continue
+        if best is None or f > best[1]:
+            best = (it, f)
+    if best is None:
+        return None
+    bar = KIND_BARS[kind] if bar is None else bar
+    return {"kind": kind, "item": best[0], "filled": False, "nearest": True, "figure": best[1], "bar": bar,
+            "label": f"{kind} (nearest; none met {bar:.2f})"}
+
+
+def choose_ear_kinds(order, kinds_tr, kinds_ann, figs_tr, figs_ann):
+    """(Pure.) The 4 new ear items as amended (2026-11-23): the declared pass (`pick_ear_items`) on the kinds of
+    `ear_kinds_of`; then each kind still unfilled takes its nearest item by its own figure (`nearest_fill`, from the
+    kind's own source). A kind the declared pass fills never uses the fallback. -> ({kind: item}, {kind: record})."""
+    new = pick_ear_items(order, ear_kinds_of(kinds_tr, kinds_ann))
+    chosen = {}
+    for k in KINDS:
+        src, fg = ("annotation", figs_ann) if k in ANNOTATED_KINDS else ("transcription", figs_tr)
+        if k in new:
+            chosen[k] = {"kind": k, "item": new[k], "filled": True, "nearest": False,
+                         "figure": (fg.get(new[k]) or {}).get(k), "bar": KIND_BARS[k], "label": k, "source": src}
+            continue
+        near = nearest_fill(order, new, fg, k)
+        if near is None:
+            raise SystemExit(f"no item has a {k} figure among the development items")
+        new[k] = near["item"]
+        chosen[k] = {**near, "source": src}
+    return new, chosen
 
 
 def pick_ear_items(order, kinds_of):
@@ -1233,6 +1300,15 @@ def dev_annotation(item, start_s, di):
     return [dict(n, bends=[]) for n in NR.window_notes(rec["notes"], start_s, len(di) / NR.SR)]
 
 
+def annotated_notes(item):
+    """A GOAT item's annotated notes (stage P's fine-aligned true notes) on the item's timeline, bend-free (the
+    annotation carries none), or [] without an annotation (the ear kinds' amendment)."""
+    p = NR.OUT / "true-notes" / f"{item}.json"
+    if not p.exists():
+        return []
+    return [dict(n, bends=[]) for n in json.loads(p.read_text())["notes"]]
+
+
 def dev_true_notes(item, start_s, di):
     """A development window's GOAT annotation (stage P's fine-aligned true notes) after the same onset steps."""
     w = dev_annotation(item, start_s, di)
@@ -1694,22 +1770,28 @@ def cmd_transcribe(_args):
     order = list(pool)
     random.Random(f"{EAR_SEED}|ear-items").shuffle(order)
     scans = run_bp([(goat_audio(z, it), "scan") for it in order], work / "scan")
-    kinds, starts = {}, {}
+    kinds, starts, figs, kinds_ann, starts_ann, figs_ann = {}, {}, {}, {}, {}, {}
     for it, r in zip(order, scans):
         dur = goat_duration(z, it)
         notes, _ = clean_transcribed(notes_from_events(r["events"]))
         st = grid_window(notes, dur)
-        if st is None:
-            continue
-        starts[it] = st
-        w = [dict(n, on=n["on"] - st - 0.25, off=n["off"] - st - 0.25) for n in notes
-             if st + 0.25 <= n["on"] < st + 10.25]
-        kinds[it] = kind_flags(w)
-    new = pick_ear_items(order, kinds)
-    if set(new) != set(KINDS):
-        raise SystemExit(f"no item of kind {sorted(set(KINDS) - set(new))} among the development items")
+        if st is not None:
+            starts[it] = st
+            w = [dict(n, on=n["on"] - st - 0.25, off=n["off"] - st - 0.25) for n in notes
+                 if st + 0.25 <= n["on"] < st + 10.25]
+            kinds[it], figs[it] = kind_flags(w), kind_figures(w)
+        ann = annotated_notes(it)                     # the ear kinds' amendment: single-note from the annotation
+        sa = grid_window(ann, dur) if ann else None
+        if sa is not None:
+            starts_ann[it] = sa
+            wa = [dict(n, on=n["on"] - sa - 0.25, off=n["off"] - sa - 0.25) for n in ann
+                  if sa + 0.25 <= n["on"] < sa + 10.25]
+            kinds_ann[it], figs_ann[it] = kind_flags(wa), kind_figures(wa)
+    new, chosen = choose_ear_kinds(order, kinds, kinds_ann, figs, figs_ann)
+    start_of = {k: (starts_ann if chosen[k]["source"] == "annotation" else starts)[new[k]] for k in KINDS}
     ear = [{"item": it, "start_s": probe_start(goat_duration(z, it)), "kind": None, "old": True}
-           for it in old] + [{"item": new[k], "start_s": starts[new[k]], "kind": k, "old": False} for k in KINDS]
+           for it in old] + [{"item": new[k], "start_s": start_of[k], "kind": k, "kind_label": chosen[k]["label"],
+                              "kind_filled": chosen[k]["filled"], "old": False} for k in KINDS]
     for e in ear:
         never_overwrite(note_path("ear", e["item"]))
         x = goat_audio(z, e["item"])
@@ -1747,7 +1829,10 @@ def cmd_transcribe(_args):
     out["ear_items"] = ear
     NR.write_once(ear_items_path(), {"plan": PLAN, "items": ear, "kinds_scanned": {k: sorted(v) for k, v in
                                                                                      kinds.items()},
-                                     "order_seed": EAR_SEED})
+                                     "kinds_annotated": {k: sorted(v) for k, v in kinds_ann.items()},
+                                     "figures": figs, "figures_annotated": figs_ann, "chosen": chosen,
+                                     "ledger": f"{LEDGER_ID} {PHASE_EAR_KINDS}", "order_seed": EAR_SEED})
+    out["ear_kinds"] = chosen
     sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}
     dec, pan, stop = refusal_count(out["parts"], sets_of)
     fl = flagged_parts(out["parts"], sets_of)
@@ -1971,7 +2056,7 @@ def cmd_clips(_args):
             f = dest / f"{c['id']}-{ver}.wav"
             sf.write(f, NR.at_lufs(out, EAR_LUFS).astype(np.float32), PS.SR)
             files[ver] = {"file": f.name, "sha256": NR.file_sha(f)}
-        index["cards"].append({**c, "kind": e["kind"], "clips": files})
+        index["cards"].append({**c, "kind": e["kind"], "kind_label": e.get("kind_label"), "clips": files})
     NR.write_once(dest / "index.json", index)
     print(f"CLIPS DONE: {len(cards)} cards, {2 * len(cards)} clips, {4 * len(cards)} renders -> {dest}")
 

@@ -600,6 +600,56 @@ def test_the_calibration_fix_and_the_users_go_on_main():
     assert T.effective_blocking(None, e) == T.declared_blocking() - {"playing-covered"}
 
 
+def test_the_ear_kinds_as_amended():
+    """The ear kinds' amendment (2026-11-23, the delegated decision): single-note from GOAT's annotated notes, the
+    others from the transcription; an unfilled kind takes its nearest item by its own figure, recorded as not filled;
+    a kind the declared pass fills never uses the fallback; 13 cards and 4 crunch repeats as declared."""
+    order = ["a", "b", "c", "d", "e"]
+    kinds_tr = {"a": {"chord-led", "bends"}, "b": {"bends"}, "c": {"bends", "chord-led"}, "d": {"bends"},
+                "e": {"bends", "single-note"}}                          # e's transcribed single-note is not read
+    kinds_ann = {"c": {"single-note", "chord-led"}, "d": set()}        # only single-note is read from the annotation
+    assert T.ear_kinds_of(kinds_tr, kinds_ann)["e"] == {"bends"}
+    assert T.ear_kinds_of(kinds_tr, kinds_ann)["c"] == {"bends", "chord-led", "single-note"}
+    figs_tr = {"a": {"let-ring": 0.10}, "b": {"let-ring": 0.16}, "c": {"let-ring": 0.30}, "d": {"let-ring": 0.16},
+               "e": {"let-ring": 0.02}}
+    figs_ann = {"c": {"single-note": 0.92}}
+    new, chosen = T.choose_ear_kinds(order, kinds_tr, kinds_ann, figs_tr, figs_ann)
+    assert new == {"chord-led": "a", "bends": "b", "single-note": "c", "let-ring": "d"}   # c is picked: next is a tie
+    assert chosen["single-note"] == {"kind": "single-note", "item": "c", "filled": True, "nearest": False,
+                                     "figure": 0.92, "bar": 0.8, "label": "single-note", "source": "annotation"}
+    lr = chosen["let-ring"]
+    assert lr["filled"] is False and lr["nearest"] is True and lr["figure"] == 0.16 and lr["bar"] == 0.5
+    assert lr["label"] == "let-ring (nearest; none met 0.50)" and lr["source"] == "transcription"
+    assert T.nearest_fill(["b", "d"], {}, figs_tr, "let-ring")["item"] == "b"          # a tie: the seeded order
+    assert T.nearest_fill(order, {}, {}, "let-ring") is None
+    filled = dict(kinds_tr, e={"let-ring"})
+    new2, chosen2 = T.choose_ear_kinds(order, filled, kinds_ann, figs_tr, figs_ann)
+    assert new2["let-ring"] == "e" and chosen2["let-ring"]["filled"] is True     # declared pass: no fallback
+    assert all(c["nearest"] is False for c in chosen2.values())
+    cards = T.ear_cards(["o1", "o2", "o3", "o4"], new)
+    assert len(cards) == 13 and sum(c["cls"] == "crunch" for c in cards) == 4 and sum(c["control"] for c in cards) == 1
+    assert {c["item"] for c in cards if c["cls"] == "crunch"} == set(new.values())
+
+
+def test_the_ear_kinds_record_on_main():
+    """The ear kinds' amendment is ledgered as the delegated decision agent's, not as a go of the user's."""
+    e = T.entries((REPO / "docs" / "dev-test-ledger.json").read_text())["note-rebuild"]
+    rec = e[T.PHASE_EAR_KINDS]
+    assert "delegated decision agent" in rec["decided_by"] and "Not a go of the user's" in rec["decided_by"]
+    assert rec["let_ring"] == {"kind": "let-ring", "filled": False, "nearest": True, "figure": 0.16, "bar": 0.5,
+                               "label": "let-ring (nearest; none met 0.50)"}
+    assert "not evidence that the pool has no let-ring playing" in rec["statement"]
+
+
+def test_the_kind_figures():
+    notes = [{"on": 0.0, "off": 0.5, "pitch": 60, "bends": []}, {"on": 0.3, "off": 0.6, "pitch": 62, "bends": []},
+             {"on": 1.0, "off": 1.2, "pitch": 60, "bends": []}, {"on": 1.0, "off": 1.2, "pitch": 64, "bends": []},
+             {"on": 1.0, "off": 1.2, "pitch": 67, "bends": []}]
+    f = T.kind_figures(notes)
+    assert f["chord-led"] == 1 / 3 and f["single-note"] == 2 / 3 and f["bends"] == 0 and f["let-ring"] == 1 / 3
+    assert T.kind_figures([]) == {}
+
+
 def test_the_old_pages_expected_failure_table():
     """`phase_nr_1_ear_old` (step 2): the stored read, the user's words, and which check must fail which rejected
     clip, ledgered before any check runs on them; the table is the shape `calibrate` reads."""
