@@ -737,7 +737,7 @@ def test_the_ledger_holds_the_declaration_and_the_go():
     e = X.tx_entries(LEDGER.read_text())["note-transcriber"]
     assert e["plan"] == X.PLAN and (REPO / X.PLAN).exists()
     assert X.PHASE in e and X.PHASE_GO in e
-    for later in (X.PHASE_READ, X.PHASE_BRIDGE) + X.RESERVED_PHASES:
+    for later in (X.PHASE_BRIDGE,) + X.RESERVED_PHASES:
         assert later not in e                                     # each comes with its own PR
     inst = e[X.PHASE_INSTALL]                                     # the hash PR: the shape `require_install` reads
     assert inst["size"] == "medium" and inst["device"] == "mps"
@@ -762,6 +762,10 @@ def test_the_ledger_holds_the_declaration_and_the_go():
     assert lists["size_pick"]["large_open_for_user"] and set(lists["screens"]) == set(X.SCREENED_SIZES)
     bars = e["phase_tx_bars_amend"]                                # T1/T2: the decision agent's calls, not the user's
     assert "not the user's own go" in bars["by"] and "unchanged" in bars["lists_rederived"]
+    rd = e[X.PHASE_READ]                                          # the read's result: the shape the bridge reads
+    assert re.fullmatch(r"[0-9a-f]{64}", rd["sha256"]) and rd["code"] == "TXR-undecided" and rd["flags"]["veto-holds"]
+    assert "no bridge" in X.read_bridge_refusal(rd)               # TXR-undecided has no bridge
+    assert "bridge waits" not in json.dumps(rd) and "not measured (1 window, 6 notes)" in rd["note"]
     notes = e[X.PHASE_NOTES]                                      # stage b's hash PR: the shape `read` reads
     assert re.fullmatch(r"[0-9a-f]{64}", notes["listing_sha256"]) and notes["note_files"] == 79 + 2 * 27
     assert notes["size"] == "large" and "item_5" in notes["item_5"] and "12p" in notes["item_5"]

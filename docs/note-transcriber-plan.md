@@ -907,3 +907,89 @@ No measure, pairing, clean-up or threshold of the figures changes; only what the
 `sizes[size].rows`). The stored screen's top-level rows are medium's, because its pick kept medium, while stage b runs
 large on the user's go. Taking the top-level rows would have pooled medium's list rows with large's real-DI rows, and
 the read would have disagreed with the bridge. A screen made before the amendment falls back to its `rows`.
+
+## 21. Stage b's read (2026-11-24; ledger `phase_tx_read`)
+
+`read` ran once from main at `9c031aa1`, in a frozen detached worktree: zero renders, CPU only, about 5 minutes.
+`read.json` has sha256 `84906f29…d1e0`.
+
+**What it read.**
+- MuScriptor large's stage-b notes (`phase_tx_notes`), with large's own list rows (`list_rows_for`).
+- The 79 consistent Guitar-TECHS P1 and P2 windows, from 43 files.
+- GOAT's development windows without `item_5`: 26 (12p).
+
+It reads under T1's directions (`phase_tx_bars_amend`). Every figure is a note count, by the score of the pairing;
+nothing here is by ear.
+
+**The code: `TXR-undecided`, with `veto-holds`.**
+- `tx-vote` and `tx-ms` lose recall, decided worse, on the lists and on the real DIs.
+- `tx-veto` raises precision, with recall and F not decided worse on both sets, and chord-note recall not decided
+  worse on the lists. On the real DIs chord-note recall is not measured (1 window, 6 notes).
+- No arm's ends are better.
+
+**The real DIs, pooled (1,045 true notes):**
+
+| Arm | Found | Precision | Recall | Note F | End accuracy |
+|---|---|---|---|---|---|
+| `tx-bp` | 1,937 | 0.512 | 0.949 | 0.665 | 0.801 |
+| `tx-vote` | 923 | 0.926 | 0.818 | 0.869 | 0.851 |
+| `tx-veto` | 1,696 | 0.585 | 0.949 | 0.724 | 0.801 |
+| `tx-ms` | 1,833 | 0.480 | 0.841 | 0.611 | 0.766 |
+
+**Paired against `tx-bp`** (90% intervals over the 43 file clusters):
+
+| Arm | Precision | Recall | Note F | End accuracy |
+|---|---|---|---|---|
+| `tx-vote` | +0.374 [+0.332, +0.416] | −0.228 [−0.288, −0.168] | +0.107 [+0.069, +0.144] | +0.005 [−0.023, +0.034] |
+| `tx-veto` | +0.061 [+0.046, +0.075] | +0.000 [+0.000, +0.000] | +0.046 [+0.036, +0.057] | +0.000 [+0.000, +0.000] |
+| `tx-ms` | +0.133 [+0.064, +0.203] | −0.186 [−0.253, −0.119] | +0.025 [−0.044, +0.093] | +0.031 [−0.024, +0.086] |
+
+**By player and kind**, precision / recall:
+
+| Group (windows) | `tx-bp` | `tx-vote` | `tx-veto` | `tx-ms` |
+|---|---|---|---|---|
+| P1 chords (15) | 0.228 / 0.712 | 0.642 / 0.374 | 0.251 / 0.712 | 0.486 / 0.528 |
+| P1 scales (30) | 0.616 / 0.995 | 0.969 / 0.991 | 0.766 / 0.995 | 0.969 / 0.991 |
+| P2 chords (10) | 0.431 / 0.955 | 0.952 / 0.449 | 0.457 / 0.955 | 0.406 / 0.438 |
+| P2 scales (24) | 0.677 / 1.000 | 0.947 / 0.901 | 0.743 / 1.000 | 0.288 / 0.901 |
+
+- On scales the vote removes almost all extras and keeps the notes. On chords it finds only 0.374 (P1) and 0.449
+  (P2) of the true notes, against Basic Pitch's 0.712 and 0.955.
+- On P2 scales MuScriptor alone finds 1,112 notes for 355 true notes, mostly "other" extras.
+
+**Reported only: the 26 windows' checks**, as windows gained − lost against `tx-bp`:
+
+| Arm | playing-covered | judge-accepts | ring-kept | chords-kept |
+|---|---|---|---|---|
+| `tx-vote` | −5 | −7 | −4 | −1 |
+| `tx-veto` | 0 | 0 | −1 | 0 |
+| `tx-ms` | +2 | −1 | 0 | +1 |
+
+`tx-bp` itself passes playing-covered on 8 of 26 windows, judge-accepts on 14, ring-kept on 8 and chords-kept on 1.
+The read's audio checks are at today's levels.
+
+**The side figure beside it** (found notes starting inside the window, on ≥ 0; report only):
+
+| Arm | Real-DI precision | Recall |
+|---|---|---|
+| `tx-bp` | 0.541 | 0.932 |
+| `tx-vote` | 0.947 | 0.802 |
+| `tx-veto` | 0.624 | 0.932 |
+| `tx-ms` | 0.492 | 0.821 |
+
+**For the audit to look at.**
+- **Chord-note recall on the real DIs is not measured (1 window, 6 notes).** `chord_indices` needs onset groups of
+  three or more within 50 ms, and five or more such notes in a window. The strummed Guitar-TECHS chords give only 6
+  such notes, all in one window. So the read's "not decided worse" on that row means "not measured". The printed sizes
+  text in `read.json` shows it as "chord-note recall +0.000"; that file is write-once and stays as made, and this note
+  is the correction. Recall itself is read on all 43 clusters.
+- **The intervals run about 2% narrow.** With 43 clusters, `T_95` (`pipeline_fix.t95`) falls back to z (1.645) rather
+  than t(42) (about 1.682). This is project-wide and changes no reading here.
+- The read's `AUDIO_LEVELS` text still says "27 windows". It reads 26 since 12p.
+
+**The audit.** An independent audit CONFIRMED the read WITH CORRECTIONS (`handover/2026-11-24/audit-tx-read`):
+every figure reproduces exactly from an independent pairing, and there is no leak. The corrections are the notes
+above.
+
+**Next.** `TXR-undecided` has no bridge; `read_bridge_refusal` refuses it. The veto goes to the user as the candidate
+(section 7: an open rule in its shape), and into the rebuild's F4.
