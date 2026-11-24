@@ -953,7 +953,8 @@ on; its own venv, so a clash cannot cost `codec-venv`):
 
 **Status (2026-11-24): ran; the main read audited.** The row reads **`FL-undecided`**: `D_blur` +0.067 [−0.090,
 +0.225] on BKS+panel; `D_true` +0.192 [+0.060, +0.324]; G50 −0.051. `ld-rec` reads `FL-undecided` too, level with
-`ld-stem` (+0.015 [−0.166, +0.197]); its audit is still to come.
+`ld-stem` (+0.015 [−0.166, +0.197]), audited (confirmed with corrections): on these mixes, which have no other
+guitar, separation is not what limits LOUDAR; its own rebuild is the larger limit (clearly on BKS).
 - Ledger: `phase_scratch_loudar_outcome`.
 - Results, corrections and caveats:
   [results](scratch-search-results.md#loudars-second-test-row-fs-loudar-track-2-fl-undecided).

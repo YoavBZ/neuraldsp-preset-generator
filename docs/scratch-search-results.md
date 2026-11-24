@@ -614,7 +614,8 @@ Declare **LOUDAR's second test**, under its own declaration and review, at zero 
 
 Ran 2026-11-24. The main read was audited by an independent recompute from the per-part score records, and came back
 CONFIRMED WITH CORRECTIONS: every number reproduces to 3 dp, and the code is `FL-undecided`. All four corrections are
-taken below. `ld-rec`'s read, added after the audit, has its own audit still to come before it goes to the user.
+taken below. `ld-rec`'s read, added after that audit, had its own: CONFIRMED WITH CORRECTIONS, every figure
+reproduces and its inputs are the clean records; its corrections (the limit's wording, the +0.10 count) are taken.
 - Declaration: [plan section 13](scratch-search-plan.md#13-the-fs-loudar-row).
 - Ledger, entry `preset-ladder`: `phase_scratch_loudar` and its amendments, `phase_scratch_loudar_dry`,
   `phase_scratch_loudar_answers_stem`, `_cut`, `_in`, `phase_scratch_loudar_dry_rec`,
@@ -673,7 +674,7 @@ preset. Undecided is not failed.
   the prior; GOAT's `D_blur` −0.088 reads "at the bar");
 - comparators at the checkpoint: row (b) −0.242 [−0.462, −0.022], row (c) −0.118 [−0.355, +0.120];
 - against the codec ceiling (`rt-m2l`): +0.180 [+0.056, +0.304]; room kept −0.54 (it keeps none of the gap between the
-  blur and the true DI); 8 parts at +0.10 or worse than Cen;
+  blur and the true DI); parts at +0.10 or worse than Cen: 6 deciding, plus 2 GOAT;
 - the controls: `stem-in` (the stem itself as the dry guitar) G50 +0.269 [−0.261, +0.798]; `di-cut` (the true DI cut
   the same way) −0.233 [−0.451, −0.016].
 - **`D_true` is robust** (the audit): leaving out one DI file at a time gives +0.15 to +0.23. The loss is larger on
@@ -708,13 +709,15 @@ The per-part whole-clip lags sit beside the per-part G50 (`rows.json`); they nev
 LOUDAR rebuilt from the clean record's search half instead of the stem, on the 23 deciding parts, then the same short
 row. It reads **`FL-undecided`** too (table above), and `ld-rec` less `ld-stem` (G50, paired per part) is **+0.015
 [−0.166, +0.197]** on BKS+panel (BKS +0.027 [−0.026, +0.079]).
-- **Separation is not what limits LOUDAR here**, most clearly on BKS (the panel is too wide to say): with no separation
-  at all, LOUDAR's dry guitar drives the search no better than from the stem, so its own rebuild is the larger
-  limit.
+- **On these mixes, which have no other guitar, separation is not what limits LOUDAR; LOUDAR's own rebuild is the
+  larger limit** (clearly on BKS; the panel is too wide to say). With no separation at all, LOUDAR's dry guitar drives
+  the search no better than from the stem. "The rebuild" bundles timbre, timing and the prior's coverage, and GOAT
+  was not run for `ld-rec`.
 - `bottleneck` names none, since the main row did not fall short; `ld-rec` reads beside as LOUDAR's ceiling without
   separation.
 - `ld-rec`'s lags: −11 to +12 ms, median 0, 14 of 23 within 1 ms; it has no sub-window diagnostic.
-- This read has not been audited yet; it goes to the user after its audit.
+- **Audited:** CONFIRMED WITH CORRECTIONS. Every figure reproduces, and the inputs are the clean records. `ld-rec` has
+  7 deciding parts at +0.10 or worse than Cen.
 
 ### What it does not say
 
