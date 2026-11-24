@@ -2244,12 +2244,24 @@ def cmd_stem_preview(_args):
     print(f"STEM PREVIEW: note F {json.dumps({g: round(pooled_f(vs) or 0, 3) for g, vs in sorted(by.items())})}")
 
 
+def differing_cards(cards, build, main_build):
+    """(Pure.) 12t's F6b ear arm, guard 1: of a page's cards, the real ones whose item's `tr-di` sha256 in `build`
+    differs from `main_build`'s (the control is the true DI, the same for both, so it is never repeated). -> (cards,
+    {items_differing, items_same})."""
+    diff = {k for k, r in build["ear"].items()
+            if r["arms"]["tr-di"]["sha256"] != main_build["ear"][k]["arms"]["tr-di"]["sha256"]}
+    keep = [c for c in cards if not c["control"] and c["item"] in diff]
+    return keep, {"items_differing": sorted(diff), "items_same": sorted(set(build["ear"]) - diff)}
+
+
 def cmd_clips(_args):
     """Step 8 (52 renders): the ear page's 13 cards (`ear_cards`), each version (the recorded DI and Rebuilt: tr-di, or
     the true DI on the hidden control) through the AC20's clean or crunch class start, each render primed alone,
     trimmed, at EAR_LUFS; built whatever the content checks read (every check a report, 12q R1), for any build
-    (`--build`; its own folder by `listening_suffix`). -> listening/note-rebuild-ear-2[-<sha12>]/<card>-ref.wav,
-    <card>-reb.wav, index.json (the key: never on the page)."""
+    (`--build`; its own folder by `listening_suffix`). With `--against MAIN` (12t's F6b ear arm), only the real cards
+    whose item's `tr-di` differs from MAIN's are rendered, and the index records the guard (`second_of`); none
+    differing renders nothing. -> listening/note-rebuild-ear-2[-<sha12>]/<card>-ref.wav, <card>-reb.wav, index.json
+    (the key: never on the page)."""
     require_redo()
     bpath = pathlib.Path(getattr(_args, "build", None) or build_path())     # any build: no attempt cap (2026-11-24)
     build_sha = NR.file_sha(bpath)
@@ -2276,12 +2288,21 @@ def cmd_clips(_args):
     if why:                                                  # 12p: a later page never plays a ruled-out DI
         raise SystemExit(why)
     cards = ear_cards([e["item"] for e in ear if e["old"]], {e["kind"]: e["item"] for e in ear if not e["old"]})
+    against = getattr(_args, "against", None)
+    guard = None
+    if against:                       # 12t's F6b ear arm: only the cards whose item's tr-di differs, no control
+        apath = pathlib.Path(against)
+        main_build = json.loads(apath.read_text())
+        cards, guard = differing_cards(cards, build, main_build)
+        guard["against_sha256"] = NR.file_sha(apath)
     ms = P.A_menu_S()[EAR_AMP]
     trim = (int(PS.TRIM_S * PS.SR), int(round((PS.SEC_S + PS.TRIM_S) * PS.SR)))
     LO._wait_cap()
     dest.mkdir(parents=True)
     index = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}", "amp": EAR_AMP, "lufs": EAR_LUFS,
              "build_sha256": build_sha, "cards": []}
+    if guard is not None:
+        index["second_of"] = guard
     for c in cards:
         e = next(q for q in ear if q["item"] == c["item"])
         di = SB.measure(window_audio(goat_audio(z, c["item"]), e["start_s"])[0])
@@ -2633,6 +2654,8 @@ def main(argv=None):
     ap.add_argument("cmd", choices=sorted(COMMANDS))
     ap.add_argument("--interpreter", default=None, help="install only: the declared 3.11 fallback's interpreter")
     ap.add_argument("--build", default=None, help="clips only: a later build's record (default: the first build)")
+    ap.add_argument("--against", default=None, help="clips only: the page's main build record; only the cards whose "
+                    "item's tr-di differs from it are rendered, no control (the F6b ear arm's guard 1, 12t)")
     ap.add_argument("--build-name", dest="build_name", default=None,
                     help="build and ear-items: a later build's name (its own record, dry root and ear items)")
     ap.add_argument("--fixes", default=None, help='build only: the fixes as JSON, e.g. {"F1": "global", "F3": true}')

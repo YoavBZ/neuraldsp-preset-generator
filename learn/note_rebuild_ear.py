@@ -443,6 +443,73 @@ def redo_items(index):
     return out
 
 
+TWO_BUILD_SEED = 20261404               # 12t's F6b ear arm: the shared page's card order
+
+
+def second_items(index, first_sha):
+    """(Pure.) A second build's cards for a shared page (12t's F6b ear arm): its clips index must be made `--against`
+    the page's main build (`second_of.against_sha256` = `first_sha`) and hold only real cards (guard 1: the control
+    is never repeated). -> the cards, as `redo_items`' (possibly none)."""
+    g = index.get("second_of") or {}
+    if g.get("against_sha256") != first_sha:
+        raise SystemExit("the second build's clips were not made --against the page's main build")
+    out = []
+    for c in sorted(index["cards"], key=lambda c: c["n"]):
+        if c["control"] or set(c["clips"]) != {"ref", "reb"}:
+            raise SystemExit(f"second build card {c['n']}: a control or clips {sorted(c['clips'])}")
+        out.append({"id": c["id"], "n": c["n"], "item": c["item"], "cls": c["cls"], "control": False,
+                    "kind": c.get("kind"), "clips": c["clips"]})
+    return out
+
+
+def merge_two_builds(first, second, first_sha, second_sha, seed=TWO_BUILD_SEED):
+    """(Pure.) One page for two builds (12t's F6b ear arm), in the regular layout: every card of both, each with its
+    build's sha256 and its twin (the other build's card for the same item and class), new opaque ids (so the page does
+    not say which build a card plays) and a seeded shuffled order numbered from 1. -> cards."""
+    import random as _r
+
+    cards = [dict(it, dry_build_sha256=first_sha, src_id=it["id"]) for it in first]
+    cards += [dict(it, dry_build_sha256=second_sha, src_id=it["id"]) for it in second]
+    for c in cards:
+        c["id"] = "r" + hashlib.sha256(f"{c['dry_build_sha256']}|{c['src_id']}".encode()).hexdigest()[:10]
+    by = {(c["dry_build_sha256"], c["item"], c["cls"], c["control"]): c["id"] for c in cards}
+    for c in cards:
+        other = second_sha if c["dry_build_sha256"] == first_sha else first_sha
+        c["twin"] = None if c["control"] else by.get((other, c["item"], c["cls"], False))
+    _r.Random(f"{seed}|{first_sha}|{second_sha}").shuffle(cards)
+    return [dict(c, n=j) for j, c in enumerate(cards, 1)]
+
+
+def two_build_verdict(items, answers, sha):
+    """(Pure.) One build's verdict on a shared page: `redo_verdict` on its own cards plus the page's one hidden control
+    (the true DI, the same for both builds), so the second build's verdict sees the control's answer too. -> the
+    verdict, with `cards` (its own) and `control_shared` (True when the control is the other build's card)."""
+    mine = [it for it in items if it["dry_build_sha256"] == sha or it["control"]]
+    ctl = next((it for it in items if it["control"]), None)
+    return {"cards": sum(it["dry_build_sha256"] == sha and not it["control"] for it in items),
+            "control_shared": bool(ctl) and ctl["dry_build_sha256"] != sha, **redo_verdict(mine, answers)}
+
+
+def twin_read(items, answers, second_sha):
+    """(Pure.) The F6b ear arm's pairs for the read: each second-build card beside its twin, with the faults heard on
+    each, the faults the second has that its twin lacks, and both notes. The ear rule itself (a bend fault, removed or
+    flattened, heard on the main build and not on the second) is read from these, the user's words included."""
+    by = {it["id"]: it for it in items}
+    out = []
+    for it in items:
+        if it["dry_build_sha256"] != second_sha:
+            continue
+        tw = by.get(it["twin"])
+        a, b = answers.get(it["id"]) or {}, (answers.get(it["twin"]) or {}) if tw else {}
+        fa, fb = set(a.get("faults") or []), set(b.get("faults") or [])
+        out.append({"item": it["item"], "cls": it["cls"], "second": {"n": it["n"], "same": bool(a.get("same")),
+                                                                      "faults": sorted(fa), "note": a.get("note", "")},
+                    "main": None if not tw else {"n": tw["n"], "same": bool(b.get("same")), "faults": sorted(fb),
+                                                 "note": b.get("note", "")},
+                    "second_faults_main_lacks": sorted(fa - fb), "main_faults_second_lacks": sorted(fb - fa)})
+    return out
+
+
 def redo_build_id(items):
     """(Pure.) The page's build: the hash of its cards' clips."""
     return hashlib.sha256(json.dumps([[it["id"], it["cls"], it["clips"]] for it in items],
@@ -540,17 +607,29 @@ def cmd_redo_page(_args):
     from learn import note_transcribe as NT
 
     sha = getattr(_args, "build_sha", None) or NT.FIRST_DRY_SHA
+    second = getattr(_args, "second_sha", None)
     out = redo_page_dir(sha)
     for name in ("index.html", "artifact.html", "key.json"):
         NT.never_overwrite(out / name)
     src = NT.clips_dir(sha)
     index = json.loads((src / "index.json").read_text())
     items = redo_items(index)
+    srcs = {it["id"]: src for it in items}
+    if second:                     # 12t's F6b ear arm: the second build's cards on the same page, blind and shuffled
+        if second == index["build_sha256"]:
+            raise SystemExit("the second build is the page's main build")
+        src2 = NT.clips_dir(second)
+        index2 = json.loads((src2 / "index.json").read_text())
+        if index2["build_sha256"] != second:
+            raise SystemExit("the second clips folder is not that build's")
+        more = second_items(index2, index["build_sha256"])
+        items = merge_two_builds(items, more, index["build_sha256"], second)
+        srcs = {it["id"]: (src if it["dry_build_sha256"] == index["build_sha256"] else src2) for it in items}
     build = redo_build_id(items)
     clips = {}
     for it in items:
         for k, ver in (("ref", "ref"), ("B", "reb")):
-            f = src / it["clips"][ver]["file"]
+            f = srcs[it["id"]] / it["clips"][ver]["file"]
             if NR.file_sha(f) != it["clips"][ver]["sha256"]:
                 raise SystemExit(f"{f.name}: not the clip its index records")
             y, sr = sf.read(f, dtype="float64", always_2d=True)
@@ -559,9 +638,15 @@ def cmd_redo_page(_args):
             clips[f"{it['id']}-{k}"] = E.encode(np.asarray(y).mean(1), out / "aac-cache")
     page, css, js = redo_page_html(items, clips, build)
     out.mkdir(parents=True, exist_ok=True)
-    NR.write_once(out / "key.json", {"phase": NT.ear_key(index["build_sha256"]), "build": build,
-                                     "dry_build_sha256": index["build_sha256"],
-                                     "items": items})
+    key = {"phase": NT.ear_key(index["build_sha256"]), "build": build, "dry_build_sha256": index["build_sha256"],
+           "items": items}
+    if second:
+        key["second"] = {"phase": NT.ear_key(second), "dry_build_sha256": second,
+                         "cards": sum(it["dry_build_sha256"] == second for it in items),
+                         "guard_1": index2["second_of"],
+                         "control": "the page's one hidden control (the true DI, the same for both builds) is the "
+                                    "main build's card of this page and counts in both builds' verdicts (redo-read)"}
+    NR.write_once(out / "key.json", key)
     for name, text in (("index.html", page), ("artifact.html", redo_artifact_page(page, css, js))):
         NT.never_overwrite(out / name)
         (out / name).write_text(text)
@@ -581,6 +666,17 @@ def cmd_redo_read(args):
     ex = EE.stored_answers(pathlib.Path(args.answers).read_text())
     if ex.get("build") != key["build"]:
         raise SystemExit(f"answers for build {ex.get('build')}, the page's is {key['build']}")
+    if key.get("second"):          # 12t's F6b ear arm: each build's verdict on its own cards, under its own key
+        main_sha, sec = key["dry_build_sha256"], key["second"]["dry_build_sha256"]
+        per = {sha: {"phase": NT.ear_key(sha), "dry_build_sha256": sha, **two_build_verdict(key["items"], ex["answers"],
+                                                                                               sha)}
+               for sha in (main_sha, sec)}
+        rep = {"build": key["build"], "builds": per, "twins": twin_read(key["items"], ex["answers"], sec),
+               "ear_rule": "12t's F6b ear arm (phase_nr_1_redo_fix_bend_frozen b3k.ear_rule), read from the twins "
+                           "and the user's words"}
+        pathlib.Path(args.out).write_text(json.dumps(rep, indent=1))
+        print(json.dumps(rep, indent=1))
+        return
     rep = {"phase": NT.ear_key(key["dry_build_sha256"]), "build": key["build"],
            "dry_build_sha256": key["dry_build_sha256"],
            **redo_verdict(key["items"], ex["answers"])}
@@ -598,6 +694,8 @@ def main(argv=None):
     s.set_defaults(fn=cmd_read)
     s = sub.add_parser("redo-page")
     s.add_argument("--build-sha", dest="build_sha", default=None, help="a later build's sha256 (default: the first)")
+    s.add_argument("--second-sha", dest="second_sha", default=None,
+                   help="a second build on the same page (12t's F6b ear arm): its clips made --against the first")
     s.set_defaults(fn=cmd_redo_page)
     s = sub.add_parser("redo-read")
     s.add_argument("out")
