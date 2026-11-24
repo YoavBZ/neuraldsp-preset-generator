@@ -559,7 +559,8 @@ def cmd_redo_page(_args):
             clips[f"{it['id']}-{k}"] = E.encode(np.asarray(y).mean(1), out / "aac-cache")
     page, css, js = redo_page_html(items, clips, build)
     out.mkdir(parents=True, exist_ok=True)
-    NR.write_once(out / "key.json", {"phase": REDO_PHASE, "build": build, "dry_build_sha256": index["build_sha256"],
+    NR.write_once(out / "key.json", {"phase": NT.ear_key(index["build_sha256"]), "build": build,
+                                     "dry_build_sha256": index["build_sha256"],
                                      "items": items})
     for name, text in (("index.html", page), ("artifact.html", redo_artifact_page(page, css, js))):
         NT.never_overwrite(out / name)
