@@ -1497,3 +1497,9 @@ build 2 runs labelled "ear pending" (R5).
 - research: a content measure that passes both ladders on real DIs.
 
 F4b on the 47 parts needs MuScriptor there, which waits for the user's data yes.
+
+**Build 2's first attempt stopped (2026-11-24).** `build --build-name b2` stopped at `item_123`, the new let-ring ear
+item. `transcribe` never saw that item, so it has no note-check figures. The partial dry guitars are set aside unread
+in `dry-b2.failed-20261124/`. The build now measures a new ear item's `playing-covered` itself and leaves its
+`onsets-found` unmeasured (None), since the detector runs only in `transcribe`. Every check is a report (R1). Then
+build 2 runs once.

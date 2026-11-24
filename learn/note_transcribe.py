@@ -1924,6 +1924,16 @@ def cmd_transcribe(_args):
           f"sha256 {NR.file_sha(transcribe_path())}")
 
 
+def note_check_figures(tr, kind, key, notes, di):
+    """A built item's note-check figures: `transcribe`'s, or, for a later page's ear item that `transcribe` never saw
+    (`ear-items`' replacement, 12q), `playing-covered` measured here and `onsets-found` not measured (None: the
+    detector runs only in `transcribe`). All checks are reports (12q R1)."""
+    rows = tr["parts"] if kind == "part" else tr["ear"]
+    if key in rows:
+        return rows[key]["figures"]
+    return {"onsets-found": None, "playing-covered": playing_covered(notes, di)}
+
+
 def build_loudness(loud, fixes):
     """(Pure.) The loudness a build plays: the versions read's (`versions_loud`) unless a later build's `fixes` name
     its own (`"loud"`: None for none, or a gamma above zero; 12s). -> (gamma or None, refusal or None)."""
@@ -2151,7 +2161,7 @@ def cmd_build(_args):
             ja = judge_accepts(y32, di, info["lag"], info["search"], ref_blank)
         else:
             ja = judge_accepts(y32, di, 0, "A")
-        figs = {**(tr["parts"] if kind == "part" else tr["ear"])[key]["figures"], "judge-accepts": ja,
+        figs = {**note_check_figures(tr, kind, key, notes, di), "judge-accepts": ja,
                 "ring-kept": ring_kept(np.asarray(y32, np.float64), di, [n["on"] for n in notes]),
                 "chords-kept": chords_kept(got, notes)}
         side = {"crest_diff_db": NR.crest_db(np.asarray(y32, np.float64)) - NR.crest_db(di),
