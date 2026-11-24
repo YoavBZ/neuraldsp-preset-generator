@@ -568,13 +568,20 @@ def isolate_ms(out_path, f1_mode):
 
 
 GAMMA_GRID = (0.5, 1.0, 1.5, 2.0, 3.0, 4.0)   # R3's measurement grid for the loudness gamma (off beside); extended
-                                              # upward while the minimum sits at its top, so it brackets the minimum
+                                              # upward by doubling its top while the minimum sits there, so it brackets
+                                              # the minimum; a safety stop at 12 points, recorded as bracketed: false
+GAMMA_GRID_MAX = 12
+KEPT_KEYS = ("F1", "F2ms", "F4", "F5")
 
 
 def kept_transform(notes, ms, kept):
     """(Pure.) The kept fixes in order on a window's notes: F1 (`kept["F1"]`, a mode), then F2-MuScriptor
     (`kept["F2ms"]`, a window in s) joins, then F4 (`kept["F4"]`, its below window) or F5 (`kept["F5"]`, its
-    context) drops. An absent key is off. -> notes."""
+    context) drops. An absent key is off; any other key (`F2`, the band, or `F3`) is refused, never dropped silently.
+    -> notes."""
+    unknown = sorted(set(kept) - set(KEPT_KEYS))
+    if unknown:
+        raise ValueError(f"unknown kept fixes {unknown}: only {list(KEPT_KEYS)}")
     n = rezero_bends(notes, kept.get("F1"))
     if kept.get("F2ms"):
         pairs = refind_pairs(n)
@@ -597,6 +604,7 @@ def combine(out_path, kept):
     from learn import song_bank as SB
 
     t0 = time.time()
+    kept_transform([], [], kept)                          # refuses an unknown key before any work
     L, D, bank = windows_L_D()
     needs_ms = any(kept.get(k) for k in ("F2ms", "F4", "F5"))
     if needs_ms:
@@ -624,6 +632,8 @@ def combine(out_path, kept):
     ring = "ring-soft" if spans or rd["D"]["mean"] > 0 else "ring-on"
     body["ring"]["pick"] = ring
     body["ring"]["label"] = "undecided, the as-built ring-soft kept" if spans else None
+    body["ring"]["optimistic"] = ("picked and read on the same D: its interval is optimistic; E is the held-out "
+                                  "check")
     base = comb if ring == "ring-soft" else on
     # R3: the loudness gamma on the picked ring
     grid, rows = list(GAMMA_GRID), {}
@@ -635,15 +645,19 @@ def combine(out_path, kept):
                   for s, ws in (("L", L), ("D", D))}
             rows[g] = diff(gf, base)
         best = min(rows, key=lambda g: rows[g]["D"]["mean"])
-        if best == max(grid) and len(grid) < 12:
+        if best == max(grid) and len(grid) < GAMMA_GRID_MAX:
             grid.append(max(grid) * 2)
             continue
         break
+    bracketed = best != max(grid)
     bd = rows[best]["D"]
     spans_g = bd["lo90"] is None or bd["lo90"] <= 0 <= bd["hi90"] or bd["mean"] > 0
     body["gamma"] = {"grid": grid, "less_off": {str(g): r for g, r in sorted(rows.items())}, "lowest": best,
-                     "pick": None if spans_g else best,
-                     "label": "undecided, no loudness kept (as built)" if spans_g else None}
+                     "bracketed": bracketed, "pick": None if spans_g else best,
+                     "label": "undecided, no loudness kept (as built)" if spans_g else None,
+                     "optimistic": "picked and read on the same D: its interval is optimistic; E is the held-out check",
+                     "grid_rule": ("doubling the top while the minimum sits there, a safety stop at "
+                                   f"{GAMMA_GRID_MAX} points (bracketed: false when it is hit)")}
     body["seconds"] = time.time() - t0
     NR.write_once(out_path, body)
     print(f"COMBINE {kept}: ring {ring}, gamma {body['gamma']['pick']}; {time.time() - t0:.0f} s -> {out_path}")

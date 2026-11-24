@@ -166,3 +166,6 @@ def test_the_kept_fixes_in_order():
     assert len(j) == 2 and j[0]["off"] == 1.0                         # the re-find joined
     v = F.kept_transform(bp, ms, {"F1": "global", "F4": 0.05})
     assert [x["pitch"] for x in v] == [60, 60]                          # the octave ghost dropped
+    for bad in ({"F2": 0.0}, {"F3": True}, {"F1": "global", "F6": 1}):    # unknown keys refused, never dropped
+        with pytest.raises(ValueError, match="unknown kept fixes"):
+            F.kept_transform(bp, ms, bad)

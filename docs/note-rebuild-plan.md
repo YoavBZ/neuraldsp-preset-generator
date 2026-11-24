@@ -1442,3 +1442,13 @@ development windows.
 - MuScriptor then enters the fs-notes build, replacing the transcriber 12c froze, as 12q records. A MuScriptor-derived
   build is a development yardstick and never ships.
 - The first build's search renders stay set aside unread until R8 reads them.
+
+**Step 6's `combine` (12q; R3).** The kept fixes are applied together (F1, then F2-MuScriptor's joins, then F5's or
+F4's drops); a key it does not know (`F2`, the band, or `F3`) is refused. R3 then picks two settings on D by the
+distance:
+- **The ring variant:** ring-soft against ring-on.
+- **The loudness γ:** off, then 0.5, 1, 1.5, 2, 3 and 4. The grid doubles its top while the minimum sits there, with a
+  safety stop at 12 points, recorded as `bracketed: false` when hit.
+
+An interval spanning zero keeps the as-built choice, labelled undecided. Both picks are read on the D they were picked
+on, so their intervals are optimistic; E is the held-out check.
