@@ -5321,9 +5321,9 @@
     "build2_rule": {
      "F1": "global",
      "ring": "ring-soft",
-     "loud": 1.0,
+     "loud": null,
      "muscriptor": false,
-     "note": "frozen now; gamma above 1.0 undecided, not worse; inner doubled chord voices 3-5 dB down"
+     "note": "frozen; the decision agent's gamma 1.0 dropped after E by the orchestrator (2026-11-24): E reads gamma over F1 +0.008 [-0.128, +0.145], its D pick optimistic, item_102 +0.43, F1 alone as close; loudness an open lever for later"
     },
     "page_now": "the second page now, for build 2: reverses rebuild-one-fix.md's one page after F1-F4",
     "E_read": {
@@ -5336,8 +5336,13 @@
      "note": "held out, read once after the freeze; the ring and gamma were picked on D, E is their test"
     },
     "code": "note_transcribe.build_loudness: a later build names its own loudness in --fixes (\"loud\")",
-    "next": "build --build-name b2, its hash phase_scratch_notes_dry_b2, clips and page, the search labelled ear pending",
-    "queued": "F4b; the re-pluck ladder on L and D; F3's glide sweep; a content measure passing both ladders (research)"
+    "next": "build --build-name b2 --fixes {\"F1\": \"global\", \"loud\": null}, its hash phase_scratch_notes_dry_b2, clips and page, the search labelled ear pending (after LOUDAR's ld-rec)",
+    "queued": "F4b; the re-pluck ladder on L and D; F3's glide sweep; a content measure passing both ladders (research)",
+    "decision_agent_rule": {
+     "F1": "global",
+     "ring": "ring-soft",
+     "loud": 1.0
+    }
    }
   },
   {

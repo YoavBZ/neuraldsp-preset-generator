@@ -1453,7 +1453,7 @@ distance:
 An interval spanning zero keeps the as-built choice, labelled undecided. Both picks are read on the D they were picked
 on, so their intervals are optimistic; E is the held-out check.
 
-### 12s. Build 2 frozen and paged now, F4 out, D report-only for extra-note fixes (2026-11-24; ledger `phase_nr_1_redo_b2`)
+### 12s. Build 2 frozen (F1, ring-soft, no loudness) and paged now, F4 out, D report-only for extra-note fixes (2026-11-24; ledger `phase_nr_1_redo_b2`)
 
 Three calls by the delegated decision agent under the user's standing instruction (`rebuild-f4-and-next.md`); none is a
 go of the user's.
@@ -1465,9 +1465,11 @@ go of the user's.
   with F1's notes (12 of 19 with the row's balance); on 6, an octave ghost on every note reads as closer. 12m's
   `ladder_outcome` makes a set reported-only when a real window fails, and the same applies here. This departs from
   12r, which made D's distance decide F4. D's distance stays the judge for pitch, timing and level fixes (F1, γ).
-- **Build 2 = F1 (global) + ring-soft + γ 1.0, MuScriptor-free, frozen now and paged now.** This reverses
-  `rebuild-one-fix.md`'s "one page after F1 to F4". γ above 1.0 is undecided, not worse. The known side effect: inner
-  chord voices that double a lower string's harmonic are turned down 3 to 5 dB.
+- **Build 2 paged now.** The decision agent froze F1 (global) + ring-soft + γ 1.0, MuScriptor-free, and paged it now,
+  reversing `rebuild-one-fix.md`'s "one page after F1 to F4".
+- **γ dropped after E (the orchestrator's call, 2026-11-24).** Build 2 is **F1 (global) + ring-soft, no loudness**.
+  E, the held-out check, reads γ 1.0 over F1 at +0.008 [−0.128, +0.145]: its D pick was optimistic and does not hold.
+  It costs `item_102` +0.43, and F1 alone is as close on E. Loudness stays an open lever for later.
 
 **E's held-out read of build 2's rule** (the 8 items of `ear-items-b2.json`, Basic Pitch's notes, zero renders;
 `e-read-b2-97110e5e.json`, sha256 `7e374273…4502`):
@@ -1479,8 +1481,8 @@ go of the user's.
 
 The ring and γ were picked on D, so D's intervals for them were optimistic; E is their test, and on E γ is undecided.
 
-**Then:** `build --build-name b2 --fixes '{"F1": "global", "loud": 1.0}'` (a later build names its own loudness,
-`build_loudness`), its hash (`phase_scratch_notes_dry_b2`), clips and the regular-layout page. Before listening, the
+**Then:** `build --build-name b2 --fixes '{"F1": "global", "loud": null}'` (a later build names its own loudness,
+`build_loudness`; build 2 names none), its hash (`phase_scratch_notes_dry_b2`), clips and the regular-layout page. Before listening, the
 user is told that re-plucks, bend and slide splits and the high extra notes are not fixed yet. The fs-notes search on
 build 2 runs labelled "ear pending" (R5).
 
