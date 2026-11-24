@@ -1530,6 +1530,13 @@ def identity_check(name, fixes):
     return out
 
 
+def true_bends(w, s):
+    """(Pure.) A window's true bent notes: B's by their tracks, Db's by the annotation's `bend`."""
+    if s == "B":
+        return [w["truth"][i] for i in bent_truth(w["truth"])]
+    return [t for t in w["truth"] if "bend" in (t.get("arts") or [])]
+
+
 def f6_points():
     """(Pure.) The grid's points (family, K, gap), in `f6_variants`' order."""
     return [(fam, k, gap) for k in F6_K for fam in F6_FAMILIES for gap in F6_GAPS]
@@ -1675,17 +1682,16 @@ def isolate_bend(out_path, declared=False, skip_identity=False):
                 notes = v["notes"][("own", False)]
                 cl = bent_but_cleared(notes, stitched_heads(len(w["n1"]), v["chains"]))
                 tot_c += len(cl)
-                if s == "B":
-                    bt = [w["truth"][i] for i in bent_truth(w["truth"])]
-                else:
-                    bt = [t for t in w["truth"] if "bend" in (t.get("arts") or [])]
-                at_true += sum(1 for k in cl if matched(notes[k], bt))
+                at_true += sum(1 for k in cl if matched(notes[k], true_bends(w, s)))
             r["unsplit_bent_but_cleared"][s] = {"notes": tot_c, "at_true_bends": at_true}
         rows[pt] = r
     # F1 alone's figures beside (the as-built read on every set)
     body["F1"] = {"note_error": f1_ne,
                   "bend_error": {w["key"]: bend_error(w["truth"], w["n1"], w.get("excluded", ())) for w in bent_lists},
-                  "unsplit_bent_but_cleared": {s: sum(len(bent_but_cleared(w["n1"])) for w in ws)
+                  "unsplit_bent_but_cleared": {s: {"notes": sum(len(bent_but_cleared(w["n1"])) for w in ws),
+                                                   "at_true_bends": sum(
+                                                       1 for w in ws for k in bent_but_cleared(w["n1"])
+                                                       if matched(w["n1"][k], true_bends(w, s)))}
                                                for s, ws in (("B", B), ("Db", Db))},
                   "ends_bent": {s: [sum(ends_bent(w["n1"]) for w in ws), sum(len(w["n1"]) for w in ws)]
                                 for s, ws in (("B", B), ("L", L), ("GT", GT), ("D", D), ("Db", Db))}}
