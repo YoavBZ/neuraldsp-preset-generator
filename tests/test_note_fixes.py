@@ -434,10 +434,39 @@ def test_f6_is_declared_before_its_numbers():
     rec = e["note-rebuild"][F.PHASE_F6]
     assert {"junction_rule", "pick_rule", "keep_call", "seen", "E_relabel", "bend_list_artefact", "correction_12q",
             "amendments", "filled_in"} <= set(rec)
-    assert "preliminary" not in rec                                   # declared: no figures of its own
-    assert F.PHASE_F6_FROZEN not in e["note-rebuild"] and F.PHASE_F6_LISTS not in e["note-rebuild"]
+    # the declaration's own fields hold no figure; what was added after the preliminary isolate-bend says so
+    assert "preliminary" not in rec
     tie = rec["decision_f6b_tie"]
+    assert "after the preliminary isolate-bend" in tie["label"] and "the ear answers unseen" in tie["label"]
+    assert "before any isolate-bend figure" in rec["run_record"]
+    assert "preliminary pick" in rec["unsplit_arm_fired"]
     assert tie["build3"]["F6"]["keep"] is False and "b3k" in tie["ear_arm"] and "No count or threshold" in tie["ear_rule"]
+    assert F.PHASE_F6_FROZEN not in e["note-rebuild"]
+
+
+def test_the_bend_listings_are_hashed_before_a_declared_run_reads_them():
+    import pathlib
+
+    e = T.entries((pathlib.Path(__file__).resolve().parents[1] / "docs" / "dev-test-ledger.json").read_text())
+    rec = e["note-rebuild"][F.PHASE_F6_LISTS]
+    assert rec["lists_sha256"].startswith("9449f985") and rec["windows_sha256"].startswith("0cb49d74")
+    assert (rec["lists"], rec["windows"]) == (10, 14)
+
+
+def test_the_f6b_ear_arms_guard_figures():
+    fixes = {"F1": "global", "F6": F6P | {"keep": False}, "loud": None}
+    k = F.b3k_fixes(fixes)
+    assert k["F6"]["keep"] is True and fixes["F6"]["keep"] is False and k["loud"] is None   # the input untouched
+    assert F.faulted_first(["item_160", "item_39", "item_102", "item_46"]) == ["item_102", "item_39", "item_160",
+                                                                                "item_46"]
+    head = note(0.0, 0.32, 57, [1] * 22 + [2, 2, 3, 3, 4, 4])
+    frag = note(0.32, 0.43, 58, [1, 1, 2, 2, 3, 3, 4, 4, 4])
+    top = note(0.43, 1.6, 59, [1] * 100)
+    held = note(0.0, 1.6, 59, [1] * 130)
+    p = {"F1": "global", "F6": {"K": 3, "gap": 1, "family": "sequential", "track": "own", "keep": False}}
+    nf, nk, changed = F.keep_curve_changes([head, frag, top, held], p)
+    assert changed == 1 and "keep_bend" not in nf[0] and nk[0]["keep_bend"] is True
+    assert F.keep_curve_changes([head, frag, top, dict(held, pitch=64)], p)[2] == 0
 
 
 def test_build_2s_answers_hash_on_main_under_its_own_key():

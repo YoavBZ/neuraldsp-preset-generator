@@ -5592,6 +5592,17 @@
     },
     "run_record": "bf2cb95e (declaration and code) before any figure; bend-lists (lists.json 9449f985...a864) and bend-windows (windows.json 0cb49d74...5eca, 14 windows, 53 annotated bends) ran from it; f01c0c4e after that run and before any isolate-bend figure, a report only (F1's bent-but-cleared at true bends), no pick input changed; the preliminary isolate-bend from f01c0c4e; e-read reads E only with --declared",
     "unsplit_arm_fired": "the declared rule fired: Db's bent-but-cleared notes at true bends are 4 under F1 and 2 at the preliminary pick (B 0): the unsplit arm opens as its own arm, outside build 3"
+   },
+   "phase_nr_1_redo_bend_lists": {
+    "lists_sha256": "9449f985b1c3c4bb0de51f56feed03d4488b2fdfd45a3a2f77b79180eb8fa864",
+    "lists_file": "PF/note-rebuild/redo/fixes/bend/lists.json",
+    "lists": 10,
+    "windows_sha256": "0cb49d74f1bd4df1d5a6a063972ffbfe7a551b578118307a0154d32f1a3a5eca",
+    "windows_file": "PF/note-rebuild/redo/fixes/bend/windows.json",
+    "windows": 14,
+    "made": "2026-11-24, `note_fixes bend-lists` and `bend-windows` once from the F6 branch at bf2cb95e (the declaration and code, before any figure; between it and #602's merge 2c73689b only isolate-bend's reports and e-read changed, never BEND_LISTS, bend_audio, db_windows or the two commands), zero renders: Basic Pitch on B's ten lists (7 positives, 3 controls) and on Db's 14 windows (4 of D's items, 53 annotated bends held; item_29 has no window clear of its D window inside the item); each note file written once under fixes/bend/lists/ and fixes/bend/windows/, each listed with its sha256 (and, for B, its audio's and truth's)",
+    "read_before": "the preliminary isolate-bend (branch, f01c0c4e and 455db339) read these files; the declared isolate-bend from merged main refuses unless both listings' sha256 are these (note_fixes.bend_sets)",
+    "plan": "docs/note-rebuild-plan.md 12t (M2)"
    }
   },
   {
