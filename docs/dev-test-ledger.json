@@ -4584,6 +4584,15 @@
     "ear_items_sha256": "0680634239c48aa2b26a8d7a8822ff3e3506a1978c342051a39a6a43de2b079c",
     "arm": "b3k, the F6b ear arm (note-rebuild phase_nr_1_redo_fix_bend_frozen b3k): build 3 with keep true; on build 3's page under guard 1 and the declared ear rule; searched only if it wins by ear (then on its changed parts, carry --from b3 for the rest)",
     "note": "2026-11-24, `build --build-name b3k --fixes <the frozen rule with keep true>` once from main at 1c7ccb32 (#604's merge, the freeze) in a frozen worktree, zero renders: tr-di and tr-plain for the 47 parts and the 8 ear items, dry guitars under dry-b3k/, work under work/build-b3k/; nothing refused (every check a report, none blocking). `ear-items --build-name b3k` ran first from the same worktree and reproduces build 2's items and replacement exactly (item_123 in item_5's slot). Guard 1: b3k's tr-di differs from build 3's on 4 of 8 ear items (item_102, item_39, item_46, item_49) and 17 of 47 parts, as exposure read them; the build files agree with exposure's sha256 everywhere"
+   },
+   "phase_scratch_notes_answers": {
+    "sha256": "fe7dddb543151b17c348e0e8f55aa7106559f09a7bedb8736a9162b83035fcff",
+    "file": "PF/fs/notes/answers.json",
+    "built": "2026-11-24 20:20:37",
+    "build_name": null,
+    "build_sha256": "46e485a22c5f925457ebb89905aa2fc16c853e58c694791cbde77c14831fbf5b",
+    "code": "search b238f6c8 (#600's merge; frozen worktree, re-cut twice as main moved, nothing searched before); answers 1c7ccb32 (main after F6, #602-#604). cmd_search's source is byte-identical at 4959128a, 8a4995db and b238f6c8, so build 1 and build 2 searched on the same search code; cmd_answers, cmd_score and cmd_read are byte-identical at 6b570cf5 and 1c7ccb32",
+    "about": "fs-notes on build 1 (tr-di from build.json, the ear-faulty first build; xlnoG@-3), read under 12q R8 after build 2 was hashed on main; labelled \"ear fault-content\" (phase_nr_1_redo_ear; 12q R5: a label, the FN code provisional). Both checks from 2026-11-22 gate it (the gate reads only that they exist and passed; build 2's rerun of both on 4959128a passed on the same search code). Searched once after build 2's shards exited (python -m learn.scratch_notes search, 3 shards, no_bg_nice, caffeinate, the disk guard before every part): 47 of 47 parts, 0 refused, 0 content labels; step 1 200 evaluations on every part, step 2 kept the canonical start on every part. 12,405 renders (12,311 search plus 94 start reference) in 6,478 s wall on 3 processes. The answers (zero renders, python -m learn.scratch_notes answers) passed the dry-guitar check against the hashed build on every part; merged before `score`"
    }
   },
   {

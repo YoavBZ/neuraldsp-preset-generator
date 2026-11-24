@@ -511,3 +511,16 @@ def test_build_3_and_b3k_hashed_on_main_with_the_frozen_rule():
     assert {k: b3["rule"][k] for k in ("F1", "F6", "loud")} == frozen["rule"]
     assert {k: b3k["rule"][k] for k in ("F1", "F6", "loud")} == F.b3k_fixes(frozen["rule"]) == frozen["b3k"]["fixes"]
     assert b3["transcribe_sha256"] == b3k["transcribe_sha256"] == lad[SN.dry_key("b2")]["transcribe_sha256"]
+
+
+def test_build_1s_answers_hash_on_main_under_its_own_key():
+    import pathlib
+
+    from learn import scratch_notes as SN
+
+    e = T.entries((pathlib.Path(__file__).resolve().parents[1] / "docs" / "dev-test-ledger.json").read_text())
+    lad = e["preset-ladder"]
+    rec = lad[SN.answers_key()]
+    assert rec["build_sha256"] == lad[SN.dry_key()]["sha256"] != lad[SN.dry_key("b2")]["sha256"]
+    assert SN.pair_answers_refusal(rec, None, lad[SN.dry_key()]) is None
+    assert rec["sha256"] != lad[SN.answers_key("b2")]["sha256"]                 # each build's answers, its own key
