@@ -337,16 +337,24 @@ def redo_hash_refusal(nr_main, build, transcribe_sha, pair):
 
 
 def ear_refusal(nr_main, build_sha=None):
-    """(Pure.) Why answers, score and read may not run on the ear check, or None: main's phase_nr_1_redo_ear must
-    read ok (from the page's stored answers, `note_rebuild_ear.redo_verdict`) and, given `build_sha`, name the build
-    its clips were rendered from (`dry_build_sha256`, the build hashed as phase_scratch_notes_dry)."""
-    rec = (nr_main or {}).get(NT.PHASE_EAR)
+    """(Pure.) Why answers, score and read may not run on the ear check, or None: the ear verdict for `build_sha`
+    must read ok (from the page's stored answers, `note_rebuild_ear.redo_verdict`). Each build is heard on its own
+    page with its own verdict (`note_transcribe.ear_key`: the first build's `phase_nr_1_redo_ear`, a later one's
+    `phase_nr_1_redo_ear_<sha12>`); no count of builds or fixes is kept (the user, 2026-11-24). Without `build_sha`,
+    main's `phase_nr_1_redo_ear`."""
+    nr = nr_main or {}
+    if build_sha is None:
+        rec = nr.get(NT.PHASE_EAR)
+    else:
+        heard = {k: v for k, v in nr.items() if (k == NT.PHASE_EAR or k.startswith(NT.PHASE_EAR + "_"))
+                 and isinstance(v, dict) and "verdict" in v}
+        rec = next((v for k, v in sorted(heard.items()) if v.get("dry_build_sha256") == build_sha), None)
+        if rec is None and heard:
+            return f"main's ear verdicts were heard on clips from another build, not {build_sha[:12]}"
     if not isinstance(rec, dict) or "verdict" not in rec:
-        return f"the redo's ear check is not recorded on main ({NT.PHASE_EAR})"
+        return f"the redo's ear check is not recorded on main ({NT.ear_key(build_sha) if build_sha else NT.PHASE_EAR})"
     if rec["verdict"] != "ok":
         return f"the redo's ear check reads {rec['verdict']}: nothing is answered, scored or read"
-    if build_sha is not None and rec.get("dry_build_sha256") != build_sha:
-        return f"main's {NT.PHASE_EAR} was heard on clips from another build"
     return None
 
 

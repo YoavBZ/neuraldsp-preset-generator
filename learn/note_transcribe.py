@@ -76,6 +76,8 @@ PHASE_GO_GUARD = "phase_nr_1_redo_go_guard"       # the user's go that the check
                                                 #     reports, the listening page the guard (2026-11-23; names them)
 PHASE_EAR_KINDS = "phase_nr_1_ear_kinds"          # the ear items' kinds, amended 2026-11-23 (the delegated decision)
 PHASE_ITEM5_OUT = "phase_nr_1_redo_item5_out"     # 12p's exclusion of the DI the user ruled out (the code on main)
+PHASE_NO_CAPS = "phase_nr_1_redo_no_caps"         # the user retires 12h's fix cap and its stop (2026-11-24)
+FIRST_DRY_SHA = "46e485a22c5f925457ebb89905aa2fc16c853e58c694791cbde77c14831fbf5b"   # the first build (phase_scratch_notes_dry)
 PHASE_GO_HUM = "phase_nr_1_redo_go_hum"           # ... the user's go after the hum guard stopped the truth report
                                                 #     (2026-11-23; bound to that truth-report.json by its sha256)
 
@@ -892,8 +894,22 @@ def note_path(kind, key):
     return REDO / "notes" / kind / f"{key.replace('/', '__')}.json"
 
 
-def dry_path(arm, key):
-    return REDO / "dry" / arm / f"{key.replace('/', '__')}.npy"
+def dry_path(arm, key, root=None):
+    """A dry guitar's file: under the build's own `dry_root` (a fixed build), else the first build's `redo/dry/`."""
+    return (pathlib.Path(root) if root else REDO / "dry") / arm / f"{key.replace('/', '__')}.npy"
+
+
+def listening_suffix(build_sha):
+    """(Pure.) The listening folders' suffix for a build (2026-11-24, no attempt cap): none for the first build (its
+    page as built), the build's sha256 prefix for every later one, so each fixed build gets its own clips, page and
+    verdict and none overwrites another."""
+    return "" if build_sha == FIRST_DRY_SHA else f"-{build_sha[:12]}"
+
+
+def ear_key(build_sha):
+    """(Pure.) A build's ear verdict key: `phase_nr_1_redo_ear` for the first build, `phase_nr_1_redo_ear_<sha12>`
+    for each later one."""
+    return PHASE_EAR if build_sha == FIRST_DRY_SHA else f"{PHASE_EAR}_{build_sha[:12]}"
 
 
 def gate_path():
@@ -983,8 +999,8 @@ def ear_items_path():
     return REDO / "ear-items.json"
 
 
-def clips_dir():
-    return NR.HOME / "listening" / "note-rebuild-ear-2"
+def clips_dir(build_sha=FIRST_DRY_SHA):
+    return NR.HOME / "listening" / f"note-rebuild-ear-2{listening_suffix(build_sha)}"
 
 
 # --- audio in and out (numpy) ---------------------------------------------------------------------------------------------
@@ -1924,7 +1940,7 @@ def cmd_build(_args):
     never_overwrite(build_path())
     tr = json.loads(transcribe_path().read_text())
     if tr["stopped"]:
-        raise SystemExit("the note checks refused 3 or more deciding parts: nothing is built (one declared fix)")
+        raise SystemExit("the note checks refused 3 or more deciding parts: nothing is built")
     why = flags_go_refusal(tr.get("onsets_flagged_deciding") or [], m.get(LEDGER_ID))
     if why:
         raise SystemExit(why)
@@ -2016,7 +2032,7 @@ def load_dry(arm, key, build, kind="part"):
     """A redo dry guitar, refused unless its sha256 is the one `build` recorded."""
     import numpy as np
 
-    path = dry_path(arm, f"{kind}|{key}")
+    path = dry_path(arm, f"{kind}|{key}", build.get("dry_root"))
     rows = build["parts"] if kind == "part" else build["ear"]
     if NR.file_sha(path) != rows[key]["arms"][arm]["sha256"]:
         raise SystemExit(f"{path.name}: not the dry guitar `build` wrote")
@@ -2068,9 +2084,11 @@ def cmd_clips(_args):
     trimmed, at EAR_LUFS; only when every ear item passes every content check. -> listening/note-rebuild-ear-2/
     <card>-ref.wav, <card>-reb.wav, index.json (the key: never on the page)."""
     require_redo()
-    dest = clips_dir()
+    bpath = pathlib.Path(getattr(_args, "build", None) or build_path())     # any build: no attempt cap (2026-11-24)
+    build_sha = NR.file_sha(bpath)
+    dest = clips_dir(build_sha)
     never_overwrite(dest)
-    build = json.loads(build_path().read_text())
+    build = json.loads(bpath.read_text())
     if build["ear_failing"]:
         raise SystemExit(f"ear items fail a content check ({build['ear_failing']}): no page until fixed")
     from learn import note_replay as R
@@ -2088,13 +2106,16 @@ def cmd_clips(_args):
 
     _, _, z, _ = _dev_context()
     ear = json.loads(ear_items_path().read_text())["items"]
+    why = None if build_sha == FIRST_DRY_SHA else ruled_out_refusal([e["item"] for e in ear], "the ear items")
+    if why:                                                  # 12p: a later page never plays a ruled-out DI
+        raise SystemExit(why)
     cards = ear_cards([e["item"] for e in ear if e["old"]], {e["kind"]: e["item"] for e in ear if not e["old"]})
     ms = P.A_menu_S()[EAR_AMP]
     trim = (int(PS.TRIM_S * PS.SR), int(round((PS.SEC_S + PS.TRIM_S) * PS.SR)))
     LO._wait_cap()
     dest.mkdir(parents=True)
     index = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}", "amp": EAR_AMP, "lufs": EAR_LUFS,
-             "build_sha256": NR.file_sha(build_path()), "cards": []}
+             "build_sha256": build_sha, "cards": []}
     for c in cards:
         e = next(q for q in ear if q["item"] == c["item"])
         di = SB.measure(window_audio(goat_audio(z, c["item"]), e["start_s"])[0])
@@ -2445,6 +2466,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=sorted(COMMANDS))
     ap.add_argument("--interpreter", default=None, help="install only: the declared 3.11 fallback's interpreter")
+    ap.add_argument("--build", default=None, help="clips only: a later build's record (default: the first build)")
     args = ap.parse_args(argv)
     COMMANDS[args.cmd](args)
 

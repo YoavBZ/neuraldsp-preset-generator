@@ -519,10 +519,13 @@ def redo_artifact_page(page, css, js):
     return f"<title>{REDO_TITLE}</title>" + out[len(old):]
 
 
-def redo_page_dir():
+def redo_page_dir(build_sha=None):
+    """The redo's page folder for a build: the first build's as built, a later build's under its own suffix
+    (`note_transcribe.listening_suffix`; no attempt cap, 2026-11-24)."""
+    from learn import note_transcribe as NT
     from learn import pretrain_set as PS
 
-    return PS.HOME / "listening" / "note-rebuild-ear-page-2"
+    return PS.HOME / "listening" / f"note-rebuild-ear-page-2{NT.listening_suffix(build_sha or NT.FIRST_DRY_SHA)}"
 
 
 def cmd_redo_page(_args):
@@ -536,10 +539,11 @@ def cmd_redo_page(_args):
     from learn import note_rebuild as NR
     from learn import note_transcribe as NT
 
-    out = redo_page_dir()
+    sha = getattr(_args, "build_sha", None) or NT.FIRST_DRY_SHA
+    out = redo_page_dir(sha)
     for name in ("index.html", "artifact.html", "key.json"):
         NT.never_overwrite(out / name)
-    src = NT.clips_dir()
+    src = NT.clips_dir(sha)
     index = json.loads((src / "index.json").read_text())
     items = redo_items(index)
     build = redo_build_id(items)
@@ -572,11 +576,12 @@ def cmd_redo_read(args):
     from learn import note_transcribe as NT
 
     NT.never_overwrite(args.out)
-    key = json.loads((redo_page_dir() / "key.json").read_text())
+    key = json.loads((redo_page_dir(getattr(args, "build_sha", None)) / "key.json").read_text())
     ex = EE.stored_answers(pathlib.Path(args.answers).read_text())
     if ex.get("build") != key["build"]:
         raise SystemExit(f"answers for build {ex.get('build')}, the page's is {key['build']}")
-    rep = {"phase": REDO_PHASE, "build": key["build"], "dry_build_sha256": key["dry_build_sha256"],
+    rep = {"phase": NT.ear_key(key["dry_build_sha256"]), "build": key["build"],
+           "dry_build_sha256": key["dry_build_sha256"],
            **redo_verdict(key["items"], ex["answers"])}
     pathlib.Path(args.out).write_text(json.dumps(rep, indent=1))
     print(json.dumps(rep, indent=1))
@@ -590,10 +595,13 @@ def main(argv=None):
     s.add_argument("out")
     s.add_argument("--answers", required=True)
     s.set_defaults(fn=cmd_read)
-    sub.add_parser("redo-page").set_defaults(fn=cmd_redo_page)
+    s = sub.add_parser("redo-page")
+    s.add_argument("--build-sha", dest="build_sha", default=None, help="a later build's sha256 (default: the first)")
+    s.set_defaults(fn=cmd_redo_page)
     s = sub.add_parser("redo-read")
     s.add_argument("out")
     s.add_argument("--answers", required=True)
+    s.add_argument("--build-sha", dest="build_sha", default=None, help="a later build's sha256 (default: the first)")
     s.set_defaults(fn=cmd_redo_read)
     args = ap.parse_args(argv)
     args.fn(args)

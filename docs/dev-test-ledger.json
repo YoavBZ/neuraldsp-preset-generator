@@ -5166,6 +5166,15 @@
     },
     "track_1": "one owner keeps the exclusion consistent: this key. Stage b's note files stay as made, bound by phase_tx_notes with all 27 windows",
     "renders": "zero"
+   },
+   "phase_nr_1_redo_no_caps": {
+    "date": "2026-11-24",
+    "by": "the user, relayed by the coordinating session",
+    "words": "I don't want any such predefined rules. We should do whatever takes us further towards our main goal. No made up or random thresholds/limits/etc.",
+    "retired": "12h's stop rule: one declared fix allowed, and a second failure (content checks) or a second ear content fault going to the user with \"stop\" recommended; and \"one build\" before the ear check, since every fix is a new build",
+    "kept": "the ear page itself: a listening check on whether the rebuilt notes are right; each build is heard on its own page and gets its own verdict",
+    "code": "note_transcribe: listening_suffix, ear_key, FIRST_DRY_SHA; clips_dir and dry_path per build (`--build`, a build's `dry_root`); the build refusal's \"(one declared fix)\" dropped; a later page refuses ear items holding a ruled-out DI (12p). note_rebuild_ear: redo_page_dir per build, `redo-page` and `redo-read` take `--build-sha`, the read names the build's own key. scratch_notes.ear_refusal finds the verdict for the build asked about. No count of builds or fixes is kept",
+    "not_changed_yet": "the other predefined bars and caps on the note-rebuild path are listed for the user's call in this PR's report; none is changed here"
    }
   },
   {
