@@ -537,3 +537,16 @@ def test_build_2s_read_on_main_is_provisional():
     assert rec["code_provisional"] is True and rec["ear"] == "ear fault-content"
     assert rec["ear"] == SN.ear_label(e["note-rebuild"], lad[SN.dry_key("b2")]["sha256"])     # 12q R5
     assert rec["answers_sha256"] == lad[SN.answers_key("b2")]["sha256"]
+
+
+def test_build_1s_read_on_main_is_provisional():
+    import pathlib
+
+    from learn import scratch_notes as SN
+
+    e = T.entries((pathlib.Path(__file__).resolve().parents[1] / "docs" / "dev-test-ledger.json").read_text())
+    lad = e["preset-ladder"]
+    rec = lad["phase_scratch_notes_read"]
+    assert rec["code_provisional"] is True and rec["ear"] == "ear fault-content"
+    assert rec["ear"] == SN.ear_label(e["note-rebuild"], lad[SN.dry_key()]["sha256"])          # 12q R5
+    assert rec["answers_sha256"] == lad[SN.answers_key()]["sha256"] != lad["phase_scratch_notes_read_b2"]["answers_sha256"]
