@@ -130,8 +130,9 @@ def test_the_slot_rule():
     assert SL.OPEN_VERDICTS == ("fault-content", "fault-signal")
     for v in SL.OPEN_VERDICTS:
         assert SL.slots_refusal(False, {"verdict": v}) is None
-    assert SL.rec_refusal(None) and SL.rec_refusal({"fl": {"code": "FL-reach"}})
-    assert SL.rec_refusal({"fl": {"code": "FL-short"}}) is None and SL.rec_refusal({"fl": {"code": "FL-null"}}) is None
+    assert "not read yet" in SL.rec_refusal(None) and SL.rec_refusal({"fl": None})       # L1: an order, not a gate
+    for code in SL.FL_CODES:                                                 # ld-rec runs after the read, any code
+        assert SL.rec_refusal({"fl": {"code": code}}) is None
 
 
 @pytest.mark.parametrize("half", ["A", "B"])
@@ -244,8 +245,8 @@ def test_read_rec_checks_the_bottleneck_before_any_report(monkeypatch, tmp_path)
     rows = {q: {"bp": iv} for q in ("D_null", "D_blur", "D_cut", "D_bar", "G50")}
     rows.update(G50_rows_b_c={"fs-both": {"bp": iv}}, lag_beside_g50={}, D_true_vs_subwin={})
     monkeypatch.setattr(SL, "read_body", lambda *a: (rows, {}, {}))
-    monkeypatch.setattr(SL, "bottleneck", lambda code, goat: {"bottleneck": "the generator or its operator",
-                                                               "next": "x"})
+    monkeypatch.setattr(SL, "bottleneck", lambda code, goat, main=None: {"bottleneck": "the generator or its "
+                                                                         "operator", "next": "x"})
     with pytest.raises(SystemExit, match="timing and timbre are not separated"):
         SL.cmd_read_rec(None)
     assert not SL.report_path(True).exists() and SL.rows_path(True).exists()   # the rows first, never the report
@@ -307,7 +308,8 @@ def test_the_phases_are_new_and_outside_the_other_rows_guards():
     pinned = {"phase_scratch_loudar_globals",        # the checkpoint's allowlist (learn/loudar_run.py's pin)
               "phase_scratch_loudar_gate_amend",     # the gate's amendment (the direction check removed)
               "phase_scratch_loudar_timing_amend",   # the timing check made report-only, the placement stop kept
-              "phase_scratch_loudar_read_nits"}      # the reads' report-only nits; timing-subwin.json protected
+              "phase_scratch_loudar_read_nits",      # the reads' report-only nits; timing-subwin.json protected
+              "phase_scratch_loudar_l1"}             # L1: S1 here, ld-rec after any code, the park text
     assert set(SL.loudar_keys(e)) <= set(keys) | pinned and SL.PHASE in e
 
 
@@ -423,11 +425,14 @@ def test_search_waits_for_the_control(monkeypatch, tmp_path):
 
 
 @pytest.mark.parametrize("cmd", ["build-rec", "start", "search", "answers", "score"])
-def test_ld_rec_waits_for_a_fail(monkeypatch, tmp_path, cmd):
+def test_ld_rec_waits_for_the_main_read_only(monkeypatch, tmp_path, cmd):
     _built(monkeypatch, tmp_path, control={"passed": True})
-    (tmp_path / "report.json").write_text(json.dumps({"fl": {"code": "FL-reach"}}))
-    with pytest.raises(SystemExit, match="ld-rec does not run"):
+    with pytest.raises(SystemExit, match="ld-rec runs after it"):               # no main read yet: it waits
         SL.COMMANDS[cmd](_args("ld-rec"))
+    (tmp_path / "report.json").write_text(json.dumps({"fl": {"code": "FL-reach"}}))
+    with pytest.raises(SystemExit) as e:                                    # a pass no longer stops it (L1)
+        SL.COMMANDS[cmd](_args("ld-rec"))
+    assert "ld-rec runs after it" not in str(e.value) and "does not run" not in str(e.value)
 
 
 def test_a_name_outside_the_build_or_the_row_is_refused(monkeypatch, tmp_path):
@@ -495,3 +500,82 @@ def test_preps_clip_is_the_blanked_references_span():
         blank = S.load_ref_blank(sd, p, SL.REF)
         assert np.array_equal(stem[a:b], blank[a:b]) and not blank[:a].any() and not blank[b:].any()
         assert len(stem[a:b]) == SL.CLIP
+
+
+# --- L1 (phase_scratch_loudar_l1): S1 in LOUDAR, ld-rec after any code, the park text as a recommendation ----------
+
+def _rows(d, g50=None):
+    iv = {"bp": d}
+    return {"D_null": {"bp": _iv(-0.2, -0.3, -0.1)}, "D_blur": iv, "D_cut": {"bp": CUT_FREE}, "D_bar": iv,
+            "G50": {"bp": g50 or G_BELOW}}
+
+
+def test_the_read_codes_and_the_refusal_label():
+    base = dict(_rows(_iv(-0.10, -0.15, -0.06)), G50_rows_b_c={"fs-both": {"bp": G_BELOW}})
+    fl, fp, label = SL.read_codes(base)
+    assert fl == fp and label is None and fl["code"] == "FL-above"
+    shifted = dict(base, passing_only=_rows(_iv(0.12, 0.06, 0.18)))
+    fl, fp, label = SL.read_codes(shifted)
+    assert (fl["code"], fp["code"], label) == ("FL-above", "FL-short", "refusal-sensitive")
+    bare = dict(base, passing_only={"D_null": {"bp": None}, "D_blur": {"bp": None}, "D_cut": {"bp": None},
+                                    "D_bar": {"bp": None}, "G50": {"bp": None}})
+    fl, fp, label = SL.read_codes(bare)
+    assert fp == {"code": None, "reading": "no passing-only interval"} and label is None
+
+
+def test_a_passing_read_without_a_cut_bar_never_crashes_the_once_only_read():
+    base = dict(_rows(_iv(-0.10, -0.15, -0.06)), G50_rows_b_c={"fs-both": {"bp": G_BELOW}})
+    po = dict(_rows(_iv(0.0, -0.05, 0.05)), D_cut={"bp": _iv(0.05, -0.01, 0.12)}, D_bar={"bp": None})
+    with pytest.raises((TypeError, KeyError, SystemExit)):               # the crash the guard prevents
+        SL.fl_code(po["D_null"]["bp"], po["D_blur"]["bp"], po["D_cut"]["bp"], po["D_bar"]["bp"], po["G50"]["bp"],
+                   G_BELOW)
+    fl, fp, label = SL.read_codes(dict(base, passing_only=po))
+    assert fl["code"] == "FL-above" and fp == {"code": None, "reading": "no passing-only interval"} and label is None
+    fl, fp, _ = SL.read_codes(dict(base, passing_only=dict(po, D_cut={"bp": None})))
+    assert fp["code"] is None
+
+
+def test_the_review_nits_of_l1():
+    src = (REPO / "learn" / "scratch_loudar.py").read_text()
+    assert 'rows["refused_audit"][n] = S.refused_audit(' in src             # each name on its own values
+    assert '"refusal_report": {n: S.refusal_report(r, sets_of, DECIDING)' in src
+    assert "not read: the user's pool rule fails on" in src
+    assert 'if tr["stopped"]' not in (REPO / "learn" / "note_transcribe.py").read_text()
+    assert '"note": NO_PASSING_INTERVAL' in (REPO / "learn" / "scratch_search.py").read_text()
+
+
+def test_ld_rec_after_a_pass_names_no_bottleneck():
+    ns = SL.NOT_SEPARATED
+    for main in ("FL-above", "FL-reach", "FL-undecided"):
+        b = SL.bottleneck("FL-short", "short", main)
+        assert b["bottleneck"] == f"none named: the main row reads {main}" + ns and "ceiling" in b["next"]
+    assert SL.bottleneck("FL-reach", None, "FL-short")["bottleneck"] == "the stem" + ns
+    assert SL.bottleneck("FL-short", "short", "FL-null")["bottleneck"] == "the generator or its operator" + ns
+
+
+def test_the_park_text_is_a_recommendation_that_names_the_next_measurement():
+    follows = {c: f for c, _, _, f in SL.FL_TABLE}
+    for code in ("FL-null", "FL-short"):
+        t = follows[code]
+        assert t.startswith("recommend parking") and "the user's call" in t and "the next measurement" in t
+        assert "ld-rec's read" in t and "is parked" not in t
+    src = (REPO / "learn" / "scratch_loudar.py").read_text()
+    assert 'next=f"ld-rec (after any code); then' in src
+
+
+def test_answers_wait_for_a_technical_refusals_rerun(monkeypatch, tmp_path):
+    _built(monkeypatch, tmp_path, control={"passed": True})
+    draw = {"parts": [{"pkey": "a", "set": "bks"}, {"pkey": "b", "set": "panel"}]}
+    monkeypatch.setattr(S, "require_draw", lambda: draw)
+    monkeypatch.setattr(SL, "build_for", lambda m, name: {"names": {"ld-stem": {"a": {"sha256": "x"},
+                                                                                 "b": {"sha256": "y"}}}})
+    monkeypatch.setattr(SL, "search_path", lambda name, k: tmp_path / "search" / name / f"{k}.json")
+    monkeypatch.setattr(SL, "answers_path", lambda name: tmp_path / f"answers-{name}.json")
+    (tmp_path / "search" / "ld-stem").mkdir(parents=True)
+    for k in "ab":
+        (tmp_path / "search" / "ld-stem" / f"{k}.json").write_text(json.dumps({"refused": {"start": 1}}))
+    with pytest.raises(SystemExit, match="rerun once in a fresh process"):
+        SL.cmd_answers(_args())
+    assert not (tmp_path / "answers-ld-stem.json").exists()
+    src = (REPO / "learn" / "scratch_loudar.py").read_text()
+    assert src.count('getattr(args, "rerun", False)') == 2 and '"--rerun"' in src

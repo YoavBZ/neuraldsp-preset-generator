@@ -4431,6 +4431,30 @@
     "stored_readings": "rows (b) and (c), both codec rows and the tone split refused 0 parts: none of their stored readings changes (tests re-derive them from the stored reports where the data is present)",
     "code": "learn/scratch_search.py, learn/scratch_notes.py, learn/scratch_codec.py, learn/scratch_tone.py, learn/scratch_loudar.py, learn/note_transcribe.py (refusal_count only); tests/test_refusal_reports.py and the updated pins in the rows' tests; plan section 14",
     "next": "L1 (LOUDAR's intent-to-treat read, ld-rec on any code, the park text as a recommendation) before LOUDAR's answers"
+   },
+   "phase_scratch_loudar_l1": {
+    "declared": "2026-11-24, after S1 (phase_scratch_refusal_reports, merged as 14838c3f on main ec43db56), before LOUDAR's answers; the row's searches ran from main 7f40979a and are untouched",
+    "decided_by": "an isolated decision agent under the user's rule of 2026-11-24 ('no made up or random thresholds/limits'); not the user's own answer",
+    "decision_record": {
+     "file": "handover 2026-11-24 decisions/bar-conversion.md (the LOUDAR section and L1)",
+     "sha256": "2e598bca0ee1ea06435d2d0ebe74da3ff03a2c10c1fdb488f33533e08e45ddb2"
+    },
+    "changes": {
+     "s1": "answers reads each search record or its rerun (--rerun on search and score, once, in a fresh process) and waits while a technical refusal has not been rerun; refusals are reported (refusal_report), never a stop; the read is on every part, a refused part's G50 Cen's (0) in ld-stem, di-cut and stem-in alike; beside: the passing-only rows (with no interval: 'no passing-only interval', no label), refused_audit per name (each of ld-stem's, di-cut's and stem-in's refused parts on that name's own G50 and Cen's start value from its own start records), refusal_report per name and read_codes's refusal-sensitive label (to the user with both reads)",
+     "ld_rec": "rec_refusal no longer gates on FL-short or FL-null: ld-rec (1,311 renders) runs after the main read on any code, waiting only for the main read's report; after a pass or an undecided read bottleneck names none and reads ld-rec beside as LOUDAR's ceiling without separation",
+     "park_text": "FL-null and FL-short's 'what follows' say 'recommend parking' and name the next measurement (ld-rec's read, which names the bottleneck); parking is the user's call, nothing parks itself",
+     "read_codes_guard": "read_codes computes the passing-only FL code only when D_null, D_blur, D_cut, D_bar and G50 all hold an interval, else 'no passing-only interval': a missing D_cut or D_bar can no longer crash fl_code after rows.json is written and jam the once-only read",
+     "pool_stop_message": "the main read's pool-rule stop says what happened: not read, which number failed the user's pool rule, rows.json saved, report.json holding the stop and no FL code, to the user",
+     "s1_leftovers": "note_transcribe.cmd_build's dead check of the transcription's 'stopped' (always False since S1) is removed; rows (b)/(c)'s reading_passing_only says 'no passing-only interval' instead of a bare None"
+    },
+    "unchanged": "FL_TABLE's conditions and codes, SMALL and BIG (the user's), the deciding number and its switch, the sets, the comparators, the timing and placement rules, the stem-in null and the fs-notes render wait",
+    "code": "learn/scratch_loudar.py (FL_TABLE's texts, bottleneck, rec_refusal, cmd_answers, cmd_search/cmd_score --rerun, read_body, read_codes, cmd_read, cmd_read_rec); learn/note_transcribe.py (cmd_build's dead check), learn/scratch_search.py (cmd_read), learn/scratch_codec.py (the re-pin); tests in tests/test_scratch_loudar.py and tests/test_refusal_reports.py; plan 13f",
+    "next": "LOUDAR's answers for ld-stem, di-cut and stem-in from merged main, then the answers hash PR",
+    "scratch_search_blob": {
+     "from": "b66af002f56242a6128a4719479c90f4d5abd319",
+     "to": "6687a5dcac9be3542ffd20f0426146c5dfc5387a",
+     "why": "scratch_search.cmd_read only (reading_passing_only's 'no passing-only interval'); the 60 functions fs-notes' checks ran through keep their source (the pinned sha256 holds)"
+    }
    }
   },
   {
