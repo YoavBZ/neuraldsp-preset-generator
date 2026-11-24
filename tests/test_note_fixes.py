@@ -436,3 +436,18 @@ def test_f6_is_declared_before_its_numbers():
             "amendments", "filled_in"} <= set(rec)
     assert "preliminary" not in rec                                   # declared: no figures of its own
     assert F.PHASE_F6_FROZEN not in e["note-rebuild"] and F.PHASE_F6_LISTS not in e["note-rebuild"]
+    tie = rec["decision_f6b_tie"]
+    assert tie["build3"]["F6"]["keep"] is False and "b3k" in tie["ear_arm"] and "No count or threshold" in tie["ear_rule"]
+
+
+def test_build_2s_answers_hash_on_main_under_its_own_key():
+    import pathlib
+
+    from learn import scratch_notes as SN
+
+    e = T.entries((pathlib.Path(__file__).resolve().parents[1] / "docs" / "dev-test-ledger.json").read_text())
+    lad = e["preset-ladder"]
+    rec = lad[SN.answers_key("b2")]
+    assert SN.answers_key("b2") == "phase_scratch_notes_answers_b2" != SN.answers_key()
+    assert rec["build_name"] == "b2" and rec["build_sha256"] == lad[SN.dry_key("b2")]["sha256"]
+    assert SN.pair_answers_refusal(rec, "b2", lad[SN.dry_key("b2")]) is None

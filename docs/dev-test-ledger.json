@@ -4534,6 +4534,15 @@
     },
     "ear_items_sha256": "4726715c1c6b55cff98fc1acd70762a29ef1e1379645366e64da32d7ecb07ae8",
     "note": "2026-11-24, `build --build-name b2 --fixes {\"F1\": \"global\", \"loud\": null}` once from main at 6aeca97d in a frozen worktree, zero renders, 217 s: tr-di and tr-plain for the 47 parts and the 8 ear items of ear-items-b2.json (item_123 in item_5's slot), dry guitars under dry-b2/, work under work/build-b2/; nothing refused (every check a report). Checks failing (reported, never refusing) on tr-di: chords-kept 45, onsets-found 35, playing-covered 32, ring-kept 29, judge-accepts 24 of 47 parts failing; ear items failing 8, 7, 5, 5, 3 of 8. The first attempt's partial output is set aside unread (dry-b2.failed-20261124/). The fs-notes search on this build runs labelled ear pending (12q R5)"
+   },
+   "phase_scratch_notes_answers_b2": {
+    "sha256": "10becffd1d5c989dcb95e7992823efc8d5797733db26bc09c3a53a8e0b518754",
+    "file": "PF/fs/notes-b2/answers.json",
+    "built": "2026-11-24 18:32:35",
+    "build_name": "b2",
+    "build_sha256": "b6640c44fc7832a1001ed9a6a9082dde9c15dbe79fade38d5aec904e2a2c2f0a",
+    "code": "search 4959128a (#597's merge; frozen worktree); answers b238f6c8 (#600's merge; #599's per-build answers key and build sha256). cmd_search's source is byte-identical at 4959128a, 8a4995db and b238f6c8",
+    "about": "fs-notes on build 2 (tr-di from build-b2.json: F1 global + ring-soft, no loudness; xlnoG@-3), labelled \"ear fault-content\" (phase_nr_1_redo_ear_b6640c44fc78; 12q R5: a label, never a gate; the FN code provisional). Both checks rerun for build 2 on 4959128a first (score-check 40 renders, search-check 22, passed, no mismatches). Searched once (python -m learn.scratch_notes search --build-name b2, 3 shards, no_bg_nice, caffeinate, the disk guard before every part): 47 of 47 parts, 0 refused, 0 content labels; step 1 200 evaluations on every part, step 2 kept the canonical start on every part. 12,435 renders (12,341 search plus 94 start reference) in 6,532 s wall on 3 processes. The answers (zero renders, python -m learn.scratch_notes answers --build-name b2) passed the dry-guitar check against the hashed build on every part; merged before `score`. Build 1's search (R8) started on b238f6c8 at 18:32 after build 2's shards exited"
    }
   },
   {
