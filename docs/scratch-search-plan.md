@@ -1302,7 +1302,7 @@ played from single recorded notes. Replay is exact on it by construction.
   so they are left at Cen. The left mic type projects only on parts where every branch keeps the left cab on: stage A
   searches the left cab's switch whenever the right cab is on, so this needs the right cab off in Cen and never
   searched in step 1. Step 1 searches `rightCabActive` on every amp, so **the rule projects the left mic type on 0 of
-  47 parts** (`left_mic_on_every_branch`; flagged to the reviewer). A categorical value is kept only when it is in the
+  47 parts** (`left_mic_on_every_branch`; the literal reading, the orchestrator's call of 2026-11-24 under the user's standing delegation of technical choices: it keeps the target reachable on every search path by construction, which is what T1 is for). A categorical value is kept only when it is in the
   part's own value list. At declaration each target differs from Cen on 22 to 35 keys, all of them searched by rows
   (b) and (c) on every part. Without the projection, the review counted 10 parts with audible unsearched keys (on
   parts with the right room off the right room's keys are inert).
