@@ -4543,6 +4543,47 @@
     "build_sha256": "b6640c44fc7832a1001ed9a6a9082dde9c15dbe79fade38d5aec904e2a2c2f0a",
     "code": "search 4959128a (#597's merge; frozen worktree); answers b238f6c8 (#600's merge; #599's per-build answers key and build sha256). cmd_search's source is byte-identical at 4959128a, 8a4995db and b238f6c8",
     "about": "fs-notes on build 2 (tr-di from build-b2.json: F1 global + ring-soft, no loudness; xlnoG@-3), labelled \"ear fault-content\" (phase_nr_1_redo_ear_b6640c44fc78; 12q R5: a label, never a gate; the FN code provisional). Both checks rerun for build 2 on 4959128a first (score-check 40 renders, search-check 22, passed, no mismatches). Searched once (python -m learn.scratch_notes search --build-name b2, 3 shards, no_bg_nice, caffeinate, the disk guard before every part): 47 of 47 parts, 0 refused, 0 content labels; step 1 200 evaluations on every part, step 2 kept the canonical start on every part. 12,435 renders (12,341 search plus 94 start reference) in 6,532 s wall on 3 processes. The answers (zero renders, python -m learn.scratch_notes answers --build-name b2) passed the dry-guitar check against the hashed build on every part; merged before `score`. Build 1's search (R8) started on b238f6c8 at 18:32 after build 2's shards exited"
+   },
+   "phase_scratch_notes_dry_b3": {
+    "sha256": "d61e0f0c8d88081df112f8f7b69f3190f5e1dcc91757b05fab31ea6d52b0afda",
+    "file": "PF/note-rebuild/redo/build-b3.json",
+    "transcribe_sha256": "cbd1f4fb0e92ec53a058538d236daaafd5ae62eccdb7c07689edf115a37c18ab",
+    "rule": {
+     "F1": "global",
+     "F6": {
+      "K": 5,
+      "gap": 2,
+      "family": "sequential",
+      "track": "own",
+      "keep": false
+     },
+     "ring": "ring-soft",
+     "loud": null,
+     "muscriptor": false
+    },
+    "ear_items_sha256": "f7e786fcba6e0511082c76e2ea724bd48736a8d3d33a4d6405bca3b1c5271917",
+    "note": "2026-11-24, `build --build-name b3 --fixes <phase_nr_1_redo_fix_bend_frozen's rule>` once from main at 1c7ccb32 (#604's merge, the freeze) in a frozen worktree, zero renders: tr-di and tr-plain for the 47 parts and the 8 ear items, dry guitars under dry-b3/, work under work/build-b3/; nothing refused (every check a report, none blocking). `ear-items --build-name b3` ran first from the same worktree and reproduces build 2's items and replacement exactly (item_123 in item_5's slot). F6 frozen (note-rebuild phase_nr_1_redo_fix_bend_frozen). Before it, from the same worktree: e-read --declared (PF/note-rebuild/redo/fixes/e-read-f6-1c7ccb32.json, sha256 bc4bfbf7...cb73; E's distance, build 3 less build 2's rule, +0.094 [-0.099, +0.287], 8 items, reported; item_102 +0.726 with its annotated bends' fragments 8 -> 3) and exposure (fixes/exposure-f6-1c7ccb32.json, 24c830fd...31e3; 26 of 47 parts' tr-di differ from build 2's; stitches on the faulted items item_102 3 chains, item_123 1, item_39 5; tr-di differs from build 2's on 6 of 8 ear items, the three faulted among them). The build's tr-di sha256 equal exposure's on all 47 parts and 8 ear items. Its fs-notes search runs labelled ear pending (12q R5), third in the queue"
+   },
+   "phase_scratch_notes_dry_b3k": {
+    "sha256": "e7e94f828fbabe31a5f907926241a82670dcd443d00b3ae5a60815343ab75324",
+    "file": "PF/note-rebuild/redo/build-b3k.json",
+    "transcribe_sha256": "cbd1f4fb0e92ec53a058538d236daaafd5ae62eccdb7c07689edf115a37c18ab",
+    "rule": {
+     "F1": "global",
+     "F6": {
+      "K": 5,
+      "gap": 2,
+      "family": "sequential",
+      "track": "own",
+      "keep": true
+     },
+     "ring": "ring-soft",
+     "loud": null,
+     "muscriptor": false
+    },
+    "ear_items_sha256": "0680634239c48aa2b26a8d7a8822ff3e3506a1978c342051a39a6a43de2b079c",
+    "arm": "b3k, the F6b ear arm (note-rebuild phase_nr_1_redo_fix_bend_frozen b3k): build 3 with keep true; on build 3's page under guard 1 and the declared ear rule; searched only if it wins by ear (then on its changed parts, carry --from b3 for the rest)",
+    "note": "2026-11-24, `build --build-name b3k --fixes <the frozen rule with keep true>` once from main at 1c7ccb32 (#604's merge, the freeze) in a frozen worktree, zero renders: tr-di and tr-plain for the 47 parts and the 8 ear items, dry guitars under dry-b3k/, work under work/build-b3k/; nothing refused (every check a report, none blocking). `ear-items --build-name b3k` ran first from the same worktree and reproduces build 2's items and replacement exactly (item_123 in item_5's slot). Guard 1: b3k's tr-di differs from build 3's on 4 of 8 ear items (item_102, item_39, item_46, item_49) and 17 of 47 parts, as exposure read them; the build files agree with exposure's sha256 everywhere"
    }
   },
   {
