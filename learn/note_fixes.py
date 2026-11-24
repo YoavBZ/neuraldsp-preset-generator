@@ -1796,6 +1796,10 @@ def require_frozen(m, fixes):
 FAULTED_ITEMS = ("item_102", "item_123", "item_39")   # build 2's cards c12, c2/c11, c4: reported first
 
 
+B3K_SHA_LABEL = ("b3_tr_di_sha256 and b3k_tr_di_sha256 are this read's sha256 (the rebuild here, as the build would "
+                 "save it), not the build file's")
+
+
 def b3k_fixes(fixes):
     """(Pure.) The F6b ear arm b3k's fixes (12t, the decision agent's call): `fixes` with F6's keep set true."""
     return dict(fixes, F6=dict(fixes["F6"], keep=True))
@@ -1883,7 +1887,7 @@ def e_read(out_path, fixes, base, declared=False):
     body = {"plan": "docs/note-rebuild-plan.md 12t phase 5 (E)", "label": label, "head": head, "renders": 0,
             "fixes": fixes, "base": base, "items": items, "distance_less_base": interval90(dd),
             "b3k_items_differing": [k for k, v in items.items() if v["b3k"]["b3k_differs"]],
-            "seconds": time.time() - t0}
+            "b3k_sha256_label": B3K_SHA_LABEL, "seconds": time.time() - t0}
     NR.write_once(out_path, body)
     print(f"E-READ ({label}): distance less base {body['distance_less_base']}; -> {out_path}")
 
@@ -1923,7 +1927,7 @@ def exposure(out_path, fixes, declared=False):
     ear = {k: ear[k] for k in faulted_first(ear)}
     body = {"plan": "docs/note-rebuild-plan.md 12t phase 5 (exposure)", "label": label, "head": head, "renders": 0,
             "fixes": fixes, "parts": parts, "changed": sorted(k for k, v in parts.items() if not v["identical_to_b2"]),
-            "ear_items_file": ear_file.name, "ear_b3k": ear,
+            "ear_items_file": ear_file.name, "ear_b3k": ear, "b3k_sha256_label": B3K_SHA_LABEL,
             "b3k_guard_1": {"ear_items_differing": [k for k, v in ear.items() if v["b3k_differs"]],
                             "parts_differing": sorted(k for k, v in parts.items() if v["b3k"]["b3k_differs"]),
                             "rule": "a b3k card only for an ear item whose b3k tr-di differs from build 3's; none: "
