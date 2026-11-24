@@ -1924,6 +1924,23 @@ def cmd_transcribe(_args):
           f"sha256 {NR.file_sha(transcribe_path())}")
 
 
+def build_work_dir(name=None):
+    """The build's work folder: build 1's `work/build/`, a named build's own `work/build-<name>/` (so a later build
+    never touches build 1's intermediates)."""
+    return REDO / "work" / ("build" if not name else f"build-{name}")
+
+
+def note_check_figures(tr, kind, key, notes, di):
+    """A built item's note-check figures: `transcribe`'s, or, for a later page's ear item that `transcribe` never saw
+    (`ear-items`' replacement, 12q), `playing-covered` measured here on its pre-fix notes (`timed_notes`' own, as
+    `transcribe` checks them) and `onsets-found` not measured (None: the detector runs only in `transcribe`). All
+    checks are reports (12q R1)."""
+    rows = tr["parts"] if kind == "part" else tr["ear"]
+    if key in rows:
+        return rows[key]["figures"]
+    return {"onsets-found": None, "playing-covered": playing_covered(notes, di)}
+
+
 def build_loudness(loud, fixes):
     """(Pure.) The loudness a build plays: the versions read's (`versions_loud`) unless a later build's `fixes` name
     its own (`"loud"`: None for none, or a gamma above zero; 12s). -> (gamma or None, refusal or None)."""
@@ -2118,13 +2135,14 @@ def cmd_build(_args):
     bank = NR.Bank(NR.load_notes_doc(), excl=excl)
     ring = cal["ring_variant"]
     draw, _, sd = row_parts()
-    work = REDO / "work" / "build"
+    work = build_work_dir(name)                     # each named build its own work folder (build 1's never touched)
     todo = build_todo(pair, ear_items_file(name))
     if name:
         from learn import note_fixes as NF
     built, jobs = [], []
     for kind, key, info, rec, di, finish in todo:
         notes, rep = timed_notes(rec, di)
+        notes0 = notes                                 # the pre-fix notes, as `transcribe` checked them
         if fixes:
             notes, frep = NF.apply_fixes(notes, fixes, di)
             rep = {**rep, "fixes": frep}
@@ -2137,21 +2155,21 @@ def cmd_build(_args):
             never_overwrite(path)
             path.parent.mkdir(parents=True, exist_ok=True)
             np.save(path, y32)
-            built.append((kind, key, info, arm, notes, rep, yrep, di, y32, NR.file_sha(path)))
+            built.append((kind, key, info, arm, notes, rep, yrep, di, y32, NR.file_sha(path), notes0))
             jobs.append((y32, f"{arm}"))
     rt = run_bp(jobs, work / "round-trip")
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}", "pair": list(pair), "ring_variant": ring,
            "loud_gamma": loud, "name": name, "fixes": fixes,
            "dry_root": str(dry_root(name)) if name else None, "ear_items_file": ear_items_file(name).name,
            "transcribe_sha256": NR.file_sha(transcribe_path()), "parts": {}, "ear": {}}
-    for (kind, key, info, arm, notes, rep, yrep, di, y32, sha), r in zip(built, rt):
+    for (kind, key, info, arm, notes, rep, yrep, di, y32, sha, notes0), r in zip(built, rt):
         got = round_trip_notes(r["events"], np.asarray(y32, np.float64))
         if kind == "part":
             ref_blank = S.load_ref_blank(sd, info, "xlnoG")
             ja = judge_accepts(y32, di, info["lag"], info["search"], ref_blank)
         else:
             ja = judge_accepts(y32, di, 0, "A")
-        figs = {**(tr["parts"] if kind == "part" else tr["ear"])[key]["figures"], "judge-accepts": ja,
+        figs = {**note_check_figures(tr, kind, key, notes0, di), "judge-accepts": ja,
                 "ring-kept": ring_kept(np.asarray(y32, np.float64), di, [n["on"] for n in notes]),
                 "chords-kept": chords_kept(got, notes)}
         side = {"crest_diff_db": NR.crest_db(np.asarray(y32, np.float64)) - NR.crest_db(di),
