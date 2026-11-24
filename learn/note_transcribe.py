@@ -2247,8 +2247,9 @@ def cmd_stem_preview(_args):
 def cmd_clips(_args):
     """Step 8 (52 renders): the ear page's 13 cards (`ear_cards`), each version (the recorded DI and Rebuilt: tr-di, or
     the true DI on the hidden control) through the AC20's clean or crunch class start, each render primed alone,
-    trimmed, at EAR_LUFS; only when every ear item passes every content check. -> listening/note-rebuild-ear-2/
-    <card>-ref.wav, <card>-reb.wav, index.json (the key: never on the page)."""
+    trimmed, at EAR_LUFS; built whatever the content checks read (every check a report, 12q R1), for any build
+    (`--build`; its own folder by `listening_suffix`). -> listening/note-rebuild-ear-2[-<sha12>]/<card>-ref.wav,
+    <card>-reb.wav, index.json (the key: never on the page)."""
     require_redo()
     bpath = pathlib.Path(getattr(_args, "build", None) or build_path())     # any build: no attempt cap (2026-11-24)
     build_sha = NR.file_sha(bpath)

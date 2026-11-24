@@ -208,3 +208,13 @@ def test_redo_player_and_artifact_page():
     assert data["build"] == "b9" and all(set(x) == {"id", "n"} for x in data["items"])
     art = NE.redo_artifact_page(page, css, js)
     assert art.startswith(f"<title>{NE.REDO_TITLE}</title>") and '"answers/" + DATA.build' in art
+
+
+def test_a_later_pages_key_names_its_own_verdict_key():
+    """A page's key.json names its build's own verdict key (`note_transcribe.ear_key`); build 2's published key says
+    phase_nr_1_redo_ear (made before this fix) and redo-read derives the right key itself."""
+    import inspect
+
+    from learn import note_transcribe as NT
+    assert "NT.ear_key(index[\"build_sha256\"])" in inspect.getsource(NE.cmd_redo_page)
+    assert NT.ear_key(NT.FIRST_DRY_SHA) == NE.REDO_PHASE and NT.ear_key("b6" * 32) != NE.REDO_PHASE

@@ -1506,3 +1506,8 @@ in `dry-b2.failed-20261124/`. It also overwrote build 1's round-trip intermediat
 is affected. Each named build now has its own work folder (`work/build-<name>/`). The build now measures a new ear item's `playing-covered` itself and leaves its
 `onsets-found` unmeasured (None), since the detector runs only in `transcribe`. Every check is a report (R1). Then
 build 2 runs once.
+
+**Build 2's page key (2026-11-24).** Build 2's published `key.json` (page build `f62efa8e1d3f`) says `phase:
+phase_nr_1_redo_ear`, which is build 1's verdict key. `redo-read` derives the right key itself
+(`phase_nr_1_redo_ear_b6640c44fc78`, `ear_key`), so the read is unaffected, and the published file stays as it is.
+`redo-page` now writes the build's own key into `key.json`.
