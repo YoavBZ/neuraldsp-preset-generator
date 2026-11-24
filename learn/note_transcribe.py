@@ -1924,6 +1924,19 @@ def cmd_transcribe(_args):
           f"sha256 {NR.file_sha(transcribe_path())}")
 
 
+def build_loudness(loud, fixes):
+    """(Pure.) The loudness a build plays: the versions read's (`versions_loud`) unless a later build's `fixes` name
+    its own (`"loud"`: None for none, or a gamma above zero; 12s). -> (gamma or None, refusal or None)."""
+    if "loud" not in (fixes or {}):
+        return loud, None
+    g = fixes["loud"]
+    if g is None:
+        return None, None
+    if isinstance(g, bool) or not isinstance(g, (int, float)) or not g > 0:
+        return None, f"the build's loudness {g!r} is not None or a gamma above zero"
+    return float(g), None
+
+
 def build_todo(pair=None, ear_file=None):
     """The build's items in its order (also the fixes' identity check, `note_fixes`): the 47 parts (each with its
     finish: `song_bank.measure`, then `average_balance` with `note_replay.others_for`'s others, as row (c)'s avg+mild)
@@ -2084,6 +2097,9 @@ def cmd_build(_args):
     fixes = json.loads(getattr(_args, "fixes", None) or "{}")
     if fixes and not name:
         raise SystemExit("a build with fixes needs --build-name: the first build is never rewritten")
+    loud, why = build_loudness(loud, fixes)               # a later build's own loudness (12s: build 2 is loud null)
+    if why:
+        raise SystemExit(why)
     if name:
         why = ruled_out_refusal([e["item"] for e in json.loads(ear_items_file(name).read_text())["items"]],
                                 f"the ear items for {name}")
