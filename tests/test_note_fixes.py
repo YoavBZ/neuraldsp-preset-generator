@@ -108,3 +108,12 @@ def test_build_1_is_read_only_after_a_later_build_is_hashed():
     assert "12q R8" in SN.build1_read_refusal({SN.PHASE_DRY: {}})
     assert SN.build1_read_refusal({SN.PHASE_DRY: {}, SN.PHASE_DRY + "_b2": {}}) is None
     assert SN.build1_read_refusal({}, "b2") is None                        # a later build reads freely
+
+
+def test_the_muscriptor_fixes_are_declared_before_their_numbers():
+    import pathlib
+
+    e = T.entries((pathlib.Path(__file__).resolve().parents[1] / "docs" / "dev-test-ledger.json").read_text())
+    rec = e["note-rebuild"]["phase_nr_1_redo_fixes_ms"]
+    assert {"F2_muscriptor", "F4", "F5", "order"} <= set(rec) and "50, 100, 150 ms" in rec["F2_muscriptor"]
+    assert "not tuned bars" in rec["F5"] and "preliminary" not in rec                 # declared: no figures yet
