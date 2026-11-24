@@ -4493,6 +4493,14 @@
     "steps": "loudar_run.py in loudar-venv on the 23 deciding clean-record clips (in/ld-rec, made by prep), CPU, 4 threads, no MPS, no render job beside, the released setting, seed slot 0: 05:35:25 to 05:58:39, 60 s a clip -> build-rec",
     "build_checks": "one setting (released); every measured clip within 0.25 LU of -22.9; ld-rec 23 parts; the placement stop did not fire (median whole-clip lag 0 ms); the 1-ms check, report-only, reads 9 of 23 beyond (as ld-stem's 9 and ld-stem-b's 10: the envelope's cycle slips on regenerated audio)",
     "next": "ld-rec's start reads, search (51 a part), answers and its hash, score, then read-rec; ~1,311 renders"
+   },
+   "phase_scratch_loudar_answers_rec": {
+    "sha256": "782cbddb5da78499cbdce66c57d509cab90f901afb37912739d9e1cd64644c97",
+    "file": "PF/fs/loudar/answers-ld-rec.json",
+    "made": "2026-11-24, start, search and `answers` from a frozen detached worktree of main at c0d79f84 (#592's squash), every guard passed (ld-rec's build hash on main), no other render job on the machine",
+    "about": "ld-rec's short row: 23 of 23 deciding parts answered, 0 refused (no rerun due, nothing reads at Cen); every record's dry guitar the hashed build-rec's (365a54a1...), exactly 50 evaluations (budget_used 50, step 1 only), checkpoint '50'. No held-half value is read before this hash is on main",
+    "renders": "start reads 46 (12:57:29 to 12:59:21), search 1,173 (--first 2 first, 102 renders in 143 s; then 3 shards, 13:02 to 13:12): 1,219, about 15 wall minutes; 1,809 process-seconds for the search (1.54 a render)",
+    "next": "score for ld-rec (92 render calls, 46 distinct renders), then read-rec, then the results PR"
    }
   },
   {
