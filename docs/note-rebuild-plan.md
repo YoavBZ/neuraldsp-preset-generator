@@ -1376,7 +1376,10 @@ the next onset.
 variable for each part's checks before the file was written. The picks (`chosen`) and `figures_annotated` are right.
 `transcribe` now keeps the kind figures under their own name. `ear-items` recomputes the transcription's kind figures
 from the first transcribe's stored scans, and they reproduce the first record: `item_5`'s let-ring figure is 0.158 in
-both. Zero renders.
+both. Zero renders. The recomputed figures cover only items with a scan window (a grid window from the stored scan);
+an item without one has no transcription figure. `ear-items --build-name b2` then ran from main at b9c350b9:
+`item_5`'s let-ring slot goes to `item_123` at 60 s (the nearest, 0.081, not filled); `ear-items-b2.json` sha256
+`4726715c…7ae8`, and `item_123`'s note file `cd0f7da7…4415`.
 
 ### 12r. The MuScriptor-based fixes declared before their distances are read: F2-MuScriptor, F4 and F5 (2026-11-24; ledger `phase_nr_1_redo_fixes_ms`)
 
@@ -1384,8 +1387,9 @@ Declared after track 1's audited real-DI read (`phase_tx_read`), before any dist
 L or D. **Seen before this declaration:**
 - the audit's F2-MuScriptor counts on D: MuScriptor confirms 471 of 515 annotated same-pitch successions and 93 of 232
   unannotated ones;
-- F4's list counts in track 1's `lists.json` (the medium screen): `tx-veto` keeps 256 of the 259 true notes and 345 of
-  Basic Pitch's 431 notes.
+- F4's list counts in track 1's `lists.json`: on the medium screen `tx-veto` keeps 256 of the 259 true notes and 345
+  of Basic Pitch's 431 notes, and on the large screen 257 of 259 and 345. The large screen's list files are the ones
+  `isolate-ms` reads.
 
 
 The auditor's figures are exploratory, on the scored Guitar-TECHS set. They motivate the candidates; L and D decide.
@@ -1430,9 +1434,10 @@ development windows.
   are read. **Its dependencies, declared here; none is acted on in this amendment:**
   - `note_tx.declared_input` refuses the row's parts and any GOAT window outside the 27, so track 1's input guard needs
     its own amendment;
-  - the 7 panel parts are MedleyDB and Laminar Flow, and `phase_tx_go` says MedleyDB and Cambridge-MT wait for the
-    user's separate yes;
-  - BKS (set5) needs a rights check under MuScriptor's terms;
+  - the 7 panel parts are MedleyDB and The Laminar Flow, and `phase_tx_go` says MedleyDB and Cambridge-MT wait for
+    the user's separate yes. The Laminar Flow ("Headspace") is a Cambridge-MT session, and so is BKS (12f's table), so
+    that pending yes covers the panel's Laminar Flow parts and the BKS parts as well as MedleyDB's;
+  - BKS (set5) also needs a rights check under MuScriptor's terms;
   - the user's yes and the rights question go to the user.
 - MuScriptor then enters the fs-notes build, replacing the transcriber 12c froze, as 12q records. A MuScriptor-derived
   build is a development yardstick and never ships.
