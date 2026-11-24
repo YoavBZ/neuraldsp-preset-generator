@@ -4606,7 +4606,7 @@
     "score": "2026-11-24, python -m learn.scratch_notes score --build-name b2 --shard k/2 once from main at 1c7ccb32 in a frozen worktree (2 shards: the F6 clips held the third render slot), after build 1's search exited: 47 of 47 parts scored, the scoring control 47 of 47 ok, 0 reruns, 0 non-finite, 0 refused; 940 renders in 1,074 s wall; every score record from the hashed answers (phase_scratch_notes_answers_b2)",
     "read": "2026-11-24, python -m learn.scratch_notes read --build-name b2 once from main at 480dacf4 in a frozen worktree (cmd_answers, cmd_score and cmd_read byte-identical from 6b570cf5 on), zero renders; the pairs against row (b) and the curve recomputed beside it from the same score files with the module's own set_rows (zero renders)",
     "headline_bks_goat_40": {
-     "note": "ln(x / Cen) on BKS+GOAT (the 40), 90% intervals; negative is closer than Cen. By the score only: the ear has not compared these presets",
+     "note": "ln(x / Cen) on BKS+GOAT (the 40), 90% intervals; negative is closer than Cen. Every mean here is `note_replay.summary`'s cluster- and band-weighted figure (pooled over BKS and GOAT); the plain unweighted mean of the answer arm on the 40 is -0.008 (shrunk -0.087). By the score only: the ear has not compared these presets",
      "answer": {
       "G_vs_Cen": {
        "all": {
@@ -4780,9 +4780,13 @@
       }
      },
      "share_of_row_b_gain": -0.0344,
-     "search_gain_vs_held_G_r": 0.1081
+     "search_gain_vs_held_G_r": 0.1081,
+     "plain_unweighted_mean_40": {
+      "answer": -0.0082,
+      "shrunk": -0.0868
+     }
     },
-    "reading": "by the score: build 2's answer is level with Cen on the 40 (+0.009 [-0.088, +0.106]); against row (c) +0.096 [+0.005, +0.187] (undecided by the user's SMALL and BIG; the interval is above 0); against row (b) +0.274 [+0.186, +0.361] (keeps none of row (b)'s gain, share -0.03). The curve is flat from 50 evaluations on (-0.005 to +0.009), where row (c)'s is already -0.078 at 50. Crunch reads closer than clean in every pair. The shrunk arm is -0.077 [-0.161, +0.008] against Cen"
+    "reading": "by the score (cluster- and band-weighted means): build 2's answer is level with Cen on the 40 (+0.009 [-0.088, +0.106]); against row (c) +0.096 [+0.005, +0.187] (undecided by the user's SMALL and BIG; the interval is above 0); against row (b) +0.274 [+0.186, +0.361] (keeps none of row (b)'s gain, share -0.03). The curve is flat from 50 evaluations on (-0.005 to +0.020; cp200 +0.020, final +0.009), where row (c)'s is already -0.078 at 50. Crunch reads closer than clean in every pair. The shrunk arm is -0.077 [-0.161, +0.008] against Cen"
    }
   },
   {
