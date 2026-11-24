@@ -186,3 +186,8 @@ def test_a_later_pages_new_ear_item_gets_its_note_checks_in_the_build(monkeypatc
     monkeypatch.setattr(T, "playing_covered", lambda notes, di: {"measured": "here"})
     assert T.note_check_figures(tr, "ear", "item_123", [], None) == {"onsets-found": None,
                                                                     "playing-covered": {"measured": "here"}}
+
+
+def test_a_named_builds_work_folder_is_its_own():
+    assert T.build_work_dir() == T.REDO / "work" / "build"
+    assert T.build_work_dir("b2") == T.REDO / "work" / "build-b2" != T.build_work_dir()

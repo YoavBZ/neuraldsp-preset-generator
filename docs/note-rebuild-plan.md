@@ -1500,6 +1500,9 @@ F4b on the 47 parts needs MuScriptor there, which waits for the user's data yes.
 
 **Build 2's first attempt stopped (2026-11-24).** `build --build-name b2` stopped at `item_123`, the new let-ring ear
 item. `transcribe` never saw that item, so it has no note-check figures. The partial dry guitars are set aside unread
-in `dry-b2.failed-20261124/`. The build now measures a new ear item's `playing-covered` itself and leaves its
+in `dry-b2.failed-20261124/`. It also overwrote build 1's round-trip intermediates in `work/build/round-trip/`
+(all 220 files, at 13:43). They are moved beside the set-aside as the b2 attempt's round trips
+(`dry-b2.failed-20261124-work/round-trip/`). Build 1's figures are intact inside the hashed `build.json`, so no read
+is affected. Each named build now has its own work folder (`work/build-<name>/`). The build now measures a new ear item's `playing-covered` itself and leaves its
 `onsets-found` unmeasured (None), since the detector runs only in `transcribe`. Every check is a report (R1). Then
 build 2 runs once.
