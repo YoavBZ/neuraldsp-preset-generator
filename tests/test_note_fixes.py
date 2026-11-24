@@ -214,3 +214,16 @@ def test_build_2s_ear_verdict_on_main_labels_its_reads():
     assert rec["verdict"] == "fault-content" and rec["build"] == "f62efa8e1d3f" and not rec["unanswered"]
     assert SN.ear_label(e["note-rebuild"], b2) == "ear fault-content"          # 12q R5: a label, never a gate
     assert SN.ear_refusal(e["note-rebuild"], b2) is not None                    # so the FN code stays provisional
+
+
+def test_build_2s_answers_hash_on_main_under_its_own_key():
+    import pathlib
+
+    from learn import scratch_notes as SN
+
+    e = T.entries((pathlib.Path(__file__).resolve().parents[1] / "docs" / "dev-test-ledger.json").read_text())
+    lad = e["preset-ladder"]
+    rec = lad[SN.answers_key("b2")]
+    assert SN.answers_key("b2") == "phase_scratch_notes_answers_b2" != SN.answers_key()
+    assert rec["build_name"] == "b2" and rec["build_sha256"] == lad[SN.dry_key("b2")]["sha256"]
+    assert SN.pair_answers_refusal(rec, "b2", lad[SN.dry_key("b2")]) is None
