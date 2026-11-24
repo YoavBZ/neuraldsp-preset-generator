@@ -503,13 +503,17 @@ def start_path(pk):
     return notes_dir() / "start-ref" / f"{pk}.json"
 
 
-def answers_path(name=None):
-    """This run's answers (`--build-name`), or build `name`'s when given (the paired figure reads both builds)."""
-    return build_dir(name or BUILD_NAME) / "answers.json"
+_THIS = object()                         # "this run's build" (`--build-name`), distinct from None (build 1)
 
 
-def score_path(pk, name=None):
-    return build_dir(name or BUILD_NAME) / "score" / f"{pk}.json"
+def answers_path(name=_THIS):
+    """This run's answers (`--build-name`), or build `name`'s when given, None being build 1's (the paired figure
+    reads both builds; `name or BUILD_NAME` read build 1 as this run's build, the refusal of 2026-11-24)."""
+    return build_dir(BUILD_NAME if name is _THIS else name) / "answers.json"
+
+
+def score_path(pk, name=_THIS):
+    return build_dir(BUILD_NAME if name is _THIS else name) / "score" / f"{pk}.json"
 
 
 def pair_path(against=None):
