@@ -5251,6 +5251,17 @@
      "clamps_sha256": "9f3443871c42f0257e64d0438b2ce2245ac36f05e88e29b3b5a62f6dd8d988d1",
      "note": "preliminary, from frozen worktrees of the branch; the declared run repeats from merged main. Identity 108 of 108; F1 D -0.093 [-0.152, -0.035], L -0.294 [-0.585, -0.002], tuning 27 c and 30 c to under 2 c; F3 on F1 D +0.174 [+0.059, +0.289]; F2 DI band on F1 farther on D at every operating point. #584's review: F1's modes a tie (median less global on D 0.0007 [-0.026, +0.035]), the global step used; F3 read as its detector failing, not glides not helping (the bend list's 7 true splits all joined, -0.005 there; the harm from false joins on the scales and D), a glide discriminator sweep queued; R8's order guard (build 1 read only after a later build is hashed); the replacement ear item drawn outside D; the FN code provisional while the ear is pending; the pair definitions are candidate definitions, not tuned bars"
     }
+   },
+   "phase_nr_1_redo_fixes_ms": {
+    "declared": "2026-11-24, after track 1's audited real-DI read and before any figure of these fixes exists on L or D; the auditor's figures exploratory (scored Guitar-TECHS), L and D decide; no bars, no caps; zero renders",
+    "F2_muscriptor": "a same-pitch re-find joined into its sounding note when MuScriptor has no onset of that pitch within +-w of its onset; joins, never deletes; w = 50, 100, 150 ms",
+    "F4": "tx-veto as track 1 declared it; beside it, the paired note below confirmed by MuScriptor within 150 ms rather than 50",
+    "F5": "the context hybrid: a Basic Pitch note kept only when MuScriptor confirms it (same pitch, 50 ms), unless MuScriptor has 2 or more onsets within 150 ms of it, where F4's veto applies; the 150 ms and the count of 2 are the auditor's candidate definition, not tuned bars; 100 ms beside",
+    "not_adopted": "the plain vote (tx-vote): it drops chord notes",
+    "judged_by": "the counts (D: annotated picks lost against unannotated re-finds or extras removed; L: true notes lost against extras removed; real chord repicks lost watched most), floored_logmel to the DI on D with L beside, F5's chord-note recall on L beside",
+    "order": "12q's declared isolation first (identity, F1 tie rule, F2-band, F3) on merged main; then F2-MuScriptor, F4 and F5 each alone on F1; kept fixes added only to verified ones; combined on D with R3; then E",
+    "muscriptor_runs": "E's page windows and the 47 parts have no MuScriptor notes: if any of these fixes is kept, E's read and build 2 wait for a MuScriptor run there (track 1's installed large model, its gate's settings and device, one job, zero renders, hashed before read); MuScriptor then replaces 12c's transcriber in the build; build 1's search renders stay set aside until R8",
+    "plan": "docs/note-rebuild-plan.md 12r"
    }
   },
   {

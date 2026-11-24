@@ -1377,3 +1377,40 @@ variable for each part's checks before the file was written. The picks (`chosen`
 `transcribe` now keeps the kind figures under their own name. `ear-items` recomputes the transcription's kind figures
 from the first transcribe's stored scans, and they reproduce the first record: `item_5`'s let-ring figure is 0.158 in
 both. Zero renders.
+### 12r. The MuScriptor-based fixes declared before any of their numbers: F2-MuScriptor, F4 and F5 (2026-11-24; ledger `phase_nr_1_redo_fixes_ms`)
+
+Declared after track 1's audited real-DI read (`phase_tx_read`) and before any figure of these three exists on L or D.
+The auditor's figures are exploratory, on the scored Guitar-TECHS set. They motivate the candidates; L and D decide.
+This follows the user's rule: no bars, no caps. Effect sizes are reported with 90% intervals, and a fix is kept when it
+measurably brings the rebuild closer to the DI. Zero renders. `item_5` is in no set.
+
+**The notes.** MuScriptor's notes come from track 1's stage b, timed by `timed_notes` against the same DI:
+- on D, the `goat` files at the development windows (`phase_tx_notes`' listing);
+- on L, the lists' files from track 1's screen, the picked size.
+
+The fixes read them beside Basic Pitch's. Basic Pitch's notes stay the ones rebuilt.
+
+| Fix | Rule | Operating points or candidates |
+|---|---|---|
+| F2-MuScriptor | A same-pitch re-find (`refind_pairs`) is joined into its sounding note when MuScriptor has no onset of that pitch within ±w of the re-find's onset. It joins and never deletes | w = 50, 100 and 150 ms |
+| F4 | `tx-veto` as track 1 declared it: an unpaired Basic Pitch note is dropped when a paired note in its onset group sits 12, 19 or 24 semitones below it | As declared, and beside it the paired note below confirmed by MuScriptor within 150 ms rather than 50 |
+| F5 | The context hybrid: keep a Basic Pitch note only when MuScriptor confirms it (same pitch, within 50 ms), unless MuScriptor has 2 or more onsets within 150 ms of it; there, F4's veto applies instead | The 150 ms context and the count of 2 are the auditor's candidate definition, not tuned bars; read beside at 100 ms |
+
+- **The plain vote** (`tx-vote`) is not adopted: it drops chord notes.
+- **What each is judged by:**
+  - the counts: on D, annotated picks lost against unannotated re-finds or extras removed; on L, true notes lost
+    against extras removed. Real chord repicks lost are watched most;
+  - `floored_logmel` to the DI on D, with L beside;
+  - for F5, chord-note recall on L beside.
+
+**The order.** First the declared isolation (12q) on merged main: identity, F1 (the tie rule), F2-band and F3. Then
+each of F2-MuScriptor, F4 and F5 alone, on top of F1 and of no unverified fix. Each kept fix is added only to fixes
+already verified. Then the kept fixes are combined on D, with R3's ring and γ picks. Then E, held out.
+
+**E and the build need MuScriptor's notes where it has not run.** The 7 ear items' page windows and the 47 parts have
+no MuScriptor notes; stage b ran only on the truth windows and the 27 development windows. If F2-MuScriptor, F4 or F5
+is kept:
+- E's read and build 2 wait for a MuScriptor run on those windows: track 1's installed large model, with its gate's
+  settings and device, one job, zero renders, its note files hashed before they are read;
+- MuScriptor then enters the fs-notes build, replacing the transcriber 12c froze, as 12q records;
+- the first build's search renders stay set aside unread until R8 reads them.
