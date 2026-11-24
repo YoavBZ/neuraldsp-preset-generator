@@ -145,3 +145,12 @@ def test_f4_at_50_ms_is_track_1s_veto():
     ms = [{"on": 0.02, "off": 0.4, "pitch": 60}, {"on": 0.55, "off": 0.9, "pitch": 64}, {"on": 1.2, "off": 1.4,
                                                                                          "pitch": 67}]
     assert F.kept_notes(bp, F.f4_keep(bp, ms, below_s=0.050)) == X.veto_notes(bp, ms)
+
+
+def test_the_ear_items_figure_merge():
+    """#589's nit: the annotated kinds' figures come from the annotation, the rest from the scans; only scanned items."""
+    tr = {"a": {"single-note": None, "let-ring": 0.08, "bends": 12}, "b": {"single-note": 0.5, "let-ring": 0.01}}
+    ann = {"a": {"single-note": 0.92, "let-ring": 0.0}, "c": {"single-note": 1.0}}
+    got = T.merge_kind_figures(tr, ann)
+    assert got == {"a": {"single-note": 0.92, "let-ring": 0.08, "bends": 12}, "b": {"let-ring": 0.01}}
+    assert "c" not in got                                                  # no scan window: no figure
