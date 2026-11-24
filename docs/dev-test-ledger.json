@@ -5090,6 +5090,69 @@
     },
     "note": "ln(x / Cen) differences, build 2 less build 1, on BKS+GOAT (the 40), 90% intervals; negative is build 2 closer. Means are `note_replay.summary`'s cluster- and band-weighted figures. With 0 refusals in either build the intent-to-treat and passing-only pairs are the same numbers",
     "reading": "by the score: build 2 less build 1, answer arm -0.020 [-0.045, +0.005] on the 40 (matches; level, not readable by the score: the interval inside +-SMALL 0.05), clean -0.045 [-0.088, -0.001], crunch +0.005 [-0.026, +0.036]; shrunk arm -0.031 [-0.056, -0.006] (matches; the interval excludes 0, its bottom just past -SMALL), clean -0.050 [-0.091, -0.010], crunch -0.012 [-0.050, +0.025]. Build 2's fixes (F1 global, ring-soft) move the search's answers by less than the score can read; a small lean to build 2 on clean. Readings use the user's SMALL and BIG and only label"
+   },
+   "phase_scratch_exact": {
+    "declared": "2026-11-24, before anything in it runs",
+    "plan": "docs/scratch-search-plan.md section 15, 'The exact-notes test'; the plan (handover plans/exact-notes-plan-v2.md, sha256 897e275e6f6d3ced709c7ebb68e915ab523db7407ef93636d71c8ebe24951ab4) passed two independent review rounds (both APPROVE WITH CHANGES); round 2's binding amendments are built in and override the plan's text where they differ",
+    "user_go_1": {
+     "date": "2026-11-24",
+     "how": "AskUserQuestion",
+     "deciding_set": "The 40, all 47 beside: BKS+GOAT decides, the panel and all 47 read beside",
+     "target_rule": "accepted as presented: another song's found tone on the same amp, limited to the settings the search always adjusts, the starting preset elsewhere (T1 as corrected)",
+     "run_mode": "Run straight through: Phase A, then stage 1, then stage 2 without stopping, unless stage 1's gate (G1) fails; results reported as each step lands; this replaces Go 2 and Go 3. The route decision (Go 4) stays the user's"
+    },
+    "question": "on guitars the bank reproduces exactly (build 2's tr-di, phase_scratch_notes_dry_b2: the bank guitar), what share of the whole dry-guitar mismatch cost comes from note reading (Basic Pitch) and what share from the replay-from-samples method; reported beside the real gap (build 2 less row (b), +0.274 [+0.186, +0.361] on the 40, phase_scratch_notes_read_b2). No outcome licenses a route change",
+    "rows": {
+     "xn-bank": "the bank guitar drives the search",
+     "xn-swap": "the part's real DI (note_replay.di_section): D_swap = G(xn-swap) - G(xn-bank), the whole mismatch between a real guitar and build 2's rebuild",
+     "xn-reread": "Basic Pitch re-reads the bank guitar (no pre-roll); build 2's rule (F1 global, ring-soft, no loudness); rebuild_redo with the bank guitar as the DI: D* = note reading plus re-derivation",
+     "xn-list": "rebuild_redo from the bank guitar's exact note list (build 2's notes after its fixes, as played; no fix applied again) with the bank guitar as the DI: D_list = re-derivation of levels, mutes, tilt and finish alone; a part whose guitar is byte-identical to the bank guitar takes xn-bank's search record"
+    },
+    "target": "T1: the part's first partner in the draw's order whose Cen differs from its own (47 targets from 33 partners, 18 parts in mutual pairs); the partner's row (b) answer projected onto the dims every step-1 branch searches (step 1's space, which holds the amp EQ, and the left room: leftRoomActive, leftRoomMicLevel), the part's own Cen elsewhere; the left mic type only where every branch keeps the left cab on (stage A searches the left cab's switch whenever the right cab is on, and step 1 searches rightCabActive on every amp, so the rule projects it on 0 of 47 parts; the literal reading, 0 of 47, is the orchestrator's call (2026-11-24) under the user's standing delegation of technical choices, not the user's own answer: it keeps the target reachable on every search path by construction, which is what T1 is for); a categorical value kept only when in the part's own value list. At declaration each target differs from Cen on 22 to 35 keys, all searched by rows (b) and (c) on every part; T1's coverage reported after each row",
+    "record": "the target through the bank guitar, primed alone (fresh_render); the search gets it with everything outside the search half zeros (blank_plan) and opens only the blanked record (records.json: sha256 only) and its dry guitar, never targets.json, a target file, answers-fs-stem.json or anything scored (search_open; a test walks every function the search reaches). Lag 0, tested at zero renders: J0 of the record against a second target render is exactly 0 on both halves at lag 0 and above 0 at lag +-1",
+    "scoring": "J0 on the held half against the record through the bank guitar (the judge's DI too), lag 0; G = ln(d / d_Cen), the part's own Cen; six settings a part (Cen, the answer, cp50, cp100, cp200, shrunk; no borrowed answer, no centre); the scoring control a determinism check only (Cen within SCORE_TOL of its value from targets); a zero distance on any scored setting, or a non-finite one on Cen or the answer, stops the read and goes to the user (non-finite elsewhere: nonfinite_rule); one seed",
+    "search": "scratch_search.search_row_part unchanged on the exact world's part (the draw's part at lag 0) with each row's own start reference (scratch_notes.start_reference's rule with the row's dry name); same budget, seeds, checkpoints and halves as rows (b) and (c)",
+    "reads": "answer arm deciding, shrunk beside; BKS+GOAT (the 40) decides, all 47 beside; intervals from note_replay.summary through scratch_notes.set_rows; SMALL 0.05 and BIG 0.10 label only (paired_reading, number_reading). Paired costs D_swap, D*, D_list, D_swap - D*, reading proper (G(xn-reread) - G(xn-list)). Beside: D* split at the median re-read F, Spearman of D* with the part's real gap, clean and crunch, the checkpoints, one part per partner (first by key, 33), the passing-only read and the refusal report (S1)",
+    "amendments_round_2": {
+     "G1": "the gate: xn-bank reads 'passes' against Cen AND D_swap's 90% interval lies wholly above zero (the condition for the share to be defined; no bar). XN-insensitive = the gate fails. The realism comparison (the Fieller share of xn-bank's gain that xn-swap keeps, beside the share real build 2 keeps over row (b)) goes beside the gate, not in it",
+     "T1": "the target projection as above; the 'audible rightRoomMicLevel on 11 parts' count corrected (with the right room off those keys are inert; the review found 10 parts with audible unsearched keys)",
+     "F1": "the Fieller share: for each r the per-part values D*_i - r D_swap_i through set_rows' BKS+GOAT pool; the share is every r whose interval spans zero, on a declared grid (r from -4 to +4 in steps of 0.01, each boundary bisected to 1e-6, an end touching the grid followed outward by doubling to 1e6), its shape reported as it comes out; never from the two marginal intervals; undefined if D_swap's interval reaches zero; the same method for every share",
+     "C1": "XN-reading says 'reading plus re-derivation's cost is shown; a remainder beyond it is not shown (upper end hi90 = ...)'; new XN-overshoot (D_swap - D* wholly below zero) checked before XN-reading and audited before anything is said; XN-rest states D*'s hi90 as the reading cost the test rules out",
+     "S1": "score-check compares on the six settings rows (c) and this test share (Cen, the answer, the three checkpoints, shrunk), since row (c) stored borrowed and centre settings too",
+     "A1": "the floors are read for order and rough size, never as a predicted D (a fixed-preset floor is an upper bound on what search cannot recover); xn-swap's floor includes the true DI's input-level offset (the SB.measure clip, up to about 7 dB) at a fixed input gain, which the search can fix; A4 renders row (b)'s answer through the true DI (checked against its stored render sha256 and value) and through tr-di: Phase A about 800 renders",
+     "N1": "stage 2 starts on its own once G1 holds, unless the user stops it; if G1 fails, stop and go to the user; Go 4, the route, stays the user's"
+    },
+    "codes": [
+     "XN-insensitive",
+     "XN-anomaly",
+     "XN-overshoot",
+     "XN-reading",
+     "XN-both",
+     "XN-rest",
+     "XN-undecided"
+    ],
+    "codes_note": "the first that holds, on the 40, the answer arm; xn-list's rule coded before any render (list_split): reading proper shown when G(xn-reread) - G(xn-list) lies wholly above zero, re-derivation when D_list does",
+    "cant_show": "the exact world differs from real songs in more than the replay (the plugin is the target, the reference is clean, the objective sharper); the scale bias runs both ways; the bank guitar is read without pre-roll; the bank guitar is the song as Basic Pitch heard it; one bank, one transcriber, one seed, the score only",
+    "phases": "Phase 1 build (zero renders; four proofs: build 2 rebuilt byte for byte, the re-read's events equal build 2's round trip, this module and the six pinned files byte-identical to main, xn-reread's pause shares per half reported) -> Phase A (A1 score-check and search-check about 50 renders, A2 targets 282, A3 floors 282, A4 floors-real 188, A5 floor-read) -> hash PR phase_scratch_exact_targets -> stage 1 (search, answers and hash PR phase_scratch_exact_answers_bank and _swap, score, gate) -> stage 2 on a holding G1 (_reread, _list) -> read once, independent audit, results PR phase_scratch_exact_outcome",
+    "renders": "about 800 in Phase A; about 26,000 a stage (about 3.9 hours on 3 processes); about 52,000 for all four rows",
+    "code": "learn/scratch_exact.py (edits none of scratch_search.py, scratch_notes.py, note_transcribe.py, note_rebuild.py, note_fixes.py, bp_run.py); tests/test_scratch_exact.py",
+    "data": "PF/fs/exact/, each file written once; the ledger holds hashes and counts only",
+    "keys_to_come": [
+     "phase_scratch_exact_targets",
+     "phase_scratch_exact_answers_bank",
+     "phase_scratch_exact_answers_swap",
+     "phase_scratch_exact_answers_reread",
+     "phase_scratch_exact_answers_list",
+     "phase_scratch_exact_outcome"
+    ],
+    "grepped": "no phase_scratch_exact* key, row name (xn-bank, xn-swap, xn-reread, xn-list), code (XN-*) or scratch_exact existed in docs/, learn/, tests/ or the ledger before this declaration",
+    "declaration_review": {
+     "verdict": "passed independent review with nits at 86f7cf0e; all four folded in before merge",
+     "nit_1": "Phase A's checks enforced (phase_a_refusal): a lag-check failure, or a part whose row (b) answer through the true DI does not reproduce row (b)'s stored score, stops floor-read with nothing written; records.json lists both checks and the search refuses one that lists a failure",
+     "nit_2": "fieller_share: when the point estimate (where the mean is exactly 0) lies in no piece the grid found, the set is seeded there and followed outward both ways from the grid's step, so a defined share wholly outside +-4 never reads 'empty on the grid'",
+     "nit_3": "gate.json is no longer in SEARCH_FORBIDDEN: stage 2's search reads G1 there through gate_record (N1); it holds no settings",
+     "nit_4": "re-read F matches the re-read notes against the full post-fix list, notes the rebuild skipped included, so it understates recall slightly; it is used only beside the read (said in build.json and the report)"
+    }
    }
   },
   {
