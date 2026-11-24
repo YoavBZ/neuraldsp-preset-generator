@@ -609,3 +609,124 @@ Declare **LOUDAR's second test**, under its own declaration and review, at zero 
 - **Timing:** the released config uses 300 steps (the paper says 10) and no runtime is given, so time one clip on the
   CPU first.
 - **Renders** come after `fs-notes`' 47-part row.
+
+## LOUDAR's second test, row `fs-loudar` (track 2): `FL-undecided`
+
+Ran 2026-11-24. The main read was audited by an independent recompute from the per-part score records, and came back
+CONFIRMED WITH CORRECTIONS: every number reproduces to 3 dp, and the code is `FL-undecided`. All four corrections are
+taken below. `ld-rec`'s read, added after the audit, has its own audit still to come before it goes to the user.
+- Declaration: [plan section 13](scratch-search-plan.md#13-the-fs-loudar-row).
+- Ledger, entry `preset-ladder`: `phase_scratch_loudar` and its amendments, `phase_scratch_loudar_dry`,
+  `phase_scratch_loudar_answers_stem`, `_cut`, `_in`, `phase_scratch_loudar_dry_rec`,
+  `phase_scratch_loudar_answers_rec` and `phase_scratch_loudar_outcome`.
+- Code: `learn/scratch_loudar.py` and `learn/loudar_run.py`.
+
+**The question.** Can a dry guitar rebuilt from the song's separated guitar alone drive the search? LOUDAR, a
+published rebuild model, hears only the search half of the `xlnoG@-3` stem and returns a dry guitar. That guitar
+drives a 50-evaluation search from Cen. Its incumbent is scored through the true DI on the held half and read per part
+against the blurred true DI (row (c)) at the same checkpoint. BKS and the panel decide (23 parts); GOAT, which
+LOUDAR's prior trained on, is read beside.
+
+### What ran
+
+| Step | Render calls |
+|---|---|
+| Unit 0 (installs, the gate, timing), `prep`, LOUDAR on the stems (CPU), `build` | 0 |
+| Start reads (`ld-stem` 47, `di-cut` 23, `stem-in` 23) | 186 |
+| Control (the true DI through the row's search path against row (b)'s records): PASS | 22 |
+| Searches, 51 a part (`ld-stem` 47, `di-cut` 23, `stem-in` 23) | 4,743 |
+| Scores, 4 calls a part, 2 of them distinct renders | 372 (186 distinct) |
+| **The main row** | **5,323** |
+| The seed gauge: `ld-stem-b`'s start reads | 46 |
+| `ld-rec`: LOUDAR on the clean records (CPU), `build-rec`, start 46, search 1,173, score 92 (46 distinct) | 1,311 |
+| **All** | **6,680** |
+
+- Every stage ran from frozen worktrees of merged main, and each hash was on main before the step that used it.
+- **Clean run:** no part refused in any name, no scoring-control miss, no non-finite scored value.
+- The disk guard (31 GB) stopped two search shards once; they were relaunched when it cleared, the finished parts
+  skipped, nothing overwritten.
+
+### The result: `FL-undecided`
+
+The deciding number is `D_blur`, since `D_cut`'s upper end (+0.028) is under the +0.05 switch.
+
+| On BKS+panel (mean [90% interval]) | `ld-stem` (the main row) | `ld-rec` (the clean record, no separation) |
+|---|---|---|
+| **`D_blur` (deciding)** | **+0.067 [−0.090, +0.225]** | +0.082 [−0.018, +0.182] |
+| `D_true` | +0.192 [+0.060, +0.324] | +0.207 [+0.086, +0.328] |
+| G50 | −0.051 [−0.159, +0.058] | −0.036 [−0.237, +0.166] |
+| `D_null` | −0.319 [−0.804, +0.165] | −0.304 [−0.673, +0.064] (against the stem) |
+| Code | `FL-undecided` | `FL-undecided` |
+
+**What the main read says, in plain words** (the audit's wording; it does not say "about as well as row (c)", since a
+loss of up to 0.225 against row (c) is not ruled out):
+- it is **not shown different from the blurred true DI** (`D_blur` above);
+- it is **clearly worse than the true DI**, by 0.19 [0.06, 0.32] (`D_true`);
+- **the search lands level with the starting preset**: G50 −0.05 on BKS+panel (BKS +0.05, panel −0.155);
+- it is **much better than the raw stem**: `D_null` −0.34 [−0.55, −0.14] on BKS.
+
+By the score, LOUDAR as released is not yet useful for the product: its search is level with keeping the starting
+preset. Undecided is not failed.
+
+**Beside the deciding read (main row):**
+- by set: G50 BKS +0.053 [−0.146, +0.252], panel −0.155 [−0.306, −0.004], GOAT −0.243 [−0.328, −0.159] (in-sample for
+  the prior; GOAT's `D_blur` −0.088 reads "at the bar");
+- comparators at the checkpoint: row (b) −0.242 [−0.462, −0.022], row (c) −0.118 [−0.355, +0.120];
+- against the codec ceiling (`rt-m2l`): +0.180 [+0.056, +0.304]; room kept −0.54 (it keeps none of the gap between the
+  blur and the true DI); 8 parts at +0.10 or worse than Cen;
+- the controls: `stem-in` (the stem itself as the dry guitar) G50 +0.269 [−0.261, +0.798]; `di-cut` (the true DI cut
+  the same way) −0.233 [−0.451, −0.016].
+- **`D_true` is robust** (the audit): leaving out one DI file at a time gives +0.15 to +0.23. The loss is larger on
+  clean parts than on crunch: BKS +0.228 and +0.161, panel +0.369 and +0.099.
+- **The panel's width comes from AimeeNorwich (RAW_05_02)** (the audit, **post hoc**, decides nothing): that stem is
+  already nearly dry, and LOUDAR makes it worse. Without it, `D_blur` is +0.009 [−0.080, +0.099].
+
+### The seed gauge
+
+It is the seed-to-seed change in Cen's search-half start value: `ld-stem-b` (LOUDAR's second sampling seed) less
+`ld-stem`, ln of the start values, 2 seeds on the 23 deciding parts. It is not the spread of G50 or of D, and it
+decides nothing.
+- On the pool it shows **no shift**: +0.026 [−0.032, +0.084] (BKS +0.048, panel +0.003).
+- **Per part the noise is about three times SMALL**: median |change| 0.147, largest 0.376; 14 of 23 parts at 0.10 or
+  more, 8 within 0.05.
+
+### Timing, priced with timbre (the declared caveat)
+
+The row prices LOUDAR's timing and timbre together: an `FL-short` or `FL-null` alone would not say which fell short.
+The per-part whole-clip lags sit beside the per-part G50 (`rows.json`); they never decide.
+- Lags: −33 to +7 ms on the deciding sets; **GOAT −47 to +31 ms**. `stem-in` sits within 1 ms on 21 of 23 deciding
+  parts (median 0 ms), the placement evidence.
+- **Timing is not the main limit** (the audit): the Spearman of `D_true` against the share of sub-windows within 1 ms
+  is +0.198, the wrong sign for a timing cause; `D_true` is +0.147 on the 14 parts within 1 ms and +0.298 beyond (+0.206
+  without the outlier); GOAT lags more but loses less. The limit leans to timbre and to the prior's coverage: the
+  floored log-mel distance to the true DI is about 6, against 1.6 for the cut DI.
+- The worst part, BKS TooMuch DI16 @65 pr12 (clean, G50 +0.912), lags −11 ms, about one pitch period, and its Cen
+  start is 0.70 ln further from the target; timing and timbre cannot be told apart on it.
+
+### `ld-rec`: LOUDAR on the clean record (run after the read, any code: L1)
+
+LOUDAR rebuilt from the clean record's search half instead of the stem, on the 23 deciding parts, then the same short
+row. It reads **`FL-undecided`** too (table above), and `ld-rec` less `ld-stem` (G50, paired per part) is **+0.015
+[−0.166, +0.197]** on BKS+panel (BKS +0.027 [−0.026, +0.079]).
+- **Separation is not what limits LOUDAR here**, most clearly on BKS (the panel is too wide to say): with no separation
+  at all, LOUDAR's dry guitar drives the search no better than from the stem, so its own rebuild is the larger
+  limit.
+- `bottleneck` names none, since the main row did not fall short; `ld-rec` reads beside as LOUDAR's ceiling without
+  separation.
+- `ld-rec`'s lags: −11 to +12 ms, median 0, 14 of 23 within 1 ms; it has no sub-window diagnostic.
+- This read has not been audited yet; it goes to the user after its audit.
+
+### What it does not say
+
+- Anything with other guitars in the mix (the stem here comes from a mix with none), on released records, or by ear.
+- LOUDAR hearing the whole window, as the product would; LOUDAR after 50 evaluations, step 2, or long-term tone colour
+  (the measure step removes it).
+- LOUDAR with a wider prior, more steps or another operator.
+
+### Next on this track (recorded, not started)
+
+- **Not a fallback for the note rebuild**: it does not beat keeping the starting preset.
+- Optional, for the user: an oracle timing-aligned `ld-stem` row, diagnostic only, would need the user's go; the
+  evidence suggests it would recover little.
+- L3 (the bar conversion's record): LOUDAR's full row at 200 evaluations plus step 2, paired with row (c)'s answer,
+  about 12k renders, would need a declaration and a review; queued after `fs-notes` build 2's search.
