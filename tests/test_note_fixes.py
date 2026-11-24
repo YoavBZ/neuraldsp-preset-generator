@@ -131,5 +131,17 @@ def test_the_muscriptor_fixes_transforms():
     assert 3 in F.f5_keep(bp, dense)                               # dense context: the veto decides, 64 kept
     truth = [note(0.0, 0.5, 60), note(0.0, 0.5, 64), note(0.0, 0.5, 67), note(2.0, 2.5, 64)]
     got = F.removal_counts(truth + [note(1.0, 1.2, 50)], [truth[0], truth[3]], truth)
-    assert got == {"lost": 2, "removed": 1, "chord_lost": 2}
+    assert got == {"lost": 2, "removed": 1, "chord_lost_proxy": 2}
+    dup = [note(0.0, 0.5, 60), note(0.01, 0.5, 60)]                   # two notes on one truth note: one lost at most
+    assert F.removal_counts(dup, [], [note(0.0, 0.5, 60)]) == {"lost": 1, "removed": 1, "chord_lost_proxy": 0}
     assert F.chord_recall([truth[0]], truth) == 1 / 3 and F.chord_recall([], [note(0, 1, 60)]) is None
+
+
+def test_f4_at_50_ms_is_track_1s_veto():
+    from learn import note_tx as X
+
+    bp = [note(0.0, 0.4, 60), note(0.0, 0.4, 72), note(0.0, 0.4, 79), note(0.5, 0.9, 64), note(0.5, 0.9, 76),
+          note(1.0, 1.3, 67)]
+    ms = [{"on": 0.02, "off": 0.4, "pitch": 60}, {"on": 0.55, "off": 0.9, "pitch": 64}, {"on": 1.2, "off": 1.4,
+                                                                                         "pitch": 67}]
+    assert F.kept_notes(bp, F.f4_keep(bp, ms, below_s=0.050)) == X.veto_notes(bp, ms)

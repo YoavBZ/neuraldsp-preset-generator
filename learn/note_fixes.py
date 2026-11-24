@@ -465,23 +465,27 @@ def chord_truth(truth):
     return {k for g in NR.onset_groups(truth) if len(g) >= 3 for k in g}
 
 
+def matched_truth(notes, truth, onset_s=0.050):
+    """(Pure.) The truth notes a note list matches one to one (same pitch, onsets within `onset_s`, closest first).
+    -> set of truth indices."""
+    cand = sorted((abs(t["on"] - n["on"]), i, j) for i, t in enumerate(truth) for j, n in enumerate(notes)
+                  if t["pitch"] == n["pitch"] and abs(t["on"] - n["on"]) <= onset_s)
+    ui, uj = set(), set()
+    for _, i, j in cand:
+        if i not in ui and j not in uj:
+            ui.add(i)
+            uj.add(j)
+    return ui
+
+
 def removal_counts(before, after, truth):
-    """(Pure.) Notes a fix removed (dropped or joined away), sorted against the truth: `lost` matches a truth note
-    (on D an annotated pick, on L a true note), `removed` matches none; `chord_lost` of the lost, a chord note's.
-    Notes are compared by (onset, pitch)."""
-    kept = {(n["on"], n["pitch"]) for n in after}
+    """(Pure.) What a fix removed (dropped or joined away), against the truth: `lost`, truth notes matched before and
+    no longer matched after (on D annotated picks, on L true notes; never over-counted); `removed`, the other notes
+    gone; `chord_lost_proxy`, of the lost, the chord notes (a stand-in for real chord repicks lost)."""
     ch = chord_truth(truth)
-    out = {"lost": 0, "removed": 0, "chord_lost": 0}
-    for n in before:
-        if (n["on"], n["pitch"]) in kept:
-            continue
-        t = matched(n, truth)
-        if t is None:
-            out["removed"] += 1
-        else:
-            out["lost"] += 1
-            out["chord_lost"] += truth.index(t) in ch
-    return out
+    lost = matched_truth(before, truth) - matched_truth(after, truth)
+    return {"lost": len(lost), "removed": max(0, (len(before) - len(after)) - len(lost)),
+            "chord_lost_proxy": len(lost & ch)}
 
 
 def chord_recall(notes, truth):
@@ -501,6 +505,9 @@ def muscriptor_notes(L, D):
 
     m = X.require_tx(X.PHASE_GO, X.PHASE_INSTALL, X.PHASE_LISTS, X.PHASE_GO_READ, X.PHASE_NOTES)
     tx = m.get(X.LEDGER_ID) or {}
+    _, sha = X.notes_listing(("truth", "goat", "goat-free"))          # as `note_tx read` checks it
+    if (tx.get(X.PHASE_NOTES) or {}).get("listing_sha256") != sha:
+        raise SystemExit(f"the note files are not main's {X.PHASE_NOTES} listing")
     size = X.picked_size(T.require_file_hash(tx, X.PHASE_LISTS, X.lists_path())["body"], tx.get(X.PHASE_GO_READ))
     inst = X.require_install(m, size)
     for w in L:
@@ -525,8 +532,9 @@ def isolate_ms(out_path, f1_mode):
     variants += [("F5", f"ctx={int(c * 1000)}ms,count={F5_CONTEXT_COUNT}", c) for c in (F5_CONTEXT_S, F5_CONTEXT_BESIDE_S)]
     rows = []
     for fix, label, par in variants:
-        row = {"fix": fix, "point": label, "L": {"lost": 0, "removed": 0, "chord_lost": 0},
-               "D": {"lost": 0, "removed": 0, "chord_lost": 0}}
+        row = {"fix": fix, "point": label, "L": {"lost": 0, "removed": 0, "chord_lost_proxy": 0},
+               "D": {"lost": 0, "removed": 0, "chord_lost_proxy": 0},
+               "counts_label": "seen before the declaration" if fix in ("F2-MuScriptor", "F4") else None}
         fig = {"L": {}, "D": {}}
         chord = {"before": [], "after": []}
         for s, ws in (("L", L), ("D", D)):
