@@ -4484,7 +4484,7 @@
    "phase_scratch_loudar_dry_rec": {
     "sha256": "365a54a120c65a34bcb7ce1383570bf47c31d75c7aaee99c53ba9ef6bdb540a3",
     "file": "PF/fs/loudar/build-rec.json",
-    "built": "2026-11-24, `build-rec` from a frozen detached worktree of main at 97110e5e (LOUDAR's code and keys as at 016c724c), every guard passed; the main read is on main's record (report.json 6a948b30..., FL-undecided), and ld-rec runs after it on any code (L1). Zero renders",
+    "built": "2026-11-24, `build-rec` from a frozen detached worktree of main at 97110e5e (LOUDAR's code and keys as at 016c724c), every guard passed; the main read was run (report.json 6a948b30..., FL-undecided; its outcome key to follow), and ld-rec runs after it on any code (L1). Zero renders",
     "files_sha256": {
      "out/ld-rec/run-ld-rec-bks-panel.json": "4d6338b656a3e3395b1d38061342c66524eeeb02c24ef2bd2cec351b4f0c3b1f",
      "figures-rec.json": "12baf995dd8707c3650ce4c5547b203668c76aa433f0ba0b08f8cc4b5118c018",
