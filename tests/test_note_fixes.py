@@ -497,3 +497,17 @@ def test_build_2s_answers_hash_on_main_under_its_own_key():
     assert SN.answers_key("b2") == "phase_scratch_notes_answers_b2" != SN.answers_key()
     assert rec["build_name"] == "b2" and rec["build_sha256"] == lad[SN.dry_key("b2")]["sha256"]
     assert SN.pair_answers_refusal(rec, "b2", lad[SN.dry_key("b2")]) is None
+
+
+def test_build_3_and_b3k_hashed_on_main_with_the_frozen_rule():
+    import pathlib
+
+    from learn import scratch_notes as SN
+
+    e = T.entries((pathlib.Path(__file__).resolve().parents[1] / "docs" / "dev-test-ledger.json").read_text())
+    lad, frozen = e["preset-ladder"], e["note-rebuild"][F.PHASE_F6_FROZEN]
+    b3, b3k = lad[SN.dry_key("b3")], lad[SN.dry_key("b3k")]
+    assert SN.dry_key("b3k") == "phase_scratch_notes_dry_b3k" and b3["sha256"].startswith("d61e0f0c")
+    assert {k: b3["rule"][k] for k in ("F1", "F6", "loud")} == frozen["rule"]
+    assert {k: b3k["rule"][k] for k in ("F1", "F6", "loud")} == F.b3k_fixes(frozen["rule"]) == frozen["b3k"]["fixes"]
+    assert b3["transcribe_sha256"] == b3k["transcribe_sha256"] == lad[SN.dry_key("b2")]["transcribe_sha256"]

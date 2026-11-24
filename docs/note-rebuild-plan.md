@@ -1812,3 +1812,24 @@ rebuild, not the build file's.
 **Next:** `e-read --declared` and `exposure` (zero renders); `ear-items --build-name b3` before `build --build-name b3`
 (otherwise the build falls back to build 1's ear items); build 3 and b3k built and hashed; the page; build 3's own
 checks (C1) and its search, third in the queue.
+
+**E, exposure, and build 3 and b3k hashed (2026-11-24; ledger `preset-ladder` `phase_scratch_notes_dry_b3`,
+`phase_scratch_notes_dry_b3k`).** Everything ran from a frozen worktree of main at 1c7ccb32, the freeze. Zero renders.
+
+E's held-out read (`e-read --declared`, `fixes/e-read-f6-1c7ccb32.json`, sha256 `bc4bfbf7…cb73`):
+- Build 3 less build 2's rule, by the distance (reported): +0.094 [−0.099, +0.287] over 8 items, undecided.
+- `item_102` (c12) reads +0.726. Its 3 annotated bends' fragments drop from 8 to 3.
+- `item_39`'s 7 annotated bends: those with fragments drop from 5 to 3, and its distance reads −0.214.
+- The faulted items all get stitches: `item_102` 3 chains, `item_123` 1, `item_39` 5.
+- E has no stitch-free outcome, so the page follows.
+
+Exposure (`fixes/exposure-f6-1c7ccb32.json`, `24c830fd…31e3`):
+- Build 3's `tr-di` differs from build 2's on 26 of 47 parts and on 6 of 8 ear items, the three faulted among them.
+- b3k's differs from build 3's on 4 ear items (`item_102`, `item_39`, `item_46`, `item_49`) and 17 parts.
+- So guard 1 gives 6 b3k cards.
+
+The builds:
+- `ear-items --build-name b3` (and `b3k`) reproduce build 2's items exactly.
+- `build --build-name b3` gives `build-b3.json`, sha256 `d61e0f0c…afda`.
+- `build --build-name b3k` gives `build-b3k.json`, sha256 `e7e94f82…5324`.
+- Every `tr-di` sha256 in them equals exposure's.
