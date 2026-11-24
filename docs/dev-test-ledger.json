@@ -4593,6 +4593,196 @@
     "build_sha256": "46e485a22c5f925457ebb89905aa2fc16c853e58c694791cbde77c14831fbf5b",
     "code": "search b238f6c8 (#600's merge; frozen worktree, re-cut twice as main moved, nothing searched before); answers 1c7ccb32 (main after F6, #602-#604). cmd_search's source is byte-identical at 4959128a, 8a4995db and b238f6c8, so build 1 and build 2 searched on the same search code; cmd_answers, cmd_score and cmd_read are byte-identical at 6b570cf5 and 1c7ccb32",
     "about": "fs-notes on build 1 (tr-di from build.json, the ear-faulty first build; xlnoG@-3), read under 12q R8 after build 2 was hashed on main; labelled \"ear fault-content\" (phase_nr_1_redo_ear; 12q R5: a label, the FN code provisional). Both checks from 2026-11-22 gate it (the gate reads only that they exist and passed; build 2's rerun of both on 4959128a passed on the same search code). Searched once after build 2's shards exited (python -m learn.scratch_notes search, 3 shards, no_bg_nice, caffeinate, the disk guard before every part): 47 of 47 parts, 0 refused, 0 content labels; step 1 200 evaluations on every part, step 2 kept the canonical start on every part. 12,405 renders (12,311 search plus 94 start reference) in 6,478 s wall on 3 processes. The answers (zero renders, python -m learn.scratch_notes answers) passed the dry-guitar check against the hashed build on every part; merged before `score`"
+   },
+   "phase_scratch_notes_read_b2": {
+    "report_sha256": "4a888d704b095ab483af89c7a24bca14cbeb43a166323978ec1b25c9b136e367",
+    "report_file": "PF/fs/notes-b2/report.json",
+    "rows_sha256": "7d142bfb832353267c8a58bae1376c1658ed88a4b03169038ef455e36b213846",
+    "rows_file": "PF/fs/notes-b2/rows.json",
+    "answers_sha256": "10becffd1d5c989dcb95e7992823efc8d5797733db26bc09c3a53a8e0b518754",
+    "ear": "ear fault-content",
+    "code_provisional": true,
+    "code": "FN-crunch (shrunk), provisional: 12q R5, the ear verdict is fault-content, so the code is not the row's outcome; this record writes no phase_scratch_notes_outcome",
+    "score": "2026-11-24, python -m learn.scratch_notes score --build-name b2 --shard k/2 once from main at 1c7ccb32 in a frozen worktree (2 shards: the F6 clips held the third render slot), after build 1's search exited: 47 of 47 parts scored, the scoring control 47 of 47 ok, 0 reruns, 0 non-finite, 0 refused; 940 renders in 1,074 s wall; every score record from the hashed answers (phase_scratch_notes_answers_b2)",
+    "read": "2026-11-24, python -m learn.scratch_notes read --build-name b2 once from main at 480dacf4 in a frozen worktree (cmd_answers, cmd_score and cmd_read byte-identical from 6b570cf5 on), zero renders; the pairs against row (b) and the curve recomputed beside it from the same score files with the module's own set_rows (zero renders)",
+    "headline_bks_goat_40": {
+     "note": "ln(x / Cen) on BKS+GOAT (the 40), 90% intervals; negative is closer than Cen. By the score only: the ear has not compared these presets",
+     "answer": {
+      "G_vs_Cen": {
+       "all": {
+        "mean": 0.0091,
+        "lo90": -0.0882,
+        "hi90": 0.1064
+       },
+       "clean": {
+        "mean": 0.0595,
+        "lo90": -0.1593,
+        "hi90": 0.2783
+       },
+       "crunch": {
+        "mean": -0.0413,
+        "lo90": -0.0982,
+        "hi90": 0.0155
+       }
+      },
+      "less_row_c": {
+       "all": {
+        "mean": 0.0958,
+        "lo90": 0.0048,
+        "hi90": 0.1868
+       },
+       "clean": {
+        "mean": 0.1381,
+        "lo90": -0.0578,
+        "hi90": 0.3341
+       },
+       "crunch": {
+        "mean": 0.0534,
+        "lo90": -0.0503,
+        "hi90": 0.1572
+       }
+      },
+      "less_row_b": {
+       "all": {
+        "mean": 0.2735,
+        "lo90": 0.186,
+        "hi90": 0.361
+       },
+       "clean": {
+        "mean": 0.4002,
+        "lo90": 0.2406,
+        "hi90": 0.5598
+       },
+       "crunch": {
+        "mean": 0.1469,
+        "lo90": 0.097,
+        "hi90": 0.1967
+       }
+      },
+      "row_c_G": {
+       "mean": -0.0867,
+       "lo90": -0.1552,
+       "hi90": -0.0182
+      },
+      "row_b_G": {
+       "mean": -0.2644,
+       "lo90": -0.3102,
+       "hi90": -0.2186
+      },
+      "reading_less_row_c": "undecided (the interval above 0, the mean under BIG 0.10)"
+     },
+     "shrunk": {
+      "G_vs_Cen": {
+       "all": {
+        "mean": -0.0765,
+        "lo90": -0.1612,
+        "hi90": 0.0082
+       },
+       "clean": {
+        "mean": -0.0415,
+        "lo90": -0.2417,
+        "hi90": 0.1587
+       },
+       "crunch": {
+        "mean": -0.1116,
+        "lo90": -0.1755,
+        "hi90": -0.0477
+       }
+      },
+      "less_row_c": {
+       "all": {
+        "mean": 0.0712,
+        "lo90": 0.0024,
+        "hi90": 0.1399
+       },
+       "clean": {
+        "mean": 0.1069,
+        "lo90": -0.0562,
+        "hi90": 0.2699
+       },
+       "crunch": {
+        "mean": 0.0354,
+        "lo90": -0.0142,
+        "hi90": 0.0851
+       }
+      },
+      "less_row_b": {
+       "all": {
+        "mean": 0.1433,
+        "lo90": 0.0747,
+        "hi90": 0.212
+       },
+       "clean": {
+        "mean": 0.2209,
+        "lo90": 0.0727,
+        "hi90": 0.3691
+       },
+       "crunch": {
+        "mean": 0.0658,
+        "lo90": 0.0273,
+        "hi90": 0.1043
+       }
+      },
+      "row_c_G": {
+       "mean": -0.1477,
+       "lo90": -0.2006,
+       "hi90": -0.0948
+      },
+      "row_b_G": {
+       "mean": -0.2199,
+       "lo90": -0.2573,
+       "hi90": -0.1825
+      },
+      "reading_less_row_c": "undecided"
+     },
+     "curve_answer_G": {
+      "cp50": {
+       "mean": -0.0047,
+       "lo90": -0.0977,
+       "hi90": 0.0884
+      },
+      "cp100": {
+       "mean": 0.0057,
+       "lo90": -0.0901,
+       "hi90": 0.1015
+      },
+      "cp200": {
+       "mean": 0.0202,
+       "lo90": -0.0772,
+       "hi90": 0.1177
+      },
+      "final": {
+       "mean": 0.0091,
+       "lo90": -0.0882,
+       "hi90": 0.1064
+      }
+     },
+     "curve_row_c_G": {
+      "cp50": {
+       "mean": -0.078,
+       "lo90": -0.1422,
+       "hi90": -0.0138
+      },
+      "cp100": {
+       "mean": -0.0487,
+       "lo90": -0.1265,
+       "hi90": 0.029
+      },
+      "cp200": {
+       "mean": -0.0765,
+       "lo90": -0.144,
+       "hi90": -0.009
+      },
+      "final": {
+       "mean": -0.0867,
+       "lo90": -0.1552,
+       "hi90": -0.0182
+      }
+     },
+     "share_of_row_b_gain": -0.0344,
+     "search_gain_vs_held_G_r": 0.1081
+    },
+    "reading": "by the score: build 2's answer is level with Cen on the 40 (+0.009 [-0.088, +0.106]); against row (c) +0.096 [+0.005, +0.187] (undecided by the user's SMALL and BIG; the interval is above 0); against row (b) +0.274 [+0.186, +0.361] (keeps none of row (b)'s gain, share -0.03). The curve is flat from 50 evaluations on (-0.005 to +0.009), where row (c)'s is already -0.078 at 50. Crunch reads closer than clean in every pair. The shrunk arm is -0.077 [-0.161, +0.008] against Cen"
    }
   },
   {
