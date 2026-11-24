@@ -5356,6 +5356,17 @@
     "lists_rederived": "the list screen (lists.json 664b3f0a...440e) was read under the old bars. Re-derived from the stored rows under T1, with no re-run: every reading is unchanged on both sizes, and the screen stays lists-go. tx-vote and tx-ms still do not hold recall (medium recall -0.067 [-0.115, -0.020], decided worse; large -0.055 [-0.103, -0.006]); tx-veto still holds it (medium recall -0.009 [-0.020, +0.002], chord-note recall -0.018 [-0.042, +0.007]; large -0.006 [-0.016, +0.005], -0.011 [-0.035, +0.013]). So stage b can still only end TXR-undecided, with or without veto-holds. Under T2 the stored size pick (+0.010 [-0.019, +0.040]) would read 'undecided, large kept', the size the user's go already runs",
     "scoring": "no measure, pairing, clean-up or threshold of the figures changes; only what the readings compare to",
     "supersedes": "12p's row 'CHECK_SLACK kept' (note-rebuild phase_nr_1_redo_item5_out, #580; that key is not edited): check_window_report supersedes it, so the checks count over the read's 26 windows as a per-window report and no slack gates anything"
+   },
+   "phase_tx_read": {
+    "sha256": "84906f2975755ccb0452cceba390a83f4c80aa318a65f700b5410e90685bd1e0",
+    "file": "PF/note-rebuild/tx/read.json",
+    "code": "TXR-undecided",
+    "flags": {
+     "veto-holds": true
+    },
+    "note": "2026-11-24, `read` run once from main at 9c031aa1 (PR #582's squash) in a frozen detached worktree, zero renders, CPU only, about 5 min: MuScriptor large's stage-b notes (phase_tx_notes) with large's own list rows (list_rows_for), the 79 consistent Guitar-TECHS P1/P2 windows (43 files) and GOAT's development windows without item_5 (26; 12p). Read under T1's directions (phase_tx_bars_amend). Real DIs, pooled (1,045 true notes): tx-bp P 0.512 R 0.949 F 0.665; tx-vote P 0.926 R 0.818 F 0.869; tx-veto P 0.585 R 0.949 F 0.724; tx-ms P 0.480 R 0.841 F 0.611. Paired against tx-bp (90%, 43 file clusters): tx-vote precision +0.374 [+0.332, +0.416], recall -0.228 [-0.288, -0.168], F +0.107 [+0.069, +0.144]; tx-veto precision +0.061 [+0.046, +0.075], recall +0.000, F +0.046 [+0.036, +0.057]; tx-ms precision +0.133 [+0.064, +0.203], recall -0.186 [-0.253, -0.119], F +0.025 [-0.044, +0.093]. The code: TXR-undecided with veto-holds (tx-vote and tx-ms lose recall, decided worse, on the lists and the real DIs; tx-veto raises precision with recall and F not decided worse on both sets and chord-note recall not decided worse on the lists; on the real DIs chord-note recall is not measured (1 window, 6 notes); no arm's ends better). Reported only: the 26 windows' checks against tx-bp, windows gained - lost: tx-vote playing-covered -5, judge-accepts -7, ring-kept -4, chords-kept -1; tx-veto 0, 0, -1, 0; tx-ms +2, -1, 0, +1. The side figure (notes starting inside the window) beside: real tx-bp P 0.541, tx-vote 0.947, tx-veto 0.624, tx-ms 0.492",
+    "audit": "an independent audit CONFIRMED WITH CORRECTIONS (handover/2026-11-24/audit-tx-read): every figure reproduces exactly from an independent pairing, no leak. Corrections: chord-note recall on the real DIs is not measured (1 window, 6 notes; read.json's write-once sizes text prints it as +0.000); with 43 clusters T_95 falls back to z rather than t(42), so the intervals run about 2% narrow (project-wide, no reading changes); AUDIO_LEVELS says 27 windows, the read uses 26",
+    "next": "TXR-undecided has no bridge (read_bridge_refusal). The veto goes to the user as the candidate (plan section 7) and into the rebuild's F4"
    }
   }
  ],
