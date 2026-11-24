@@ -5313,6 +5313,31 @@
     "e_windows": "inside the 27 at the same windows: item_102, item_160, item_46 (1 s), item_57 (30 s); other windows of development items: item_77 (135 s; 30 s), item_49 (20 s; 1 s), item_39 (0 s; 1 s); item_5's let-ring replacement (item_123 on the stored scans; ear-items not yet run) not a development item",
     "f1_tie_correction": "12q's preliminary note quoted the F1 tie as 0.0007 [-0.026, +0.035]: those were the minimum and maximum, not an interval; the declared run's interval is -0.0007 [-0.0056, +0.0041] (isolate-declared-1fe30b7e.json)",
     "ear_items_b2": "ran 2026-11-24 from main at b9c350b9: item_5's let-ring slot to item_123 at 60 s (nearest, 0.081, not filled); ear-items-b2.json sha256 4726715c1c6b55cff98fc1acd70762a29ef1e1379645366e64da32d7ecb07ae8; item_123's note file cd0f7da7f12f6b5cd85207ca3bb9dc36ce622df5269b3260c714f2010c874415"
+   },
+   "phase_nr_1_redo_b2": {
+    "decided_by": "the delegated decision agent (rebuild-f4-and-next.md), under the user's standing instruction of 2026-11-23; not the user's go",
+    "F4": "as declared, out of build 2: 13 annotated notes lost on D, 11 of them the top octave of a root-fifth-octave power chord (item_165, item_55); F4b (never veto the octave in a 1-5-8 shape) queued, its D counts labelled designed on D, judged by L, Guitar-TECHS real-DI counts and the ear",
+    "D_report_only": "D's floored_logmel is report-only for extra-note fixes: it fails the ghost ladder on 9 of 19 D windows (12 with the row's balance), as 12m's ladder_outcome rule; departs from 12r for F4; D stays the judge for pitch, timing and level (F1, gamma)",
+    "build2_rule": {
+     "F1": "global",
+     "ring": "ring-soft",
+     "loud": 1.0,
+     "muscriptor": false,
+     "note": "frozen now; gamma above 1.0 undecided, not worse; inner doubled chord voices 3-5 dB down"
+    },
+    "page_now": "the second page now, for build 2: reverses rebuild-one-fix.md's one page after F1-F4",
+    "E_read": {
+     "file": "PF/note-rebuild/redo/fixes/e-read-b2-97110e5e.json",
+     "sha256": "7e374273223771dd433a28628371420bfc1579856d22feaff80131b6a5c64502",
+     "build2_less_as_built": "-0.174 [-0.325, -0.022]",
+     "F1_less_as_built": "-0.182 [-0.269, -0.095]",
+     "gamma_less_F1": "+0.008 [-0.128, +0.145] (item_102 +0.43)",
+     "tuning": "+31.0 c -> +0.9 c",
+     "note": "held out, read once after the freeze; the ring and gamma were picked on D, E is their test"
+    },
+    "code": "note_transcribe.build_loudness: a later build names its own loudness in --fixes (\"loud\")",
+    "next": "build --build-name b2, its hash phase_scratch_notes_dry_b2, clips and page, the search labelled ear pending",
+    "queued": "F4b; the re-pluck ladder on L and D; F3's glide sweep; a content measure passing both ladders (research)"
    }
   },
   {

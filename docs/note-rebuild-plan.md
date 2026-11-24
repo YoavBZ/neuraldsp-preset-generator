@@ -1452,3 +1452,42 @@ distance:
 
 An interval spanning zero keeps the as-built choice, labelled undecided. Both picks are read on the D they were picked
 on, so their intervals are optimistic; E is the held-out check.
+
+### 12s. Build 2 frozen and paged now, F4 out, D report-only for extra-note fixes (2026-11-24; ledger `phase_nr_1_redo_b2`)
+
+Three calls by the delegated decision agent under the user's standing instruction (`rebuild-f4-and-next.md`); none is a
+go of the user's.
+- **F4 as declared is out of build 2.** On D it loses 13 annotated notes, and 11 of them are the top octave of a
+  root–fifth–octave power chord (`item_165`, `item_55`). A revised F4b, which never vetoes the octave in a 1-5-8 shape, is
+  queued on top of build 2. It was designed on D, so D's counts are labelled "designed on D"; it is judged by L, by
+  Guitar-TECHS's real-DI counts, and by the ear.
+- **D's distance is report-only for extra-note fixes.** `floored_logmel` fails the ghost ladder on 9 of D's 19 windows
+  with F1's notes (12 of 19 with the row's balance); on 6, an octave ghost on every note reads as closer. 12m's
+  `ladder_outcome` makes a set reported-only when a real window fails, and the same applies here. This departs from
+  12r, which made D's distance decide F4. D's distance stays the judge for pitch, timing and level fixes (F1, γ).
+- **Build 2 = F1 (global) + ring-soft + γ 1.0, MuScriptor-free, frozen now and paged now.** This reverses
+  `rebuild-one-fix.md`'s "one page after F1 to F4". γ above 1.0 is undecided, not worse. The known side effect: inner
+  chord voices that double a lower string's harmonic are turned down 3 to 5 dB.
+
+**E's held-out read of build 2's rule** (the 8 items of `ear-items-b2.json`, Basic Pitch's notes, zero renders;
+`e-read-b2-97110e5e.json`, sha256 `7e374273…4502`):
+- build 2 less the first build's rule: −0.174 [−0.325, −0.022], closer;
+- F1 alone less the first build's rule: −0.182 [−0.269, −0.095];
+- γ 1.0 over F1: +0.008 [−0.128, +0.145]. On E, the loudness picked on D adds nothing, and on `item_102` it costs
+  +0.43;
+- tuning +31.0 c → +0.9 c.
+
+The ring and γ were picked on D, so D's intervals for them were optimistic; E is their test, and on E γ is undecided.
+
+**Then:** `build --build-name b2 --fixes '{"F1": "global", "loud": 1.0}'` (a later build names its own loudness,
+`build_loudness`), its hash (`phase_scratch_notes_dry_b2`), clips and the regular-layout page. Before listening, the
+user is told that re-plucks, bend and slide splits and the high extra notes are not fixed yet. The fs-notes search on
+build 2 runs labelled "ear pending" (R5).
+
+**Queued on top of build 2:**
+- F4b;
+- the re-pluck ladder on L and D;
+- F3's glide sweep;
+- research: a content measure that passes both ladders on real DIs.
+
+F4b on the 47 parts needs MuScriptor there, which waits for the user's data yes.

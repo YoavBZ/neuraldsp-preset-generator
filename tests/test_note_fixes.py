@@ -169,3 +169,12 @@ def test_the_kept_fixes_in_order():
     for bad in ({"F2": 0.0}, {"F3": True}, {"F1": "global", "F6": 1}):    # unknown keys refused, never dropped
         with pytest.raises(ValueError, match="unknown kept fixes"):
             F.kept_transform(bp, ms, bad)
+
+
+def test_a_later_build_names_its_own_loudness():
+    assert T.build_loudness(None, {}) == (None, None)                       # the versions read's, as the first build
+    assert T.build_loudness(2.0, {"F1": "global"}) == (2.0, None)
+    assert T.build_loudness(None, {"F1": "global", "loud": 1.0}) == (1.0, None)   # build 2: gamma 1.0
+    assert T.build_loudness(1.0, {"loud": None}) == (None, None)
+    for bad in (0, -1.0, "1", True):
+        assert T.build_loudness(None, {"loud": bad})[1]
