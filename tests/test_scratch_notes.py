@@ -373,6 +373,8 @@ def test_each_builds_answers_have_their_own_key_and_folder(monkeypatch):
     assert SN.score_path("x", "b2") == S.fs_dir() / "notes-b2" / "score" / "x.json"
     monkeypatch.setattr(SN, "BUILD_NAME", "b2")
     assert SN.answers_path() == SN.answers_path("b2") and SN.score_path("x").parent.parent.name == "notes-b2"
+    assert SN.answers_path(None) == S.fs_dir() / "notes" / "answers.json"     # build 1's, even under --build-name b2
+    assert SN.score_path("x", None) == S.fs_dir() / "notes" / "score" / "x.json"   # (pair-builds refused on this)
     assert SN.pair_path() == S.fs_dir() / "notes-b2" / "pair-b1.json"
     assert SN.check_dir("check-score").parent.name == "notes-b2"      # the checks rerun on a later build's code
 
