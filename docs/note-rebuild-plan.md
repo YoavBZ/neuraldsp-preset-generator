@@ -1789,3 +1789,26 @@ between it and the merge only `isolate-bend`'s reports and `e-read` changed, nev
 `item_102`, `item_123`, `item_39` first), whether b3k's `tr-di` sha256 differs from build 3's and how many stitched
 curves the keep flag changes; `e-read` reports the same on E beside its distances. Both still run only after the
 freeze.
+
+**M3: F6 frozen (2026-11-24; ledger `phase_nr_1_redo_fix_bend_frozen`).** The declared `isolate-bend` ran once from a
+fresh frozen worktree of main at 86a4cf5c (M2's merge), zero renders, 492 s (`isolate-bend-declared-86a4cf5c.json`,
+sha256 `1ed0d5df…7e7b`). It repeats the preliminary run in every field but the labels.
+
+| Read (declared) | Figure |
+|---|---|
+| Identity | Build 1 with F6 off 108 of 108 files; build 2's fixes 110 of 110 |
+| B's fault as built | 31 of 31 true bent notes split [0.91, 1.00]; 0 of 31 unsplit and cleared [0.00, 0.09] |
+| The pick (B1, B2) | Minimum `both|K=5|gap<=2` (176); 10 points tie with it; the harm step picks `sequential|K=5|gap<=2` (72 bend-free joins) |
+| Track and keep | Own tracks, cleared: kept 0.178 bins, cleared ties at +0.007 [−0.007, +0.022]; the line +0.210 [+0.048, +0.371] |
+| Keep call (B3) | **Kept.** Deciding note error less F1 −5.09 [−7.74, −2.44] (177 against 233); harm less F1: L's nine −0.11 [−0.32, +0.10], B's controls −0.67 [−2.61, +1.28], Guitar-TECHS −0.35 [−0.62, −0.08] |
+| Beside, deciding nothing | False joins: L's nine 1 of 408, B's controls 2 of 156, Guitar-TECHS 69 of 1,937 (28 take away a true note); extra attacks 119 → 65; D distance −0.003 [−0.024, +0.018]; Db fragmented bends 38 → 31 of 53; keep changes 9 stitched curves on B's positives and 48 on Guitar-TECHS |
+
+**The frozen rule (build 3):** `{"F1": "global", "F6": {"K": 5, "gap": 2, "family": "sequential", "track": "own",
+"keep": false}, "loud": null}`, ring-soft. F6b is undecided by the score; the F6b ear arm b3k (`keep: true`) goes on
+build 3's page under guard 1 and the declared ear rule above, both copied into the frozen key. `e-read` and `exposure`
+accept only this rule and compute b3k's figures themselves; their b3k sha256 values are labelled as the read's own
+rebuild, not the build file's.
+
+**Next:** `e-read --declared` and `exposure` (zero renders); `ear-items --build-name b3` before `build --build-name b3`
+(otherwise the build falls back to build 1's ear items); build 3 and b3k built and hashed; the page; build 3's own
+checks (C1) and its search, third in the queue.

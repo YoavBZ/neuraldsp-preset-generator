@@ -5603,6 +5603,50 @@
     "made": "2026-11-24, `note_fixes bend-lists` and `bend-windows` once from the F6 branch at bf2cb95e (the declaration and code, before any figure; between it and #602's merge 2c73689b only isolate-bend's reports and e-read changed, never BEND_LISTS, bend_audio, db_windows or the two commands), zero renders: Basic Pitch on B's ten lists (7 positives, 3 controls) and on Db's 14 windows (4 of D's items, 53 annotated bends held; item_29 has no window clear of its D window inside the item); each note file written once under fixes/bend/lists/ and fixes/bend/windows/, each listed with its sha256 (and, for B, its audio's and truth's)",
     "read_before": "the preliminary isolate-bend (branch, f01c0c4e and 455db339) read these files; the declared isolate-bend from merged main refuses unless both listings' sha256 are these (note_fixes.bend_sets)",
     "plan": "docs/note-rebuild-plan.md 12t (M2)"
+   },
+   "phase_nr_1_redo_fix_bend_frozen": {
+    "rule": {
+     "F1": "global",
+     "F6": {
+      "K": 5,
+      "gap": 2,
+      "family": "sequential",
+      "track": "own",
+      "keep": false
+     },
+     "loud": null
+    },
+    "ring": "ring-soft",
+    "file": "PF/note-rebuild/redo/fixes/isolate-bend-declared-86a4cf5c.json",
+    "sha256": "1ed0d5dfcc0cce705151c630b60c68942cd0126d6b454e6c6650aa3512337e7b",
+    "run": "2026-11-24, `note_fixes isolate-bend --declared` once from a fresh frozen worktree of main at 86a4cf5c (#603's merge), nice 10, zero renders, 492 s; redo_on_main passed; main's phase_nr_1_redo_bend_lists matched both listings",
+    "repeats_preliminary": "every field equal to the preliminary run at 455db339 except the labels (pick, track and keep, keep call, every row); identity as the preliminary run at f01c0c4e",
+    "identity": "build 1 with F6 off 108 of 108 files byte-identical; build 2's fixes {F1 global, loud null} 110 of 110",
+    "fault_as_built": "B (and L bend): 31 of 31 true bent notes split [0.91, 1.00]; 0 of 31 unsplit and cleared [0.00, 0.09]; extra attacks 119",
+    "pick": "B1: the minimum summed note error both|K=5|gap<=2 (176); 10 candidates tie with it (every K=1 point, K=3 gap<=2 both families, K=5 gap<=2 both families); B2's harm step (fewest joins on bend-free material) picks sequential|K=5|gap<=2 (72 joins)",
+    "track_keep": "own tracks, cleared: own kept the lowest mean bend error (0.178 bins), own cleared ties (+0.007 [-0.007, +0.022], n 8), the line worse (+0.210 [+0.048, +0.371]); the tie takes cleared",
+    "keep_call": "kept (B3): deciding note error less F1 -5.09 [-7.74, -2.44] (177 against 233, 11 lists); harm less F1: L's nine -0.11 [-0.32, +0.10], B's controls -0.67 [-2.61, +1.28], Guitar-TECHS -0.35 [-0.62, -0.08]; none above zero",
+    "beside": "false joins (Clopper-Pearson 90%): L's nine 1 of 408 [0.0001, 0.012], B's controls 2 of 156 [0.002, 0.040], Guitar-TECHS 69 of 1,937 [0.029, 0.043] (28 take away a true note); extra attacks 119 -> 65; second note lost 5 -> 5; D distance less F1 -0.003 [-0.024, +0.018] (report only); Db fragmented bends 38 -> 31 of 53 (fragments 57 -> 44; confirms); unsplit bent-but-cleared at true bends: Db 4 -> 2, B 0 (the unsplit arm opens as its own arm); keep changes 9 stitched curves on B's positives, 48 on Guitar-TECHS, 1 on B's controls, 0 on L's nine (report only); pad every bent note: D +0.0001 [-0.0014, +0.0017] (its own arm)",
+    "F6b": "undecided by the score, not failed",
+    "b3k": {
+     "ear_arm": "b3k (the F6b ear arm): identical except keep true, on the same page and items",
+     "fixes": {
+      "F1": "global",
+      "F6": {
+       "K": 5,
+       "gap": 2,
+       "family": "sequential",
+       "track": "own",
+       "keep": true
+      },
+      "loud": null
+     },
+     "guard_1": "Only cards that differ. A b3k card exists only for an item whose b3k tr-di differs from build 3's (sha256). If b3k changes no ear item, it gets no cards and no renders; F6b then stays undecided, recorded as 'not exposed on this page'.",
+     "ear_rule": "Read on b3k's cards against build 3's cards for the same items: b3k replaces build 3 for the search when, on at least one item, the user's answers name a bend fault (c12's class: bend removed or flattened) that build 3 has and b3k does not, and no b3k card has a fault its build 3 twin lacks. Build 3 stays (cleared) otherwise. That covers a tie by ear, mixed answers, and b3k worse anywhere. This is the declared tie rule carried over to the ear. No count or threshold is set. One clear heard fix with no heard harm decides.",
+     "decided_by": "decision agent's call, after the preliminary isolate-bend (the tie seen; the ear answers unseen); a delegated technical decision, not the user's go"
+    },
+    "next": "E and exposure after the freeze (e-read --declared, exposure: guard 1's figures); ear-items --build-name b3 before build --build-name b3 (else the build falls back to build 1's ear items); build 3 and b3k built and hashed; build 3's clips in full and b3k's only where its tr-di differs; one page (redo-page with a second --build-sha, its own reviewed change); build 3's own score-check and search-check before its search (C1); its search third in the queue",
+    "plan": "docs/note-rebuild-plan.md 12t (M3)"
    }
   },
   {

@@ -441,7 +441,24 @@ def test_f6_is_declared_before_its_numbers():
     assert "before any isolate-bend figure" in rec["run_record"]
     assert "preliminary pick" in rec["unsplit_arm_fired"]
     assert tie["build3"]["F6"]["keep"] is False and "b3k" in tie["ear_arm"] and "No count or threshold" in tie["ear_rule"]
-    assert F.PHASE_F6_FROZEN not in e["note-rebuild"]
+
+
+
+def test_f6_frozen_on_main_as_the_declared_run_picked():
+    import pathlib
+
+    e = T.entries((pathlib.Path(__file__).resolve().parents[1] / "docs" / "dev-test-ledger.json").read_text())
+    rec = e["note-rebuild"][F.PHASE_F6_FROZEN]
+    assert rec["rule"] == {"F1": "global", "F6": {"K": 5, "gap": 2, "family": "sequential", "track": "own",
+                                                  "keep": False}, "loud": None}
+    F.f6_params(rec["rule"]["F6"])
+    assert rec["sha256"].startswith("1ed0d5df") and "86a4cf5c" in rec["run"]
+    assert rec["b3k"]["fixes"] == F.b3k_fixes(rec["rule"]) and "undecided by the score" in rec["F6b"]
+    tie = e["note-rebuild"][F.PHASE_F6]["decision_f6b_tie"]
+    assert rec["b3k"]["ear_rule"] == tie["ear_rule"] and rec["b3k"]["guard_1"] == tie["guard_1"]   # verbatim
+    F.require_frozen(e, rec["rule"])                               # e-read and exposure accept exactly this rule
+    with pytest.raises(SystemExit):
+        F.require_frozen(e, F.b3k_fixes(rec["rule"]))
 
 
 def test_the_bend_listings_are_hashed_before_a_declared_run_reads_them():
