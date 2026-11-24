@@ -104,6 +104,29 @@ def test_no_bend_while_another_note_sounds_within_two_semitones():
     assert got[:17] == [3.0] * 17 and not any(got[18:])
 
 
+def test_a_kept_bend_skips_the_clear_rule_and_nothing_else():
+    """F6b (note-rebuild-plan 12t): a note marked `keep_bend` keeps its bend under a neighbour within two semitones;
+    the median, the clamp and the five-frame rule still apply; without the mark (or with it false) the curve is
+    today's."""
+    n = _note(bends=[3] * 30)
+    near = _note(on=0.0, pitch=66, off=1.0)
+    kept = dict(n, keep_bend=True)
+    assert N.bend_curve(kept, [kept, near]) == [3.0] * 30
+    assert N.bend_curve(dict(n, keep_bend=False), [n, near]) == N.bend_curve(n, [n, near]) == [0.0] * 30
+    assert max(N.bend_curve(dict(_note(bends=[20] * 8), keep_bend=True), [near])) == 9.0
+    assert not any(N.bend_curve(dict(_note(bends=[0] * 5 + [3] * 4 + [0] * 5), keep_bend=True)))
+
+
+def test_apply_bend_is_unchanged_by_f6():
+    import ast
+    import hashlib
+
+    src = (REPO / "learn" / "note_rebuild.py").read_text()
+    fn = next(n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name == "apply_bend")
+    assert hashlib.sha256(ast.get_source_segment(src, fn).encode()).hexdigest() == \
+        "edf45b82ea83c5d2f4b790294e6fb96d2c348434f381829b1ba07161db991ce2"      # its source at b238f6c8
+
+
 # --- the stage-1 arms are untouched ------------------------------------------------------------------------------------------
 
 STAGE1_FUNCTIONS = ("synthesise", "rebuild_dry", "source_for", "placed", "note_length_s", "note_gain_db",

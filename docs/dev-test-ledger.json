@@ -5529,6 +5529,69 @@
      "When playing both a bend and a regular note together it removes the bends and split it into multiple notes (card 12)"
     ],
     "what_follows": "12q R5: the verdict is a label, never a gate. fs-notes's build-2 reads are labelled \"ear fault-content\" (was \"ear pending\"), and their FN code stays provisional (code_provisional is true unless the label is \"ear ok\"). What the verdict means for the row's outcome is not settled by this record"
+   },
+   "phase_nr_1_redo_fix_bend": {
+    "declared": "2026-11-24, before any F6 figure; from the planner's revised plan (f6-bend-chains-plan-v2), passed with changes by its second review, the binding amendments folded in; the user's go; zero renders until build 3's clips",
+    "plan": "docs/note-rebuild-plan.md 12t",
+    "goal": "tr-di plays a bend as one bent note when a second note is held or picked with it, instead of flattening it and re-plucking it as semitone steps (build 2's card c12, item_102; perhaps c2, c11, c4); it earns its place only if it moves the preset: the row's paired J0 read of build 3 against build 2",
+    "faults": "1 Basic Pitch splits a bent string into semitone notes and the synthesis re-plucks each; 2 the clear rule zeroes a bend whenever a note within 2 semitones sounds (42% of notes on D and E, 12q R4), split or unsplit; 3 every bent note steps back to pitch 0 in its release (apply_bend 0 past the track, ring-soft's 150-ms release); which of these c12 is is not known",
+    "junction_rule": {
+     "tracks": "Basic Pitch's bends per 11.6-ms frame from the onset, re-zeroed by F1 global; F6 refuses without F1 global (gaps not invariant under median)",
+     "absolute_pitch": "3 x pitch + track, in bins (thirds of a semitone)",
+     "families_J1": "both: on_j more than 30 ms after on_i, 1 to 3 semitones apart; sequential: on_j - off_i within +-60 ms, gap |3(p_i - p_j) + median of i's last K frames - median of j's first K frames|; overlapping: on_j more than 60 ms before off_i, gap |median over the frames both sound of the same difference|, at least K frames; disjoint",
+     "grid": "K in {1, 3, 5}; gap <= {0, 1, 2}; sequential alone or with overlapping; 18 points, every one reported",
+     "chains": "each note at most one predecessor and one successor: the smallest gap first, a tie the later onset",
+     "stitched_track": "on each frame the track of the latest-started member sounding then plus 3 x (member pitch - head pitch); a frame with no member sounding holds the last value (an overlapping pair switches on j's first frame)",
+     "padding": "the stitched track holds its last value through the note-off plus 150 ms; stitched notes only",
+     "keep_F6b": "a stitched note carries keep_bend; bend_curve skips the clear loop for it; measured as stitch cleared against stitch kept",
+     "track_candidates": "the members' own tracks, or a line through the member pitches",
+     "F6c": "only on evidence from B, each alone on a frozen F6a+b: a chain merging into the held note (unison bend); a same-pitch re-find inside a chain",
+     "on_L_bend_events": "K = 3: up-hops 1, 1, 1, 2, 2, 1, artefact down-hops 0, 6, 6; K = 1: 0, 0, 1, 0, 0, 0 and 0, 0, 6; K = 5: 2 x 6 and 6, 6, 6; the junction margin is one bin (a picked semitone at 3, the loosest point admits 2)"
+    },
+    "seen": {
+     "label": "seen before the declaration (the planner's exploratory probes)",
+     "D_joins": "stored events, no clean-up or snap; annotated plucks / unannotated / annotated legato joined: F3's lean sequential 34 of 209 / 28 of 137 / 4 of 9; K=3 gap<=1 seq 2 / 12 / 0 of 9; K=3 gap<=2 seq 2 / 17 / 0 of 9; K=5 gap<=1 seq 2 / 7 / 0 of 9; K=1 gap<=1 seq 14 / 23 / 1 of 9; K=3 overlapping (every gap) 2 of 19 / 6 of 42 / 4 of 5",
+     "D_legato": "the 9 sequential legato pairs are 2 bends, 3 hammers, 4 slides; the continuity test joins none; unannotated joins are of unknown status, not wins; recall on real bends unshown",
+     "other": "Db's annotation counts (about 62 annotated bends on D's items outside their D windows); L's bend events; build 2's synthesis reports; item_102's annotation counts (13 notes, 7 bends); nothing of Guitar-TECHS, no E note file, no detector run"
+    },
+    "E_relabel": "any rule change made after inspecting item_102's notes relabels E as designed-on for that rule",
+    "bend_list_artefact": "L's bend list's true tracks are 98 frames (1.14 s) on 1.5-s notes: the audio steps back mid-note and Basic Pitch hears new notes at 64 @1.625, 67 @3.635, 69 @5.633; amendment A: scored only up to each true track's end (frames 0-97), a rebuilt onset after it never scored; the re-truth (zeros to the note-off) reported beside, never deciding",
+    "correction_12q": "12q's 'the bend list's 7 splits all joined' counted candidate pairs, not joins that took effect: join_glides drops a pair whose first note was joined away",
+    "sets": "B (ten made-up bend lists, decides; 7 positives, 3 controls; true tracks over the note plus the 150-ms release, bent true notes keep_bend); L bend (decides, designed-on, per A); L's nine bend-free lists, B's controls, Guitar-TECHS's 79 windows (harm; every join false); D (harm, seen, distance reported only, 12s); Db (confirms); E (held out, after the freeze)",
+    "measures": "bend error (per true bent frame, the nearest rebuilt note sounding then and not matched to another true note, as played after bend_curve; mean abs bins, the share of frames with none, release frames beside); extra attacks per true bent note; note error per list (unmatched rebuilt + unmatched true, every note the same weight); second note lost per B positive (E); joins by articulation and interval; bent-but-cleared unstitched notes; counts with Clopper-Pearson 90% intervals, paired differences interval90 clustered by list, file or item; the bend ladder (true, flattened, re-plucked steps) checks the measures",
+    "pick_rule": "B1: the minimum summed note error over B and L bend; candidates every point whose paired difference against it (by list) has a 90% interval spanning zero; B2: on candidates, first the declared harm step (fewer joins on bend-free material: L's nine, B's controls, Guitar-TECHS, labelled deciding for harm), then sequential only, then the smaller gap, then K by the preference 3, 5, 1; track and keep by lower bend error on the same lists, a tie own tracks then cleared; Db only confirms (designed-on if it enters a pick); no bar anywhere",
+    "keep_call": "B3: kept when on the deciding sets (B + L bend per A) the picked point's note error less F1-only's has a 90% interval below zero and no harm set (L's nine, B's controls, Guitar-TECHS) has F6 less F1-only above zero; not kept when the deciding interval or any harm interval lies above zero; otherwise undecided (undecided-but-audible when tr-di differs on a faulted card's item: item_102, item_123, item_39; the ear page decides); raw false-join counts with Clopper-Pearson intervals beside, deciding nothing",
+    "arms_beside": "unsplit bends (bent-but-cleared unstitched notes counted on B, Db and E; above zero at true bends opens its own arm); pad every bent note (a separate build; notes that end bent and the release-frame bend error reported); never inside build 3",
+    "amendments": "review round 2, binding: J1 pair families; A L bend scored to each true track's end; B1 ties; B2 order wording; B3 the keep call; C1 build 3's own score-check and search-check before its search; C2 a refused or rerun part never carried; C3 the all-parts ITT with carried parts an exact 0 beside the changed-parts-only pair, --against's require_row keys from the --against build; D1 the search code's source test by a call-graph walk; D2 --declared runs on main; E second note lost per B positive",
+    "filled_in": "B: four instances a list every 2.4 s from 0.5 s, notes 1.6 s, the bend rising 0.25 s after the pluck over 18 frames as an integer staircase (bend_curve plays it unchanged), the release from 0.85 s over 18 frames, played ring-soft without a cut at -22.9 LUFS, transcribed with pre_s 0; Db's windows on the ear items' 5-s grid, inside the item, clear of its D window, greedy by the most annotated bends not yet held (a tie the earlier start), never overlapping; the line track linear through (each member's onset, 3 x (its pitch - the head's)), held after the last onset; a rebuilt note sounds to its note-off plus 150 ms in the bend error, truth frames at their centres; A's unscored span from each bent true track's end less the matcher's 50-ms tolerance to its note-off; extra attacks inside the true track's span; on Db and E an annotated bend's fragments are the unmatched rebuilt onsets in its span at 1 to 3 semitones; pad every bent note pads the notes whose played curve ends bent; track and keep by B1's tie rule then the preference",
+    "merges": "M1 this declaration and code; M2 phase_nr_1_redo_bend_lists; M3 phase_nr_1_redo_fix_bend_frozen; M4 phase_scratch_notes_dry_b3; M5 build 3's ear verdict key; M6 phase_scratch_notes_answers_b3; nothing of F6 merges before all three of build 1's search shards have started; every merge trips redo_on_main for older checkouts, so later build 1 or 2 commands run from a fresh frozen worktree of the then-current main; build 3's search queues third, from M4's merge commit",
+    "code": "learn/note_fixes.py (f6_pairs, f6_chains, stitched_track, f6_stitch, apply_fixes F6 and the key whitelist, BEND_LISTS, bend-lists, bend-windows, isolate-bend, e-read, exposure), learn/note_rebuild.py (bend_curve's keep_bend), learn/scratch_notes.py (pair-builds --against, carry); cmd_search and learn/scratch_search.py byte-identical to b238f6c8 by a source test",
+    "next": "M1; M2 phase_nr_1_redo_bend_lists (lists_sha256, windows_sha256); isolate-bend --declared from merged main; the pick into phase_nr_1_redo_fix_bend_frozen (M3) with the b3k arm and its ear rule",
+    "decision_f6b_tie": {
+     "label": "decision agent's call, after the preliminary isolate-bend (the tie seen; the ear answers unseen); a delegated technical decision, not the user's go",
+     "seen": "own kept against own cleared +0.007 [-0.007, +0.022] over 8 lists, 7 exact zeros; only bend-unison differs (cleared 0.260 bins, kept 0.200, F1 alone 0.204)",
+     "build3": {
+      "F1": "global",
+      "F6": {
+       "K": 5,
+       "gap": 2,
+       "family": "sequential",
+       "track": "own",
+       "keep": false
+      },
+      "loud": null
+     },
+     "F6b": "undecided by the score, not failed",
+     "ear_arm": "b3k (the F6b ear arm): identical except keep true, on the same page and items",
+     "guard_1": "Only cards that differ. A b3k card exists only for an item whose b3k tr-di differs from build 3's (sha256). If b3k changes no ear item, it gets no cards and no renders; F6b then stays undecided, recorded as 'not exposed on this page'.",
+     "ear_rule": "Read on b3k's cards against build 3's cards for the same items: b3k replaces build 3 for the search when, on at least one item, the user's answers name a bend fault (c12's class: bend removed or flattened) that build 3 has and b3k does not, and no b3k card has a fault its build 3 twin lacks. Build 3 stays (cleared) otherwise. That covers a tie by ear, mixed answers, and b3k worse anywhere. This is the declared tie rule carried over to the ear. No count or threshold is set. One clear heard fix with no heard harm decides.",
+     "stop": "if the declared isolate-bend picks another track or keep, stop and report; the arm stays only if the declared run also ties",
+     "queue": "build 3's search queued third; if the page is not read when its slot opens, build 3 (cleared) starts as declared; if b3k wins later, only the parts whose tr-di differs are searched, carry --from b3 for the rest",
+     "report_only": "isolate-bend: per harm set and per B positive, the stitched notes whose played curve differs between keep and cleared (own tracks), deciding nothing, Db not read for this call; after the freeze, exposure and e-read per ear item whether b3k's tr-di differs from build 3's, the faulted cards first (item_102, item_123, item_39)",
+     "page": "redo-page takes a second --build-sha for b3k's cards in the regular layout, as its own reviewed change; each verdict under its own ear_key(sha); the frozen key (M3) records the frozen rule, F6b undecided by the score, the b3k arm and the ear rule"
+    },
+    "run_record": "bf2cb95e (declaration and code) before any figure; bend-lists (lists.json 9449f985...a864) and bend-windows (windows.json 0cb49d74...5eca, 14 windows, 53 annotated bends) ran from it; f01c0c4e after that run and before any isolate-bend figure, a report only (F1's bent-but-cleared at true bends), no pick input changed; the preliminary isolate-bend from f01c0c4e; e-read reads E only with --declared",
+    "unsplit_arm_fired": "the declared rule fired: Db's bent-but-cleared notes at true bends are 4 under F1 and 2 at the preliminary pick (B 0): the unsplit arm opens as its own arm, outside build 3"
    }
   },
   {

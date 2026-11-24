@@ -15,6 +15,8 @@ record. Same draw, Cen, partners, budget, seeds, checkpoints and halves as rows 
     $MAIN -m learn.scratch_notes answers           # step 10 (zero renders): its sha256 -> phase_scratch_notes_answers
     $MAIN -m learn.scratch_notes score --shard 0/3 # step 11: the only step that reads a held half
     $MAIN -m learn.scratch_notes read              # step 11 (zero renders): D_notes, FN_TABLE's code, once
+    $MAIN -m learn.scratch_notes carry --build-name b3 --from b2     # note-rebuild-plan 12t: equal tr-di, 2 renders
+    $MAIN -m learn.scratch_notes pair-builds --build-name b3 --against b2   # zero renders; default against build 1
 
 Every command refuses unless this checkout runs main's redo (`note_transcribe.redo_on_main`) and main's ledger holds
 `phase_scratch_notes`, `phase_scratch_both_outcome` and `phase_nr_1_redo`. `search` refuses until both checks have
@@ -400,6 +402,44 @@ def pair_answers_refusal(ans, name, dry_rec):
     return None
 
 
+def carry_candidates(new_parts, old_parts, old_recs, reran):
+    """(Pure.) `carry`'s candidates (note-rebuild-plan 12t unit 6, amendment C2): the parts whose `tr-di` sha256 is
+    the same in both builds and whose other build's search record is for that dry guitar, is not a technical refusal
+    and was not rerun (a refused or rerun part is never carried; it is searched again). new_parts, old_parts: the
+    builds' `parts`; old_recs: {pkey: the other build's search record}; reran: the parts with a rerun record.
+    -> (candidates, {pkey: why not carried})."""
+    cands, why = [], {}
+    for pk in sorted(new_parts):
+        sha = new_parts[pk]["arms"][DRY]["sha256"]
+        rec = old_recs.get(pk)
+        if pk not in old_parts or old_parts[pk]["arms"][DRY]["sha256"] != sha:
+            why[pk] = "its tr-di differs"
+        elif rec is None:
+            why[pk] = "not searched in the other build"
+        elif rec.get("dry_sha256") != sha:
+            why[pk] = "the other build's record is for another dry guitar"
+        elif S.refused_record(rec):
+            why[pk] = "a technical refusal there (C2: searched again)"
+        elif pk in reran:
+            why[pk] = "rerun there (C2: searched again)"
+        else:
+            cands.append(pk)
+    return cands, why
+
+
+def carry_mismatches(new_refs, old_refs):
+    """(Pure.) The parts whose recomputed start reference's render sha256 is not the other build's (or is missing on
+    either side). One mismatch carries nothing (12t unit 6). new_refs, old_refs: {pkey: render_sha256 or None}."""
+    return sorted(pk for pk in new_refs if not new_refs[pk] or new_refs[pk] != old_refs.get(pk))
+
+
+def carried_pair(vals, carried):
+    """(Pure.) Amendment C3: the all-parts intent-to-treat figure, a carried part adding an exact 0 (its record is
+    the other build's), beside the changed-parts-only pair. vals: {pkey: difference}. -> (all parts, changed only)."""
+    return ({k: (0.0 if k in carried else v) for k, v in vals.items()},
+            {k: v for k, v in vals.items() if k not in carried})
+
+
 def checks_passed(score_result, search_result):
     """(Pure.) Why `search` refuses on the checks, or None: both result files exist and passed."""
     for name, r in (("score-check", score_result), ("search-check", search_result)):
@@ -472,8 +512,21 @@ def score_path(pk, name=None):
     return build_dir(name or BUILD_NAME) / "score" / f"{pk}.json"
 
 
-def pair_path():
-    return notes_dir() / "pair-b1.json"
+def pair_path(against=None):
+    """The paired figure's file: `pair-b1.json` against build 1 (the default), `pair-<against>.json` otherwise."""
+    return notes_dir() / f"pair-{against or 'b1'}.json"
+
+
+def record_path(kind, pk, name=None):
+    """(Pure.) Build `name`'s search record or start reference (`kind` "search" or "start-ref") for part `pk`; the
+    search's own `search_path` and `start_path` are left as they are (the search code stays byte-identical, 12t D1)."""
+    if kind not in ("search", "start-ref"):
+        raise ValueError(kind)
+    return build_dir(name) / kind / f"{pk}.json"
+
+
+def carry_path():
+    return notes_dir() / "carry.json"
 
 
 def report_path():
@@ -991,22 +1044,32 @@ def cmd_pair_builds(_args):
     (`scratch_search.read_row_parts`), on S1's intent-to-treat numbers (`build_pair`): per arm, the mean and 90%
     interval on BKS+GOAT (the 40, clean, crunch; `paired_reading` beside) and per set (`set_rows`), each build's
     refusals and ear label beside, and the passing-only pairs beside. The readings use the user's SMALL and BIG (0.05
-    and 0.10), kept by the bar-conversion record: they only label, never decide. -> notes-<name>/pair-b1.json."""
-    m = require_row(NT.PHASE_INSTALL, NT.PHASE_NOTES, ladder=(dry_key(), dry_key(BUILD_NAME), answers_key(),
-                                                              answers_key(BUILD_NAME)))
-    if not BUILD_NAME:
-        raise SystemExit("pair-builds pairs a later build (--build-name) with build 1")
-    NT.never_overwrite(pair_path())
+    and 0.10), kept by the bar-conversion record: they only label, never decide. -> notes-<name>/pair-b1.json.
+    `--against NAME` (note-rebuild-plan 12t, amendment C3) pairs with that build instead, its `require_row` keys
+    (`dry_key`, `answers_key`) taken from it, and writes `pair-<NAME>.json`; the parts `carry` copied from it
+    (`carry.json`) add an exact 0 to the all-parts figure, the changed-parts-only pair beside (the all-parts read is
+    likely "matches / level", stated before it is read)."""
+    against = getattr(_args, "against", None) or None
+    m = require_row(NT.PHASE_INSTALL, NT.PHASE_NOTES, ladder=(dry_key(against), dry_key(BUILD_NAME),
+                                                              answers_key(against), answers_key(BUILD_NAME)))
+    if not BUILD_NAME or BUILD_NAME == against:
+        raise SystemExit("pair-builds pairs a later build (--build-name) with build 1 or another build (--against)")
+    NT.never_overwrite(pair_path(against))
     from learn import note_replay as R
     from learn import pipeline_fix as P
 
     ladder = m.get(LEDGER_ID) or {}
+    carried = set()
+    if carry_path().exists():
+        cr = json.loads(carry_path().read_text())
+        if (cr.get("from") or None) == against:
+            carried = set(cr.get("carried") or [])
     draw = notes_draw()
     sd = R.Stored()
     rby = {p["pkey"]: p for p in R.require_draw()["parts"]}
     sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}
     side = {}
-    for name in (BUILD_NAME, None):
+    for name in (BUILD_NAME, against):
         ans = NT.require_file_hash(ladder, answers_key(name), answers_path(name))
         why = pair_answers_refusal(ans, name, ladder.get(dry_key(name)))
         if why:
@@ -1017,25 +1080,103 @@ def cmd_pair_builds(_args):
                       "answers_sha256": S.file_sha(answers_path(name)),
                       "refusal_report": S.refusal_report(refused, sets_of, DECIDING),
                       "ear": ear_label(m.get(NT.LEDGER_ID), (ladder.get(dry_key(name)) or {}).get("sha256"))}
-    new, old = side[BUILD_NAME], side[None]
+    new, old = side[BUILD_NAME], side[against]
     pair = build_pair(new["per"], old["per"], new["refused"], old["refused"])
+    if carried:
+        for d in pair.values():
+            d["measured_on_carried"] = {k: v for k, v in d["itt"].items() if k in carried}
+            d["itt"], d["changed_only"] = carried_pair(d["itt"], carried)
     arms = {}
     for arm, d in pair.items():
         arms[arm] = {}
         for kind, vals in d.items():
+            if kind == "measured_on_carried":
+                continue
             rows = set_rows(sd, draw, vals)
             bg = (rows or {}).get("bks_goat") or {}
             arms[arm][kind] = {"parts": len(vals), "bks_goat": bg, "reading": paired_reading(bg.get("all")),
                                "rows": rows}
-    out = {"plan": PLAN, "row": ROW, "pair": f"{BUILD_NAME} less build 1", "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+    who = f"build {against}" if against else "build 1"
+    out = {"plan": PLAN, "row": ROW, "pair": f"{BUILD_NAME} less {who}", "time": time.strftime("%Y-%m-%d %H:%M:%S"),
            "renders": 0, "code_provisional": True,       # 12q R5: a figure beside the two reads, no code of its own
            "builds": {(n or "1"): {k: v for k, v in b.items() if k != "per"} for n, b in side.items()},
-           "arms": arms, "per_part": pair}
-    P.save(pair_path(), out)
+           "carried": sorted(carried), "arms": arms, "per_part": pair}
+    if carried:
+        out["stated_before"] = ("the all-parts read, carried parts adding an exact 0, is likely 'matches / level' "
+                                "(12t C3); the changed-parts-only pair is read beside it")
+    P.save(pair_path(against), out)
     for arm, a in arms.items():
         iv = a["itt"]["bks_goat"].get("all") or {}
-        print(f"{BUILD_NAME} less build 1, {arm}: on the 40 {iv.get('mean')} [{iv.get('lo90')}, {iv.get('hi90')}] -> "
-              f"{(a['itt']['reading'] or {}).get('reading')} ({new['ear']}; build 1 {old['ear']})")
+        print(f"{BUILD_NAME} less {who}, {arm}: on the 40 {iv.get('mean')} [{iv.get('lo90')}, {iv.get('hi90')}] -> "
+              f"{(a['itt']['reading'] or {}).get('reading')} ({new['ear']}; {who} {old['ear']})")
+
+
+def cmd_carry(args):
+    """note-rebuild-plan 12t unit 6 (2 renders a part): before this build's search, each part whose `tr-di` sha256
+    equals build `--from`'s takes that build's search record, after its start reference is recomputed here (2 renders,
+    `start_reference`, written to this build's `start-ref/`) and its `render_sha256` matches the other build's; one
+    mismatch carries nothing. A technical refusal or a rerun there is never carried (C2). The records are copied byte
+    for byte (never over an existing one), so `search` skips them; `carry.json` lists what was carried."""
+    src = getattr(args, "carry_from", None) or None
+    m = require_row(NT.PHASE_INSTALL, NT.PHASE_NOTES, ladder=(dry_key(BUILD_NAME), dry_key(src)))
+    if not BUILD_NAME or src == BUILD_NAME:
+        raise SystemExit("carry copies into a later build (--build-name) from another (--from)")
+    why = checks_passed(check_result("check-score"), check_result("check-search"))
+    if why:
+        raise SystemExit(why)
+    build = require_build(m)
+    require_install_record(m)
+    old = NT.require_file_hash(m.get(LEDGER_ID), dry_key(src), NT.build_path(src))
+    NT.never_overwrite(carry_path())
+    from learn import cc_build as CB
+    from learn import note_replay as R
+    from learn import pipeline_fix as P
+    from learn import pretrain_set as PS
+    from learn import trusted_data as T
+
+    R.no_separation_beside()
+    draw = notes_draw()
+    sd = R.Stored()
+    if sd.st["sha256"] != draw["c3r_sha256"]:
+        raise SystemExit("C3r's state changed since the draw")
+    by = {p["pkey"]: p for p in draw["parts"]}
+    old_recs, reran = {}, set()
+    for pk in by:
+        rp = record_path("search", pk, src)
+        if rp.exists():
+            old_recs[pk] = json.loads(rp.read_text())
+        if S.rerun_path(rp).exists():
+            reran.add(pk)
+    cands, skipped = carry_candidates(build["parts"], old["parts"], old_recs, reran)
+    for pk in cands:
+        NT.never_overwrite(search_path(pk))
+    new_refs, old_refs, renders = {}, {}, 0
+    for pk in cands:
+        if PS.free_gb() < T.DISK_GUARD_GB:
+            raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+        p = by[pk]
+        x32 = NT.load_dry(DRY, pk, build)
+        sha = build["parts"][pk]["arms"][DRY]["sha256"]
+        if S.npy_sha(x32) != sha:
+            raise SystemExit(f"{pk}: the loaded dry guitar is not the hashed build's {DRY}")
+        _, used = start_reference(p, x32, S.load_ref_blank(sd, p, REF), CB.new_renderer, start_path(pk), sha)
+        renders += used
+        new_refs[pk] = json.loads(start_path(pk).read_text()).get("render_sha256")
+        op = record_path("start-ref", pk, src)
+        old_refs[pk] = json.loads(op.read_text()).get("render_sha256") if op.exists() else None
+    mism = carry_mismatches(new_refs, old_refs)
+    carried = [] if mism else cands
+    for pk in carried:
+        dst = search_path(pk)
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes(record_path("search", pk, src).read_bytes())
+    P.save(carry_path(), {"plan": "docs/note-rebuild-plan.md 12t unit 6", "row": ROW, "build_name": BUILD_NAME,
+                          "from": src, "renders": renders, "candidates": cands, "mismatches": mism,
+                          "carried": carried, "not_carried": skipped,
+                          "records_sha256": {pk: S.file_sha(search_path(pk)) for pk in carried},
+                          "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"CARRY {src or 1} -> {BUILD_NAME}: {len(carried)} of {len(cands)} candidates carried "
+          f"({len(mism)} start-reference mismatches; one carries nothing); {renders} renders")
 
 
 def _pearson(pairs):
@@ -1051,7 +1192,8 @@ def _pearson(pairs):
 
 
 COMMANDS = {"score-check": cmd_score_check, "search-check": cmd_search_check, "search": cmd_search,
-            "answers": cmd_answers, "score": cmd_score, "read": cmd_read, "pair-builds": cmd_pair_builds}
+            "answers": cmd_answers, "score": cmd_score, "read": cmd_read, "pair-builds": cmd_pair_builds,
+            "carry": cmd_carry}
 
 
 def main(argv=None):
@@ -1069,6 +1211,8 @@ def main(argv=None):
                     "folders")
     ap.add_argument("--rerun", action="store_true",
                     help="search or score again, once, only the parts whose record refused (S1: then Cen)")
+    ap.add_argument("--against", default=None, help="pair-builds: the build paired with (default build 1; 12t C3)")
+    ap.add_argument("--from", dest="carry_from", default=None, help="carry: the build whose records are copied")
     args = ap.parse_args(argv)
     global BUILD_NAME
     BUILD_NAME = args.build_name
