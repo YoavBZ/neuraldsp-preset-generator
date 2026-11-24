@@ -81,7 +81,8 @@ CHECK_BUDGET = SN.CHECK_BUDGET           # 10
 PINNED = ("learn/scratch_search.py", "learn/scratch_notes.py", "learn/note_transcribe.py", "learn/note_rebuild.py",
           "learn/note_fixes.py", "learn/bp_run.py")
 CODE_FILES = ("learn/scratch_exact.py",) + PINNED
-SEARCH_FORBIDDEN = ("targets.json", "answers-fs-stem.json", "floors.json", "gate.json", "rows.json", "report.json")
+SEARCH_FORBIDDEN = ("targets.json", "answers-fs-stem.json", "floors.json", "rows.json", "report.json")
+# gate.json is not forbidden: stage 2's search reads it through `gate_record` (N1); it holds no settings, only G1
 SEARCH_FORBIDDEN_DIRS = ("target", "floors", "floors-real", "score", "score-rerun")
 ROOM_KEYS = ("cabParameters/leftRoomActive", "cabParameters/leftRoomMicLevel")
 LEFT_CAB, RIGHT_CAB = "cabParameters/leftCabActive", "cabParameters/rightCabActive"
@@ -89,6 +90,8 @@ LEFT_MIC = "cabParameters/leftMicType"
 SHARE_GRID = (-4.0, 4.0, 801)            # Fieller's declared grid: r from -4 to +4 in steps of 0.01 ...
 SHARE_TOL = 1e-6                         # ... each boundary bisected to this ...
 SHARE_REACH = 1e6                        # ... and an end that touches the grid followed outward (doubling) to here
+REREAD_F_NOTE = ("re-read F matches the re-read notes against the full post-fix list, notes the rebuild skipped "
+                 "included, so it understates recall slightly; it is used only beside the read")
 
 
 def answers_key(row):
@@ -238,7 +241,9 @@ def fieller_share(iv_of, den_iv, grid=SHARE_GRID, tol=SHARE_TOL, reach=SHARE_REA
     """(Pure.) F1: the share num/den as every r whose interval of (num - r * den), from the per-part values through
     `set_rows`' BKS+GOAT pool (`iv_of(r)` -> {mean, lo90, hi90}), spans zero; never from the two marginal intervals.
     Undefined when den's interval reaches zero. Solved on the declared grid, each boundary bisected to `tol`, an end
-    touching the grid followed outward by doubling to `reach`. The shape as it comes out: "bounded", "a ray", "two
+    touching the grid followed outward by doubling to `reach`; when the point estimate (where the mean is 0) lies in
+    no segment the grid found, the set is seeded there and followed outward both ways (a defined share wholly outside the
+    grid never reads empty). The shape as it comes out: "bounded", "a ray", "two
     rays", "the whole line", "several pieces" or "empty on the grid". -> dict."""
     if not den_iv or den_iv.get("lo90") is None or den_iv.get("hi90") is None:
         return {"defined": False, "why": "no interval for the denominator"}
@@ -262,9 +267,12 @@ def fieller_share(iv_of, den_iv, grid=SHARE_GRID, tol=SHARE_TOL, reach=SHARE_REA
                 a = mid
         return b
 
+    lo_r, hi_r, n = grid
+    first_step = (hi_r - lo_r) / (n - 1)
+
     def follow(r0, sign):
-        """From an inside end r0, outward: the boundary, or None (open to `reach`)."""
-        prev, step = r0, 1.0
+        """From an inside point r0, outward: the boundary, or None (open to `reach`); steps from the grid's, doubling."""
+        prev, step = r0, first_step
         while True:
             r = r0 + sign * step
             if abs(r) > reach:
@@ -273,7 +281,6 @@ def fieller_share(iv_of, den_iv, grid=SHARE_GRID, tol=SHARE_TOL, reach=SHARE_REA
                 return bisect(r, prev)
             prev, step = r, step * 2
 
-    lo_r, hi_r, n = grid
     rs = [lo_r + (hi_r - lo_r) * i / (n - 1) for i in range(n)]
     flags = [inside(r) for r in rs]
     segs, i = [], 0
@@ -290,6 +297,15 @@ def fieller_share(iv_of, den_iv, grid=SHARE_GRID, tol=SHARE_TOL, reach=SHARE_REA
         i = j + 1
     m0, m1 = (iv_of(0.0) or {}).get("mean"), (iv_of(1.0) or {}).get("mean")
     est = m0 / (m0 - m1) if m0 is not None and m1 is not None and m0 != m1 else None
+
+    def covers(s, r):
+        return (s["lo"] is None or s["lo"] <= r) and (s["hi"] is None or r <= s["hi"])
+    seeded = False
+    if est is not None and math.isfinite(est) and abs(est) <= reach and inside(est) and \
+            not any(covers(s, est) for s in segs):
+        segs.append({"lo": follow(est, -1), "hi": follow(est, +1)})   # the mean is 0 at est: seeded there (review)
+        segs.sort(key=lambda s: -math.inf if s["lo"] is None else s["lo"])
+        seeded = True
     if not segs:
         shape = "empty on the grid"
     elif len(segs) == 1:
@@ -301,7 +317,7 @@ def fieller_share(iv_of, den_iv, grid=SHARE_GRID, tol=SHARE_TOL, reach=SHARE_REA
     else:
         shape = "several pieces"
     return {"defined": True, "estimate": est, "shape": shape, "segments": segs, "grid": list(grid), "tol": tol,
-            "reach": reach, "evaluations": len(cache)}
+            "reach": reach, "seeded_at_estimate": seeded, "evaluations": len(cache)}
 
 
 # --- the gate, the codes and the list split (pure) -------------------------------------------------------------------------
@@ -428,6 +444,18 @@ def search_refusal(row, gate_rec):
         if not gate_rec.get("gate", {}).get("holds"):
             return f"{row} is stage 2 and G1 does not hold: nothing more runs; to the user"
     return None
+
+
+def phase_a_refusal(lag_failed, not_reproduced):
+    """(Pure.) Phase A's checks enforced (review nit 1): any part failing the lag check, or whose row (b) answer through
+    the true DI does not reproduce row (b)'s stored score, stops `floor-read` (nothing written) and `search`; it goes
+    to the user. -> refusal or None."""
+    bad = []
+    if lag_failed:
+        bad.append(f"the lag check fails on {len(lag_failed)} part(s)")
+    if not_reproduced:
+        bad.append(f"row (b)'s answer does not reproduce its stored score on {len(not_reproduced)} part(s)")
+    return "; ".join(bad) + ": a bug, to the user before any search" if bad else None
 
 
 def keys_refusal(local, main):
@@ -624,7 +652,13 @@ def require_records(m):
     why = field_refusal(m, PHASE_TARGETS, "records_sha256", S.file_sha(p))
     if why:
         raise SystemExit(why)
-    return json.loads(p.read_text())
+    rec = json.loads(p.read_text())
+    if "lag_failed" not in rec or "row_b_not_reproduced" not in rec:
+        raise SystemExit("records.json holds no lag check or reproduction check: not floor-read's")
+    why = phase_a_refusal(rec["lag_failed"], rec["row_b_not_reproduced"])
+    if why:
+        raise SystemExit(why)
+    return rec
 
 
 def require_targets(m):
@@ -644,7 +678,8 @@ def require_answers(m, row):
 
 
 def gate_record():
-    return json.loads(gate_path().read_text()) if gate_path().exists() else None
+    p = search_open(gate_path())                       # allowed: stage 2's search reads G1 here (N1)
+    return json.loads(p.read_text()) if p.exists() else None
 
 
 def guitar_shas(build, row):
@@ -823,7 +858,7 @@ def cmd_build(_args):
     lo, hi = _trim()
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}", "renders": 0, "bank_build": BUILD2,
            "bank_build_sha256": NR.file_sha(NT.build_path(BUILD2)), "fixes": fixes, "ring_variant": ring,
-           "loud_gamma": loud, "parts": {}}
+           "loud_gamma": loud, "reread_f_note": REREAD_F_NOTE, "parts": {}}
     pause_max = {"xn-reread": {h: 0.0 for h in K.R.HALVES}, "bank_stored": {h: 0.0 for h in K.R.HALVES}}
     for kind, key, info, rec, di, finish in parts:
         b = built[key]
@@ -1231,7 +1266,11 @@ def cmd_floor_read(_args):
             raise SystemExit(f"{k}: the target was made from another build")
     lag_bad = sorted(k for k in keys if not tg[k]["lag_ok"])
     repro_bad = sorted(k for k in keys if not fr[k]["reproduces_row_b"])
-    records = {"plan": PLAN, "build_sha256": S.file_sha(build_path()),
+    why = phase_a_refusal(lag_bad, repro_bad)
+    if why:                                              # nothing written: no hash PR, no search
+        raise SystemExit(why)
+    records = {"plan": PLAN, "build_sha256": S.file_sha(build_path()), "lag_failed": lag_bad,
+               "row_b_not_reproduced": repro_bad,
                "parts": {k: {"file_sha256": tg[k]["record_file_sha256"], "audio_sha256": tg[k]["record_audio_sha256"]}
                          for k in keys}}
     targets = {"plan": PLAN, "build_sha256": S.file_sha(build_path()), "time": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -1599,7 +1638,7 @@ def cmd_read(_args):
             f_of = {k: build["parts"][k]["reread_f"]["f"] for k in ds}
             fig = SN.by_figure(ds, f_of)
             fig["rows"] = {h: (_bg(sd, draw, ds, set(fig[h]))["bks_goat"] or {}).get("all") for h in ("lower", "upper")}
-            bs["D_star_by_reread_f"] = fig
+            bs["D_star_by_reread_f"] = dict(fig, note=REREAD_F_NOTE)
             gap = paired(real_n, real_b, f)
             bs["D_star_vs_real_gap_spearman"] = SN.spearman([(ds[k], gap[k]) for k in ds if k in gap])
             bs["real_gap"] = _bg(sd, draw, gap)

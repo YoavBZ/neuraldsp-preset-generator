@@ -1310,9 +1310,12 @@ played from single recorded notes. Replay is exact on it by construction.
   handed it with everything outside the search half set to zeros (`blank_plan`). The search process opens only the
   blanked record (`records.json` holds the records' sha256 and no settings) and its dry guitar: never `targets.json`,
   a target file, `answers-fs-stem.json` or anything scored (`search_open`; a test walks every function the search
-  reaches).
+  reaches). The one result file it may open is `gate.json`, which stage 2's search reads for G1 (N1); it holds no
+  settings.
 - **Lag 0, tested** (zero renders): per part, J0 of the record against a second target render, with the bank guitar as
-  the judge's DI, is exactly 0 on both halves at lag 0 and above 0 at lag ±1 (`lag_check`).
+  the judge's DI, is exactly 0 on both halves at lag 0 and above 0 at lag ±1 (`lag_check`). Enforced
+  (`phase_a_refusal`): a lag failure, or a part whose row (b) answer through the true DI does not reproduce row (b)'s
+  stored score (A4), stops `floor-read` with nothing written, and `search` refuses a `records.json` that lists one.
 
 | Row | Dry guitar of the search | Its G less `xn-bank`'s prices |
 |---|---|---|
@@ -1349,11 +1352,14 @@ passing-only read and the refusal report go beside, with `refusal-sensitive` whe
 - **The share (F1):** for each r, the per-part values D*_i − r·D_swap_i go through `set_rows`' BKS+GOAT pool; the share
   is every r whose 90% interval spans zero (`fieller_share`), never built from the two marginal intervals. Declared
   grid: r from −4 to +4 in steps of 0.01, each boundary bisected to 1e-6, an end touching the grid followed outward by
-  doubling to 1e6. Its shape is reported as it comes out (bounded, a ray, two rays, the whole line, several pieces).
+  doubling to 1e6 (from the grid's step). When the point estimate (where the mean is exactly 0) lies in no piece the
+  grid found, the set is seeded there and followed outward both ways, so a defined share wholly outside ±4 never reads
+  empty. Its shape is reported as it comes out (bounded, a ray, two rays, the whole line, several pieces).
   Undefined if D_swap's interval reaches zero. The same method gives every share: `xn-swap` and `xn-reread` over
   `xn-bank`, beside real build 2 over row (b).
 - **Beside:** D* split at the median re-read F (`match_notes`, the exact list against the re-read notes after build 2's
-  fixes); Spearman of D* with the part's real gap (build 2 less row (b)); clean and crunch; the checkpoints; one part
+  fixes; it matches against the full post-fix list, notes the rebuild skipped included, so it understates recall
+  slightly); Spearman of D* with the part's real gap (build 2 less row (b)); clean and crunch; the checkpoints; one part
   per partner (the first by key, 33 parts); T1's coverage after each row (whether its searched dims covered every key
   on which the target differs from Cen).
 - **The gate (G1),** read by `gate` (zero renders) after stage 1's scores: `xn-bank` reads "passes" against Cen AND

@@ -165,6 +165,25 @@ def test_fieller_is_undefined_when_the_denominator_reaches_zero():
     assert X.fieller_share(iv, _iv(-0.2, -0.3, -0.1))["defined"]         # wholly below zero is defined
 
 
+def test_fieller_seeds_at_the_estimate_outside_the_grid():
+    """Review nit 2: a defined share wholly outside the grid is found from the point estimate (the mean is 0 there),
+    never read as empty."""
+    mx, my, vx, vy = 0.10, 1.0, 0.0001, 0.0004
+    got = X.fieller_share(_lin(mx, my, vx, vy, 0.0), _iv(mx, 0.08, 0.12))
+    t2 = 1.645 ** 2
+    a, b, cc = mx * mx - t2 * vx, -2 * mx * my, my * my - t2 * vy
+    disc = math.sqrt(b * b - 4 * a * cc)
+    lo, hi = sorted(((-b - disc) / (2 * a), (-b + disc) / (2 * a)))
+    assert lo > 4                                                  # wholly outside the declared grid
+    assert got["shape"] == "bounded" and got["seeded_at_estimate"] and got["estimate"] == pytest.approx(10.0)
+    assert got["segments"][0]["lo"] == pytest.approx(lo, abs=1e-5) and got["segments"][0]["hi"] == \
+        pytest.approx(hi, abs=1e-5)
+    neg = X.fieller_share(_lin(-mx, my, vx, vy, 0.0), _iv(-mx, -0.12, -0.08))
+    assert neg["shape"] == "bounded" and neg["estimate"] == pytest.approx(-10.0) and neg["segments"][0]["hi"] < -4
+    inside = X.fieller_share(_lin(0.20, 0.10, 0.0016, 0.0009, 0.0004), _iv(0.2, 0.13, 0.27))
+    assert not inside["seeded_at_estimate"] and len(inside["segments"]) == 1   # found by the grid: no second piece
+
+
 def test_fieller_reports_rays_and_the_whole_line():
     whole = X.fieller_share(lambda r: _iv(0.0, -1e9, 1e9), _iv(1.0, 0.5, 1.5))
     assert whole["shape"] == "the whole line" and whole["segments"] == [{"lo": None, "hi": None}]
@@ -318,6 +337,56 @@ def test_stage_2_waits_for_a_holding_g1():
         assert X.search_refusal(r, {"gate": {"holds": True}}) is None
 
 
+def test_phase_as_checks_are_enforced():
+    """Review nit 1: a lag-check failure or an unreproduced row (b) score stops floor-read and the search."""
+    assert X.phase_a_refusal([], []) is None
+    assert "lag check fails on 1 part" in X.phase_a_refusal(["k"], [])
+    assert "does not reproduce its stored score on 2 part" in X.phase_a_refusal([], ["a", "b"])
+    both = X.phase_a_refusal(["k"], ["a"])
+    assert "lag check" in both and "reproduce" in both and "to the user" in both
+
+
+def _records_file(tmp_path, monkeypatch, body):
+    p = tmp_path / "records.json"
+    p.write_text(json.dumps(body))
+    monkeypatch.setattr(X, "records_path", lambda: p)
+    return {X.PHASE_TARGETS: {"records_sha256": S.file_sha(p)}}
+
+
+def test_the_search_refuses_records_with_a_failed_phase_a_check(monkeypatch, tmp_path):
+    m = _records_file(tmp_path, monkeypatch, {"parts": {}, "lag_failed": ["k"], "row_b_not_reproduced": []})
+    with pytest.raises(SystemExit, match="lag check fails"):
+        X.require_records(m)
+    m = _records_file(tmp_path, monkeypatch, {"parts": {}})                # written before the checks existed
+    with pytest.raises(SystemExit, match="holds no lag check"):
+        X.require_records(m)
+    m = _records_file(tmp_path, monkeypatch, {"parts": {"k": {}}, "lag_failed": [], "row_b_not_reproduced": []})
+    assert X.require_records(m)["parts"] == {"k": {}}
+
+
+def test_floor_read_refuses_before_writing_on_a_failed_check(monkeypatch, tmp_path):
+    """floor-read reads every part's files, then refuses on a lag failure with nothing written."""
+    monkeypatch.setattr(X, "exact_dir", lambda: tmp_path)
+    monkeypatch.setattr(X, "require_exact", lambda *a: {})
+    monkeypatch.setattr(X, "require_checks", lambda m=None: {})
+    monkeypatch.setattr(X, "require_xbuild", lambda m, hashed=True: {})
+    draw = {"parts": [_p("k1", [], {}), _p("k2", [], {})]}
+    monkeypatch.setattr(X, "context", lambda: (draw, None))
+    (tmp_path / "build.json").write_text("{}")
+    bsha = S.file_sha(tmp_path / "build.json")
+    for k in ("k1", "k2"):
+        X.record_path(k).parent.mkdir(parents=True, exist_ok=True)
+        X.record_path(k).write_bytes(b"rec" + k.encode())
+        t = {"record_file_sha256": S.file_sha(X.record_path(k)), "build_sha256": bsha, "lag_ok": k == "k1"}
+        for kind, body in (("target", t), ("floors", {}), ("floors-real", {"reproduces_row_b": True})):
+            path = X.target_path(k) if kind == "target" else X.floor_path(kind, k)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(body))
+    with pytest.raises(SystemExit, match="lag check fails on 1 part"):
+        X.cmd_floor_read(_args())
+    assert not X.targets_path().exists() and not X.records_path().exists() and not X.floors_path().exists()
+
+
 def test_the_keys_and_field_refusals():
     assert X.keys_refusal({"phase_scratch_exact": 1, "phase_fs": 2}, {"phase_scratch_exact": 1}) is None
     assert "phase_scratch_exact_targets" in X.keys_refusal({"phase_scratch_exact_targets": {}}, {})
@@ -334,11 +403,12 @@ def test_the_search_open_refuses_the_targets_and_row_bs_answers():
     base = pathlib.Path("/x/fs/exact")
     for bad in (base / "targets.json", base.parent / "answers-fs-stem.json", base / "target" / "k.json",
                 base / "floors" / "k.json", base / "floors-real" / "k.json", base / "score" / "xn-bank" / "k.json",
-                base / "floors.json", base / "gate.json"):
+                base / "floors.json", base / "rows.json", base / "report.json"):
         assert X.is_forbidden(bad), bad
         with pytest.raises(SystemExit, match="never opens"):
             X.search_open(bad)
-    for ok in (base / "records.json", base / "record" / "k.npy", base / "build.json", base / "dry" / "xn-list" / "k.npy"):
+    for ok in (base / "records.json", base / "record" / "k.npy", base / "build.json", base / "dry" / "xn-list" / "k.npy",
+               base / "gate.json"):                     # stage 2 reads G1 (N1): no settings in it
         assert not X.is_forbidden(ok) and X.search_open(ok) == ok
 
 

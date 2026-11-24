@@ -5145,7 +5145,14 @@
      "phase_scratch_exact_answers_list",
      "phase_scratch_exact_outcome"
     ],
-    "grepped": "no phase_scratch_exact* key, row name (xn-bank, xn-swap, xn-reread, xn-list), code (XN-*) or scratch_exact existed in docs/, learn/, tests/ or the ledger before this declaration"
+    "grepped": "no phase_scratch_exact* key, row name (xn-bank, xn-swap, xn-reread, xn-list), code (XN-*) or scratch_exact existed in docs/, learn/, tests/ or the ledger before this declaration",
+    "declaration_review": {
+     "verdict": "passed independent review with nits at 86f7cf0e; all four folded in before merge",
+     "nit_1": "Phase A's checks enforced (phase_a_refusal): a lag-check failure, or a part whose row (b) answer through the true DI does not reproduce row (b)'s stored score, stops floor-read with nothing written; records.json lists both checks and the search refuses one that lists a failure",
+     "nit_2": "fieller_share: when the point estimate (where the mean is exactly 0) lies in no piece the grid found, the set is seeded there and followed outward both ways from the grid's step, so a defined share wholly outside +-4 never reads 'empty on the grid'",
+     "nit_3": "gate.json is no longer in SEARCH_FORBIDDEN: stage 2's search reads G1 there through gate_record (N1); it holds no settings",
+     "nit_4": "re-read F matches the re-read notes against the full post-fix list, notes the rebuild skipped included, so it understates recall slightly; it is used only beside the read (said in build.json and the report)"
+    }
    }
   },
   {
