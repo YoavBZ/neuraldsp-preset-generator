@@ -2097,7 +2097,7 @@ def cmd_build(_args):
     fixes = json.loads(getattr(_args, "fixes", None) or "{}")
     if fixes and not name:
         raise SystemExit("a build with fixes needs --build-name: the first build is never rewritten")
-    loud, why = build_loudness(loud, fixes)               # a later build's own loudness (12s: build 2's gamma 1.0)
+    loud, why = build_loudness(loud, fixes)               # a later build's own loudness (12s: build 2 is loud null)
     if why:
         raise SystemExit(why)
     if name:

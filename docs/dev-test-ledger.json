@@ -5317,7 +5317,7 @@
    "phase_nr_1_redo_b2": {
     "decided_by": "the delegated decision agent (rebuild-f4-and-next.md), under the user's standing instruction of 2026-11-23; not the user's go",
     "F4": "as declared, out of build 2: 13 annotated notes lost on D, 11 of them the top octave of a root-fifth-octave power chord (item_165, item_55); F4b (never veto the octave in a 1-5-8 shape) queued, its D counts labelled designed on D, judged by L, Guitar-TECHS real-DI counts and the ear",
-    "D_report_only": "D's floored_logmel is report-only for extra-note fixes: it fails the ghost ladder on 9 of 19 D windows (12 with the row's balance), as 12m's ladder_outcome rule; departs from 12r for F4; D stays the judge for pitch, timing and level (F1, gamma)",
+    "D_report_only": "D's floored_logmel is report-only for extra-note fixes: it fails the ghost ladder on 9 of 19 D windows (12 with the row's balance), as 12m's ladder_outcome rule; departs from 12r for F4; D stays the judge for pitch and timing (F1); for level (gamma) it is qualified, its turn upward past gamma 1.5 perhaps the same ghost blind spot as F4",
     "build2_rule": {
      "F1": "global",
      "ring": "ring-soft",
@@ -5329,11 +5329,10 @@
     "E_read": {
      "file": "PF/note-rebuild/redo/fixes/e-read-b2-97110e5e.json",
      "sha256": "7e374273223771dd433a28628371420bfc1579856d22feaff80131b6a5c64502",
-     "build2_less_as_built": "-0.174 [-0.325, -0.022]",
-     "F1_less_as_built": "-0.182 [-0.269, -0.095]",
+     "build2_F1_alone_less_as_built": "-0.182 [-0.269, -0.095]; tuning +31.0 c -> +1.0 c",
+     "decision_agent_rule_gamma_1_less_as_built": "-0.174 [-0.325, -0.022]; tuning +31.0 c -> +0.9 c",
      "gamma_less_F1": "+0.008 [-0.128, +0.145] (item_102 +0.43)",
-     "tuning": "+31.0 c -> +0.9 c",
-     "note": "held out, read once after the freeze; the ring and gamma were picked on D, E is their test"
+     "note": "held out, read once after the freeze; the ring and gamma were picked on D, E was their test; E is now spent for gamma (used to drop it), still a fair held-out test of F1; the ear page is the next independent check"
     },
     "code": "note_transcribe.build_loudness: a later build names its own loudness in --fixes (\"loud\")",
     "next": "build --build-name b2 --fixes {\"F1\": \"global\", \"loud\": null}, its hash phase_scratch_notes_dry_b2, clips and page, the search labelled ear pending (after LOUDAR's ld-rec)",
