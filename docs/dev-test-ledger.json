@@ -4480,6 +4480,19 @@
     "about": "stem-in's short row: 23 of 23 parts answered (the 23 deciding), 0 refused, so no rerun was due (reruns: none) and nothing reads at Cen; every record's dry guitar the hashed build's (phase_scratch_loudar_dry, build.json 92ddf8ae...), exactly 50 evaluations (budget_used 50, step 1 only), checkpoint '50'. refusal_report recorded (S1). No held-half value is read before this hash is on main",
     "search_renders": 1173,
     "rates": "1,173 search renders in 1,824 process-seconds (1.55 a render) on 3 processes"
+   },
+   "phase_scratch_loudar_dry_rec": {
+    "sha256": "365a54a120c65a34bcb7ce1383570bf47c31d75c7aaee99c53ba9ef6bdb540a3",
+    "file": "PF/fs/loudar/build-rec.json",
+    "built": "2026-11-24, `build-rec` from a frozen detached worktree of main at 97110e5e (LOUDAR's code and keys as at 016c724c), every guard passed; the main read was run (report.json 6a948b30..., FL-undecided; its outcome key to follow), and ld-rec runs after it on any code (L1). Zero renders",
+    "files_sha256": {
+     "out/ld-rec/run-ld-rec-bks-panel.json": "4d6338b656a3e3395b1d38061342c66524eeeb02c24ef2bd2cec351b4f0c3b1f",
+     "figures-rec.json": "12baf995dd8707c3650ce4c5547b203668c76aa433f0ba0b08f8cc4b5118c018",
+     "in/in.json": "d418a293b89aa25555f46c23b56812ce81422ee36bd53ae9c1482581081f4886"
+    },
+    "steps": "loudar_run.py in loudar-venv on the 23 deciding clean-record clips (in/ld-rec, made by prep), CPU, 4 threads, no MPS, no render job beside, the released setting, seed slot 0: 05:35:25 to 05:58:39, 60 s a clip -> build-rec",
+    "build_checks": "one setting (released); every measured clip within 0.25 LU of -22.9; ld-rec 23 parts; the placement stop did not fire (median whole-clip lag 0 ms); the 1-ms check, report-only, reads 9 of 23 beyond (as ld-stem's 9 and ld-stem-b's 10: the envelope's cycle slips on regenerated audio)",
+    "next": "ld-rec's start reads, search (51 a part), answers and its hash, score, then read-rec; ~1,311 renders"
    }
   },
   {
