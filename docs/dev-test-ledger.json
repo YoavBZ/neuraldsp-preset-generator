@@ -5375,6 +5375,151 @@
      "ring": "ring-soft",
      "loud": 1.0
     }
+   },
+   "phase_nr_1_redo_ear_b6640c44fc78": {
+    "verdict": "fault-content",
+    "read_sha256": "9a32344ac1be52d88d18614b2c72f547332bdd291526def42a864fc2abd86837",
+    "read_file": "PF/note-rebuild/redo/ear-read-b2.json",
+    "answers_sha256": "fda42787b6ec998cb0fdd8b745804e5cdfe6078d71a39277fe66300a5a619cab",
+    "answers_file": "listening/note-rebuild-ear-page-2-b6640c44fc78/export/answers/f62efa8e1d3f.json (the page's Artifact db answers/f62efa8e1d3f, exported by the coordinator)",
+    "build": "f62efa8e1d3f",
+    "key_sha256": "eeee28651f66e7494704571bc1a2f07666b1cc2f3fb77c6da69ceb72e43f8866",
+    "dry_build_sha256": "b6640c44fc7832a1001ed9a6a9082dde9c15dbe79fade38d5aec904e2a2c2f0a",
+    "read": "2026-11-24, `note_rebuild_ear redo-read --build-sha b6640c44...` once from main at 0cad5dbc in a frozen worktree (never 4959128a, where build 2's search runs), from the page's stored answers (never from chat); all 13 cards answered by the user; zero renders",
+    "content": [
+     {
+      "card": 2,
+      "item": "item_123",
+      "cls": "crunch",
+      "heard": [
+       "extra"
+      ],
+      "note": "One bend is missing"
+     },
+     {
+      "card": 4,
+      "item": "item_39",
+      "cls": "clean",
+      "heard": [
+       "extra"
+      ],
+      "note": "Pretty accurate, small issues with bends"
+     },
+     {
+      "card": 6,
+      "item": "item_160",
+      "cls": "clean",
+      "heard": [
+       "extra"
+      ],
+      "note": "Pretty good, one extra harmonics in the end"
+     },
+     {
+      "card": 9,
+      "item": "item_77",
+      "cls": "clean",
+      "heard": [
+       "missing"
+      ],
+      "note": "Missing notes chord notes"
+     },
+     {
+      "card": 11,
+      "item": "item_123",
+      "cls": "clean",
+      "heard": [
+       "extra",
+       "missing"
+      ],
+      "note": "Issues around bends"
+     },
+     {
+      "card": 12,
+      "item": "item_102",
+      "cls": "clean",
+      "heard": [
+       "missing"
+      ],
+      "note": "When playing both a bend and a regular note together it removes the bends and split it into multiple notes"
+     }
+    ],
+    "signal": [
+     {
+      "card": 1,
+      "item": "item_46",
+      "cls": "clean",
+      "heard": [
+       "timing",
+       "tune"
+      ],
+      "note": ""
+     }
+    ],
+    "unanswered": [],
+    "cant_judge": [],
+    "control": {
+     "card": 13,
+     "item": "item_39",
+     "same": true,
+     "faults": [],
+     "note": "Perfect"
+    },
+    "heard_same": [
+     3,
+     5,
+     7,
+     8,
+     10
+    ],
+    "paired_with_page_2": {
+     "cards": "the 10 real cards both pages share (1, 3-10, 12: the same item, class and reference clip); page 2's cards 2 and 11 were the ruled-out item_5, page 3's are item_123",
+     "same_on_page_2": 2,
+     "same_on_page_3": 5,
+     "fault_to_same": [
+      3,
+      5,
+      10
+     ],
+     "same_to_fault": [],
+     "same_both": [
+      7,
+      8
+     ],
+     "fault_both": [
+      1,
+      4,
+      6,
+      9,
+      12
+     ],
+     "share_heard_same_difference": 0.3,
+     "bootstrap90_over_cards": [
+      0.1,
+      0.5
+     ],
+     "exact_sign_test_p_two_sided": 0.25,
+     "tune_heard": {
+      "page_2": [
+       1,
+       9,
+       10
+      ],
+      "page_3": [
+       1
+      ]
+     },
+     "reading": "build 2 is heard same on 3 more of the 10 shared cards and on none fewer; not distinguishable from chance on 3 discordant cards (exact sign test p 0.25). With 10 cards the bootstrap interval clears zero almost by construction, so the sign test is the figure to read. Tune was heard on 3 shared cards on page 2 and on 1 on page 3, consistent with F1's re-zeroing of bends (not shown to be its cause)",
+     "caveat": "page 3 was heard after page 2, on the same items and reference clips, so familiarity can raise \"same\" answers: a caveat beside the read, not grounds to void the sitting"
+    },
+    "fault_kinds_in_the_users_words": [
+     "One bend is missing (card 2, item_123 crunch, the new let-ring item)",
+     "Pretty accurate, small issues with bends (card 4)",
+     "Pretty good, one extra harmonics in the end (card 6)",
+     "Missing notes chord notes (card 9)",
+     "Issues around bends (card 11, item_123 clean)",
+     "When playing both a bend and a regular note together it removes the bends and split it into multiple notes (card 12)"
+    ],
+    "what_follows": "12q R5: the verdict is a label, never a gate. fs-notes's build-2 reads are labelled \"ear fault-content\" (was \"ear pending\"), and their FN code stays provisional (code_provisional is true unless the label is \"ear ok\"). What the verdict means for the row's outcome is not settled by this record"
    }
   },
   {

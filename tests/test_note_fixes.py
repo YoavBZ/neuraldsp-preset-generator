@@ -200,3 +200,17 @@ def test_build_2s_hash_on_main():
     rec = e["preset-ladder"]["phase_scratch_notes_dry_b2"]
     assert rec["sha256"].startswith("b6640c44") and rec["rule"] == {"F1": "global", "ring": "ring-soft", "loud": None,
                                                                     "muscriptor": False}
+
+
+def test_build_2s_ear_verdict_on_main_labels_its_reads():
+    import pathlib
+
+    from learn import scratch_notes as SN
+
+    e = T.entries((pathlib.Path(__file__).resolve().parents[1] / "docs" / "dev-test-ledger.json").read_text())
+    b2 = e["preset-ladder"]["phase_scratch_notes_dry_b2"]["sha256"]
+    rec = e["note-rebuild"][T.ear_key(b2)]
+    assert T.ear_key(b2) == "phase_nr_1_redo_ear_b6640c44fc78" and rec["dry_build_sha256"] == b2
+    assert rec["verdict"] == "fault-content" and rec["build"] == "f62efa8e1d3f" and not rec["unanswered"]
+    assert SN.ear_label(e["note-rebuild"], b2) == "ear fault-content"          # 12q R5: a label, never a gate
+    assert SN.ear_refusal(e["note-rebuild"], b2) is not None                    # so the FN code stays provisional
