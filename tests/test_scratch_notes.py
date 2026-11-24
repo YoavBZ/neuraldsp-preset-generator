@@ -252,7 +252,7 @@ def test_the_ear_check_gates_answers_score_and_read():
 
 def test_the_build_stop_rule_refuses_on_any_failing_ear_item():
     assert SN.build_refusal({"stopped": False, "ear_failing": []}) is None
-    assert "3 or more" in SN.build_refusal({"stopped": True, "ear_failing": []})
+    assert SN.build_refusal({"stopped": True, "ear_failing": []}) is None          # S1: a count of content refusals
     assert SN.build_refusal({"stopped": False, "ear_failing": ["item_23"]}) is None   # 12q R1: a report
 
 
@@ -344,7 +344,8 @@ def test_the_start_reference_refuses_a_priming_other_than_sx1_start(monkeypatch,
 def test_the_refusal_stop_counts_the_forty():
     sets_of = {"b1": "bks", "b2": "bks", "g1": "goat", "p1": "panel", "p2": "panel", "p3": "panel"}
     assert SN.deciding_stop({"b1": 1, "p1": 1, "p2": 1, "p3": 1}, sets_of) == (["b1"], ["p1", "p2", "p3"], False)
-    assert SN.deciding_stop({"b1": 1, "b2": 1, "g1": 1}, sets_of)[2]
+    assert SN.deciding_stop({"b1": 1, "b2": 1, "g1": 1}, sets_of) == (["b1", "b2", "g1"], [], False)    # S1
+    assert not hasattr(SN, "REFUSAL_STOP")
 
 
 def test_paired_values_and_checks_passed():
@@ -425,7 +426,7 @@ def test_rows_b_and_c_resolve_as_before():
                                                      "phase_fs_answers_blur", "phase_fs_answers_control"]
     with pytest.raises(SystemExit, match="unknown row"):
         S.phase_answers(SN.ROW)                                            # the new row is not one of S's rows
-    assert S.DECIDING == ["bks", "goat", "panel"] and S.REFUSAL_STOP == 3
+    assert S.DECIDING == ["bks", "goat", "panel"] and not S.stopped({k: 1 for k in "abcd"})
     assert S.next_row({"fs-stem": "passes", "fs-both": "passes"}) is None
 
 

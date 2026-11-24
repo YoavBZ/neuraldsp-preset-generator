@@ -32,7 +32,8 @@ def test_the_frozen_settings():
                                                 "phase_scratch_both_outcome")
     assert T.HELD_KEYS == ("phase_scratch_tone_hook", "phase_scratch_tone_answers", "phase_scratch_tone_outcome")
     assert T.ROWS == ("fs-stem", "fs-both") and T.ROW_OF == {"b": "fs-stem", "c": "fs-both"}
-    assert T.PARTS == 47 and T.REFUSAL_STOP == 3 and (T.SMALL, T.BIG) == (S.SMALL, S.BIG) == (0.05, 0.10)
+    assert T.PARTS == 47 and not hasattr(T, "REFUSAL_STOP") and (T.SMALL, T.BIG) == (S.SMALL, S.BIG) == \
+        (0.05, 0.10)
     assert dict(T.ARMS) == {"true": ("cen",), "true-noclip": ("cen", "c", "b"), "avg": ("c",),
                             "true+planted": ("c",), "true+tilt": ("c",), "avg+mild": ("cen", "c")}
     assert T.RENDERS_PER_PART == 18 and set(T.BUILT) | set(T.STORED_DRY) | {T.CODED} == set(T.DRIES)

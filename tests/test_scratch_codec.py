@@ -157,7 +157,7 @@ def test_short_answer_and_its_refusals():
             SC.short_answer(_rec(), "D", checkpoint=cp)
 
 
-def test_short_answers_stop_at_three():
+def test_short_answers_never_stop():
     parts = [{"pkey": k} for k in "abcde"]
     recs = {k: _rec() for k in "abcde"}
     shas = {k: "D" for k in "abcde"}
@@ -167,7 +167,7 @@ def test_short_answers_stop_at_three():
     assert not SC.short_answers(parts, recs, shas, str)[2]
     shas["c"] = "OTHER"
     got, refused, stop = SC.short_answers(parts, recs, shas, str)
-    assert stop and set(refused) == {"a", "b", "c"} and set(got) == {"d", "e"}
+    assert not stop and set(refused) == {"a", "b", "c"} and set(got) == {"d", "e"}   # S1: reported, read at Cen
 
 
 def test_the_full_rows_first_fifty_must_be_the_short_rows():

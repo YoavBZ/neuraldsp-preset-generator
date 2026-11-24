@@ -109,10 +109,11 @@ def test_a_stopped_row_stops_the_read():
     assert S.outcome({"fs-stem": "stopped"})["code"] == "stopped"
 
 
-def test_the_refusal_stop_is_a_count_of_three():
-    assert S.REFUSAL_STOP == 3
-    assert not S.stopped({"a": 1, "b": 2})
-    assert S.stopped({"a": 1, "b": 2, "c": 3})
+def test_no_row_stops_on_a_count_of_refusals():
+    assert not hasattr(S, "REFUSAL_STOP") and S.REFUSAL_CONF == 0.90
+    assert not S.stopped({"a": 1, "b": 2}) and not S.stopped({k: 1 for k in "abcdefgh"})
+    o = S.outcome({"fs-stem": "stopped"})
+    assert "pool lost the panel" in o["reading"] and "refusal count" not in o["reading"]
 
 
 def test_the_pool_must_keep_the_panel():

@@ -55,7 +55,7 @@ GOAT_PER_CELL = 3                        # GOAT: parts a fold and class
 PANEL_LEFT_OUT = ("Drowning",)           # the replay's bleed check (never recorded); Silent Waves was never drawn
 COUNTS = {"bks": 16, "goat": 24, "panel": 7}
 PARTNERS = 3                             # the borrowed answer: the mean of this many partners' answers
-REFUSAL_STOP = 3                         # a row with this many refused parts (of 47) stops: no reading
+REFUSAL_CONF = 0.90                      # the refused share's Clopper-Pearson interval (S1: a report, never a stop)
 START_TOL = 0.005                        # the start check: |ln(first evaluation / the replay's position 0)|
 SCORE_TOL = 0.005                        # the scoring control: |ln(Cen's held-half render / its stored value)|
 BUDGET = 200                             # step 1 (C2's)
@@ -503,14 +503,15 @@ def table_guard():
 
 
 def outcome(readings):
-    """(Pure.) The read so far. readings: {row: reading} (row (b)'s refined by B2's lever; a stopped row reads
-    "stopped"). -> {"code"/"next_row", "reading", "next"}."""
+    """(Pure.) The read so far. readings: {row: reading} (row (b)'s refined by B2's lever). No row stops on a count of
+    refusals (S1): a refused part reads at Cen. Only the user's pool rule can still leave a row unread ("stopped": the
+    pool lost the panel), which the Cen fallback no longer causes. -> {"code"/"next_row", "reading", "next"}."""
     table_guard()
     if "stopped" in readings.values():
         bad = sorted(r for r, v in readings.items() if v == "stopped")
-        return {"code": "stopped", "reading": f"{', '.join(bad)} stopped (the refusal count of {REFUSAL_STOP}, or the "
-                                              "pool lost the panel: the report's stop_reason)",
-                "next": "to the user: no row is read on from a stopped row; any way on is an amendment"}
+        return {"code": "stopped", "reading": f"{', '.join(bad)} not read: the pool lost the panel (the report's "
+                                              "stop_reason; the user's pool rule)",
+                "next": "to the user: no row is read on from an unread row; any way on is an amendment"}
     nxt = next_row(readings)
     if nxt is not None:
         return {"code": None, "next_row": nxt, "reading": "no cell yet",
@@ -554,10 +555,202 @@ def pool_refusal(rows):
     return None
 
 
-def stopped(refused, stop=REFUSAL_STOP):
-    """(Pure.) B5: a row stops when `stop` or more of its parts refused (search refusals, a missing borrowed answer and
-    scoring-control failures together)."""
-    return len(refused) >= stop
+def stopped(refused):
+    """(Pure.) S1 (phase_scratch_refusal_reports): no row stops on a count of refusals, so this is always False. The
+    count and share are reported (`refusal_report`), a technical refusal is rerun once in a fresh process and then
+    reads at Cen (`itt_per`), and a content check never refuses. Kept so every record keeps its "stopped" field."""
+    return False
+
+
+# --- refusals as reports (S1, the delegated decision agent's call under the user's no-made-up-bars rule) -------------
+
+TECHNICAL_REFUSALS = ("search", "borrowed", "scoring_control", "start", "nonfinite", "dry")
+CONTENT_REFUSALS = ("content",)          # a check against the true DI: a label on the part, never a refusal
+G_FIELDS = ("G", "G_cp50", "G_cp100", "G_cp200", "G_shrunk")   # the part's own answers, ln(x / Cen): 0 at Cen
+#   (G_centre is not: the row's centre is no part's fallback, so a refused part's G_centre stays None)
+REFUSAL_SENSITIVE = "refusal-sensitive"
+
+
+def refusal_reasons(why):
+    """(Pure.) A refusal's own reasons, unwrapped from the row's "search" wrapper (`answer_parts` stores a search
+    record's refusal as {"search": {reason: ...}}). -> {reason: ...}."""
+    if isinstance(why, dict) and set(why) == {"search"} and isinstance(why["search"], dict):
+        return why["search"]
+    return why if isinstance(why, dict) else {"search": why}
+
+
+def refusal_kind(why):
+    """(Pure.) "content" when every reason is a content check, else "technical". why: a refusal's {reason: ...}."""
+    kinds = set(refusal_reasons(why))
+    return "content" if kinds and kinds <= set(CONTENT_REFUSALS) else "technical"
+
+
+def _binom_cdf(k, n, q):
+    return sum(math.comb(n, i) * q ** i * (1 - q) ** (n - i) for i in range(0, k + 1))
+
+
+def clopper_pearson(k, n, conf=REFUSAL_CONF):
+    """(Pure.) The exact (Clopper-Pearson) two-sided interval of k successes in n, by bisection. -> (lo, hi), or
+    (None, None) when n is 0."""
+    if n <= 0:
+        return None, None
+    a = (1 - conf) / 2
+
+    def solve(f):
+        lo, hi = 0.0, 1.0
+        for _ in range(200):
+            mid = (lo + hi) / 2
+            if f(mid):
+                lo = mid
+            else:
+                hi = mid
+        return (lo + hi) / 2
+    low = 0.0 if k == 0 else solve(lambda q: 1 - _binom_cdf(k - 1, n, q) < a)
+    high = 1.0 if k == n else solve(lambda q: _binom_cdf(k, n, q) > a)
+    return low, high
+
+
+def refusal_report(refused, sets_of, deciding=None, conf=REFUSAL_CONF):
+    """(Pure.) The refusals as a report, never a stop: per set and pooled (over `deciding`, or every set), the count,
+    the parts, the share and its Clopper-Pearson interval; each refusal's kind. sets_of: {pkey: set} of every part."""
+    def cell(keys):
+        r = sorted(k for k in keys if k in refused)
+        lo, hi = clopper_pearson(len(r), len(keys), conf)
+        return {"refused": len(r), "parts": len(keys), "share": len(r) / len(keys) if keys else None,
+                f"lo{round(conf * 100)}": lo, f"hi{round(conf * 100)}": hi, "keys": r}
+    sets = sorted(set(sets_of.values()))
+    pool = [k for k, v in sets_of.items() if deciding is None or v in deciding]
+    return {"per_set": {st: cell([k for k, v in sets_of.items() if v == st]) for st in sets},
+            "pooled": cell(pool), "deciding": list(deciding) if deciding is not None else sets,
+            "kinds": {k: {"kind": refusal_kind(v), "reasons": sorted(refusal_reasons(v))}
+                      for k, v in sorted(refused.items())}, "stops": False}
+
+
+def itt_per(per, refused, fields=G_FIELDS):
+    """(Pure.) The intent-to-treat per-part numbers: a refused part with no numbers reads at Cen, its answer's
+    fallback (every ln(x / Cen) field 0.0, the rest None: I and the borrowed answer need the partners scored on it),
+    marked `cen_fallback`. A part with numbers keeps them; with nothing refused this is `per` unchanged."""
+    out = dict(per)
+    for k in refused:
+        if out.get(k) is None:
+            out[k] = dict({f: 0.0 for f in fields}, cen_fallback=True)
+    return out
+
+
+def itt_values(values, refused, cen=0.0):
+    """(Pure.) As `itt_per` for one number a part ({pkey: value or None}): a refused part without a value reads `cen`
+    (0.0: Cen less Cen)."""
+    out = dict(values)
+    for k in refused:
+        if out.get(k) is None:
+            out[k] = cen
+    return out
+
+
+def passing_only(per, refused):
+    """(Pure.) The passing-only numbers beside the deciding read: every refused part dropped."""
+    return {k: (None if k in refused else v) for k, v in per.items()}
+
+
+NO_PASSING_INTERVAL = "no passing-only interval"
+
+
+def refusal_label(code_itt, code_passing):
+    """(Pure.) "refusal-sensitive" when the intent-to-treat and the passing-only reads give different codes (the row
+    then goes to the user with both), else None; with no passing-only interval (`passing_code`'s None) the two reads
+    cannot be compared, and the report says so instead."""
+    if code_passing is None:
+        return None
+    return REFUSAL_SENSITIVE if code_itt != code_passing else None
+
+
+def passing_code(code_fn, ok):
+    """(Pure.) The passing-only read's code, or {"code": None, "reading": "no passing-only interval"} when it has no
+    interval (ok False), never a silent fallback to the deciding read. code_fn() -> the code record."""
+    return code_fn() if ok else {"code": None, "reading": NO_PASSING_INTERVAL}
+
+
+def mean_diff(a, b, z=1.6448536269514722):
+    """(Pure.) mean(a) - mean(b) with a normal 90% interval (Welch's standard error); None under 2 values a side."""
+    if len(a) < 2 or len(b) < 2:
+        return {"diff": None, "lo90": None, "hi90": None, "n": [len(a), len(b)]}
+    ma, mb = sum(a) / len(a), sum(b) / len(b)
+    va = sum((x - ma) ** 2 for x in a) / (len(a) - 1)
+    vb = sum((x - mb) ** 2 for x in b) / (len(b) - 1)
+    se = math.sqrt(va / len(a) + vb / len(b))
+    return {"diff": ma - mb, "lo90": ma - mb - z * se, "hi90": ma - mb + z * se, "n": [len(a), len(b)]}
+
+
+def refused_audit(parts, refused, band=None, start=None, values=None):
+    """(Pure.) How the refused parts differ from the rest, on what is known before the held half (set, amp, class,
+    lender band, Cen's search-half start value) and, after scoring, their value at the Cen fallback against the
+    passing parts' (a difference of means with its interval). parts: the draw's; band: {unit: band}; start: {pkey:
+    value}; values: {pkey: the intent-to-treat value}."""
+    ref = [p for p in parts if p["pkey"] in refused]
+    rest = [p for p in parts if p["pkey"] not in refused]
+
+    def counts(group, f):
+        out = {}
+        for p in group:
+            v = f(p)
+            out[str(v)] = out.get(str(v), 0) + 1
+        return dict(sorted(out.items()))
+    fields = {"set": lambda p: p.get("set"), "amp": lambda p: p.get("amp"), "cls": lambda p: p.get("cls"),
+              "band": lambda p: (band or {}).get(p.get("unit"))}
+    out = {"refused": sorted(p["pkey"] for p in ref),
+           "before_held": {f: {"refused": counts(ref, g), "rest": counts(rest, g)} for f, g in fields.items()}}
+    if start:
+        out["before_held"]["cen_start"] = mean_diff([start[p["pkey"]] for p in ref if p["pkey"] in start],
+                                                    [start[p["pkey"]] for p in rest if p["pkey"] in start])
+    if values:
+        out["after_scoring"] = mean_diff([values[p["pkey"]] for p in ref if values.get(p["pkey"]) is not None],
+                                         [values[p["pkey"]] for p in rest if values.get(p["pkey"]) is not None])
+    return out
+
+
+def rerun_path(path):
+    """A record's rerun: the same file name in `<dir>-rerun/` beside its directory."""
+    path = pathlib.Path(path)
+    return path.parent.parent / f"{path.parent.name}-rerun" / path.name
+
+
+def refused_record(rec, kind="search"):
+    """(Pure.) Whether a stored record refused: a search record holds "refused"; a score record a failed control."""
+    if kind == "search":
+        return "refused" in rec
+    return not rec.get("scoring_control_ok", True)
+
+
+def with_reruns(keys, path_of, kind="search"):
+    """Every record by key, a refused one replaced by its rerun's (`rerun_path`) when that passed. -> ({key: record},
+    {key: path used}, {key: "rerun passed" | "rerun refused" | "rerun pending"}). A technical refusal is rerun once in a
+    fresh process (the command's `--rerun`) before it reads at Cen; "rerun pending" means it has not been rerun yet."""
+    recs, used, status = {}, {}, {}
+    for k in keys:
+        path = pathlib.Path(path_of(k))
+        rec = json.loads(path.read_text())
+        recs[k], used[k] = rec, path
+        if not refused_record(rec, kind) or (kind == "search" and refusal_kind(rec.get("refused")) == "content"):
+            continue
+        rp = rerun_path(path)
+        if not rp.exists():
+            status[k] = "rerun pending"
+            continue
+        again = json.loads(rp.read_text())
+        if refused_record(again, kind):
+            status[k] = "rerun refused"
+        else:
+            recs[k], used[k], status[k] = again, rp, "rerun passed"
+    return recs, used, status
+
+
+def rerun_refusal(status):
+    """(Pure.) Why a read or answers step must wait: a technical refusal not yet rerun once, or None."""
+    pending = sorted(k for k, v in status.items() if v == "rerun pending")
+    if pending:
+        return (f"{len(pending)} technical refusal(s) not yet rerun once in a fresh process: run the command again "
+                f"with --rerun first ({pending})")
+    return None
 
 
 # --- paths, the ledger, refusals ------------------------------------------------------------------------------------------
@@ -1098,7 +1291,7 @@ def answer_parts(draw, recs, search_sha):
 def cmd_answers(args):
     """The row's answers from its search records (zero renders): per part the answer, step 1's incumbents at 50, 100
     and 200, the shrunk answer, the borrowed answer's partners (`borrowed`) and the row's centre (`centre`), every
-    refusal with why; the refusal count against REFUSAL_STOP. -> answers-<row>.json; its sha256 into the ledger as
+    refusal with why, reported (S1: never a stop). -> answers-<row>.json; its sha256 into the ledger as
     phase_fs_answers_<row> before `score`."""
     from learn import pipeline_fix as P
 
@@ -1118,7 +1311,7 @@ def cmd_answers(args):
            "renders": sum(r.get("renders", 0) for r in recs.values()),
            "refused": refused, "stopped": stopped(refused), "parts": parts}
     P.save(answers_path(row), out)
-    print(f"FS ANSWERS {row}: {len(parts)} parts, {len(refused)} refused{' (STOPPED)' if out['stopped'] else ''}; "
+    print(f"FS ANSWERS {row}: {len(parts)} parts, {len(refused)} refused (each reads at Cen); "
           f"{out['renders']} search renders; sha256 {file_sha(answers_path(row))} (into the ledger as "
           f"{phase_answers(row)} before `score`)")
 
@@ -1184,8 +1377,8 @@ def cmd_score(args):
     draw = require_draw()
     require_turn(row)
     ans = require_hash(phase_answers(row), answers_path(row))
-    if ans["stopped"]:
-        raise SystemExit(f"{row} stopped at the refusal count: nothing is scored")
+    if ans.get("stopped"):                               # no answers file is written stopped since S1
+        raise SystemExit(f"{row}'s answers were written stopped: nothing is scored")
     NR.no_separation_beside()
     sd = NR.Stored()
     if sd.st["sha256"] != draw["c3r_sha256"]:
@@ -1242,13 +1435,20 @@ def read_row_parts(draw, ans, answers_sha, score_file, sd, rby):
     per, replaced, ctl_miss = {}, {}, []
     for p in draw["parts"]:
         k = p["pkey"]
-        if ans["stopped"] or k not in ans["parts"]:    # a stopped row was never scored
+        if ans.get("stopped") or k not in ans["parts"]:    # a refused part (or a pre-S1 stopped row) was not scored
             per[k] = None
             continue
         sp = score_file(k)
         if not sp.exists():
             raise SystemExit(f"{k}: not scored")
         sc = json.loads(sp.read_text())
+        if not sc["scoring_control_ok"]:                 # S1: a miss is rerun once in a fresh process first
+            if not rerun_path(sp).exists():
+                raise SystemExit(f"{k}: a scoring-control miss not yet rerun once in a fresh process: run `score "
+                                 "--rerun` first")
+            again = json.loads(rerun_path(sp).read_text())
+            if again["scoring_control_ok"]:
+                sc = again
         if sc["answers_sha256"] != answers_sha:
             raise SystemExit(f"{k}: scored from other answers")
         if not sc["scoring_control_ok"]:
@@ -1267,17 +1467,17 @@ def read_row_parts(draw, ans, answers_sha, score_file, sd, rby):
 
 
 def report_body(row, letter, answers_sha, per, refused, replaced, ctl_miss):
-    """(Pure.) A row's report before its rows: as `cmd_read` writes it."""
+    """(Pure.) A row's report before its rows: as `cmd_read` writes it. No row stops on its refusals (S1)."""
     return {"plan": PLAN, "row": row, "letter": letter, "answers_sha256": answers_sha,
             "time": time.strftime("%Y-%m-%d %H:%M:%S"), "refused": refused, "stopped": stopped(refused),
-            "stop_reason": f"{len(refused)} refused (the stop is {REFUSAL_STOP})" if stopped(refused) else None,
-            "nonfinite_replaced": replaced, "scoring_control_misses": ctl_miss, "parts": per}
+            "stop_reason": None, "nonfinite_replaced": replaced, "scoring_control_misses": ctl_miss, "parts": per}
 
 
 def cmd_read(args):
     """The row's reading (zero renders), once: the per-part numbers from the scored files (`nonfinite_rule`,
-    `part_numbers`), the refusals (search, borrowed answer, scoring control) against REFUSAL_STOP, the rows saved
-    before the reading; then the outcome so far (`outcome`: the cell, or the coded next row). -> report-<row>.json."""
+    `part_numbers`), the refusals (search, borrowed answer, scoring control) reported and each read at Cen (S1: the
+    deciding read on every part; the passing-only read beside, with `refusal_label`), the rows saved before the
+    reading; then the outcome so far (`outcome`: the cell, or the coded next row). -> report-<row>.json."""
     from learn import note_replay as NR
     from learn import pipeline_fix as P
 
@@ -1291,19 +1491,29 @@ def cmd_read(args):
     per, refused, replaced, ctl_miss = read_row_parts(draw, ans, file_sha(answers_path(row)),
                                                       lambda k: score_path(row, k), sd, rby)
     out = report_body(row, LETTER[row], file_sha(answers_path(row)), per, refused, replaced, ctl_miss)
-    if not out["stopped"]:
-        rows = summarise_row(sd, draw, per)
-        never_overwrite(rows_path(row))
-        P.save(rows_path(row), dict(out, rows=rows))     # the rows are saved before the reading (their own file)
-        why = pool_refusal(rows)
-        if why:                                          # the user's pool or nothing: to the user
-            out.update(stopped=True, stop_reason=why)
-        else:
-            rows["reading"] = row_reading(rows["G"]["deciding_pool"], rows["I"]["deciding_pool"])
-            rows["reading_bks_goat"] = row_reading(rows["G"]["bks_goat"], rows["I"]["bks_goat"])
-        out["rows"] = rows
+    sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}
+    out["refusal_report"] = refusal_report(refused, sets_of, DECIDING)
+    rows = summarise_row(sd, draw, itt_per(per, refused))           # the deciding read: every part (S1)
+    dry, ref = ROWS[row]
+    start = {p["pkey"]: ((p.get("start_ref") or {}).get(dry) or {}).get(ref) for p in draw["parts"]}
+    rows_pass = summarise_row(sd, draw, passing_only(per, refused)) if refused else rows
+    never_overwrite(rows_path(row))
+    P.save(rows_path(row), dict(out, rows=rows, rows_passing_only=rows_pass))   # saved before the reading
+    why = pool_refusal(rows)
+    if why:                                              # the user's pool or nothing: to the user
+        out.update(stopped=True, stop_reason=why)
     else:
-        out["rows"] = None
+        rows["reading"] = row_reading(rows["G"]["deciding_pool"], rows["I"]["deciding_pool"])
+        rows["reading_bks_goat"] = row_reading(rows["G"]["bks_goat"], rows["I"]["bks_goat"])
+        passing = row_reading((rows_pass.get("G") or {}).get("deciding_pool"),
+                              (rows_pass.get("I") or {}).get("deciding_pool")) if refused else rows["reading"]
+        out["reading_passing_only"] = passing
+        out["label"] = refusal_label((rows["reading"] or {}).get("reading"), (passing or {}).get("reading"))
+        if refused:
+            g_itt = {k: (v or {}).get("G") for k, v in itt_per(per, refused).items()}
+            out["refused_audit"] = refused_audit(draw["parts"], refused, NR.lender_band(),
+                                                 start={k: v for k, v in start.items() if v is not None}, values=g_itt)
+    out["rows"] = rows
     P.save(report_path(row), out)                        # one write: the report holds its reading or its stop
     m = require_on_main(PHASE)
     o = outcome(read_so_far(m))

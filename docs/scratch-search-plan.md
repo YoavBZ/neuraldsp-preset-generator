@@ -187,7 +187,8 @@ each ≤ 0. Then, with the Control passing, row (c) runs.
   its reading or its stop, and every report must be read from answers hashed on main.
 - **The refusal stop (B5):** a row with **3 or more of its 47 parts refused** (a start-check miss, an unusable start, a
   missing borrowed answer, a scoring-control miss) stops: no reading, nothing runs on, to the user. The replay's 3
-  parts with non-finite blurred-DI renders were checked at the draw: none is drawn.
+  parts with non-finite blurred-DI renders were checked at the draw: none is drawn. **Retired by section 14 (S1,
+  2026-11-24): no row stops on a count of refusals.**
 
 **Power (planning read, from the replay's per-part numbers).** On a stem row the pool's half-width for G is about
 ±0.165, set by the panel: a true G of −0.25 or beyond passes, about −0.17 is the edge, −0.12 reads undecided; a fail
@@ -862,7 +863,8 @@ log-mel distance ranks the per-part cost at +0.52 to +0.56, and a codec errs dif
 - **Guards** (every command): `scratch_search.on_main` (`learn/scratch_search.py` and the `phase_fs*` keys equal
   main's); `learn/scratch_codec.py` and `learn/codec_roundtrip.py` equal main's; the `phase_scratch_codec*` keys equal
   main's; main's blob of `learn/scratch_search.py` is `2420043a4483a482925bed5b87e54692619a305d`, the one `fs-notes`'
-  checks passed on (otherwise an amendment first); main holds `phase_fs`, `phase_fs_draw`, `phase_scratch_both_outcome`
+  checks passed on (otherwise an amendment first; section 14's amendment re-pins it to `b66af002…`, its search and
+  score path unchanged); main holds `phase_fs`, `phase_fs_draw`, `phase_scratch_both_outcome`
   and `phase_scratch_codec`; `fs-notes`' two checks passed, their result files' sha256 `727fda89…` (score) and
   `172e1c9f…` (search). Render commands also: `no_separation_beside`, the render-slot cap, the disk guard before every
   part, C3r's state equal to the draw's, `never_overwrite` on every output. `start`, `control` and `search` need
@@ -1090,7 +1092,7 @@ beside `ld-stem`'s), descriptive, never deciding.
   `never_overwrite`. `search` needs the control passed; `score` and `read` the answers' keys;
   `ld-rec`'s commands an `FL-short` or `FL-null` report and their own build hash (`phase_scratch_loudar_dry_rec`).
 - **The pool rule:** BKS and the panel both read, the panel on its 3 DI files; a lost panel DI file stops the row, to
-  the user. The refusal stop is 3 of the 23.
+  the user. The refusal stop is 3 of the 23 (retired by section 14: refusals are reported, never a stop).
 - **Steps:** unit 0 (13d) → `prep` (the search halves LOUDAR hears; each equal to the blanked reference's span) →
   LOUDAR's runs (the 23 `ld-stem` clips, then GOAT's 24, then `ld-stem-b`'s 23, while under the cost stop; never beside
   a render job) → `build` (every check before anything is written) → hash PR `phase_scratch_loudar_dry` → once
@@ -1193,3 +1195,44 @@ beside `ld-stem`'s), descriptive, never deciding.
 - LOUDAR with a wider prior, more steps, or another operator.
 - That LOUDAR improves on its input by any measure other than J0: none we hold showed it before the row (13d's
   amendment); `FL-null` is the first test.
+
+## 14. Refusals as reports, not row stops (S1; 2026-11-24; ledger `phase_scratch_refusal_reports`)
+
+Decided by an isolated decision agent under the user's rule of 2026-11-24 ("no made up or random thresholds/limits");
+not the user's own answer. The record is the handover's `decisions/bar-conversion.md` (sha256 `2e598bca…5ddb2`),
+its refusals section and S1. It applies to every row: rows (b) and (c), `fs-notes`, `fs-codec`, the tone split and
+`fs-loudar`.
+
+1. **No row stops on a count of refusals.** `scratch_search.stopped` is always False; `scratch_notes.deciding_stop`
+   and LOUDAR's `deciding_stop` list the refusals and stop nothing; `note_transcribe.refusal_count` never stops, so
+   `cmd_build` builds on; `REFUSAL_STOP` is gone from every module. The count and share are reported per set and
+   pooled, with a Clopper-Pearson 90% interval (`refusal_report`, each refusal's reasons unwrapped).
+2. **A check against the truth is never a refusal.** A content check compares the result with the true DI, which a
+   song does not carry. `fs-notes`' search now searches a content-failing part as built and writes the failed checks
+   on its record as `content_label`, carried into the answers and the report. Such a part now counts as answered,
+   so it is a borrowed-answer partner and a member of the other parts' centre pool. A count of content failures no
+   longer stops the build (`build_refusal`, `refusal_count`). The checks themselves become report-only in the redo's
+   amendment (R1).
+3. **A technical refusal is rerun once, then reads at Cen.** Technical refusals are a start-check miss, non-finite
+   audio, a missing borrowed answer and a scoring-control miss. The part reruns once in a fresh process (`--rerun`
+   on `fs-notes`' search and score, into `<dir>-rerun/`; the search rerun recomputes its start reference there
+   too; LOUDAR's in L1). The reads wait for that rerun
+   (`with_reruns`, `rerun_refusal`); this finds the cause, it is not a cap. If it still refuses, the part's answer is
+   Cen, the product's own fallback, and it is listed.
+4. **The deciding read is on every part (intent-to-treat).** A refused part reads at Cen: every `ln(x / Cen)` number
+   of its own answers is 0 (G and the checkpoints' and the shrunk answer's G; `itt_per`, `itt_values`); in a paired
+   difference it costs the row its partner's gain. `G_centre` stays empty (the row's centre is no part's fallback),
+   and numbers that need the partners scored on the part (I, the borrowed answer) read on the passing parts. Beside:
+   the **passing-only** read; where it has no interval the report says "no passing-only interval" and labels
+   nothing. The user's pool rule stays, and the Cen fallback keeps every set whole.
+5. **The refused parts are audited against the rest** (`refused_audit`): set, amp, class, lender band and Cen's
+   search-half start value (the draw's for rows (b) and (c), each part's start reference for `fs-notes`), then, after scoring, their value at Cen against the passing parts' as a difference of
+   means with its interval. If the two reads give different codes, the row is labelled `refusal-sensitive` and goes
+   to the user with both.
+
+The shared path's guard: `scratch_codec.SCRATCH_SEARCH_BLOB` is re-pinned from `2420043a…` to `b66af002…`. Every
+function of `learn/scratch_search.py` that `fs-notes`' two checks ran through (60, `search_row_part` and
+`score_row_part` among them) keeps its source exactly (a test pins their combined sha256). Rows (b) and (c), both
+codec rows and the tone split refused 0 parts, so none of their stored readings changes (tests re-derive them where
+the data is present). The finished tone split and the codec's full row read on their passing parts if ever re-read
+with refusals; their intent-to-treat read is to be coded first.

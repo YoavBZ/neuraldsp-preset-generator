@@ -284,7 +284,8 @@ def test_the_pool_rule_and_the_refusal_stop():
     assert "pooled" in SL.pool_refusal(dict(ok, bp=None))
     sets_of = {"b1": "bks", "b2": "bks", "p1": "panel", "g1": "goat", "g2": "goat", "g3": "goat"}
     assert SL.deciding_stop({"g1": 1, "g2": 1, "g3": 1}, sets_of) == ([], ["g1", "g2", "g3"], False)
-    assert SL.deciding_stop({"b1": 1, "b2": 1, "p1": 1}, sets_of)[2]
+    assert SL.deciding_stop({"b1": 1, "b2": 1, "p1": 1}, sets_of) == (["b1", "b2", "p1"], [], False)   # S1
+    assert not hasattr(SL, "REFUSAL_STOP")
 
 
 def test_the_notes_comparisons_width_on_bks():

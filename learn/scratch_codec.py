@@ -63,14 +63,14 @@ START_NAMES = ("rt-m2l", "rt-m2l-b", "rt-dac", "rt-id")
 SHORT = {"rt-m2l": "m2l", "rt-dac": "dac"}
 VENV_OF = {"rt-m2l": "codec", "rt-m2l-b": "codec", "rt-id": "codec", "rt-dac": "dac", "rt-rs": "dac"}
 CODE_FILES = ("learn/scratch_codec.py", "learn/codec_roundtrip.py")
-SCRATCH_SEARCH_BLOB = "2420043a4483a482925bed5b87e54692619a305d"   # main's, the one fs-notes' two checks passed on
+SCRATCH_SEARCH_BLOB = "b66af002f56242a6128a4719479c90f4d5abd319"   # S1's re-pin (fs-notes' checks ran on 2420043a;
+#   the search and score path they ran through is unchanged: tests/test_refusal_reports.py)
 CHECK_SHA256 = {"check-score": "727fda89a58afb45d6bf1ee923f7daaedcae70077a3556a3b3c714bb9d765b73",
                 "check-search": "172e1c9ff509cf05db4a1d4c343f6131bc01876a6e1b8deb807fd6725aa1c545"}
 BUDGET = 50                              # the short row: step 1 to 50 evaluations
 CHECKPOINT = "50"                        # the answer: step 1's incumbent at 50 evaluations
 CONTROL_BUDGET = 10                      # `rt-id` through this module's search path, against row (b)'s records
 SMALL, BIG = S.SMALL, S.BIG              # 0.05, 0.10 (the user's rule)
-REFUSAL_STOP = S.REFUSAL_STOP            # 3 of 47
 SECTION, IN_LEN, NEXT = 492000, 540000, 48000
 TIMING_MS = 1.0                          # the timing check: the 1-ms envelope's lag within this
 TIMING_STOP = 3                          # this many parts beyond it stop the build
@@ -275,9 +275,9 @@ def short_answer(rec, dry_sha, checkpoint=CHECKPOINT, budget=BUDGET):
 
 
 def short_answers(parts, recs, dry_shas, search_sha):
-    """(Pure but for `search_sha`.) The short row's answers: per part `short_answer`; the refusal stop at
-    REFUSAL_STOP. parts: the draw's; recs: {pkey: record}; dry_shas: {pkey: the build's sha256}. -> (answers,
-    refused, stopped)."""
+    """(Pure but for `search_sha`.) The short row's answers: per part `short_answer`; the refusals reported (S1:
+    "stopped" is always False). parts: the draw's; recs: {pkey: record}; dry_shas: {pkey: the build's sha256}. ->
+    (answers, refused, stopped)."""
     out, refused = {}, {}
     for p in parts:
         k = p["pkey"]
@@ -1136,7 +1136,7 @@ def cmd_answers(args):
            "time": time.strftime("%Y-%m-%d %H:%M:%S"), "renders": sum(r.get("renders", 0) for r in recs.values()),
            "refused": refused, "stopped": stop, "parts": parts}
     P.save(answers_path(args.name), out)
-    print(f"FS-CODEC ANSWERS {args.name}: {len(parts)} parts, {len(refused)} refused{' (STOPPED)' if stop else ''}; "
+    print(f"FS-CODEC ANSWERS {args.name}: {len(parts)} parts, {len(refused)} refused (each reads at Cen); "
           f"{out['renders']} search renders; sha256 {S.file_sha(answers_path(args.name))} (into the ledger as "
           f"{phase_answers(args.name)} before `score`)")
 
@@ -1160,8 +1160,8 @@ def score_shard(args, full):
     if full:
         require_shut(m, args.name)
     ans = require_answers(m, args.name, full)
-    if ans["stopped"]:
-        raise SystemExit(f"{args.name} stopped at the refusal count: nothing is scored")
+    if ans.get("stopped"):                               # no answers file is written stopped since S1
+        raise SystemExit(f"{args.name}'s answers were written stopped: nothing is scored")
     from learn import cc_build as CB
     from learn import note_replay as NR
     from learn import pipeline_fix as P
@@ -1199,7 +1199,7 @@ def codec_g50(draw, ans, answers_sha, score_file):
     per, replaced, miss = {}, {}, []
     for p in draw["parts"]:
         k = p["pkey"]
-        if ans["stopped"] or k not in ans["parts"]:
+        if ans.get("stopped") or k not in ans["parts"]:
             per[k] = None
             continue
         sp = score_file(k)
@@ -1208,6 +1208,14 @@ def codec_g50(draw, ans, answers_sha, score_file):
         sc = json.loads(sp.read_text())
         if sc["answers_sha256"] != answers_sha:
             raise SystemExit(f"{k}: scored from other answers")
+        if not sc["scoring_control_ok"]:                 # S1: a miss is rerun once in a fresh process first
+            rp = S.rerun_path(sp)
+            if not rp.exists():
+                raise SystemExit(f"{k}: a scoring-control miss not yet rerun once in a fresh process: run `score "
+                                 "--rerun` first")
+            again = json.loads(rp.read_text())
+            if again["scoring_control_ok"] and again["answers_sha256"] == answers_sha:
+                sc = again
         if not sc["scoring_control_ok"]:
             refused[k] = {"scoring_control": {"cen": sc["held"]["cen"], "stored": sc["cen_stored"]}}
             miss.append(k)
@@ -1332,17 +1340,17 @@ def cmd_read(args):
     per, refused, replaced, miss = codec_g50(draw, ans, sha, lambda k: score_path(args.name, k))
     out = {"plan": PLAN, "row": ROW, "name": args.name, "answers_sha256": sha, "refused": refused,
            "stopped": S.stopped(refused), "nonfinite_replaced": replaced, "scoring_control_misses": miss,
-           "covers": covers(args.name), "time": time.strftime("%Y-%m-%d %H:%M:%S"), "parts": per}
-    if out["stopped"]:
-        P.save(report_path(args.name), dict(out, rows=None, fk=None, stop_reason=f"{len(refused)} refused"))
-        print(f"{args.name}: STOPPED ({len(refused)} refused; the stop is {REFUSAL_STOP})")
-        return
+           "covers": covers(args.name), "time": time.strftime("%Y-%m-%d %H:%M:%S"), "parts": per,
+           "refusal_report": S.refusal_report(refused, {p["pkey"]: p["set"] for p in draw["parts"]}, S.DECIDING)}
+    passing = per
+    per = S.itt_values(per, refused)                    # S1: the deciding read on every part, a refused one at Cen
     figs = json.loads(figures_path().read_text()) if figures_path().exists() else None
     starts = {p["pkey"]: (json.loads(start_path(args.name, p["pkey"]).read_text()).get("start_read")
                           if start_path(args.name, p["pkey"]).exists() else None) for p in draw["parts"]}
     recs = {p["pkey"]: json.loads(search_path(args.name, p["pkey"]).read_text()) for p in draw["parts"]}
     rows = read_short_rows(sd, draw, per, comparators(), figs, starts, recs, args.name)
-    P.save(rows_path(args.name), dict(out, rows=rows))          # the rows are saved before the code is read
+    rows_pass = read_short_rows(sd, draw, passing, comparators(), figs, starts, recs, args.name) if refused else rows
+    P.save(rows_path(args.name), dict(out, rows=rows, rows_passing_only=rows_pass))   # saved before the code
     why = deciding_refusal({q: rows[q] for q in ("G50", "D_true", "D_blur")})
     if why:
         P.save(report_path(args.name), dict(out, rows=rows, fk=None, stopped=True, stop_reason=why))
@@ -1351,7 +1359,10 @@ def cmd_read(args):
     fk = fk_code(rows["D_true"]["deciding_pool"], rows["D_blur"]["deciding_pool"])
     bt, bb = rows["D_true"]["bks_goat"]["all"], rows["D_blur"]["bks_goat"]["all"]
     bg = fk_code(bt, bb) if _iv_ok(bt) and _iv_ok(bb) else {"code": None, "reading": "no BKS+GOAT interval"}
+    pt, pb = rows_pass["D_true"]["deciding_pool"], rows_pass["D_blur"]["deciding_pool"]
+    fk_pass = S.passing_code(lambda: fk_code(pt, pb), _iv_ok(pt) and _iv_ok(pb)) if refused else fk
     rep = dict(out, rows=rows, fk=fk, fk_bks_goat=bg, agree=fk["code"] == bg["code"],
+               fk_passing_only=fk_pass, label=S.refusal_label(fk["code"], fk_pass["code"]),
                next="full row" if fk["code"] == "FK-shut" else fk["next"])
     P.save(report_path(args.name), rep)
     dt, db = rows["D_true"]["deciding_pool"], rows["D_blur"]["deciding_pool"]

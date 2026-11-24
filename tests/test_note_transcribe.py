@@ -50,7 +50,7 @@ def test_the_checks_are_the_six_declared():
     assert not hasattr(T, "RISE_LEVELS") and not hasattr(T, "RISE_PRECISION")             # retired in 12m
     assert T.CALIBRATION_PASS == 25 and T.DEV_COUNT == 27
     assert T.P2_CHORD_TRIGGER == 0.85 and T.FLAG_TRIGGER == 3
-    assert T.REFUSAL_STOP == 3 and T.DECIDING == ("bks", "goat")
+    assert not hasattr(T, "REFUSAL_STOP") and T.DECIDING == ("bks", "goat")
 
 
 # --- the clean-up -------------------------------------------------------------------------------------------------------------
@@ -421,7 +421,7 @@ def test_refusal_count_on_the_forty():
     parts.update({"p0": {"failed": ["chords-kept"]}, "g0": {"failed": ["onsets-found"]}})
     sets_of = {**{f"b{i}": "bks" for i in range(5)}, "p0": "panel", "g0": "goat"}
     dec, pan, stop = T.refusal_count(parts, sets_of)
-    assert sorted(dec) == ["b0", "b1", "g0"] and list(pan) == ["p0"] and stop
+    assert sorted(dec) == ["b0", "b1", "g0"] and list(pan) == ["p0"] and stop is False   # S1: listed, no stop
     parts["g0"]["failed"] = []
     assert not T.refusal_count(parts, sets_of)[2]                                         # a panel refusal stops nothing
 

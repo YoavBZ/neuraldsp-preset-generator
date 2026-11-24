@@ -64,7 +64,6 @@ SOURCES = {"ld-stem": "ld-stem", "ld-stem-b": "ld-stem", "ld-rec": "ld-rec"}   #
 DECIDING = ("bks", "panel")
 BESIDE = ("goat",)
 PANEL_FILES = 3                                    # a lost panel DI file stops the row, to the user
-REFUSAL_STOP = 3                                   # of the 23 deciding parts
 CODE_FILES = ("learn/scratch_loudar.py", "learn/loudar_run.py", "learn/scratch_codec.py", "learn/codec_roundtrip.py")
 SR = 48000
 SECTION = 492000
@@ -277,8 +276,9 @@ def pool_refusal(rows):
 
 
 def deciding_stop(refused, sets_of):
-    """(Pure.) The refusal stop counts the 23 deciding parts (3 or more stop); GOAT's refusals are listed only."""
-    return SN.deciding_stop(refused, sets_of, deciding=DECIDING, stop=REFUSAL_STOP)
+    """(Pure.) The 23 deciding parts' refusals and GOAT's apart. No row stops on a count of refusals (S1,
+    phase_scratch_refusal_reports): "stopped" is always False. -> (deciding, beside, stopped)."""
+    return SN.deciding_stop(refused, sets_of, deciding=DECIDING)
 
 
 def rec_refusal(report):
@@ -797,7 +797,7 @@ def cmd_search(args):
 
 
 def cmd_answers(args):
-    """A name's short answers (zero renders): `scratch_codec.short_answers`; the refusal stop on the 23 deciding parts.
+    """A name's short answers (zero renders): `scratch_codec.short_answers`; the refusals reported (S1: no stop).
     -> answers-<name>.json; its sha256 into the ledger as the name's answers key."""
     m = require_loudar(PHASE_DRY)
     build = build_for(m, args.name)
@@ -846,8 +846,8 @@ def cmd_score(args):
     build_for(m, args.name)
     require_slots()
     ans = require_answers(m, args.name)
-    if ans["stopped"]:
-        raise SystemExit(f"{args.name} stopped at the refusal count: nothing is scored")
+    if ans.get("stopped"):                               # no answers file is written stopped since S1
+        raise SystemExit(f"{args.name}'s answers were written stopped: nothing is scored")
     from learn import cc_build as CB
     from learn import note_replay as NR
     from learn import pipeline_fix as P
