@@ -154,3 +154,15 @@ def test_the_ear_items_figure_merge():
     got = T.merge_kind_figures(tr, ann)
     assert got == {"a": {"single-note": 0.92, "let-ring": 0.08, "bends": 12}, "b": {"let-ring": 0.01}}
     assert "c" not in got                                                  # no scan window: no figure
+
+
+def test_the_kept_fixes_in_order():
+    bp = [note(0.0, 0.4, 60, [1] * 10), note(0.45, 1.0, 60, [1] * 10), note(0.0, 0.4, 72)]
+    ms = [{"on": 0.01, "off": 0.9, "pitch": 60}]
+    assert F.kept_transform(bp, ms, {}) == bp
+    n = F.kept_transform(bp, ms, {"F1": "global"})
+    assert n[0]["bends"] == [0.0] * 10 and len(n) == 3
+    j = F.kept_transform(bp, ms, {"F1": "global", "F2ms": 0.05})
+    assert len(j) == 2 and j[0]["off"] == 1.0                         # the re-find joined
+    v = F.kept_transform(bp, ms, {"F1": "global", "F4": 0.05})
+    assert [x["pitch"] for x in v] == [60, 60]                          # the octave ghost dropped

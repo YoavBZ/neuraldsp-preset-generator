@@ -567,6 +567,88 @@ def isolate_ms(out_path, f1_mode):
     print(f"ISOLATE-MS on F1 {f1_mode}: {len(rows)} variants; {time.time() - t0:.0f} s -> {out_path}")
 
 
+GAMMA_GRID = (0.5, 1.0, 1.5, 2.0, 3.0, 4.0)   # R3's measurement grid for the loudness gamma (off beside); extended
+                                              # upward while the minimum sits at its top, so it brackets the minimum
+
+
+def kept_transform(notes, ms, kept):
+    """(Pure.) The kept fixes in order on a window's notes: F1 (`kept["F1"]`, a mode), then F2-MuScriptor
+    (`kept["F2ms"]`, a window in s) joins, then F4 (`kept["F4"]`, its below window) or F5 (`kept["F5"]`, its
+    context) drops. An absent key is off. -> notes."""
+    n = rezero_bends(notes, kept.get("F1"))
+    if kept.get("F2ms"):
+        pairs = refind_pairs(n)
+        n = join_refinds(n, pairs, f2_ms_joins(n, pairs, ms, kept["F2ms"]))
+    if kept.get("F5"):
+        n = kept_notes(n, f5_keep(n, ms, ctx_s=kept["F5"]))
+    elif kept.get("F4"):
+        n = kept_notes(n, f4_keep(n, ms, below_s=kept["F4"]))
+    return n
+
+
+def combine(out_path, kept):
+    """12q step 6 and R3 (zero renders): the kept fixes together on D (L beside), against F1 alone and against as
+    built, then on top of them the ring variant (ring-soft against ring-on, `envelope_corr` beside) and the loudness
+    gamma (off, then GAMMA_GRID, extended while the minimum sits at its top), each picked on D by the distance;
+    an interval spanning zero keeps the as-built choice (ring-soft, no loudness). E is not read here. -> OUT.json."""
+    import numpy as np
+
+    from learn import note_versions as NV
+    from learn import song_bank as SB
+
+    t0 = time.time()
+    L, D, bank = windows_L_D()
+    needs_ms = any(kept.get(k) for k in ("F2ms", "F4", "F5"))
+    if needs_ms:
+        muscriptor_notes(L, D)
+
+    def fig(w, notes, ring="ring-soft", loud=None):
+        y, _ = NR.rebuild_redo("tr-di", notes, len(w["di"]), bank, w["di"], ring, finish=SB.measure, loud=loud)
+        y = np.asarray(y, np.float64)
+        return {"distance": NV.floored_logmel(w["di"], y), "env": NR.envelope_corr(np.asarray(w["di"]), y)}
+    notes = {s: {w["key"]: kept_transform(w["notes"], w.get("ms") or [], kept) for w in ws}
+             for s, ws in (("L", L), ("D", D))}
+    asb = {s: {w["key"]: fig(w, w["notes"]) for w in ws} for s, ws in (("L", L), ("D", D))}
+    f1 = {s: {w["key"]: fig(w, rezero_bends(w["notes"], kept.get("F1"))) for w in ws} for s, ws in (("L", L), ("D", D))}
+    comb = {s: {w["key"]: fig(w, notes[s][w["key"]]) for w in ws} for s, ws in (("L", L), ("D", D))}
+
+    def diff(a, b, key="distance"):
+        return {s: interval90([a[s][k][key] - b[s][k][key] for k in a[s]]) for s in ("L", "D")}
+    body = {"plan": "docs/note-rebuild-plan.md 12q step 6, R3", "renders": 0, "kept": kept,
+            "combined_less_as_built": diff(comb, asb), "combined_less_F1": diff(comb, f1)}
+    # R3: the ring variant on the combined notes
+    on = {s: {w["key"]: fig(w, notes[s][w["key"]], ring="ring-on") for w in ws} for s, ws in (("L", L), ("D", D))}
+    rd = diff(on, comb)
+    body["ring"] = {"ring_on_less_soft": rd, "env_on_less_soft": diff(on, comb, "env")}
+    spans = rd["D"] is None or rd["D"]["lo90"] is None or rd["D"]["lo90"] <= 0 <= rd["D"]["hi90"]
+    ring = "ring-soft" if spans or rd["D"]["mean"] > 0 else "ring-on"
+    body["ring"]["pick"] = ring
+    body["ring"]["label"] = "undecided, the as-built ring-soft kept" if spans else None
+    base = comb if ring == "ring-soft" else on
+    # R3: the loudness gamma on the picked ring
+    grid, rows = list(GAMMA_GRID), {}
+    while True:
+        for g in grid:
+            if g in rows:
+                continue
+            gf = {s: {w["key"]: fig(w, notes[s][w["key"]], ring=ring, loud=g) for w in ws}
+                  for s, ws in (("L", L), ("D", D))}
+            rows[g] = diff(gf, base)
+        best = min(rows, key=lambda g: rows[g]["D"]["mean"])
+        if best == max(grid) and len(grid) < 12:
+            grid.append(max(grid) * 2)
+            continue
+        break
+    bd = rows[best]["D"]
+    spans_g = bd["lo90"] is None or bd["lo90"] <= 0 <= bd["hi90"] or bd["mean"] > 0
+    body["gamma"] = {"grid": grid, "less_off": {str(g): r for g, r in sorted(rows.items())}, "lowest": best,
+                     "pick": None if spans_g else best,
+                     "label": "undecided, no loudness kept (as built)" if spans_g else None}
+    body["seconds"] = time.time() - t0
+    NR.write_once(out_path, body)
+    print(f"COMBINE {kept}: ring {ring}, gamma {body['gamma']['pick']}; {time.time() - t0:.0f} s -> {out_path}")
+
+
 def clamp_binding(notes, raw_counts):
     """(Pure.) 12q R4: how often the synthesis clamps act on a window's notes, from the notes alone: the bend cap
     (a note whose re-zeroed track passes +-BEND_MAX_SEMITONES), the 2-semitone clear rule (a note with a frame it
@@ -639,6 +721,10 @@ def main(argv=None):
     s.add_argument("out")
     s.add_argument("--f1", required=True, choices=F1_MODES, help="the declared isolation's F1 pick")
     s.set_defaults(fn=lambda a: isolate_ms(a.out, a.f1))
+    s = sub.add_parser("combine")
+    s.add_argument("out")
+    s.add_argument("--kept", required=True, help='the kept fixes as JSON, e.g. {"F1": "global", "F2ms": 0.1}')
+    s.set_defaults(fn=lambda a: combine(a.out, json.loads(a.kept)))
     s = sub.add_parser("clamps")
     s.add_argument("out")
     s.set_defaults(fn=lambda a: clamps(a.out))
