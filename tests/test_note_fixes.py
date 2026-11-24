@@ -214,3 +214,208 @@ def test_build_2s_ear_verdict_on_main_labels_its_reads():
     assert rec["verdict"] == "fault-content" and rec["build"] == "f62efa8e1d3f" and not rec["unanswered"]
     assert SN.ear_label(e["note-rebuild"], b2) == "ear fault-content"          # 12q R5: a label, never a gate
     assert SN.ear_refusal(e["note-rebuild"], b2) is not None                    # so the FN code stays provisional
+
+
+# --- F6, bend chains (note-rebuild-plan 12t) -----------------------------------------------------------------------------
+
+# L's `bend` list as Basic Pitch heard it (the install gate's stored events; a made-up list): three 2-semitone bends
+# split into semitone notes, and the artefact step-backs after the true tracks' end (64, 67, 69)
+BEND_EVENTS = (
+    (0.4992, 0.8243, 64, "1111111111111111111111122233"), (0.8243, 0.9288, 65, "011112233"),
+    (0.9288, 1.6602, 66, "0111111111111111111111111111111111111111111111111111111111111-5-5"),
+    (1.6254, 2.033, 64, "111111111111111111111111111111111100"), (2.4742, 2.7645, 67, "0011111111111111111111111"),
+    (2.7761, 2.927, 68, "-1-100011122223"),
+    (2.927, 3.6584, 69, "01111111111111111111111111111111111111111111111111111111111111-5"),
+    (3.6352, 4.0312, 67, "11111111111111111111111111111111111"), (4.484, 4.7859, 69, "01111111111111111111111112"),
+    (4.7859, 4.9368, 70, "-1000111122233"),
+    (4.9368, 5.645, 71, "0111111111111111111111111111111111111111111111111111111111111"),
+    (5.6334, 6.0178, 69, "1111111111111111111111111111111111"))
+F6P = {"K": 3, "gap": 1, "family": "sequential", "track": "own", "keep": True}
+
+
+def bend_events():
+    import re
+
+    return [note(on, off, p, [int(v) for v in re.findall(r"-?\d", b)]) for on, off, p, b in BEND_EVENTS]
+
+
+def test_fixes_refuse_unknown_keys_and_f6_without_the_global_baseline():
+    notes = [note(0.0, 0.40, 60, [1] * 10)]
+    got, _ = F.apply_fixes(notes, {"F1": "global", "loud": None})          # build 2's fixes pass ("loud" whitelisted)
+    assert got[0]["bends"] == [0.0] * 10
+    for bad in ({"ring": "ring-soft"}, {"F6x": 1}):
+        with pytest.raises(ValueError, match="unknown fixes"):
+            F.apply_fixes(notes, bad)
+    for f1 in (None, "median"):
+        with pytest.raises(ValueError, match="F6 needs F1 global"):
+            F.apply_fixes(notes, {"F1": f1, "F6": F6P})
+    for off_grid in ({**F6P, "K": 2}, {**F6P, "K": True}, {**F6P, "gap": 3}, {**F6P, "family": "overlapping"},
+                     {**F6P, "track": "ridge"}, {**F6P, "keep": 1}, {k: v for k, v in F6P.items() if k != "keep"}):
+        with pytest.raises(ValueError):
+            F.apply_fixes(notes, {"F1": "global", "F6": off_grid})
+    assert F.apply_fixes(notes, {"F1": "global", "F6": None})[0] == got     # F6 None: off
+
+
+def test_f6_gaps_on_the_bend_lists_events():
+    n1 = F.rezero_bends(bend_events(), "global")
+    up = [(64, 65), (65, 66), (67, 68), (68, 69), (69, 70), (70, 71)]
+    down = [(66, 64), (69, 67), (71, 69)]
+    for k, want_up, want_down in ((1, [0, 0, 1, 0, 0, 0], [0, 0, 6]), (3, [1, 1, 1, 2, 2, 1], [0, 6, 6]),
+                                  (5, [2] * 6, [6, 6, 6])):
+        got = {(n1[i]["pitch"], n1[j]["pitch"]): g for i, j, g, kind in F.f6_pairs(n1, k, "both")}
+        assert [got[p] for p in up] == want_up and [got[p] for p in down] == want_down
+    raw = {(i, j): g for i, j, g, _ in F.f6_pairs(bend_events(), 3, "sequential")}
+    assert raw == {(i, j): g for i, j, g, _ in F.f6_pairs(n1, 3, "sequential")}   # the global step moves no gap
+
+
+def test_f6_joins_the_whole_chain_where_f3_leaves_two():
+    notes = [note(0.50, 0.82, 64, [1] * 22 + [2, 2, 3, 3, 4, 4]), note(0.82, 0.93, 65, [1, 1, 2, 2, 3, 3, 4, 4, 4]),
+             note(0.93, 1.60, 66, [1] * 58)]
+    n1 = F.rezero_bends(notes, "global")
+    assert len(F.join_glides(n1, F.handoff_pairs(n1))) == 2   # F3 skips the second hop: its first note joined away
+    got, rep = F.apply_fixes(notes, {"F1": "global", "F6": F6P})
+    assert len(got) == 1 and rep["F6"]["chains"] == [[0, 1, 2]] and rep["F6"]["joins"] == 2
+    s, fr = got[0], F.NR.BEND_FRAME_S
+    assert s["pitch"] == 64 and s["off"] == 1.60 and s["keep_bend"] is True
+    assert s["bends"][int(round(0.45 / fr))] == 6.0                          # on 66: two semitones up
+    assert len(s["bends"]) == math.ceil((1.60 + F.F6_PAD_S - 0.50) / fr)    # padded through the release ...
+    assert s["bends"][-1] == 6.0                                             # ... holding its last value
+    unkept, _ = F.apply_fixes(notes, {"F1": "global", "F6": {**F6P, "keep": False}})
+    assert "keep_bend" not in unkept[0] and unkept[0]["bends"] == s["bends"]
+
+
+def test_f6_pair_families_are_disjoint_and_follow_j1():
+    i = note(0.0, 1.0, 60, [0] * 86)
+    notes = [i, note(0.95, 1.5, 62, [0] * 40),           # on_j - off_i = -50 ms: sequential
+             note(1.07, 1.5, 62, [0] * 30),               # +70 ms: neither
+             note(0.50, 1.5, 61, [0] * 80),               # 500 ms before off_i: overlapping
+             note(0.02, 1.5, 61, [0] * 80),               # within 30 ms of on_i: neither
+             note(0.95, 1.5, 64, [0] * 40)]               # 4 semitones: neither
+    assert {(j, kind) for a, j, _, kind in F.f6_pairs(notes, 3, "both") if a == 0} == {(1, "sequential"),
+                                                                                       (3, "overlapping")}
+    assert {j for a, j, _, _ in F.f6_pairs(notes, 3, "sequential") if a == 0} == {1}
+    short = [note(0.0, 1.0, 60, [0] * 30), note(0.50, 1.5, 61, [0] * 80)]   # no shared frame on i's track: no pair
+    assert F.f6_pairs(short, 1, "both") == []
+
+
+def test_f6_chains_take_the_smallest_gap_and_a_tie_the_later_onset():
+    notes = [note(0.0, 0.5, 60, [0] * 43), note(0.5, 1.0, 61, [0] * 43), note(0.52, 1.0, 62, [0] * 43)]
+    assert F.f6_chains(notes, [(0, 1, 1.0, "s"), (0, 2, 1.0, "s"), (1, 2, 0.0, "o")], 1) == [[0, 1, 2]]
+    assert F.f6_chains(notes, [(0, 1, 1.0, "s"), (0, 2, 1.0, "s")], 1) == [[0, 2]]   # a tie: the later onset
+    assert F.f6_chains(notes, [(0, 1, 0.0, "s"), (0, 2, 1.0, "s")], 1) == [[0, 1]]   # the smaller gap first
+    assert F.f6_chains(notes, [(0, 1, 2.0, "s")], 1) == []                            # over the gap: no chain
+
+
+def test_the_stitched_track_switches_at_js_first_frame_and_the_line_is_linear():
+    fr = F.NR.BEND_FRAME_S
+    i = note(0.0, 1.0, 60, [0.0] * 86)
+    j = note(0.40, 0.70, 61, [-2.0] * 26)                 # an overlapping semitone up, its track 2 bins under it
+    trk = F.stitched_track([i, j], [0, 1], "own")
+    q = math.ceil(0.40 / fr)
+    assert trk[q - 1] == 0.0 and trk[q] == 1.0           # from j's first frame: 3 x (61 - 60) - 2
+    assert trk[int(0.80 / fr)] == 0.0                    # j ended, i sounds again
+    line = F.stitched_track([i, j], [0, 1], "line")
+    assert line[0] == 0.0 and line[int(0.20 / fr)] == pytest.approx(1.5, abs=0.1) and line[-1] == 3.0
+    assert len(trk) == len(line) == math.ceil((1.0 + F.F6_PAD_S) / fr)
+    with pytest.raises(ValueError):
+        F.stitched_track([i, j], [0, 1], "ridge")
+    assert F.stitched_heads(5, [[1, 3], [2, 4]]) == {1, 2}
+
+
+def test_pad_every_bent_note_holds_only_notes_that_end_bent():
+    bent = note(0.0, 0.5, 60, [0] * 20 + [3] * 23)
+    flat = note(1.0, 1.5, 64, [0] * 43)
+    got = F.pad_bent([bent, flat])
+    assert len(got[0]["bends"]) == math.ceil((0.5 + F.F6_PAD_S) / F.NR.BEND_FRAME_S) and got[0]["bends"][-1] == 3
+    assert got[1] == flat and F.ends_bent([bent, flat]) == 1
+
+
+def test_the_bend_lists_play_their_true_tracks_unchanged():
+    assert set(F.BEND_LISTS) == set(F.BEND_POSITIVES) | set(F.BEND_CONTROLS) and len(F.BEND_LISTS) == 10
+    for nm, truth in F.BEND_LISTS.items():
+        bent = F.bent_truth(truth)
+        assert (len(bent) == 4) == (nm in F.BEND_POSITIVES) and (not bent) == (nm in F.BEND_CONTROLS)
+        assert max(n["off"] for n in truth) + F.NR.RING_SOFT_S < 10.25
+        for i in bent:
+            n = truth[i]
+            assert n["keep_bend"] and len(n["bends"]) == math.ceil((n["off"] - n["on"] + 0.150) / F.NR.BEND_FRAME_S)
+            assert F.NR.bend_curve(n, truth) == [float(v) for v in n["bends"]]    # played as declared
+    assert max(F.BEND_LISTS["bend-release"][0]["bends"]) == 6 and F.BEND_LISTS["bend-release"][0]["bends"][-1] == 0
+    assert max(F.BEND_LISTS["bend-under-semitone-held"][0]["bends"]) == 2
+
+
+def test_the_bend_measures_and_their_ladder():
+    truth = T.KNOWN_NOTES["bend"]
+    rungs = F.ladder_rungs(truth)
+    t, fl, st = (F.bend_error(truth, rungs[r]) for r in ("true", "flattened", "steps"))
+    assert t["mean_abs_bins"] == 0.0 and t["empty_share"] == 0.0 and fl["mean_abs_bins"] > 4 > 1 > st["mean_abs_bins"]
+    assert sum(F.extra_attacks(truth, rungs["true"])) == sum(F.extra_attacks(truth, rungs["flattened"])) == 0
+    assert sum(F.extra_attacks(truth, rungs["steps"])) == 6 and F.note_error(truth, rungs["steps"])["extra"] == 6
+    assert F.note_error(truth, []) == {"lost": len(truth), "extra": 0, "error": len(truth)}
+    ex = F.l_bend_excluded(truth)
+    assert len(ex) == 3 and ex[0][0] == pytest.approx(0.5 + 98 * F.NR.BEND_FRAME_S - 0.050) and ex[0][1] == 2.0
+    step_back = rungs["true"] + [note(1.62, 2.0, 64)]                 # the artefact's onset: never scored (A)
+    assert F.note_error(truth, step_back, ex)["error"] == 0 and F.note_error(truth, step_back)["error"] == 1
+    re_ = F.bend_retruth(truth)
+    assert len(re_[0]["bends"]) == math.ceil(1.5 / F.NR.BEND_FRAME_S) and re_[0]["bends"][-1] == 0.0
+
+
+def test_the_second_note_and_the_unsplit_counts():
+    bent, held = F.BEND_LISTS["bend-under-semitone-held"][:2]      # a bend under a semitone, a held whole tone above
+    assert bent["bends"] and not held["bends"]
+    heard = F.rezero_bends([{"on": n["on"], "off": n["off"], "pitch": n["pitch"],
+                             "bends": [v + 1 for v in (n["bends"] or [0] * 40)]} for n in (bent, held)], "global")
+    assert F.bent_but_cleared(heard) == [0]                          # the clear rule takes its bend
+    assert F.fault_kinds([bent, held], heard)["cleared"] == 1
+    assert F.second_lost([bent, held], heard) == 0 and F.second_lost([bent, held], heard[:1]) == 1
+
+
+def test_db_windows_cover_the_most_bends_outside_the_d_window():
+    got = F.db_windows([3.0, 20.0, 22.0, 31.0, 40.0], 1.0, 60.0, 10.25)
+    assert got == [(15.0, [20.0, 22.0]), (30.0, [31.0, 40.0])]    # 3.0 sits in D's window: no window holds it
+
+
+def test_annotated_fragments():
+    truth = [dict(note(0.0, 1.0, 60), arts=["bend"]), dict(note(2.0, 2.5, 64), arts=[])]
+    notes = [note(0.0, 0.3, 60), note(0.3, 0.6, 61), note(0.6, 1.0, 62), note(2.0, 2.5, 64), note(0.5, 0.9, 67)]
+    assert F.annotated_fragments(truth, notes) == {"bends": 1, "fragmented": 1, "fragments": 2}
+    assert F.annotated_fragments(truth, notes[:1] + notes[3:]) == {"bends": 1, "fragmented": 0, "fragments": 0}
+    assert F.art_label(note(0.0, 1.0, 60), truth) == "bend" and F.art_label(note(5.0, 6.0, 60), truth) == "unannotated"
+
+
+def test_the_f6_pick_rule():
+    pytest.importorskip("scipy")
+    pts = [("sequential", 3, 1), ("both", 3, 1), ("sequential", 5, 2), ("sequential", 1, 0)]
+    fj = {pts[0]: 1, pts[1]: 1, pts[2]: 4, pts[3]: 0}
+    ne = {pts[0]: {"a": 2, "b": 3, "c": 1}, pts[1]: {"a": 2, "b": 3, "c": 1}, pts[2]: {"a": 1, "b": 2, "c": 0},
+          pts[3]: {"a": 9, "b": 8, "c": 9}}
+    got = F.pick_point(ne, fj)
+    assert got["minimum"] == pts[2] and got["candidates"] == [pts[2]]   # one more on every list: [1, 1], not a tie
+    ne[pts[2]] = {"a": 1, "b": 4, "c": 0}
+    got = F.pick_point(ne, fj)
+    assert got["minimum"] == pts[2] and set(got["candidates"]) == set(pts[:3])
+    assert got["pick"] == pts[0]                          # tied: fewer bend-free joins, then sequential pairs only
+    assert F.simpler_key(("both", 3, 2), {("both", 3, 2): 0}) < F.simpler_key(("sequential", 3, 1),
+                                                                             {("sequential", 3, 1): 1})
+    assert [F.simpler_key(("sequential", k, 1), {("sequential", k, 1): 0})[-1] for k in (3, 5, 1)] == [0, 1, 2]
+    be = {("own", False): {"a": 1.0, "b": 2.0}, ("own", True): {"a": 0.9, "b": 2.2},
+          ("line", False): {"a": 3.0, "b": 4.0}, ("line", True): {"a": 3.0, "b": 4.1}}
+    assert F.pick_track_keep(be)["pick"] == ("own", False)          # a tie takes own, then cleared
+    iv = {"mean": -2, "lo90": -3, "hi90": -1}
+    assert F.keep_call(iv, {"L": {"mean": 0, "lo90": 0, "hi90": 0}})["call"] == "kept"
+    assert F.keep_call(iv, {"L": {"mean": 1, "lo90": 0.5, "hi90": 2}})["call"] == "not kept"
+    assert F.keep_call({"mean": -1, "lo90": -3, "hi90": 1}, {})["call"] == "undecided"
+    assert F.keep_call({"mean": 2, "lo90": 1, "hi90": 3}, {})["call"] == "not kept"
+    cp = F.clopper_pearson(0, 10)
+    assert cp["lo90"] == 0.0 and 0 < cp["hi90"] < 0.3 and F.clopper_pearson(0, 0) is None
+
+
+def test_f6_is_declared_before_its_numbers():
+    import pathlib
+
+    e = T.entries((pathlib.Path(__file__).resolve().parents[1] / "docs" / "dev-test-ledger.json").read_text())
+    rec = e["note-rebuild"][F.PHASE_F6]
+    assert {"junction_rule", "pick_rule", "keep_call", "seen", "E_relabel", "bend_list_artefact", "correction_12q",
+            "amendments", "filled_in"} <= set(rec)
+    assert "preliminary" not in rec                                   # declared: no figures of its own
+    assert F.PHASE_F6_FROZEN not in e["note-rebuild"] and F.PHASE_F6_LISTS not in e["note-rebuild"]

@@ -1576,7 +1576,9 @@ def next_source(sources, last):
 def bend_curve(note, others=()):
     """(Pure.) A redo note's bend in steps (thirds of a semitone) per Basic Pitch frame: its bend track, a 3-frame
     median, zero on frames where another note within BEND_CLEAR_SEMITONES sounds (transcriber's times), held within
-    +-BEND_MAX_SEMITONES, and kept only on runs of BEND_MIN_FRAMES or more frames at one step or more. -> [steps]."""
+    +-BEND_MAX_SEMITONES, and kept only on runs of BEND_MIN_FRAMES or more frames at one step or more. A note marked
+    `keep_bend` (F6b's stitched notes, the bend lists' true bent notes; note-rebuild-plan 12t) skips the clear rule;
+    without the mark the curve is as it always was. -> [steps]."""
     b = [float(v) for v in (note.get("bends") or [])]
     if not b:
         return []
@@ -1585,7 +1587,8 @@ def bend_curve(note, others=()):
     for j in range(len(b)):
         w = sorted(b[max(0, j - h):j + h + 1])
         med.append(w[len(w) // 2] if len(w) % 2 else (w[len(w) // 2 - 1] + w[len(w) // 2]) / 2)
-    for j in range(len(med)):
+    clear = [] if note.get("keep_bend") else range(len(med))
+    for j in clear:
         t = note["on"] + j * BEND_FRAME_S
         if any(m is not note and abs(m["pitch"] - note["pitch"]) <= BEND_CLEAR_SEMITONES and m["on"] <= t < m["off"]
                for m in others):

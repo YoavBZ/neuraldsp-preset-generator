@@ -599,3 +599,111 @@ def test_fs_notes_refuses_a_draw_holding_a_ruled_out_di(monkeypatch):
     ok = {"parts": [{"unit": "goat/item_0@140.0#amp_3"}, {"unit": "set5/a.wav@15.0#b.wav"}]}
     monkeypatch.setattr(SN.S, "require_draw", lambda: ok)
     assert SN.notes_draw() is ok
+
+
+# --- note-rebuild-plan 12t unit 6: `pair-builds --against`, `carry`, and the search code left byte-identical ----------
+
+def _reached(src, root="cmd_search"):
+    """The top-level names `root` reaches in a module's source (a call-graph walk over its names, the functions and
+    the module-level assignments), and the sha256 of their sources in name order."""
+    import ast
+    import hashlib
+
+    defs = {}
+    tree = ast.parse(src)
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            defs[node.name] = node
+        elif isinstance(node, (ast.Assign, ast.AnnAssign)):
+            for t in (node.targets if isinstance(node, ast.Assign) else [node.target]):
+                for n in ast.walk(t):
+                    if isinstance(n, ast.Name):
+                        defs[n.id] = node
+    seen, todo = set(), [root]
+    while todo:
+        name = todo.pop()
+        if name in seen or name not in defs:
+            continue
+        seen.add(name)
+        todo += [n.id for n in ast.walk(defs[name]) if isinstance(n, ast.Name) and n.id in defs]
+    text = "\n".join(f"{k}\n{ast.get_source_segment(src, defs[k])}" for k in sorted(seen))
+    return seen, hashlib.sha256(text.encode()).hexdigest()
+
+
+def test_the_search_code_is_byte_identical_to_build_1s():
+    """12t D1: every function `cmd_search` reaches in learn/scratch_notes.py, found by walking the code, and
+    learn/scratch_search.py whole, are as at b238f6c8 (build 1's frozen search; build 2's searched on the same code),
+    so builds 1, 2 and 3 search on the same code."""
+    import hashlib
+
+    names, digest = _reached((REPO / "learn" / "scratch_notes.py").read_text())
+    assert {"cmd_search", "start_reference", "first_evaluation", "require_build", "notes_draw", "search_path",
+            "start_path", "checks_passed", "require_row", "require_install_record", "check_result", "check_dir",
+            "notes_dir", "build_dir"} <= names
+    assert digest == "ba71b1c4da4cd17d4efb2fa3c547d10771e15be740704750624e6b9ab2c28e95"
+    assert hashlib.sha256((REPO / "learn" / "scratch_search.py").read_bytes()).hexdigest() == \
+        "1753755cb6e5aa8c170f7e6b68f1d64445d44ceb361af522e12f4db4769a1740"
+
+
+def _parts(**sha):
+    return {k: {"arms": {"tr-di": {"sha256": v}}} for k, v in sha.items()}
+
+
+def test_carry_takes_only_equal_dry_guitars_never_a_refusal_or_rerun():
+    new = _parts(a="A", b="B3", c="C", d="D", e="E", f="F")
+    old = _parts(a="A", b="B2", c="C", d="D", e="E", f="F")
+    recs = {"a": {"dry_sha256": "A"}, "b": {"dry_sha256": "B2"}, "c": {"dry_sha256": "C", "refused": "x"},
+            "d": {"dry_sha256": "D"}, "e": {"dry_sha256": "other"}}
+    cands, why = SN.carry_candidates(new, old, recs, reran={"d"})
+    assert cands == ["a"]
+    assert why["b"] == "its tr-di differs" and "technical refusal" in why["c"] and "rerun" in why["d"]
+    assert "another dry guitar" in why["e"] and why["f"] == "not searched in the other build"
+    assert SN.carry_mismatches({"a": "r1", "g": "r2"}, {"a": "r1", "g": "r2"}) == []
+    assert SN.carry_mismatches({"a": "r1", "g": "r2"}, {"a": "r1", "g": "x"}) == ["g"]   # one carries nothing
+    assert SN.carry_mismatches({"a": None}, {"a": None}) == ["a"]                      # nothing to match: a mismatch
+
+
+def test_the_carried_parts_add_an_exact_zero():
+    allp, changed = SN.carried_pair({"a": 0.003, "b": -0.2, "c": 0.1}, {"a"})
+    assert allp == {"a": 0.0, "b": -0.2, "c": 0.1} and changed == {"b": -0.2, "c": 0.1}
+    assert SN.carried_pair({"b": 1.0}, set()) == ({"b": 1.0}, {"b": 1.0})
+
+
+def test_pair_builds_against_a_named_build(monkeypatch):
+    assert SN.pair_path().name == "pair-b1.json" and SN.pair_path("b2").name == "pair-b2.json"
+    assert SN.record_path("search", "p", "b2") == SN.build_dir("b2") / "search" / "p.json"
+    assert SN.record_path("start-ref", "p") == SN.build_dir() / "start-ref" / "p.json"
+    with pytest.raises(ValueError):
+        SN.record_path("score", "p")
+    main = {"note-rebuild": {T.PHASE: "d", T.PHASE_INSTALL: {}, T.PHASE_NOTES: {}},
+            "preset-ladder": {SN.PHASE: "d", SN.GATE: "F-both", SN.PHASE_DRY: {}, SN.PHASE_ANSWERS: {},
+                              SN.dry_key("b3"): {}, SN.answers_key("b3"): {}}}
+    monkeypatch.setattr(T, "redo_on_main", lambda: (main, None))
+    monkeypatch.setattr(SN, "BUILD_NAME", "b3")
+    args = type("A", (), {"shard": (0, 1), "first": 0, "against": "b2"})()
+    with pytest.raises(SystemExit, match="phase_scratch_notes_dry_b2"):     # the --against build's own keys
+        SN.cmd_pair_builds(args)
+    main["preset-ladder"][SN.dry_key("b2")] = {}
+    with pytest.raises(SystemExit, match="phase_scratch_notes_answers_b2"):
+        SN.cmd_pair_builds(args)
+    args.against = "b3"
+    main["preset-ladder"][SN.answers_key("b2")] = {}
+    with pytest.raises(SystemExit, match="another build"):
+        SN.cmd_pair_builds(args)
+
+
+def test_carry_needs_a_later_build_and_both_builds_hashed(monkeypatch):
+    main = {"note-rebuild": {T.PHASE: "d", T.PHASE_INSTALL: {}, T.PHASE_NOTES: {}},
+            "preset-ladder": {SN.PHASE: "d", SN.GATE: "F-both", SN.PHASE_DRY: {}}}
+    monkeypatch.setattr(T, "redo_on_main", lambda: (main, None))
+    args = type("A", (), {"shard": (0, 1), "first": 0, "carry_from": "b2"})()
+    monkeypatch.setattr(SN, "BUILD_NAME", "b3")
+    with pytest.raises(SystemExit, match="phase_scratch_notes_dry_b3"):
+        SN.cmd_carry(args)
+    main["preset-ladder"][SN.dry_key("b3")] = {}
+    with pytest.raises(SystemExit, match="phase_scratch_notes_dry_b2"):
+        SN.cmd_carry(args)
+    monkeypatch.setattr(SN, "BUILD_NAME", None)
+    main["preset-ladder"][SN.dry_key("b2")] = {}
+    with pytest.raises(SystemExit, match="carry copies into a later build"):
+        SN.cmd_carry(args)
