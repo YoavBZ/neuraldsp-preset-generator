@@ -176,7 +176,12 @@ def test_the_ledger_key():
     e = next(t for t in d["tests"] if t.get("test_id") == S.LEDGER_ID)["phase_scratch_refusal_reports"]
     assert e["decision_record"]["sha256"] == DECISION_SHA256 and "not the user's" in e["decided_by"]
     assert e["scratch_search_blob"]["from"] == "2420043a4483a482925bed5b87e54692619a305d"
-    assert e["scratch_search_blob"]["to"] == SC.SCRATCH_SEARCH_BLOB
+    chain = [e["scratch_search_blob"]]                                     # each later re-pin names its from
+    later = next(t for t in d["tests"] if t.get("test_id") == S.LEDGER_ID).get("phase_scratch_loudar_l1")
+    if later and later.get("scratch_search_blob"):
+        chain.append(later["scratch_search_blob"])
+    assert all(a["to"] == b["from"] for a, b in zip(chain, chain[1:]))
+    assert chain[-1]["to"] == SC.SCRATCH_SEARCH_BLOB
 
 
 # --- the stored readings, unchanged (each of these rows refused 0 parts); skipped where the data is absent ----------

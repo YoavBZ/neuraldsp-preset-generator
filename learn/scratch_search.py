@@ -1505,8 +1505,9 @@ def cmd_read(args):
     else:
         rows["reading"] = row_reading(rows["G"]["deciding_pool"], rows["I"]["deciding_pool"])
         rows["reading_bks_goat"] = row_reading(rows["G"]["bks_goat"], rows["I"]["bks_goat"])
-        passing = row_reading((rows_pass.get("G") or {}).get("deciding_pool"),
-                              (rows_pass.get("I") or {}).get("deciding_pool")) if refused else rows["reading"]
+        passing = (row_reading((rows_pass.get("G") or {}).get("deciding_pool"),
+                               (rows_pass.get("I") or {}).get("deciding_pool"))
+                   or {"reading": None, "note": NO_PASSING_INTERVAL}) if refused else rows["reading"]
         out["reading_passing_only"] = passing
         out["label"] = refusal_label((rows["reading"] or {}).get("reading"), (passing or {}).get("reading"))
         if refused:

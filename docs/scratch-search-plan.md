@@ -863,8 +863,9 @@ log-mel distance ranks the per-part cost at +0.52 to +0.56, and a codec errs dif
 - **Guards** (every command): `scratch_search.on_main` (`learn/scratch_search.py` and the `phase_fs*` keys equal
   main's); `learn/scratch_codec.py` and `learn/codec_roundtrip.py` equal main's; the `phase_scratch_codec*` keys equal
   main's; main's blob of `learn/scratch_search.py` is `2420043a4483a482925bed5b87e54692619a305d`, the one `fs-notes`'
-  checks passed on (otherwise an amendment first; section 14's amendment re-pins it to `b66af002…`, its search and
-  score path unchanged); main holds `phase_fs`, `phase_fs_draw`, `phase_scratch_both_outcome`
+  checks passed on (otherwise an amendment first; section 14's amendment re-pins it to `b66af002…` and L1 to
+  `6687a5dc…`, its search and score path unchanged); main holds `phase_fs`, `phase_fs_draw`,
+  `phase_scratch_both_outcome`
   and `phase_scratch_codec`; `fs-notes`' two checks passed, their result files' sha256 `727fda89…` (score) and
   `172e1c9f…` (search). Render commands also: `no_separation_beside`, the render-slot cap, the disk guard before every
   part, C3r's state equal to the draw's, `never_overwrite` on every output. `start`, `control` and `search` need
@@ -1252,7 +1253,8 @@ its refusals section and S1. It applies to every row: rows (b) and (c), `fs-note
    means with its interval. If the two reads give different codes, the row is labelled `refusal-sensitive` and goes
    to the user with both.
 
-The shared path's guard: `scratch_codec.SCRATCH_SEARCH_BLOB` is re-pinned from `2420043a…` to `b66af002…`. Every
+The shared path's guard: `scratch_codec.SCRATCH_SEARCH_BLOB` is re-pinned from `2420043a…` to `b66af002…` (L1
+then to `6687a5dc…`, for rows (b)/(c)'s "no passing-only interval" in `cmd_read` only). Every
 function of `learn/scratch_search.py` that `fs-notes`' two checks ran through (60, `search_row_part` and
 `score_row_part` among them) keeps its source exactly (a test pins their combined sha256). Rows (b) and (c), both
 codec rows and the tone split refused 0 parts, so none of their stored readings changes (tests re-derive them where

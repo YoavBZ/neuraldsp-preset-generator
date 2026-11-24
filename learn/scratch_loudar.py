@@ -1038,15 +1038,22 @@ def read_body(sd, draw, m, name, gin=None):
                                                 {p["pkey"]: p["set"] for p in draw["parts"]}, name)
     sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}
     every = {**{k: v for k, v in cut_ref.items()}, **{k: v for k, v in in_ref.items()}, **refused}
+    by_name = {name: (refused, g), "di-cut": (cut_ref, gcut), "stem-in": (in_ref, gin)}
     if every:                                            # beside: the passing-only read, the audit
         rows["passing_only"] = {q: bp_rows(sd, draw, v)
                                 for q, v in numbers(g_pass, comp, gcut_pass, gin_pass).items()}
         rows["passing_only"]["G50"] = bp_rows(sd, draw, g_pass)
-        start = {p["pkey"]: json.loads(start_path(name, p["pkey"]).read_text())["value"] for p in draw["parts"]
-                 if start_path(name, p["pkey"]).exists()}             # Cen's search-half start value, this dry guitar
-        rows["refused_audit"] = S.refused_audit(draw["parts"], every, NR.lender_band(), start=start, values=g)
+        rows["refused_audit"] = {}                       # each name's refused parts on its own G50 and start value
+        for n, (ref_n, vals) in by_name.items():
+            if not ref_n:
+                continue
+            start = {p["pkey"]: json.loads(start_path(n, p["pkey"]).read_text())["value"] for p in draw["parts"]
+                     if start_path(n, p["pkey"]).exists()}         # Cen's search-half start value, this dry guitar
+            rows["refused_audit"][n] = S.refused_audit(draw["parts"], ref_n, NR.lender_band(), start=start,
+                                                       values=vals)
     head = {"refused": refused, "refused_di_cut": cut_ref, "refused_stem_in": in_ref, "nonfinite_replaced": replaced,
-            "scoring_control_misses": miss, "refusal_report": S.refusal_report(every, sets_of, DECIDING)}
+            "scoring_control_misses": miss,
+            "refusal_report": {n: S.refusal_report(r, sets_of, DECIDING) for n, (r, _) in by_name.items()}}
     return rows, head, g
 
 
@@ -1058,7 +1065,7 @@ def read_codes(rows):
     po = rows.get("passing_only")
     if not po:
         return fl, fl, None
-    ok = all(_iv_ok((po.get(q) or {}).get("bp")) for q in ("D_null", "D_blur", "G50"))
+    ok = all(_iv_ok((po.get(q) or {}).get("bp")) for q in ("D_null", "D_blur", "D_cut", "D_bar", "G50"))
     fp = S.passing_code(lambda: fl_code(po["D_null"]["bp"], po["D_blur"]["bp"], po["D_cut"]["bp"], po["D_bar"]["bp"],
                                         po["G50"]["bp"], rows["G50_rows_b_c"]["fs-both"]["bp"]), ok)
     return fl, fp, S.refusal_label(fl["code"], fp["code"])
@@ -1084,8 +1091,10 @@ def cmd_read(_args):
     for q in ("G50", "D_blur", "D_null", "D_cut", "D_bar"):
         why = pool_refusal(rows[q] or {})
         if why:
-            P.save(report_path(), dict(out, rows=rows, fl=None, stopped=True, stop_reason=f"{q}: {why}"))
-            raise SystemExit(f"{q}: {why}; to the user")
+            stop = (f"not read: the user's pool rule fails on {q} ({why}); rows.json is saved, report.json "
+                    "records this stop and no FL code; to the user")
+            P.save(report_path(), dict(out, rows=rows, fl=None, stopped=True, stop_reason=stop))
+            raise SystemExit(stop)
     fl, fl_pass, label = read_codes(rows)
     goat = goat_reading((rows["D_blur"]["goat"] or None) if build.get("goat_built") else None)
     rep = dict(out, rows=rows, fl=fl, fl_passing_only=fl_pass, label=label, goat=goat,

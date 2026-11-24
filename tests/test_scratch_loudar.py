@@ -523,6 +523,27 @@ def test_the_read_codes_and_the_refusal_label():
     assert fp == {"code": None, "reading": "no passing-only interval"} and label is None
 
 
+def test_a_passing_read_without_a_cut_bar_never_crashes_the_once_only_read():
+    base = dict(_rows(_iv(-0.10, -0.15, -0.06)), G50_rows_b_c={"fs-both": {"bp": G_BELOW}})
+    po = dict(_rows(_iv(0.0, -0.05, 0.05)), D_cut={"bp": _iv(0.05, -0.01, 0.12)}, D_bar={"bp": None})
+    with pytest.raises((TypeError, KeyError, SystemExit)):               # the crash the guard prevents
+        SL.fl_code(po["D_null"]["bp"], po["D_blur"]["bp"], po["D_cut"]["bp"], po["D_bar"]["bp"], po["G50"]["bp"],
+                   G_BELOW)
+    fl, fp, label = SL.read_codes(dict(base, passing_only=po))
+    assert fl["code"] == "FL-above" and fp == {"code": None, "reading": "no passing-only interval"} and label is None
+    fl, fp, _ = SL.read_codes(dict(base, passing_only=dict(po, D_cut={"bp": None})))
+    assert fp["code"] is None
+
+
+def test_the_review_nits_of_l1():
+    src = (REPO / "learn" / "scratch_loudar.py").read_text()
+    assert 'rows["refused_audit"][n] = S.refused_audit(' in src             # each name on its own values
+    assert '"refusal_report": {n: S.refusal_report(r, sets_of, DECIDING)' in src
+    assert "not read: the user's pool rule fails on" in src
+    assert 'if tr["stopped"]' not in (REPO / "learn" / "note_transcribe.py").read_text()
+    assert '"note": NO_PASSING_INTERVAL' in (REPO / "learn" / "scratch_search.py").read_text()
+
+
 def test_ld_rec_after_a_pass_names_no_bottleneck():
     ns = SL.NOT_SEPARATED
     for main in ("FL-above", "FL-reach", "FL-undecided"):

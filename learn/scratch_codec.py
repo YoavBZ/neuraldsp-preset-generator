@@ -63,7 +63,7 @@ START_NAMES = ("rt-m2l", "rt-m2l-b", "rt-dac", "rt-id")
 SHORT = {"rt-m2l": "m2l", "rt-dac": "dac"}
 VENV_OF = {"rt-m2l": "codec", "rt-m2l-b": "codec", "rt-id": "codec", "rt-dac": "dac", "rt-rs": "dac"}
 CODE_FILES = ("learn/scratch_codec.py", "learn/codec_roundtrip.py")
-SCRATCH_SEARCH_BLOB = "b66af002f56242a6128a4719479c90f4d5abd319"   # S1's re-pin (fs-notes' checks ran on 2420043a;
+SCRATCH_SEARCH_BLOB = "6687a5dcac9be3542ffd20f0426146c5dfc5387a"   # L1 re-pin (fs-notes' checks ran on 2420043a;
 #   the search and score path they ran through is unchanged: tests/test_refusal_reports.py)
 CHECK_SHA256 = {"check-score": "727fda89a58afb45d6bf1ee923f7daaedcae70077a3556a3b3c714bb9d765b73",
                 "check-search": "172e1c9ff509cf05db4a1d4c343f6131bc01876a6e1b8deb807fd6725aa1c545"}

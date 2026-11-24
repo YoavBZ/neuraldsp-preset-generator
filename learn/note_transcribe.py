@@ -2084,9 +2084,7 @@ def cmd_build(_args):
         if why:
             raise SystemExit(why)
     never_overwrite(build_path(name))
-    tr = json.loads(transcribe_path().read_text())
-    if tr["stopped"]:
-        raise SystemExit("the note checks refused 3 or more deciding parts: nothing is built")
+    tr = json.loads(transcribe_path().read_text())     # its "stopped" is always False since S1 (refusal_count)
     why = flags_go_refusal(tr.get("onsets_flagged_deciding") or [], m.get(LEDGER_ID))
     if why:
         raise SystemExit(why)
