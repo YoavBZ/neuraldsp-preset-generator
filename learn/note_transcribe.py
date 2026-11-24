@@ -136,12 +136,12 @@ CONTENT = {
                         "onset_s": 0.050, "median": 0.85, "floor": 0.75, "admission": "consistent", "tertile": "top"},
     "onsets-found": {"gates": "a report (flag under 0.90)", "blocking": False, "within_s": 0.050, "share": 0.90,
                      "detector": "librosa onset_detect, hop 256, delta 0.07, after the P1 offset"},
-    "playing-covered": {"gates": "the notes", "blocking": True, "playing": 0.95, "silent": 0.10},
-    "judge-accepts": {"gates": "the audio", "blocking": True, "pause_over_true": 0.05, "gap_s": 0.250,
+    "playing-covered": {"gates": "a report (12q R1)", "blocking": False, "playing": 0.95, "silent": 0.10},
+    "judge-accepts": {"gates": "a report (12q R1)", "blocking": False, "pause_over_true": 0.05, "gap_s": 0.250,
                       "gap_db": 40.0},
-    "ring-kept": {"gates": "the audio", "blocking": True, "after_s": 0.600, "attack_s": 0.050, "median_db": 3.0,
+    "ring-kept": {"gates": "a report (12q R1)", "blocking": False, "after_s": 0.600, "attack_s": 0.050, "median_db": 3.0,
                   "min_frames": 20, "env_corr": 0.80},
-    "chords-kept": {"gates": "the audio", "blocking": True, "onset_s": 0.050, "note_f": 0.85, "chord_recall": 0.85,
+    "chords-kept": {"gates": "a report (12q R1)", "blocking": False, "onset_s": 0.050, "note_f": 0.85, "chord_recall": 0.85,
                     "chord_size": 3, "min_chord_notes": 5},
 }
 NOTE_CHECKS = ("onsets-found", "playing-covered")
@@ -573,9 +573,7 @@ def chords_go_refusal(p2_chord_recall, nr_main, trigger=P2_CHORD_TRIGGER):
     trigger goes to the user first (their go on main, `PHASE_GO_CHORDS`)."""
     if p2_chord_recall is None:
         return "the truth report has no P2 chord recall"
-    if p2_chord_recall < trigger and PHASE_GO_CHORDS not in (nr_main or {}):
-        return f"P2's chord recall {p2_chord_recall:.3f} is under {trigger}: to the user first ({PHASE_GO_CHORDS})"
-    return None
+    return None                                  # 12q R1: the chord recall is reported, never a trigger
 
 
 def flags_note(flagged_deciding, nr_main, trigger=FLAG_TRIGGER):
@@ -583,18 +581,13 @@ def flags_note(flagged_deciding, nr_main, trigger=FLAG_TRIGGER):
     and main holds no go of the user's (`flags_go_refusal`); reported under the go; nothing under the trigger."""
     if len(flagged_deciding) < trigger:
         return ""
-    if flags_go_refusal(flagged_deciding, nr_main, trigger):
-        return " (TO THE USER before any build)"
-    return f" (reported: the user's go {PHASE_GO_FLAGS})"
+    return " (reported: 12q R1, never a trigger)"
 
 
 def flags_go_refusal(flagged_deciding, nr_main, trigger=FLAG_TRIGGER):
     """(Pure.) Why nothing may be built after transcription, or None: `onsets-found` flags on `trigger` or more of the
     40 deciding parts go to the user first (their go on main, `PHASE_GO_FLAGS`)."""
-    if len(flagged_deciding) >= trigger and PHASE_GO_FLAGS not in (nr_main or {}):
-        return (f"onsets-found flags {len(flagged_deciding)} of the 40 deciding parts: to the user first "
-                f"({PHASE_GO_FLAGS})")
-    return None
+    return None                                  # 12q R1: the flag count is reported, never a trigger
 
 
 def versions_loud(nr_main):
@@ -808,7 +801,8 @@ def ledger_pair_refusal(nr_main, pair):
 
 CODE_FILES = ("learn/scratch_search.py", "learn/scratch_notes.py", "learn/note_rebuild.py",
               "learn/note_rebuild_s1.py", "learn/note_rebuild_ear.py", "learn/note_transcribe.py", "learn/bp_run.py",
-              "learn/note_truth.py", "learn/note_attacks.py", "learn/attack_run.py", "learn/note_versions.py")
+              "learn/note_truth.py", "learn/note_attacks.py", "learn/attack_run.py", "learn/note_versions.py",
+              "learn/note_fixes.py")
 KEY_PREFIXES = {LADDER_ID: ("phase_fs", "phase_scratch_notes"), LEDGER_ID: ("phase_nr",)}
 
 
@@ -987,8 +981,20 @@ def transcribe_path():
     return REDO / "transcribe.json"
 
 
-def build_path():
-    return REDO / "build.json"
+def build_path(name=None):
+    """The first build's record, or a later build's own (`build-<name>.json`; no attempt cap)."""
+    return REDO / ("build.json" if not name else f"build-{name}.json")
+
+
+def dry_root(name=None):
+    """The first build's dry guitars (`redo/dry/`), or a later build's own (`redo/dry-<name>/`)."""
+    return REDO / ("dry" if not name else f"dry-{name}")
+
+
+def ear_items_file(name=None):
+    """The first build's ear items, or a later page's own when they were made (`ear-items-<name>.json`)."""
+    p = REDO / f"ear-items-{name}.json"
+    return p if name and p.exists() else ear_items_path()
 
 
 def stem_preview_path():
@@ -1738,8 +1744,8 @@ def require_install_facts():
         if not p.exists():
             raise SystemExit(f"{p.name} missing: run step 3 first")
     g, c = (json.loads(p.read_text())["body"] for p in (gate_path(), calibration_path()))
-    if not gate_passes(g) or not c["ok"]:
-        raise SystemExit("the install gate or the calibration did not pass: a declared amendment first")
+    if not gate_passes(g):                       # 12q R1: the calibration is a report; repeatability stays
+        raise SystemExit("the install gate did not pass (repeatability)")
     if c["gate_sha256"] != NR.file_sha(gate_path()):
         raise SystemExit("calibration.json was made from another install gate")
     return g, c
@@ -1918,6 +1924,134 @@ def cmd_transcribe(_args):
           f"sha256 {NR.file_sha(transcribe_path())}")
 
 
+def build_todo(pair=None, ear_file=None):
+    """The build's items in its order (also the fixes' identity check, `note_fixes`): the 47 parts (each with its
+    finish: `song_bank.measure`, then `average_balance` with `note_replay.others_for`'s others, as row (c)'s avg+mild)
+    and the ear items (finish: `song_bank.measure`). -> [(kind, key, info, note record, DI, finish)]."""
+    import numpy as np
+
+    from learn import di_robustness as DR
+    from learn import note_replay as R
+    from learn import song_bank as SB
+
+    pair = pair or install_pair(load_manifest())
+    draw, rby, sd = row_parts()
+    _, _, z, _ = _dev_context()
+    rparts = list(rby.values())                   # the replay's drawn parts (the others' pool, as row (c)'s blur)
+    by_sec = {}
+    for p in rparts:
+        by_sec.setdefault(p["section"], sd.units[(p["set"], p["unit"], p["amp"])]["prt"])
+    cache = {}
+
+    def sec(s):
+        if s not in cache:
+            cache[s] = np.asarray(R.di_section(by_sec[s]), np.float64)
+        return cache[s]
+    todo = []
+    for p in sorted(draw["parts"], key=lambda p: p["pkey"]):
+        rec = load_note("part", p["pkey"], pair)
+        di = sec(p["section"])
+        others = {s: [sec(x) for x in xs] for s, xs in R.others_for(rby[p["pkey"]], rparts).items()}
+
+        def finish(y, others=others):
+            return DR.average_balance(SB.measure(y), others)
+        todo.append(("part", p["pkey"], p, rec, di, finish))
+    for e in json.loads((ear_file or ear_items_path()).read_text())["items"]:
+        rec = load_note("ear", e["item"], pair)
+        di = SB.measure(window_audio(goat_audio(z, e["item"]), e["start_s"])[0])
+        todo.append(("ear", e["item"], e, rec, di, SB.measure))
+    return todo
+
+
+def replace_ruled_out_kinds(order, ear, figs, kinds_of, exclude=()):
+    """(Pure.) A later page's ear items (12q; #581's nit): the first page's items kept, each new item that is a
+    ruled-out DI replaced for its kind by the first item in the seeded `order` (ruled-out items dropped) that shows
+    the kind and is not already on the page, else its nearest by the kind's own figure (`nearest_fill`).
+    ear: the first page's items; figs/kinds_of: the kind figures and kinds by item (from the kind's own source).
+    `exclude`: items never drawn (12q: D's 19 development windows, so the new page never hears an item the fixes
+    were picked on). -> (items, replacements)."""
+    keep = [e for e in ear if e["old"] or e["item"] not in RULED_OUT]
+    order = [it for it in order if it not in RULED_OUT and it not in set(exclude)]
+    out, repl = [dict(e) for e in keep], {}
+    for e in ear:
+        if e["old"] or e["item"] not in RULED_OUT:
+            continue
+        k = e["kind"]
+        used = {x["item"] for x in out}
+        it = next((i for i in order if i not in used and k in (kinds_of.get(i) or set())), None)
+        if it is not None:
+            rec = {"kind": k, "item": it, "filled": True, "nearest": False, "figure": (figs.get(it) or {}).get(k),
+                   "bar": KIND_BARS[k], "label": k}
+        else:
+            rec = nearest_fill(order, {i: x["item"] for i, x in enumerate(out)}, figs, k)
+            if rec is None:
+                raise SystemExit(f"no item has a {k} figure among the development items")
+        repl[k] = {"from": e["item"], **rec}
+        out.append({"item": rec["item"], "start_s": None, "kind": k, "kind_label": rec["label"],
+                    "kind_filled": rec["filled"], "old": False})
+    return out, repl
+
+
+def cmd_ear_items(_args):
+    """A later page's ear items (zero renders; 12q, #581's nit; 12p's "new ear items come first"): the first page's
+    eight items with each ruled-out DI replaced for its kind (`replace_ruled_out_kinds`, from the first transcribe's
+    stored scans and seeded order); a replacement's window by the declared rule (`grid_window`, its kind's source);
+    its notes transcribed once (Basic Pitch, the install's pair). -> redo/ear-items-<name>.json, its note files."""
+    require_redo(PHASE_CALIB, PHASE_TRUTH, PHASE_ITEM5_OUT)
+    name = getattr(_args, "build_name", None)
+    if not name:
+        raise SystemExit("ear-items needs --build-name: the first page's items are never rewritten")
+    out_path = REDO / f"ear-items-{name}.json"
+    never_overwrite(out_path)
+    pair = install_pair(load_manifest())
+    first = json.loads(ear_items_path().read_text())
+    excl, tn, z, meta = _dev_context()
+    old = [e["item"] for e in first["items"] if e["old"]]
+    pool = sorted((it for it in meta if not NR.clear_of({"goat_item": it}, excl) and it not in old),
+                  key=lambda s: int(s.split("_")[1]))                 # the first transcribe's pool, item_5 in
+    order = list(pool)
+    random.Random(f"{EAR_SEED}|ear-items").shuffle(order)
+    scan = REDO / "work" / "transcribe" / "scan"
+    kinds_tr, starts = {}, {}
+    for i, it in enumerate(order):
+        f = scan / f"{i:03d}-scan.json"
+        if not f.exists():
+            raise SystemExit(f"{f.name}: the first transcribe's scan is not stored")
+        notes, _ = clean_transcribed(notes_from_events(json.loads(f.read_text())["events"]))
+        st = grid_window(notes, goat_duration(z, it))
+        if st is not None:
+            starts[it] = st
+            kinds_tr[it] = kind_flags([dict(n, on=n["on"] - st - 0.25, off=n["off"] - st - 0.25) for n in notes
+                                       if st + 0.25 <= n["on"] < st + 10.25])
+    kinds = ear_kinds_of(kinds_tr, {k: set(v) for k, v in (first.get("kinds_annotated") or {}).items()})
+    figs = dict(first.get("figures") or {})
+    d_items = {w["item"] for w in read_dev_windows(dev_windows(z, excl, tn["items"]))} - \
+        {e["item"] for e in first["items"]}                 # D: the fixes' development windows
+    items, repl = replace_ruled_out_kinds(order, first["items"], figs, kinds, exclude=d_items)
+    jobs, meta_of = [], []
+    for e in items:
+        if e["start_s"] is None:
+            e["start_s"] = starts[e["item"]]
+        if note_path("ear", e["item"]).exists():
+            rec = json.loads(note_path("ear", e["item"]).read_text())
+            if abs(rec["source"]["start_s"] - e["start_s"]) > 1e-9:
+                raise SystemExit(f"{e['item']}: a note file at another window exists")
+            continue
+        _, inp, pre = window_audio(goat_audio(z, e["item"]), e["start_s"])
+        jobs.append((inp, "ear"))
+        meta_of.append((e["item"], pre, {"start_s": e["start_s"]}))
+    for (it, pre, info), r in zip(meta_of, run_bp(jobs, REDO / "work" / f"ear-items-{name}") if jobs else []):
+        NR.write_once(note_path("ear", it), note_record(r, pre, info))
+    why = ruled_out_refusal([e["item"] for e in items], "the new ear items")
+    if why:
+        raise SystemExit(why)
+    NR.write_once(out_path, {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_ITEM5_OUT}", "name": name,
+                             "items": items, "replaced": repl, "first_sha256": NR.file_sha(ear_items_path()),
+                             "pair": list(pair)})
+    print(f"EAR ITEMS {name}: {[(e['item'], e['kind']) for e in items]}; replaced {repl}; sha256 "
+          f"{NR.file_sha(out_path)}")
+
+
 def cmd_build(_args):
     """Step 6 (zero renders): `tr-di` and `tr-plain` (`note_rebuild.rebuild_redo`, the ring variant from the
     calibration) for the 47 parts (finish: `song_bank.measure`, then `average_balance` with `note_replay.others_for`'s
@@ -1937,7 +2071,16 @@ def cmd_build(_args):
     why = why or ledger_pair_refusal(m.get(LEDGER_ID), pair)
     if why:
         raise SystemExit(why)
-    never_overwrite(build_path())
+    name = getattr(_args, "build_name", None)             # a later build (12q): its own record and dry root
+    fixes = json.loads(getattr(_args, "fixes", None) or "{}")
+    if fixes and not name:
+        raise SystemExit("a build with fixes needs --build-name: the first build is never rewritten")
+    if name:
+        why = ruled_out_refusal([e["item"] for e in json.loads(ear_items_file(name).read_text())["items"]],
+                                f"the ear items for {name}")
+        if why:
+            raise SystemExit(why)
+    never_overwrite(build_path(name))
     tr = json.loads(transcribe_path().read_text())
     if tr["stopped"]:
         raise SystemExit("the note checks refused 3 or more deciding parts: nothing is built")
@@ -1946,48 +2089,28 @@ def cmd_build(_args):
         raise SystemExit(why)
     import numpy as np
 
-    from learn import di_robustness as DR
-    from learn import note_replay as R
     from learn import scratch_search as S
-    from learn import song_bank as SB
 
-    draw, rby, sd = row_parts()
     excl, _, z, _ = _dev_context()
     bank = NR.Bank(NR.load_notes_doc(), excl=excl)
     ring = cal["ring_variant"]
-    rparts = list(rby.values())                   # the replay's drawn parts (the others' pool, as row (c)'s blur)
-    by_sec = {}
-    for p in rparts:
-        by_sec.setdefault(p["section"], sd.units[(p["set"], p["unit"], p["amp"])]["prt"])
-    cache = {}
-
-    def sec(s):
-        if s not in cache:
-            cache[s] = np.asarray(R.di_section(by_sec[s]), np.float64)
-        return cache[s]
+    draw, _, sd = row_parts()
     work = REDO / "work" / "build"
-    todo = []
-    for p in sorted(draw["parts"], key=lambda p: p["pkey"]):
-        rec = load_note("part", p["pkey"], pair)
-        di = sec(p["section"])
-        others = {s: [sec(x) for x in xs] for s, xs in R.others_for(rby[p["pkey"]], rparts).items()}
-
-        def finish(y, others=others):
-            return DR.average_balance(SB.measure(y), others)
-        todo.append(("part", p["pkey"], p, rec, di, finish))
-    for e in json.loads(ear_items_path().read_text())["items"]:
-        rec = load_note("ear", e["item"], pair)
-        di = SB.measure(window_audio(goat_audio(z, e["item"]), e["start_s"])[0])
-        todo.append(("ear", e["item"], e, rec, di, SB.measure))
+    todo = build_todo(pair, ear_items_file(name))
+    if name:
+        from learn import note_fixes as NF
     built, jobs = [], []
     for kind, key, info, rec, di, finish in todo:
         notes, rep = timed_notes(rec, di)
+        if fixes:
+            notes, frep = NF.apply_fixes(notes, fixes, di)
+            rep = {**rep, "fixes": frep}
         for arm in NR.REDO_ARMS:
             y, yrep = NR.rebuild_redo(arm, notes, len(di), bank, di, ring, finish=finish, loud=loud)
             y32 = np.asarray(y, np.float32)
             if len(y32) != len(di) or not np.isfinite(y32).all():
                 raise SystemExit(f"{key}: a bad {arm} dry guitar")
-            path = dry_path(arm, f"{kind}|{key}")
+            path = dry_path(arm, f"{kind}|{key}", dry_root(name) if name else None)
             never_overwrite(path)
             path.parent.mkdir(parents=True, exist_ok=True)
             np.save(path, y32)
@@ -1995,7 +2118,8 @@ def cmd_build(_args):
             jobs.append((y32, f"{arm}"))
     rt = run_bp(jobs, work / "round-trip")
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}", "pair": list(pair), "ring_variant": ring,
-           "loud_gamma": loud,
+           "loud_gamma": loud, "name": name, "fixes": fixes,
+           "dry_root": str(dry_root(name)) if name else None, "ear_items_file": ear_items_file(name).name,
            "transcribe_sha256": NR.file_sha(transcribe_path()), "parts": {}, "ear": {}}
     for (kind, key, info, arm, notes, rep, yrep, di, y32, sha), r in zip(built, rt):
         got = round_trip_notes(r["events"], np.asarray(y32, np.float64))
@@ -2022,10 +2146,11 @@ def cmd_build(_args):
     dec, pan, stop = refusal_count(out["parts"], sets_of)
     out.update(refused_deciding=dec, refused_panel=pan, stopped=stop,
                ear_failing=sorted(k for k, r in out["ear"].items() if r["failed"]))
-    NR.write_once(build_path(), out)
+    NR.write_once(build_path(name), out)
     print(f"BUILD: {len(out['parts'])} parts and {len(out['ear'])} ear items x {len(NR.REDO_ARMS)} arms; refused "
           f"deciding {len(dec)} {sorted(dec)}{' (STOPPED: no render)' if stop else ''}, panel {sorted(pan)}; ear "
-          f"failing {out['ear_failing']}; sha256 {NR.file_sha(build_path())} (into the ledger as {PHASE_DRY})")
+          f"failing {out['ear_failing']}; sha256 {NR.file_sha(build_path(name))} (into the ledger as "
+          f"{PHASE_DRY if not name else PHASE_DRY + '_' + name})")
 
 
 def load_dry(arm, key, build, kind="part"):
@@ -2089,8 +2214,7 @@ def cmd_clips(_args):
     dest = clips_dir(build_sha)
     never_overwrite(dest)
     build = json.loads(bpath.read_text())
-    if build["ear_failing"]:
-        raise SystemExit(f"ear items fail a content check ({build['ear_failing']}): no page until fixed")
+    # 12q R1: the page is built whatever the checks read (their figures go into the key, never on the page)
     from learn import note_replay as R
 
     R.no_separation_beside()
@@ -2105,7 +2229,7 @@ def cmd_clips(_args):
     from learn import song_bank as SB
 
     _, _, z, _ = _dev_context()
-    ear = json.loads(ear_items_path().read_text())["items"]
+    ear = json.loads((REDO / build.get("ear_items_file", ear_items_path().name)).read_text())["items"]
     why = None if build_sha == FIRST_DRY_SHA else ruled_out_refusal([e["item"] for e in ear], "the ear items")
     if why:                                                  # 12p: a later page never plays a ruled-out DI
         raise SystemExit(why)
@@ -2452,7 +2576,7 @@ def cmd_versions(_args):
 
 COMMANDS = {"set-aside": cmd_set_aside, "install": cmd_install, "install-gate": cmd_install_gate,
             "calibrate": cmd_calibrate, "transcribe": cmd_transcribe, "build": cmd_build,
-            "stem-preview": cmd_stem_preview, "clips": cmd_clips, "truth": cmd_truth,
+            "stem-preview": cmd_stem_preview, "clips": cmd_clips, "truth": cmd_truth, "ear-items": cmd_ear_items,
             "attacks-report": cmd_attacks_report, "ghost-ladder": cmd_ghost_ladder, "truth-report": cmd_truth_report,
             "versions": cmd_versions}
 
@@ -2467,6 +2591,9 @@ def main(argv=None):
     ap.add_argument("cmd", choices=sorted(COMMANDS))
     ap.add_argument("--interpreter", default=None, help="install only: the declared 3.11 fallback's interpreter")
     ap.add_argument("--build", default=None, help="clips only: a later build's record (default: the first build)")
+    ap.add_argument("--build-name", dest="build_name", default=None,
+                    help="build and ear-items: a later build's name (its own record, dry root and ear items)")
+    ap.add_argument("--fixes", default=None, help='build only: the fixes as JSON, e.g. {"F1": "global", "F3": true}')
     args = ap.parse_args(argv)
     COMMANDS[args.cmd](args)
 

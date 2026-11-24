@@ -238,16 +238,22 @@ def test_the_ear_check_gates_answers_score_and_read():
     for v in ("fault-content", "fault-signal", "ask", "incomplete"):
         assert v in SN.ear_refusal({T.PHASE_EAR: {"verdict": v}})
     assert SN.ear_refusal({T.PHASE_EAR: {"verdict": "ok"}}) is None
-    heard = {T.PHASE_EAR: {"verdict": "ok", "dry_build_sha256": "B"}}
+    heard = {T.ear_key("B"): {"verdict": "ok", "dry_build_sha256": "B"}}
     assert SN.ear_refusal(heard, "B") is None
     assert "another build" in SN.ear_refusal(heard, "B2")
+    misfiled = {T.PHASE_EAR: {"verdict": "ok", "dry_build_sha256": "B"}}       # #581's nit: its own key only
+    assert "filed under" in SN.ear_refusal(misfiled, "B")
+    assert SN.ear_label(heard, "B") == "ear ok" and SN.ear_label({}, "B") == "ear pending"   # 12q R5
+    assert SN.ear_label({T.ear_key("B"): {"verdict": "fault-content", "dry_build_sha256": "B"}}, "B") == \
+        "ear fault-content"
+    assert SN.dry_key() == SN.PHASE_DRY and SN.dry_key("b2") == SN.PHASE_DRY + "_b2"
     assert "another build" in SN.ear_refusal({T.PHASE_EAR: {"verdict": "ok"}}, "B")
 
 
 def test_the_build_stop_rule_refuses_on_any_failing_ear_item():
     assert SN.build_refusal({"stopped": False, "ear_failing": []}) is None
     assert "3 or more" in SN.build_refusal({"stopped": True, "ear_failing": []})
-    assert "item_23" in SN.build_refusal({"stopped": False, "ear_failing": ["item_23"]})
+    assert SN.build_refusal({"stopped": False, "ear_failing": ["item_23"]}) is None   # 12q R1: a report
 
 
 def test_require_build_refuses_a_search_when_an_ear_item_fails(monkeypatch):
@@ -256,10 +262,7 @@ def test_require_build_refuses_a_search_when_an_ear_item_fails(monkeypatch):
     monkeypatch.setattr(T, "load_manifest", lambda: {"lock_sha256": "L", "model_sha256": "M"})
     monkeypatch.setattr(T.NR, "file_sha", lambda path: "N")
     monkeypatch.setattr(SN, "redo_hash_refusal", lambda *a: None)
-    with pytest.raises(SystemExit, match="ear items fail a content check"):
-        SN.require_build({})
-    build["ear_failing"] = []
-    assert SN.require_build({}) is build
+    assert SN.require_build({}) is build                  # 12q R1: an ear item's check is a report, never a refusal
 
 
 def test_main_must_hold_the_installs_gate_and_calibration():
@@ -395,9 +398,10 @@ def test_answers_score_and_read_refuse_without_the_ear_verdict(monkeypatch):
     main = {"note-rebuild": {T.PHASE: "d", T.PHASE_INSTALL: {}, T.PHASE_NOTES: {}, T.PHASE_EAR: {"verdict": "ask"}},
             "preset-ladder": {SN.PHASE: "d", SN.GATE: "F-both", SN.PHASE_DRY: {}, SN.PHASE_ANSWERS: {}}}
     monkeypatch.setattr(T, "redo_on_main", lambda: (main, None))
-    for cmd in ("answers", "score", "read"):
-        with pytest.raises(SystemExit, match="reads ask"):
+    for cmd in ("answers", "score", "read"):                 # 12q R5: the verdict is a label, never a gate
+        with pytest.raises((SystemExit, OSError)) as got:        # it goes on, to the next missing input
             SN.COMMANDS[cmd](type("A", (), {"shard": (0, 1), "first": 0})())
+        assert "reads ask" not in str(got.value)
 
 
 def test_search_refuses_until_both_checks_passed(monkeypatch):

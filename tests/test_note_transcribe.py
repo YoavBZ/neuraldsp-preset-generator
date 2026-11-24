@@ -35,7 +35,7 @@ def test_the_settings_are_the_declared_ones():
 def test_the_checks_are_the_six_declared():
     assert list(T.CONTENT) == ["annotated-found", "onsets-found", "playing-covered", "judge-accepts", "ring-kept",
                                "chords-kept"]
-    assert [k for k, v in T.CONTENT.items() if not v["blocking"]] == ["annotated-found", "onsets-found"]   # 12m
+    assert not any(v["blocking"] for v in T.CONTENT.values())          # 12q R1: every content check a report
     c = T.CONTENT
     assert (c["annotated-found"]["median"], c["annotated-found"]["floor"], c["annotated-found"]["admission"]) == \
         (0.85, 0.75, "consistent")
@@ -221,7 +221,8 @@ def test_check_verdict_blocks_only_on_blocking_failures():
     figs["ring-kept"]["env_corr"] = 0.5
     figs["onsets-found"] = {"attacks": 0, "found": 0}                                     # not measured: no block
     v = T.check_verdict(figs)
-    assert v["failed"] == ["ring-kept"] and v["passes"]["onsets-found"] is None
+    assert v["failed"] == [] and v["passes"]["ring-kept"] is False and v["passes"]["onsets-found"] is None   # R1
+    assert T.check_verdict(figs, blocking={"ring-kept"})["failed"] == ["ring-kept"]   # a blocking set still blocks
     assert T.check_verdict(figs, T.NOTE_CHECKS)["failed"] == []
 
 
@@ -251,13 +252,16 @@ def test_calibration_as_fixed():
     assert not T.calibration_ok(27, caught, positive_blocking=["chords-kept"])  # a failing check that stays blocking
 
 
-def test_the_positive_controls_rule_and_the_blocking_set():
-    """A declared blocking check that avg+mild or the true DI fails on any window becomes report-only; the user's
+def test_the_positive_controls_rule_and_the_blocking_set(monkeypatch):
+    """(Under 12q R1 no check is declared blocking; the rule is tested with the four declared blocking as before.)
+    A declared blocking check that avg+mild or the true DI fails on any window becomes report-only; the user's
     calibration go makes playing-covered a report; the verdict and the clip cases follow the effective set."""
     checks = {"avg+mild": {"w1": {"passes": {"judge-accepts": True, "ring-kept": False, "chords-kept": True}},
                            "w2": {"passes": {"judge-accepts": None, "ring-kept": True, "chords-kept": True}}},
               "true": {"w1": {"passes": {"judge-accepts": True, "ring-kept": True, "chords-kept": False}}},
               "ring-soft": {"w1": {"passes": {"judge-accepts": False}}}}          # not a control: never counted
+    for k in ("playing-covered", "judge-accepts", "ring-kept", "chords-kept"):
+        monkeypatch.setitem(T.CONTENT, k, dict(T.CONTENT[k], blocking=True))
     assert T.positive_failing(checks) == ["chords-kept", "ring-kept"]
     assert T.positive_failing({"true": {"w": {"passes": {"onsets-found": False}}}}) == []        # already a report
     failing = ["chords-kept", "ring-kept"]
@@ -349,24 +353,25 @@ def test_the_rejected_clips_cases():
     res = {"a|nr-plain": {"onsets-found": False, "playing-covered": False},
            "b|nr-plain": {"ring-kept": True, "playing-covered": True},
            "c|nr-plain": {"onsets-found": False, "playing-covered": True}}
-    assert T.clip_case(exp, res) == {"a|nr-plain": "caught by a blocking check", "b|nr-plain": "caught by no check",
-                                     "c|nr-plain": "caught by a report only"}
+    assert T.clip_case(exp, res, {"playing-covered", "ring-kept"}) == {
+        "a|nr-plain": "caught by a blocking check", "b|nr-plain": "caught by no check",
+        "c|nr-plain": "caught by a report only"}
+    assert T.clip_case(exp, res)["a|nr-plain"] == "caught by a report only"     # 12q R1: nothing declared blocking
     only_ring = {"ring-kept"}                                # playing-covered a report: a now caught by a report only
     assert T.clip_case(exp, res, only_ring)["a|nr-plain"] == "caught by a report only"
 
 
 def test_the_two_triggers_and_the_versions_loudness():
     assert T.chords_go_refusal(0.86, {}) is None
-    assert "to the user first" in T.chords_go_refusal(0.84, {})
+    assert T.chords_go_refusal(0.84, {}) is None                     # 12q R1: reported, never a trigger
     assert T.chords_go_refusal(0.84, {T.PHASE_GO_CHORDS: {"go": True}}) is None
     assert "no P2 chord recall" in T.chords_go_refusal(None, {})
     assert T.p2_chord_recall({"report": {"P2|chords": {"recall": 0.9}}}) == 0.9 and T.p2_chord_recall({}) is None
     assert T.flags_go_refusal(["a", "b"], {}) is None
-    assert "3 of the 40" in T.flags_go_refusal(["a", "b", "c"], {})
+    assert T.flags_go_refusal(["a", "b", "c"], {}) is None           # 12q R1: reported, never a trigger
     assert T.flags_go_refusal(["a", "b", "c"], {T.PHASE_GO_FLAGS: {}}) is None
     assert T.flags_note(["a", "b"], {}) == ""                                     # under the trigger
-    assert T.flags_note(["a", "b", "c"], {}) == " (TO THE USER before any build)"
-    assert T.flags_note(["a", "b", "c"], {T.PHASE_GO_FLAGS: {}}) == f" (reported: the user's go {T.PHASE_GO_FLAGS})"
+    assert T.flags_note(["a", "b", "c"], {}) == " (reported: 12q R1, never a trigger)"
     parts = {"a": {"figures": {"onsets-found": {"flag": True}}}, "b": {"figures": {"onsets-found": {"flag": False}}},
              "p": {"figures": {"onsets-found": {"flag": True}}}}
     assert T.flagged_parts(parts, {"a": "goat", "b": "bks", "p": "panel"}) == (["a"], ["p"])
@@ -496,7 +501,7 @@ def test_the_guard_covers_the_declared_files_and_keys():
     assert set(T.CODE_FILES) == {"learn/scratch_search.py", "learn/scratch_notes.py", "learn/note_rebuild.py",
                                  "learn/note_rebuild_s1.py", "learn/note_rebuild_ear.py", "learn/note_transcribe.py",
                                  "learn/bp_run.py", "learn/note_truth.py", "learn/note_attacks.py",
-                                 "learn/attack_run.py", "learn/note_versions.py"}
+                                 "learn/attack_run.py", "learn/note_versions.py", "learn/note_fixes.py"}
     assert all((REPO / f).exists() for f in T.CODE_FILES)
     assert T.KEY_PREFIXES == {"preset-ladder": ("phase_fs", "phase_scratch_notes"), "note-rebuild": ("phase_nr",)}
     local = {"preset-ladder": {"phase_fs": 1, "phase_scratch_notes": 2, "phase_l0": 3},
