@@ -4960,6 +4960,136 @@
     },
     "reading": "by the score (cluster- and band-weighted means): build 1's answer is undecided against Cen on the 40 (the interval spans 0; its top passes BIG 0.10) (+0.029 [-0.072, +0.130]); against row (c) +0.116 [+0.020, +0.212] (worse by the user's SMALL and BIG); against row (b) +0.293 [+0.200, +0.387]. The curve is flat from 50 evaluations on (-0.004 to +0.034; final +0.029). Crunch reads closer than clean in every pair. The shrunk arm is -0.045 [-0.124, +0.034] against Cen and +0.102 [+0.038, +0.166] against row (c) (worse). The ear-faulty build (R8), read beside build 2 (phase_scratch_notes_read_b2); their pair is pair-builds --build-name b2",
     "correction_to_read_b2": "phase_scratch_notes_read_b2 words build 2's answer as \"level with Cen\" (+0.009 [-0.088, +0.106]); by `paired_reading` with the user's SMALL and BIG it is \"undecided\" (the interval spans 0, its top +0.106 passes BIG 0.10). Recorded here; that record is left as merged (the ledger is append-only)"
+   },
+   "phase_scratch_notes_pair_b2": {
+    "sha256": "27a7c3f32135c5f93d252abbbcd85d09035fac41cd0379cc1ae946f32a8f6eda",
+    "file": "PF/fs/notes-b2/pair-b1.json",
+    "built": "2026-11-24 21:37:19",
+    "pair": "b2 less build 1",
+    "renders": 0,
+    "code_provisional": true,
+    "ran": "2026-11-24, python -m learn.scratch_notes pair-builds --build-name b2 once from main at 6007cabf in a frozen worktree (after #609's path fix: the first attempt from 53d3fff7 refused on the answers hash, nothing written), zero renders; both builds from their hashed answers (phase_scratch_notes_answers_b2, phase_scratch_notes_answers) and score files",
+    "ear": {
+     "b2": "ear fault-content",
+     "1": "ear fault-content"
+    },
+    "refused": {
+     "b2": 0,
+     "1": 0
+    },
+    "tr_di_changed": "47 of 47 parts (0 identical), 40 of 40 on BKS+GOAT: F1's global re-zeroing changes every part's dry guitar, so no part is carried and every part is measured",
+    "arms": {
+     "answer": {
+      "itt": {
+       "parts": 47,
+       "bks_goat": {
+        "all": {
+         "mean": -0.0199,
+         "lo90": -0.0449,
+         "hi90": 0.0051
+        },
+        "clean": {
+         "mean": -0.0446,
+         "lo90": -0.0884,
+         "hi90": -0.0009
+        },
+        "crunch": {
+         "mean": 0.0048,
+         "lo90": -0.026,
+         "hi90": 0.0356
+        }
+       },
+       "reading": {
+        "reading": "matches",
+        "level_not_readable": true
+       }
+      },
+      "passing_only": {
+       "parts": 47,
+       "bks_goat": {
+        "all": {
+         "mean": -0.0199,
+         "lo90": -0.0449,
+         "hi90": 0.0051
+        },
+        "clean": {
+         "mean": -0.0446,
+         "lo90": -0.0884,
+         "hi90": -0.0009
+        },
+        "crunch": {
+         "mean": 0.0048,
+         "lo90": -0.026,
+         "hi90": 0.0356
+        }
+       },
+       "reading": {
+        "reading": "matches",
+        "level_not_readable": true
+       }
+      }
+     },
+     "shrunk": {
+      "itt": {
+       "parts": 47,
+       "bks_goat": {
+        "all": {
+         "mean": -0.0313,
+         "lo90": -0.0564,
+         "hi90": -0.0061
+        },
+        "clean": {
+         "mean": -0.0504,
+         "lo90": -0.0908,
+         "hi90": -0.01
+        },
+        "crunch": {
+         "mean": -0.0121,
+         "lo90": -0.0497,
+         "hi90": 0.0255
+        }
+       },
+       "reading": {
+        "reading": "matches",
+        "level_not_readable": false
+       }
+      },
+      "passing_only": {
+       "parts": 47,
+       "bks_goat": {
+        "all": {
+         "mean": -0.0313,
+         "lo90": -0.0564,
+         "hi90": -0.0061
+        },
+        "clean": {
+         "mean": -0.0504,
+         "lo90": -0.0908,
+         "hi90": -0.01
+        },
+        "crunch": {
+         "mean": -0.0121,
+         "lo90": -0.0497,
+         "hi90": 0.0255
+        }
+       },
+       "reading": {
+        "reading": "matches",
+        "level_not_readable": false
+       }
+      }
+     }
+    },
+    "plain_unweighted_mean_40": {
+     "answer": -0.0181,
+     "shrunk": -0.0304
+    },
+    "parts_closer_on_the_40": {
+     "answer": "22 closer, 18 farther",
+     "shrunk": "22 closer, 18 farther"
+    },
+    "note": "ln(x / Cen) differences, build 2 less build 1, on BKS+GOAT (the 40), 90% intervals; negative is build 2 closer. Means are `note_replay.summary`'s cluster- and band-weighted figures. With 0 refusals in either build the intent-to-treat and passing-only pairs are the same numbers",
+    "reading": "by the score: build 2 less build 1, answer arm -0.020 [-0.045, +0.005] on the 40 (matches; level, not readable by the score: the interval inside +-SMALL 0.05), clean -0.045 [-0.088, -0.001], crunch +0.005 [-0.026, +0.036]; shrunk arm -0.031 [-0.056, -0.006] (matches; the interval excludes 0, its bottom just past -SMALL), clean -0.050 [-0.091, -0.010], crunch -0.012 [-0.050, +0.025]. Build 2's fixes (F1 global, ring-soft) move the search's answers by less than the score can read; a small lean to build 2 on clean. Readings use the user's SMALL and BIG and only label"
    }
   },
   {

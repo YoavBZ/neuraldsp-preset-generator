@@ -550,3 +550,12 @@ def test_build_1s_read_on_main_is_provisional():
     assert rec["code_provisional"] is True and rec["ear"] == "ear fault-content"
     assert rec["ear"] == SN.ear_label(e["note-rebuild"], lad[SN.dry_key()]["sha256"])          # 12q R5
     assert rec["answers_sha256"] == lad[SN.answers_key()]["sha256"] != lad["phase_scratch_notes_read_b2"]["answers_sha256"]
+
+
+def test_the_build_pair_on_main_reads_both_builds_own_answers():
+    import pathlib
+
+    e = T.entries((pathlib.Path(__file__).resolve().parents[1] / "docs" / "dev-test-ledger.json").read_text())
+    rec = e["preset-ladder"]["phase_scratch_notes_pair_b2"]
+    assert rec["renders"] == 0 and rec["code_provisional"] is True and rec["pair"] == "b2 less build 1"
+    assert set(rec["arms"]) == {"answer", "shrunk"} and all(a["itt"]["parts"] == 47 for a in rec["arms"].values())
