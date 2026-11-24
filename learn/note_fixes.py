@@ -169,6 +169,71 @@ def join_glides(notes, pairs, rate_frame=NR.BEND_FRAME_S):
     return [n for k, n in enumerate(out) if k not in drop]
 
 
+# --- 12r: the MuScriptor-based fixes (pure; MuScriptor's timed notes beside Basic Pitch's) --------------------------
+
+MS_JOIN_WINDOWS_S = (0.050, 0.100, 0.150)    # F2-MuScriptor's operating points (12r)
+CONFIRM_S = 0.050                            # a MuScriptor confirmation: same pitch, onsets within 50 ms (track 1's pair)
+F4_BELOW_S = (0.050, 0.150)                  # F4: the paired note below confirmed within 50 ms (as declared), 150 beside
+F5_CONTEXT_S, F5_CONTEXT_COUNT = 0.150, 2    # F5: the auditor's candidate definition (12r), not tuned bars
+F5_CONTEXT_BESIDE_S = 0.100
+GHOST_INTERVALS = (12, 19, 24)               # track 1's veto: an octave, a twelfth, two octaves above a paired note
+
+
+def ms_confirms(note, ms, w=CONFIRM_S):
+    """(Pure.) MuScriptor has an onset of the note's pitch within +-w of its onset."""
+    return any(m["pitch"] == note["pitch"] and abs(m["on"] - note["on"]) <= w for m in ms)
+
+
+def f2_ms_joins(notes, pairs, ms, w):
+    """(Pure.) F2-MuScriptor at window `w`: the re-finds MuScriptor does not confirm (they join; nothing is deleted).
+    -> set of j."""
+    return {j for _, j in pairs if not ms_confirms(notes[j], ms, w)}
+
+
+def _paired(bp, ms, w):
+    """(Pure.) One-to-one pairs of Basic Pitch notes with MuScriptor's (same pitch, onsets within w, closest first).
+    -> set of Basic Pitch indices."""
+    cand = sorted((abs(a["on"] - b["on"]), i, j) for i, a in enumerate(bp) for j, b in enumerate(ms)
+                  if a["pitch"] == b["pitch"] and abs(a["on"] - b["on"]) <= w)
+    ui, uj = set(), set()
+    for _, i, j in cand:
+        if i not in ui and j not in uj:
+            ui.add(i)
+            uj.add(j)
+    return ui
+
+
+def f4_keep(bp, ms, below_s=F4_BELOW_S[0], intervals=GHOST_INTERVALS):
+    """(Pure.) F4, `tx-veto`: every confirmed note kept, and every unconfirmed one unless a note in its onset group,
+    confirmed within `below_s`, sits 12, 19 or 24 semitones below it. -> set of kept indices."""
+    paired = _paired(bp, ms, CONFIRM_S)
+    below_ok = _paired(bp, ms, below_s)
+    keep = set()
+    for g in NR.onset_groups(bp):
+        below = {bp[k]["pitch"] for k in g if k in below_ok}
+        for k in g:
+            if k in paired or not any(bp[k]["pitch"] - p in intervals for p in below):
+                keep.add(k)
+    return keep
+
+
+def f5_keep(bp, ms, ctx_s=F5_CONTEXT_S, count=F5_CONTEXT_COUNT):
+    """(Pure.) F5, the context hybrid: a note MuScriptor confirms is kept; an unconfirmed one is dropped (the vote)
+    unless MuScriptor has `count` or more onsets within +-`ctx_s` of it, where F4's veto decides. -> kept indices."""
+    paired = _paired(bp, ms, CONFIRM_S)
+    veto = f4_keep(bp, ms)
+    keep = set()
+    for k, n in enumerate(bp):
+        dense = sum(abs(m["on"] - n["on"]) <= ctx_s for m in ms) >= count
+        if k in paired or (dense and k in veto):
+            keep.add(k)
+    return keep
+
+
+def kept_notes(bp, keep):
+    return [dict(n) for k, n in enumerate(bp) if k in keep]
+
+
 # --- applying the fixes ------------------------------------------------------------------------------------------------
 
 def apply_fixes(notes, fixes, di=None, rate=NR.SR):
@@ -395,6 +460,113 @@ def isolate(out_path):
           f"{time.time() - t0:.0f} s -> {out_path}")
 
 
+def chord_truth(truth):
+    """(Pure.) The truth notes in onset groups of 3 or more (the chords). -> set of indices."""
+    return {k for g in NR.onset_groups(truth) if len(g) >= 3 for k in g}
+
+
+def matched_truth(notes, truth, onset_s=0.050):
+    """(Pure.) The truth notes a note list matches one to one (same pitch, onsets within `onset_s`, closest first).
+    -> set of truth indices."""
+    cand = sorted((abs(t["on"] - n["on"]), i, j) for i, t in enumerate(truth) for j, n in enumerate(notes)
+                  if t["pitch"] == n["pitch"] and abs(t["on"] - n["on"]) <= onset_s)
+    ui, uj = set(), set()
+    for _, i, j in cand:
+        if i not in ui and j not in uj:
+            ui.add(i)
+            uj.add(j)
+    return ui
+
+
+def removal_counts(before, after, truth):
+    """(Pure.) What a fix removed (dropped or joined away), against the truth: `lost`, truth notes matched before and
+    no longer matched after (on D annotated picks, on L true notes; never over-counted); `removed`, the other notes
+    gone; `chord_lost_proxy`, of the lost, the chord notes (a stand-in for real chord repicks lost)."""
+    ch = chord_truth(truth)
+    lost = matched_truth(before, truth) - matched_truth(after, truth)
+    return {"lost": len(lost), "removed": max(0, (len(before) - len(after)) - len(lost)),
+            "chord_lost_proxy": len(lost & ch)}
+
+
+def chord_recall(notes, truth):
+    """(Pure.) The share of the truth's chord notes a note list matches (same pitch, onsets within 50 ms)."""
+    ch = chord_truth(truth)
+    if not ch:
+        return None
+    return sum(any(n["pitch"] == truth[k]["pitch"] and abs(n["on"] - truth[k]["on"]) <= 0.050 for n in notes)
+               for k in ch) / len(ch)
+
+
+def muscriptor_notes(L, D):
+    """MuScriptor's timed notes beside each L and D window (track 1's stage b and list screen, the picked size;
+    `note_tx`'s own refusals: its install, its listing). Adds `ms` to each window."""
+    from learn import note_transcribe as T
+    from learn import note_tx as X
+
+    m = X.require_tx(X.PHASE_GO, X.PHASE_INSTALL, X.PHASE_LISTS, X.PHASE_GO_READ, X.PHASE_NOTES)
+    tx = m.get(X.LEDGER_ID) or {}
+    _, sha = X.notes_listing(("truth", "goat", "goat-free"))          # as `note_tx read` checks it
+    if (tx.get(X.PHASE_NOTES) or {}).get("listing_sha256") != sha:
+        raise SystemExit(f"the note files are not main's {X.PHASE_NOTES} listing")
+    size = X.picked_size(T.require_file_hash(tx, X.PHASE_LISTS, X.lists_path())["body"], tx.get(X.PHASE_GO_READ))
+    inst = X.require_install(m, size)
+    for w in L:
+        w["ms"], _ = T.timed_notes(X.ms_events(X.load_ms(X.LIST_KINDS[size][0], w["key"], inst)), w["di"])
+    for w in D:
+        w["ms"], _ = T.timed_notes(X.ms_events(X.load_ms("goat", w["key"], inst)), w["di"])
+    return size
+
+
+def isolate_ms(out_path, f1_mode):
+    """12r (zero renders): F2-MuScriptor at 50, 100 and 150 ms, F4 (the note below confirmed within 50, and 150
+    beside) and F5 (the context hybrid, 150 ms and 2 onsets, 100 ms beside), each alone on top of F1 (`f1_mode`, the
+    declared isolation's pick), on L and D: the distance less F1 with its 90% interval, the counts against the truth
+    or the annotation, chord repicks or notes lost, chord-note recall on L. -> OUT.json."""
+    t0 = time.time()
+    L, D, bank = windows_L_D()
+    size = muscriptor_notes(L, D)
+    base = {s: {w["key"]: window_figures(w, rezero_bends(w["notes"], f1_mode), bank) for w in ws}
+            for s, ws in (("L", L), ("D", D))}
+    variants = [("F2-MuScriptor", f"w={int(w * 1000)}ms", w) for w in MS_JOIN_WINDOWS_S]
+    variants += [("F4", f"below={int(b * 1000)}ms", b) for b in F4_BELOW_S]
+    variants += [("F5", f"ctx={int(c * 1000)}ms,count={F5_CONTEXT_COUNT}", c) for c in (F5_CONTEXT_S, F5_CONTEXT_BESIDE_S)]
+    rows = []
+    for fix, label, par in variants:
+        row = {"fix": fix, "point": label, "L": {"lost": 0, "removed": 0, "chord_lost_proxy": 0},
+               "D": {"lost": 0, "removed": 0, "chord_lost_proxy": 0},
+               "counts_label": "seen before the declaration" if fix in ("F2-MuScriptor", "F4") else None}
+        fig = {"L": {}, "D": {}}
+        chord = {"before": [], "after": []}
+        for s, ws in (("L", L), ("D", D)):
+            for w in ws:
+                n1 = rezero_bends(w["notes"], f1_mode)
+                if fix == "F2-MuScriptor":
+                    pairs = refind_pairs(n1)
+                    after = join_refinds(n1, pairs, f2_ms_joins(n1, pairs, w["ms"], par))
+                elif fix == "F4":
+                    after = kept_notes(n1, f4_keep(n1, w["ms"], below_s=par))
+                else:
+                    after = kept_notes(n1, f5_keep(n1, w["ms"], ctx_s=par))
+                for k, v in removal_counts(n1, after, w["truth"]).items():
+                    row[s][k] += v
+                fig[s][w["key"]] = window_figures(w, after, bank)
+                if s == "L":
+                    chord["before"].append(chord_recall(n1, w["truth"]))
+                    chord["after"].append(chord_recall(after, w["truth"]))
+        row["distance_less_F1"] = {s: interval90([fig[s][k]["distance"] - base[s][k]["distance"] for k in base[s]])
+                                   for s in ("L", "D")}
+        pairs_ = [(a, b) for a, b in zip(chord["before"], chord["after"]) if a is not None and b is not None]
+        row["chord_recall_L"] = {"F1": interval90([a for a, _ in pairs_]), "fixed": interval90([b for _, b in pairs_]),
+                                 "fixed_less_F1": interval90([b - a for a, b in pairs_])}
+        row["figures"] = fig
+        rows.append(row)
+    body = {"plan": "docs/note-rebuild-plan.md 12r", "ledger": "note-rebuild phase_nr_1_redo_fixes_ms", "renders": 0,
+            "f1_mode": f1_mode, "muscriptor_size": size, "F1_figures": base, "rows": rows,
+            "seconds": time.time() - t0}
+    NR.write_once(out_path, body)
+    print(f"ISOLATE-MS on F1 {f1_mode}: {len(rows)} variants; {time.time() - t0:.0f} s -> {out_path}")
+
+
 def clamp_binding(notes, raw_counts):
     """(Pure.) 12q R4: how often the synthesis clamps act on a window's notes, from the notes alone: the bend cap
     (a note whose re-zeroed track passes +-BEND_MAX_SEMITONES), the 2-semitone clear rule (a note with a frame it
@@ -463,6 +635,10 @@ def main(argv=None):
     s = sub.add_parser("isolate")
     s.add_argument("out")
     s.set_defaults(fn=lambda a: isolate(a.out))
+    s = sub.add_parser("isolate-ms")
+    s.add_argument("out")
+    s.add_argument("--f1", required=True, choices=F1_MODES, help="the declared isolation's F1 pick")
+    s.set_defaults(fn=lambda a: isolate_ms(a.out, a.f1))
     s = sub.add_parser("clamps")
     s.add_argument("out")
     s.set_defaults(fn=lambda a: clamps(a.out))

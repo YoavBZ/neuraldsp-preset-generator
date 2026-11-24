@@ -117,3 +117,40 @@ def test_the_muscriptor_fixes_are_declared_before_their_numbers():
     rec = e["note-rebuild"]["phase_nr_1_redo_fixes_ms"]
     assert {"F2_muscriptor", "F4", "F5", "order"} <= set(rec) and "50, 100, 150 ms" in rec["F2_muscriptor"]
     assert "not tuned bars" in rec["F5"] and "preliminary" not in rec                 # declared: no figures yet
+
+
+def test_the_muscriptor_fixes_transforms():
+    bp = [note(0.0, 0.4, 60), note(0.45, 1.0, 60), note(0.0, 0.4, 72), note(2.0, 2.5, 64)]
+    ms = [{"on": 0.01, "off": 0.9, "pitch": 60}, {"on": 2.3, "off": 2.6, "pitch": 64}]
+    pairs = F.refind_pairs(bp)
+    assert F.f2_ms_joins(bp, pairs, ms, 0.050) == {1}            # MuScriptor hears no new attack at 0.45: join
+    assert F.f2_ms_joins(bp, pairs, ms + [{"on": 0.47, "off": 0.9, "pitch": 60}], 0.050) == set()
+    assert F.f4_keep(bp, ms) == {0, 1, 3}                          # 72 is a ghost an octave above a confirmed 60
+    assert F.f5_keep(bp, ms) == {0}                                # sparse: only confirmed notes (the vote)
+    dense = ms + [{"on": 2.05, "off": 2.4, "pitch": 67}, {"on": 2.1, "off": 2.4, "pitch": 71}]
+    assert 3 in F.f5_keep(bp, dense)                               # dense context: the veto decides, 64 kept
+    truth = [note(0.0, 0.5, 60), note(0.0, 0.5, 64), note(0.0, 0.5, 67), note(2.0, 2.5, 64)]
+    got = F.removal_counts(truth + [note(1.0, 1.2, 50)], [truth[0], truth[3]], truth)
+    assert got == {"lost": 2, "removed": 1, "chord_lost_proxy": 2}
+    dup = [note(0.0, 0.5, 60), note(0.01, 0.5, 60)]                   # two notes on one truth note: one lost at most
+    assert F.removal_counts(dup, [], [note(0.0, 0.5, 60)]) == {"lost": 1, "removed": 1, "chord_lost_proxy": 0}
+    assert F.chord_recall([truth[0]], truth) == 1 / 3 and F.chord_recall([], [note(0, 1, 60)]) is None
+
+
+def test_f4_at_50_ms_is_track_1s_veto():
+    from learn import note_tx as X
+
+    bp = [note(0.0, 0.4, 60), note(0.0, 0.4, 72), note(0.0, 0.4, 79), note(0.5, 0.9, 64), note(0.5, 0.9, 76),
+          note(1.0, 1.3, 67)]
+    ms = [{"on": 0.02, "off": 0.4, "pitch": 60}, {"on": 0.55, "off": 0.9, "pitch": 64}, {"on": 1.2, "off": 1.4,
+                                                                                         "pitch": 67}]
+    assert F.kept_notes(bp, F.f4_keep(bp, ms, below_s=0.050)) == X.veto_notes(bp, ms)
+
+
+def test_the_ear_items_figure_merge():
+    """#589's nit: the annotated kinds' figures come from the annotation, the rest from the scans; only scanned items."""
+    tr = {"a": {"single-note": None, "let-ring": 0.08, "bends": 12}, "b": {"single-note": 0.5, "let-ring": 0.01}}
+    ann = {"a": {"single-note": 0.92, "let-ring": 0.0}, "c": {"single-note": 1.0}}
+    got = T.merge_kind_figures(tr, ann)
+    assert got == {"a": {"single-note": 0.92, "let-ring": 0.08, "bends": 12}, "b": {"let-ring": 0.01}}
+    assert "c" not in got                                                  # no scan window: no figure

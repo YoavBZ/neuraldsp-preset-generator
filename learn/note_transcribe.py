@@ -1963,6 +1963,14 @@ def build_todo(pair=None, ear_file=None):
     return todo
 
 
+def merge_kind_figures(figs_tr, figs_ann):
+    """(Pure.) Each kind's figure from its own source (12n): the annotated kinds (`ANNOTATED_KINDS`) from the
+    annotation's figures, every other kind from the transcription's. Only items with a scan window (keys of
+    `figs_tr`) are covered; an item without one has no figure. -> {item: {kind: figure}}."""
+    return {it: {**{k: v for k, v in (figs_ann.get(it) or {}).items() if k in ANNOTATED_KINDS},
+                 **{k: v for k, v in f.items() if k not in ANNOTATED_KINDS}} for it, f in figs_tr.items()}
+
+
 def replace_ruled_out_kinds(order, ear, figs, kinds_of, exclude=()):
     """(Pure.) A later page's ear items (12q; #581's nit): the first page's items kept, each new item that is a
     ruled-out DI replaced for its kind by the first item in the seeded `order` (ruled-out items dropped) that shows
@@ -2025,9 +2033,7 @@ def cmd_ear_items(_args):
                  if st + 0.25 <= n["on"] < st + 10.25]
             kinds_tr[it], figs_tr[it] = kind_flags(w), kind_figures(w)
     kinds = ear_kinds_of(kinds_tr, {k: set(v) for k, v in (first.get("kinds_annotated") or {}).items()})
-    figs = {it: {**(first.get("figures_annotated") or {}).get(it, {}), **{k: v for k, v in f.items()
-                                                                          if k not in ANNOTATED_KINDS}}
-            for it, f in figs_tr.items()}             # each kind's figure from its own source (12n)
+    figs = merge_kind_figures(figs_tr, first.get("figures_annotated") or {})
     d_items = {w["item"] for w in read_dev_windows(dev_windows(z, excl, tn["items"]))} - \
         {e["item"] for e in first["items"]}                 # D: the fixes' development windows
     items, repl = replace_ruled_out_kinds(order, first["items"], figs, kinds, exclude=d_items)
