@@ -365,6 +365,67 @@ def test_the_rows_paths():
         assert "fs-both" not in str(p) and p.relative_to(S.fs_dir() / "notes")
 
 
+def test_each_builds_answers_have_their_own_key_and_folder(monkeypatch):
+    assert SN.answers_key() == SN.PHASE_ANSWERS == "phase_scratch_notes_answers"
+    assert SN.answers_key("b2") == "phase_scratch_notes_answers_b2" != SN.answers_key()
+    assert SN.answers_path().parent == SN.build_dir() == S.fs_dir() / "notes"
+    assert SN.answers_path("b2").parent == SN.build_dir("b2") == S.fs_dir() / "notes-b2"
+    assert SN.score_path("x", "b2") == S.fs_dir() / "notes-b2" / "score" / "x.json"
+    monkeypatch.setattr(SN, "BUILD_NAME", "b2")
+    assert SN.answers_path() == SN.answers_path("b2") and SN.score_path("x").parent.parent.name == "notes-b2"
+    assert SN.pair_path() == S.fs_dir() / "notes-b2" / "pair-b1.json"
+    assert SN.check_dir("check-score").parent.name == "notes-b2"      # the checks rerun on a later build's code
+
+
+def test_the_paired_figure_reads_a_refused_part_at_cen_in_either_build():
+    new = {"a": {"G": -0.3, "G_shrunk": -0.2}, "b": None, "c": {"G": 0.1, "G_shrunk": 0.05}, "d": None}
+    old = {"a": {"G": -0.1, "G_shrunk": -0.1}, "b": {"G": -0.4, "G_shrunk": -0.3}, "c": None, "d": None}
+    got = SN.build_pair(new, old, {"b": {"search": "x"}, "d": {"search": "x"}}, {"c": {"search": "y"}, "d": {}})
+    assert set(got) == set(SN.ARMS)
+    itt = got["answer"]["itt"]
+    assert itt == {"a": pytest.approx(-0.2), "b": pytest.approx(0.4), "c": pytest.approx(0.1), "d": 0.0}
+    assert got["shrunk"]["itt"] == {"a": pytest.approx(-0.1), "b": pytest.approx(0.3), "c": pytest.approx(0.05),
+                                    "d": 0.0}
+    assert got["answer"]["passing_only"] == {"a": pytest.approx(-0.2)}      # beside: scored in both builds
+    assert SN.build_pair({"a": {"G": 0.0}}, {}, {}, {}, {"answer": "G"}) == {"answer": {"itt": {}, "passing_only": {}}}
+
+
+def test_the_paired_figure_refuses_answers_of_another_build():
+    dry = {"sha256": "B2"}
+    assert SN.pair_answers_refusal({"build_name": "b2", "build_sha256": "B2"}, "b2", dry) is None
+    assert SN.pair_answers_refusal({"build_sha256": "B1"}, None, {"sha256": "B1"}) is None      # build 1's: no name
+    assert "not 'b2'" in SN.pair_answers_refusal({"build_sha256": "B2"}, "b2", dry)
+    assert "phase_scratch_notes_dry_b2" in SN.pair_answers_refusal({"build_name": "b2", "build_sha256": "B1"}, "b2",
+                                                                   dry)    # the old answers carried build 1's sha
+    assert "phase_scratch_notes_dry" in SN.pair_answers_refusal({"build_sha256": "B1"}, None, None)
+
+
+def test_pair_builds_needs_a_later_build_and_both_answers_keys(monkeypatch):
+    main = {"note-rebuild": {T.PHASE: "d", T.PHASE_INSTALL: {}, T.PHASE_NOTES: {}},
+            "preset-ladder": {SN.PHASE: "d", SN.GATE: "F-both", SN.PHASE_DRY: {}, SN.PHASE_ANSWERS: {}}}
+    monkeypatch.setattr(T, "redo_on_main", lambda: (main, None))
+    args = type("A", (), {"shard": (0, 1), "first": 0})()
+    with pytest.raises(SystemExit, match="pairs a later build"):
+        SN.cmd_pair_builds(args)
+    monkeypatch.setattr(SN, "BUILD_NAME", "b2")
+    with pytest.raises(SystemExit, match="phase_scratch_notes_dry_b2"):
+        SN.cmd_pair_builds(args)
+    main["preset-ladder"][SN.dry_key("b2")] = {}
+    with pytest.raises(SystemExit, match="phase_scratch_notes_answers_b2"):
+        SN.cmd_pair_builds(args)
+
+
+def test_score_and_read_of_a_later_build_wait_for_its_own_answers_key(monkeypatch):
+    main = {"note-rebuild": {T.PHASE: "d", T.PHASE_INSTALL: {}, T.PHASE_NOTES: {}},
+            "preset-ladder": {SN.PHASE: "d", SN.GATE: "F-both", SN.PHASE_DRY: {}, SN.dry_key("b2"): {},
+                              SN.PHASE_ANSWERS: {}}}                     # build 1's key does not stand for build 2's
+    monkeypatch.setattr(T, "redo_on_main", lambda: (main, None))
+    monkeypatch.setattr(SN, "BUILD_NAME", "b2")
+    for cmd in ("score", "read"):
+        with pytest.raises(SystemExit, match="phase_scratch_notes_answers_b2"):
+            SN.COMMANDS[cmd](type("A", (), {"shard": (0, 1), "first": 0})())
+
+
 @pytest.mark.parametrize("cmd", sorted(SN.COMMANDS))
 def test_every_command_refuses_off_main(monkeypatch, cmd):
     monkeypatch.setattr(T, "redo_on_main", lambda: ({}, "this checkout's learn/scratch_notes.py differs from main's"))
