@@ -380,6 +380,26 @@ def paired_values(new, old, field):
     return out
 
 
+def build_pair(new, old, refused_new, refused_old, fields=None):
+    """(Pure.) 12q R8's paired figure: a later build's per-part numbers less build 1's on the same parts, per arm
+    (`ARMS`). "itt": S1's intent-to-treat numbers on both sides (a part refused in either build reads at Cen there,
+    `scratch_search.itt_per`; G_shrunk is a Cen field, so both arms keep every part). "passing_only" (beside): the
+    parts scored in both builds. new, old: {pkey: part numbers or None}; refused_*: {pkey: reason}."""
+    itt_new, itt_old = S.itt_per(new, refused_new), S.itt_per(old, refused_old)
+    return {arm: {"itt": paired_values(itt_new, itt_old, f), "passing_only": paired_values(new, old, f)}
+            for arm, f in (fields or ARMS).items()}
+
+
+def pair_answers_refusal(ans, name, dry_rec):
+    """(Pure.) Why a build's answers may not enter the paired figure, or None: they must name that build
+    (`build_name`; build 1's answers may lack the field) and carry its hashed build's sha256 (main's `dry_key(name)`)."""
+    if (ans.get("build_name") or None) != (name or None):
+        return f"the answers name build {ans.get('build_name')!r}, not {name!r}"
+    if not isinstance(dry_rec, dict) or ans.get("build_sha256") != dry_rec.get("sha256"):
+        return f"build {name or 1}'s answers were not made from main's {dry_key(name)}"
+    return None
+
+
 def checks_passed(score_result, search_result):
     """(Pure.) Why `search` refuses on the checks, or None: both result files exist and passed."""
     for name, r in (("score-check", score_result), ("search-check", search_result)):
@@ -392,14 +412,25 @@ def checks_passed(score_result, search_result):
 
 # --- paths --------------------------------------------------------------------------------------------------------------------
 
+def build_dir(name=None):
+    """(Pure.) A build's folder: build 1's `PF/fs/notes/`, a later one's `PF/fs/notes-<name>/`."""
+    return S.fs_dir() / ("notes" if not name else f"notes-{name}")
+
+
 def notes_dir():
-    return S.fs_dir() / ("notes" if not BUILD_NAME else f"notes-{BUILD_NAME}")
+    return build_dir(BUILD_NAME)
 
 
 def dry_key(name=None):
     """(Pure.) A build's hash key in the ladder: the first build's `phase_scratch_notes_dry`, a later one's
     `phase_scratch_notes_dry_<name>` (#581's nit: fs-notes asks about a later build's own key)."""
     return PHASE_DRY if not name else f"{PHASE_DRY}_{name}"
+
+
+def answers_key(name=None):
+    """(Pure.) A build's answers hash key in the ladder: build 1's `phase_scratch_notes_answers`, a later one's
+    `phase_scratch_notes_answers_<name>`: each build's answers file has its own key in the append-only ledger."""
+    return PHASE_ANSWERS if not name else f"{PHASE_ANSWERS}_{name}"
 
 
 def build1_read_refusal(ladder_main, name=None):
@@ -432,12 +463,17 @@ def start_path(pk):
     return notes_dir() / "start-ref" / f"{pk}.json"
 
 
-def answers_path():
-    return notes_dir() / "answers.json"
+def answers_path(name=None):
+    """This run's answers (`--build-name`), or build `name`'s when given (the paired figure reads both builds)."""
+    return build_dir(name or BUILD_NAME) / "answers.json"
 
 
-def score_path(pk):
-    return notes_dir() / "score" / f"{pk}.json"
+def score_path(pk, name=None):
+    return build_dir(name or BUILD_NAME) / "score" / f"{pk}.json"
+
+
+def pair_path():
+    return notes_dir() / "pair-b1.json"
 
 
 def report_path():
@@ -712,7 +748,8 @@ def cmd_answers(_args):
     """The row's answers (zero renders): every search record's dry guitar checked against the hashed build
     (`dry_refusal`); a technical refusal's rerun used when it passed (`scratch_search.with_reruns`; one not yet rerun
     waits); `scratch_search.answer_parts`; the refusals reported (`deciding_stop`, `refusal_report`), never a stop.
-    -> answers.json; its sha256 into the ledger as phase_scratch_notes_answers before `score`."""
+    -> answers.json; its sha256 into the ledger as `answers_key` (phase_scratch_notes_answers, a later build's
+    phase_scratch_notes_answers_<name>) before `score`."""
     m = require_row(NT.PHASE_INSTALL, NT.PHASE_NOTES, ladder=(dry_key(BUILD_NAME),))
     why = build1_read_refusal(m.get(LEDGER_ID), BUILD_NAME)
     if why:
@@ -738,7 +775,8 @@ def cmd_answers(_args):
     sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}
     dec, pan, stop = deciding_stop(refused, sets_of)
     out = {"plan": PLAN, "row": ROW, "dry": DRY, "ref": S.REF_NAME[REF], "draw_sha256": S.file_sha(S.draw_path()),
-           "build_sha256": NT.NR.file_sha(NT.build_path()), "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+           "build_name": BUILD_NAME,
+           "build_sha256": NT.NR.file_sha(NT.build_path(BUILD_NAME)), "time": time.strftime("%Y-%m-%d %H:%M:%S"),
            "renders": sum(r.get("renders", 0) for r in recs.values()), "refused": refused,
            "refused_deciding": dec, "refused_panel": pan, "stopped": stop, "reruns": reruns,
            "refusal_report": S.refusal_report(refused, sets_of, DECIDING),
@@ -747,19 +785,19 @@ def cmd_answers(_args):
     P.save(answers_path(), out)
     print(f"FS-NOTES ANSWERS: {len(parts)} parts, {len(refused)} refused ({len(dec)} of the 40 deciding, each read "
           f"at Cen; panel {pan}); reruns {reruns}; sha256 {S.file_sha(answers_path())} (into the ledger as "
-          f"{PHASE_ANSWERS} before `score`)")
+          f"{answers_key(BUILD_NAME)} before `score`)")
 
 
 def cmd_score(args):
     """One shard of the row's score (renders): `scratch_search.score_row_part` on the hashed answers, exactly as rows
     (b) and (c) were scored. -> score/<part>.json."""
-    m = require_row(NT.PHASE_INSTALL, NT.PHASE_NOTES, ladder=(dry_key(BUILD_NAME), PHASE_ANSWERS))
+    m = require_row(NT.PHASE_INSTALL, NT.PHASE_NOTES, ladder=(dry_key(BUILD_NAME), answers_key(BUILD_NAME)))
     why = build1_read_refusal(m.get(LEDGER_ID), BUILD_NAME)
     if why:
         raise SystemExit(why)
     ear = ear_label(m.get(NT.LEDGER_ID), ((m.get(LEDGER_ID) or {}).get(dry_key(BUILD_NAME)) or {}).get("sha256"))
     print(f"{ROW}: {ear} (12q R5: a label beside the read; the outcome code waits for the ear verdict)")
-    ans = NT.require_file_hash(m.get(LEDGER_ID), PHASE_ANSWERS, answers_path())
+    ans = NT.require_file_hash(m.get(LEDGER_ID), answers_key(BUILD_NAME), answers_path())
     if ans.get("stopped"):                               # no answers file is written stopped since S1
         raise SystemExit(f"{ROW}'s answers were written stopped: nothing is scored")
     from learn import cc_build as CB
@@ -828,13 +866,13 @@ def cmd_read(_args):
     the answer less the shrunk answer, the parts at +0.10 or worse, the share of row (b)'s gain kept, the
     checkpoints, the search-half gain against held G, tr-plain's checks, and the bottleneck with D_notes by `ring-kept`'s
     figure, the share of bent notes and the share of chords (`part_figures`, `by_figure`). -> rows.json, report.json."""
-    m = require_row(NT.PHASE_INSTALL, NT.PHASE_NOTES, ladder=(dry_key(BUILD_NAME), PHASE_ANSWERS))
+    m = require_row(NT.PHASE_INSTALL, NT.PHASE_NOTES, ladder=(dry_key(BUILD_NAME), answers_key(BUILD_NAME)))
     why = build1_read_refusal(m.get(LEDGER_ID), BUILD_NAME)
     if why:
         raise SystemExit(why)
     ear = ear_label(m.get(NT.LEDGER_ID), ((m.get(LEDGER_ID) or {}).get(dry_key(BUILD_NAME)) or {}).get("sha256"))
     print(f"{ROW}: {ear} (12q R5: a label beside the read; the outcome code waits for the ear verdict)")
-    ans = NT.require_file_hash(m.get(LEDGER_ID), PHASE_ANSWERS, answers_path())
+    ans = NT.require_file_hash(m.get(LEDGER_ID), answers_key(BUILD_NAME), answers_path())
     NT.never_overwrite(report_path())
     NT.never_overwrite(rows_path())
     build = require_build(m)
@@ -947,6 +985,59 @@ def cmd_read(_args):
           f"{fn['licence']}{'; ' + str(fn['lean']) if fn.get('lean') else ''}")
 
 
+def cmd_pair_builds(_args):
+    """12q R8's paired figure (zero renders), once, after both reads: a later build's (`--build-name`) per-part numbers
+    less build 1's on the same parts, each build from its hashed answers (`answers_key`) and its score files
+    (`scratch_search.read_row_parts`), on S1's intent-to-treat numbers (`build_pair`): per arm, the mean and 90%
+    interval on BKS+GOAT (the 40, clean, crunch; `paired_reading` beside) and per set (`set_rows`), each build's
+    refusals and ear label beside, and the passing-only pairs beside. The readings use the user's SMALL and BIG (0.05
+    and 0.10), kept by the bar-conversion record: they only label, never decide. -> notes-<name>/pair-b1.json."""
+    m = require_row(NT.PHASE_INSTALL, NT.PHASE_NOTES, ladder=(dry_key(), dry_key(BUILD_NAME), answers_key(),
+                                                              answers_key(BUILD_NAME)))
+    if not BUILD_NAME:
+        raise SystemExit("pair-builds pairs a later build (--build-name) with build 1")
+    NT.never_overwrite(pair_path())
+    from learn import note_replay as R
+    from learn import pipeline_fix as P
+
+    ladder = m.get(LEDGER_ID) or {}
+    draw = notes_draw()
+    sd = R.Stored()
+    rby = {p["pkey"]: p for p in R.require_draw()["parts"]}
+    sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}
+    side = {}
+    for name in (BUILD_NAME, None):
+        ans = NT.require_file_hash(ladder, answers_key(name), answers_path(name))
+        why = pair_answers_refusal(ans, name, ladder.get(dry_key(name)))
+        if why:
+            raise SystemExit(why)
+        per, refused, _replaced, ctl = S.read_row_parts(draw, ans, S.file_sha(answers_path(name)),
+                                                        lambda k, n=name: score_path(k, n), sd, rby)
+        side[name] = {"per": per, "refused": refused, "scoring_control_misses": ctl,
+                      "answers_sha256": S.file_sha(answers_path(name)),
+                      "refusal_report": S.refusal_report(refused, sets_of, DECIDING),
+                      "ear": ear_label(m.get(NT.LEDGER_ID), (ladder.get(dry_key(name)) or {}).get("sha256"))}
+    new, old = side[BUILD_NAME], side[None]
+    pair = build_pair(new["per"], old["per"], new["refused"], old["refused"])
+    arms = {}
+    for arm, d in pair.items():
+        arms[arm] = {}
+        for kind, vals in d.items():
+            rows = set_rows(sd, draw, vals)
+            bg = (rows or {}).get("bks_goat") or {}
+            arms[arm][kind] = {"parts": len(vals), "bks_goat": bg, "reading": paired_reading(bg.get("all")),
+                               "rows": rows}
+    out = {"plan": PLAN, "row": ROW, "pair": f"{BUILD_NAME} less build 1", "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+           "renders": 0, "code_provisional": True,       # 12q R5: a figure beside the two reads, no code of its own
+           "builds": {(n or "1"): {k: v for k, v in b.items() if k != "per"} for n, b in side.items()},
+           "arms": arms, "per_part": pair}
+    P.save(pair_path(), out)
+    for arm, a in arms.items():
+        iv = a["itt"]["bks_goat"].get("all") or {}
+        print(f"{BUILD_NAME} less build 1, {arm}: on the 40 {iv.get('mean')} [{iv.get('lo90')}, {iv.get('hi90')}] -> "
+              f"{(a['itt']['reading'] or {}).get('reading')} ({new['ear']}; build 1 {old['ear']})")
+
+
 def _pearson(pairs):
     """(Pure.) Pearson's r of [(x, y)], or None under 3 pairs."""
     if len(pairs) < 3:
@@ -960,7 +1051,7 @@ def _pearson(pairs):
 
 
 COMMANDS = {"score-check": cmd_score_check, "search-check": cmd_search_check, "search": cmd_search,
-            "answers": cmd_answers, "score": cmd_score, "read": cmd_read}
+            "answers": cmd_answers, "score": cmd_score, "read": cmd_read, "pair-builds": cmd_pair_builds}
 
 
 def main(argv=None):

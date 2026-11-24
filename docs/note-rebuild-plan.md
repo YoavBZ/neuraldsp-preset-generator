@@ -1511,3 +1511,22 @@ build 2 runs once.
 phase_nr_1_redo_ear`, which is build 1's verdict key. `redo-read` derives the right key itself
 (`phase_nr_1_redo_ear_b6640c44fc78`, `ear_key`), so the read is unaffected, and the published file stays as it is.
 `redo-page` now writes the build's own key into `key.json`.
+
+**Build 2's search, and build 1's after it (2026-11-24).** Both checks were rerun for build 2 on the frozen search
+code (`--build-name b2`; score-check 40 renders and search-check 22, both passed, no mismatches). The search gate
+reads only whether a build's check results exist and passed, so build 1's checks (2026-11-22) gate its own search on
+the same code. Build 2's search runs on 3 shards, labelled "ear pending". Build 1's search follows it (R8: build 2 is hashed on
+main), from a fresh frozen worktree of this change's merge commit: `cmd_search` is unchanged by it, so both builds
+search on the same search code.
+
+Each build's answers now have their own ledger key: `phase_scratch_notes_answers` for build 1 and
+`phase_scratch_notes_answers_<name>` for a later build (`answers_key`). A later build's answers name the build and carry
+its build file's sha256. Before this change they carried build 1's sha256, and every build shared one key.
+
+`pair-builds --build-name b2` (zero renders, after both reads) is R8's paired figure: build 2's per-part numbers less
+build 1's on the same parts, from each build's hashed answers and score files. On S1's intent-to-treat numbers, a part
+refused in either build reads at Cen there. Per arm, it gives the mean and 90% interval on BKS+GOAT (the 40, clean,
+crunch) and per set, with each build's refusals and ear label, and the passing-only pairs beside. It refuses answers
+that do not name their build or were not made from main's hashed build. Its readings use the user's SMALL and BIG
+(0.05 and 0.10), kept by the bar-conversion record; they only label, never decide. It is a figure beside the two
+reads, with no code of its own, written to `notes-b2/pair-b1.json`.
