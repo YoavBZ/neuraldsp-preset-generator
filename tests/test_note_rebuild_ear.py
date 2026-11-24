@@ -160,6 +160,70 @@ def test_redo_verdict_every_reading():
     assert set(NE.REDO_VERDICTS) == {"ok", "fault-content", "fault-signal", "ask", "incomplete"}
 
 
+def _second_index(first_sha="B3", items=("item_1", "item_3")):
+    cards = [c for c in redo_index()["cards"] if not c["control"] and c["item"] in items]
+    return {"build_sha256": "B3K", "second_of": {"against_sha256": first_sha, "items_differing": list(items)},
+            "cards": cards}
+
+
+def test_a_second_builds_cards_share_the_page_blind_and_shuffled():
+    """12t's F6b ear arm: build 3's 13 cards and b3k's cards for the items whose tr-di differs, on one page in the
+    regular layout; new opaque ids, one seeded order, each card's build and twin kept in the key only."""
+    first = NE.redo_items(redo_index())
+    second = NE.second_items(_second_index(), "B3")
+    assert second and all(not c["control"] and c["item"] in ("item_1", "item_3") for c in second)
+    with pytest.raises(SystemExit, match="--against"):
+        NE.second_items(_second_index(first_sha="other"), "B3")
+    bad = _second_index()
+    bad["cards"] = redo_index()["cards"]                         # the control may not be repeated
+    with pytest.raises(SystemExit):
+        NE.second_items(bad, "B3")
+    cards = NE.merge_two_builds(first, second, "B3", "B3K")
+    assert [c["n"] for c in cards] == list(range(1, len(first) + len(second) + 1))
+    assert len({c["id"] for c in cards}) == len(cards) and all(c["id"].startswith("r") for c in cards)
+    assert not any(c["id"] == c["src_id"] for c in cards)          # the page's ids never name the build's cards
+    assert cards == NE.merge_two_builds(first, second, "B3", "B3K")  # seeded
+    by = {c["id"]: c for c in cards}
+    for c in cards:
+        if c["dry_build_sha256"] == "B3K":
+            t = by[c["twin"]]
+            assert (t["dry_build_sha256"], t["item"], t["cls"]) == ("B3", c["item"], c["cls"])
+    html, _, _ = NE.redo_page_html(cards, {}, NE.redo_build_id(cards))
+    assert "B3K" not in html and "src_id" not in html and html.count('class="item"') == len(cards)
+    # the read: each build's own verdict; the twins side by side
+    ans = {c["id"]: {"same": True} for c in cards}
+    k = next(c for c in cards if c["dry_build_sha256"] == "B3K")
+    ans[k["twin"]] = {"faults": ["missing"], "note": "the bend is flattened"}
+    tw = NE.twin_read(cards, ans, "B3K")
+    row = next(r for r in tw if r["second"]["n"] == k["n"])
+    assert row["main_faults_second_lacks"] == ["missing"] and row["second_faults_main_lacks"] == []
+    assert row["main"]["note"] == "the bend is flattened" and len(tw) == len(second)
+    # the one hidden control counts in both builds' verdicts
+    ctl = next(c for c in cards if c["control"])
+    ans2 = {c["id"]: {"same": True} for c in cards}
+    ans2[ctl["id"]] = {"faults": ["hiss"]}
+    v3, v3k = (NE.two_build_verdict(cards, ans2, s) for s in ("B3", "B3K"))
+    assert v3["control"]["faults"] == v3k["control"]["faults"] == ["hiss"]
+    assert v3k["control_shared"] and not v3["control_shared"]
+    assert (v3["cards"], v3k["cards"]) == (len(first) - 1, len(second)) and v3k["verdict"] == "ask"
+    assert NE.two_build_verdict(cards, {c["id"]: {"same": True} for c in cards}, "B3K")["verdict"] == "ok"
+
+
+def test_the_second_builds_clips_are_only_the_differing_real_cards():
+    from learn import note_transcribe as T
+
+    cards = [{"id": "c1", "item": "a", "cls": "clean", "control": False},
+             {"id": "c2", "item": "b", "cls": "clean", "control": False},
+             {"id": "c3", "item": "a", "cls": "crunch", "control": False},
+             {"id": "c4", "item": "a", "cls": "clean", "control": True}]
+
+    def b(**sha):
+        return {"ear": {k: {"arms": {"tr-di": {"sha256": v}}} for k, v in sha.items()}}
+    keep, g = T.differing_cards(cards, b(a="A2", b="B"), b(a="A", b="B"))
+    assert [c["id"] for c in keep] == ["c1", "c3"] and g == {"items_differing": ["a"], "items_same": ["b"]}
+    assert T.differing_cards(cards, b(a="A", b="B"), b(a="A", b="B"))[0] == []    # none differ: no cards, no renders
+
+
 def test_redo_cards_carry_every_answer_on_each_card():
     items = NE.redo_items(redo_index())
     html = NE.redo_cards(items)

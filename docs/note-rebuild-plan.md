@@ -1818,7 +1818,10 @@ checks (C1) and its search, third in the queue.
 
 E's held-out read (`e-read --declared`, `fixes/e-read-f6-1c7ccb32.json`, sha256 `bc4bfbf7…cb73`):
 - Build 3 less build 2's rule, by the distance (reported): +0.094 [−0.099, +0.287] over 8 items, undecided.
-- `item_102` (c12) reads +0.726. Its 3 annotated bends' fragments drop from 8 to 3.
+- `item_102` (c12) reads +0.726: farther from the DI by the distance. The distance is report-only here (12s):
+  `floored_logmel` is unfit to judge notes added or joined. Its 3 annotated bends' fragments drop from 8 to 3.
+- `item_49` has no annotated bends, yet build 3 stitches 3 chains there and reads +0.283. These are likely false
+  stitches on a single-note item, and b3k differs there too. The user is told before listening.
 - `item_39`'s 7 annotated bends: those with fragments drop from 5 to 3, and its distance reads −0.214.
 - The faulted items all get stitches: `item_102` 3 chains, `item_123` 1, `item_39` 5.
 - E has no stitch-free outcome, so the page follows.
@@ -1833,3 +1836,16 @@ The builds:
 - `build --build-name b3` gives `build-b3.json`, sha256 `d61e0f0c…afda`.
 - `build --build-name b3k` gives `build-b3k.json`, sha256 `e7e94f82…5324`.
 - Every `tr-di` sha256 in them equals exposure's.
+
+**The shared page for build 3 and b3k (code; no figure).**
+- `note_transcribe clips --build <b3k> --against <b3>` renders only the real cards whose item's `tr-di` differs from
+  build 3's (guard 1). The control is the true DI, the same for both, so it is never repeated. The index records the
+  guard (`second_of`). If no item differs, nothing is rendered.
+- `note_rebuild_ear redo-page --build-sha <b3> --second-sha <b3k>` puts both builds' cards on build 3's page in the
+  regular layout: one card per recording, each with its own play and answer buttons, answers saved in the page. The
+  cards get new opaque ids and one seeded shuffled order (`TWO_BUILD_SEED`), so the page never says which build a card
+  plays. `key.json` keeps each card's build and its twin.
+- `redo-read` on that page files each build's verdict, from its own cards, under its own `ear_key(sha)`. The one
+  hidden control (the true DI, the same for both builds) counts in both verdicts: its answer is copied into b3k's,
+  and the read and `key.json` say so. Beside them it lists each b3k card with its twin's faults and notes, the inputs
+  to the declared ear rule.
