@@ -1726,7 +1726,57 @@ stay byte-identical to b238f6c8, by a source test (D1).
     $MAIN -m learn.note_fixes bend-lists
     $MAIN -m learn.note_fixes bend-windows
     $MAIN -m learn.note_fixes isolate-bend OUT.json [--declared]
-    $MAIN -m learn.note_fixes e-read OUT.json --fixes '<frozen>' --base '{"F1": "global"}' [--declared]
+    $MAIN -m learn.note_fixes e-read OUT.json --fixes '<frozen>' --base '{"F1": "global"}' --declared
     $MAIN -m learn.note_fixes exposure OUT.json --fixes '<frozen>' [--declared]
     $MAIN -m learn.scratch_notes carry --build-name b3 --from b2
     $MAIN -m learn.scratch_notes pair-builds --build-name b3 --against b2
+
+**The run record so far (preliminary, branch).**
+- The declaration and code were committed at `bf2cb95e` before any figure.
+- `bend-lists` and `bend-windows` then ran from it: B's ten note files (`lists.json` sha256 `9449f985…a864`) and Db's 14
+  windows on 4 items, holding 53 annotated bends (`windows.json` `0cb49d74…5eca`).
+- `f01c0c4e` came after that run and before any `isolate-bend` figure: it adds F1's bent-but-cleared count at true
+  bends beside, a report, and changes no pick input. The preliminary `isolate-bend` ran from it
+  (`isolate-bend-prelim-f01c0c4e.json`).
+- `e-read` now reads E only with `--declared` (the review's nit), so a branch can never read held-out E early.
+
+**The unsplit arm's declared rule fired.** Db's bent-but-cleared notes at true bends are 4 under F1 alone and 2 at the
+preliminary pick; B has 0 (B's bends all come back split, 31 of 31). So the unsplit arm opens as its own arm, as
+declared, outside build 3. Also from the preliminary run, reported only: at the pick 28 of Guitar-TECHS's 69 joins take
+away a true note (the other 41 join fragments), and the fragments left per B list and on Db are in the run's file.
+
+**Amendment: the F6b tie (decision agent's call, after the preliminary isolate-bend; ledger
+`phase_nr_1_redo_fix_bend`, `decision_f6b_tie`).** The preliminary pick's track and keep is "own, cleared": kept and
+cleared tie on bend error (+0.007 [−0.007, +0.022] over 8 lists, 7 of them exact zeros; they differ only on the unison
+list, where cleared reads 0.260 bins, kept 0.200 and F1 alone 0.204). The call was made after that tie was seen; the ear
+answers are unseen.
+- **Build 3 stays as declared:** `{"F1": "global", "F6": {"K": 5, "gap": 2, "family": "sequential", "track": "own",
+  "keep": false}, "loud": null}`, frozen, hashed and queued for search. F6b is recorded **undecided by the score**, not
+  failed.
+- **The F6b ear arm, b3k**, is identical except `"keep": true`. It goes on the same page, on the same items, with two
+  guards, declared before any ear figure:
+  1. **Only cards that differ.** A b3k card exists only for an item whose b3k `tr-di` differs from build 3's (sha256).
+     If b3k changes no ear item, it gets no cards and no renders; F6b then stays undecided, recorded as "not exposed on
+     this page".
+  2. **The ear rule**, read on b3k's cards against build 3's cards for the same items:
+     - **b3k replaces build 3 for the search** when, on at least one item, the user's answers name a bend fault (c12's
+       class: bend removed or flattened) that build 3 has and b3k does not, and no b3k card has a fault its build 3
+       twin lacks.
+     - **Build 3 stays (cleared) otherwise.** That covers a tie by ear, mixed answers, and b3k worse anywhere. This is
+       the declared tie rule carried over to the ear.
+     - No count or threshold is set. One clear heard fix with no heard harm decides.
+- If the declared `isolate-bend` from merged main picks another track or keep, the work stops and is reported; the arm
+  stays only if the declared run also ties.
+- Build 3's search is queued third. If the page is not read when its slot opens, build 3 (cleared) starts as declared;
+  if b3k wins later, only the parts whose `tr-di` differs are searched, `carry --from b3` for the rest.
+- `isolate-bend` adds a report that decides nothing: per harm set (L's nine, B's controls, Guitar-TECHS) and per B
+  positive, the stitched notes whose played curve differs between keep and cleared (own tracks). Db is not read for
+  this call. After the freeze, `exposure` and `e-read` report per ear item whether b3k's `tr-di` differs from build
+  3's and how many stitched curves the flag changes, the faulted cards first (`item_102`, `item_123`, `item_39`).
+- `redo-page` taking a second `--build-sha` for b3k's cards, in the regular layout, comes as its own reviewed change;
+  each build's verdict is filed under its own `ear_key(sha)`. The frozen key (`phase_nr_1_redo_fix_bend_frozen`, M3)
+  records the frozen rule, F6b undecided by the score, the b3k arm and this ear rule.
+- The unsplit arm and pad every bent note stay separate arms.
+
+**Next.** M1 (this declaration and code), then M2 (the two listings' sha256 as `phase_nr_1_redo_bend_lists`:
+`lists_sha256`, `windows_sha256`), then `isolate-bend --declared` from merged main.

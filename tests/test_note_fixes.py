@@ -370,6 +370,23 @@ def test_the_second_note_and_the_unsplit_counts():
     assert F.second_lost([bent, held], heard) == 0 and F.second_lost([bent, held], heard[:1]) == 1
 
 
+def test_keep_changes_counts_only_stitched_notes_whose_played_curve_differs():
+    head = note(0.0, 0.32, 57, [1] * 22 + [2, 2, 3, 3, 4, 4])
+    frag = note(0.32, 0.43, 58, [1, 1, 2, 2, 3, 3, 4, 4, 4])
+    top = note(0.43, 1.6, 59, [1] * 100)
+    held = note(0.0, 1.6, 59, [1] * 130)                              # the unison: a held note 2 semitones above
+    n1 = F.rezero_bends([head, frag, top, held], "global")
+    var = F.f6_variants(n1)[("sequential", 3, 1)]
+    assert var["chains"] and F.keep_changes(n1, var) == 1              # cleared zeroes the stitched bend, kept plays it
+    far = F.rezero_bends([head, frag, top, dict(held, pitch=64)], "global")
+    assert F.keep_changes(far, F.f6_variants(far)[("sequential", 3, 1)]) == 0   # no neighbour within 2: no change
+
+
+def test_e_read_reads_held_out_e_only_when_declared():
+    with pytest.raises(SystemExit, match="--declared"):
+        F.e_read("/nonexistent/out.json", {"F1": "global", "F6": F6P}, {"F1": "global"}, declared=False)
+
+
 def test_db_windows_cover_the_most_bends_outside_the_d_window():
     got = F.db_windows([3.0, 20.0, 22.0, 31.0, 40.0], 1.0, 60.0, 10.25)
     assert got == [(15.0, [20.0, 22.0]), (30.0, [31.0, 40.0])]    # 3.0 sits in D's window: no window holds it

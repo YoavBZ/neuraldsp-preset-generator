@@ -1530,6 +1530,14 @@ def identity_check(name, fixes):
     return out
 
 
+def keep_changes(n1, var):
+    """(Pure.) At one grid point's variants (`f6_variants`), the stitched notes whose curve as played (`bend_curve`
+    against the window's notes) differs between kept and cleared, own tracks: where F6b acts at all."""
+    kept, clr = var["notes"][("own", True)], var["notes"][("own", False)]
+    return sum(1 for h in stitched_heads(len(n1), var["chains"])
+               if NR.bend_curve(kept[h], kept) != NR.bend_curve(clr[h], clr))
+
+
 def true_bends(w, s):
     """(Pure.) A window's true bent notes: B's by their tracks, Db's by the annotation's `bend`."""
     if s == "B":
@@ -1684,6 +1692,15 @@ def isolate_bend(out_path, declared=False, skip_identity=False):
                 tot_c += len(cl)
                 at_true += sum(1 for k in cl if matched(notes[k], true_bends(w, s)))
             r["unsplit_bent_but_cleared"][s] = {"notes": tot_c, "at_true_bends": at_true}
+        # report only (the decision agent's call on the F6b tie, after the preliminary run): stitched notes whose
+        # played curve the keep flag changes (own tracks), per harm set and per B positive; decides nothing
+        r["keep_changes_curve"] = {
+            "harm": {hs: sum(keep_changes(w["n1"], w["var"][pt]) for w in ws) for hs, ws in harm.items()},
+            "B_positives": {w["key"]: keep_changes(w["n1"], w["var"][pt]) for w in B if w["positive"]},
+            "label": "report only, deciding nothing"}
+        # report only (the review's nit): Db's fragments at annotated bends at every point (confirms)
+        r["Db_fragments"] = {f: sum(annotated_fragments(w["truth"], w["var"][pt]["notes"][("own", False)])[f]
+                                    for w in Db) for f in ("bends", "fragmented", "fragments")}
         rows[pt] = r
     # F1 alone's figures beside (the as-built read on every set)
     body["F1"] = {"note_error": f1_ne,
@@ -1779,11 +1796,14 @@ def require_frozen(m, fixes):
 def e_read(out_path, fixes, base, declared=False):
     """12t phase 5 (zero renders), after the freeze: on E (build 2's ear items, `ear-items-b2.json`), per item the
     chains stitched and joins, the bent-but-cleared unstitched notes, the annotated bends still fragmented, and the
-    distance against `base` (build 2's rule; reported). -> OUT.json."""
+    distance against `base` (build 2's rule; reported). E is held out: only the declared run reads it (the review's
+    nit: a branch, whose own ledger could hold any key, never reads E early). -> OUT.json."""
     from learn import note_transcribe as T
     from learn import song_bank as SB
 
     t0 = time.time()
+    if not declared:
+        raise SystemExit("e-read reads the held-out E only from merged main: run it with --declared")
     m, label, head = run_label(declared)
     require_frozen(m, fixes)
     apply_fixes([], fixes)

@@ -632,8 +632,9 @@ def _reached(src, root="cmd_search"):
 
 def test_the_search_code_is_byte_identical_to_build_1s():
     """12t D1: every function `cmd_search` reaches in learn/scratch_notes.py, found by walking the code, and
-    learn/scratch_search.py whole, are as at b238f6c8 (build 1's frozen search; build 2's searched on the same code),
-    so builds 1, 2 and 3 search on the same code."""
+    learn/scratch_search.py whole, are byte-identical to b238f6c8 (build 1's frozen search), so builds 1 and 3 search
+    on the same code. Build 2's search code at 4959128a is behaviourally the same, not textually: this digest differs
+    there through the `notes_dir`/`build_dir` refactor (`cmd_search` unchanged in behaviour by it)."""
     import hashlib
 
     names, digest = _reached((REPO / "learn" / "scratch_notes.py").read_text())
