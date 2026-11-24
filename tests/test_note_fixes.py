@@ -191,3 +191,12 @@ def test_a_later_pages_new_ear_item_gets_its_note_checks_in_the_build(monkeypatc
 def test_a_named_builds_work_folder_is_its_own():
     assert T.build_work_dir() == T.REDO / "work" / "build"
     assert T.build_work_dir("b2") == T.REDO / "work" / "build-b2" != T.build_work_dir()
+
+
+def test_build_2s_hash_on_main():
+    import pathlib
+
+    e = T.entries((pathlib.Path(__file__).resolve().parents[1] / "docs" / "dev-test-ledger.json").read_text())
+    rec = e["preset-ladder"]["phase_scratch_notes_dry_b2"]
+    assert rec["sha256"].startswith("b6640c44") and rec["rule"] == {"F1": "global", "ring": "ring-soft", "loud": None,
+                                                                    "muscriptor": False}

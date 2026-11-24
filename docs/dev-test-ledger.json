@@ -4521,6 +4521,19 @@
     "timing": "priced with timbre (the declared caveat); lags -33 to +7 ms on the deciding sets, GOAT -47 to +31 ms; stem-in within 1 ms on 21 of 23; the audit: not the main limit (Spearman of D_true against the sub-window share +0.198, the wrong sign; D_true +0.147 within 1 ms against +0.298 beyond)",
     "post_hoc": "the audit's, deciding nothing: without AimeeNorwich (RAW_05_02), whose stem is already nearly dry and which LOUDAR makes worse, D_blur is +0.009 [-0.080, +0.099]; D_true leave-one-file-out +0.15 to +0.23; larger on clean than crunch",
     "next": "not a fallback for the note rebuild (it does not beat keeping the starting preset). For the user: an oracle timing-aligned ld-stem row (diagnostic, needs the user's go; little expected); L3, LOUDAR's full row at 200 evaluations plus step 2 (about 12k renders, a declaration and a review), queued after fs-notes build 2's search. Parking is the user's call; nothing parks itself"
+   },
+   "phase_scratch_notes_dry_b2": {
+    "sha256": "b6640c44fc7832a1001ed9a6a9082dde9c15dbe79fade38d5aec904e2a2c2f0a",
+    "file": "PF/note-rebuild/redo/build-b2.json",
+    "transcribe_sha256": "cbd1f4fb0e92ec53a058538d236daaafd5ae62eccdb7c07689edf115a37c18ab",
+    "rule": {
+     "F1": "global",
+     "ring": "ring-soft",
+     "loud": null,
+     "muscriptor": false
+    },
+    "ear_items_sha256": "4726715c1c6b55cff98fc1acd70762a29ef1e1379645366e64da32d7ecb07ae8",
+    "note": "2026-11-24, `build --build-name b2 --fixes {\"F1\": \"global\", \"loud\": null}` once from main at 6aeca97d in a frozen worktree, zero renders, 217 s: tr-di and tr-plain for the 47 parts and the 8 ear items of ear-items-b2.json (item_123 in item_5's slot), dry guitars under dry-b2/, work under work/build-b2/; nothing refused (every check a report). Checks failing (reported, never refusing) on tr-di: chords-kept 45, onsets-found 35, playing-covered 32, ring-kept 29, judge-accepts 24 of 47 parts failing; ear items failing 8, 7, 5, 5, 3 of 8. The first attempt's partial output is set aside unread (dry-b2.failed-20261124/). The fs-notes search on this build runs labelled ear pending (12q R5)"
    }
   },
   {
