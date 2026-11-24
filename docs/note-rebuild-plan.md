@@ -1357,7 +1357,7 @@ picked on. fs-notes takes `--build-name` for that build's own hash key
 | Step | Set | Figure |
 |---|---|---|
 | Identity | 54 items × 2 arms | 108 of 108 files byte-identical |
-| F1 (median less global on D: a tie, 0.0007 [−0.026, +0.035]; the global step used) | D | distance −0.093 [−0.152, −0.035]; tuning +26.8 c → −0.7 c |
+| F1 (median less global on D, per window: a tie, −0.0007 [−0.0056, +0.0041], the declared run's interval; the global step used) | D | distance −0.093 [−0.152, −0.035]; tuning +26.8 c → −0.7 c |
 | F1 | L | distance −0.294 [−0.585, −0.002]; tuning +30.5 c → −1.4 c; bent share on the nine bend-free lists 0.18 → 0.04 |
 | F3 on F1 | D | distance +0.174 [+0.059, +0.289] (farther); joins: 36 annotated plucks, 4 annotated glides, 28 unannotated |
 | F3 on F1 | L | distance +0.466 [−0.094, +1.025]; the `bend` list's 7 splits all joined |
@@ -1377,10 +1377,21 @@ variable for each part's checks before the file was written. The picks (`chosen`
 `transcribe` now keeps the kind figures under their own name. `ear-items` recomputes the transcription's kind figures
 from the first transcribe's stored scans, and they reproduce the first record: `item_5`'s let-ring figure is 0.158 in
 both. Zero renders.
-### 12r. The MuScriptor-based fixes declared before any of their numbers: F2-MuScriptor, F4 and F5 (2026-11-24; ledger `phase_nr_1_redo_fixes_ms`)
 
-Declared after track 1's audited real-DI read (`phase_tx_read`) and before any figure of these three exists on L or D.
+### 12r. The MuScriptor-based fixes declared before their distances are read: F2-MuScriptor, F4 and F5 (2026-11-24; ledger `phase_nr_1_redo_fixes_ms`)
+
+Declared after track 1's audited real-DI read (`phase_tx_read`), before any distance to the DI of these three is read on
+L or D. **Seen before this declaration:**
+- the audit's F2-MuScriptor counts on D: MuScriptor confirms 471 of 515 annotated same-pitch successions and 93 of 232
+  unannotated ones;
+- F4's list counts in track 1's `lists.json` (the medium screen): `tx-veto` keeps 256 of the 259 true notes and 345 of
+  Basic Pitch's 431 notes.
+
+
 The auditor's figures are exploratory, on the scored Guitar-TECHS set. They motivate the candidates; L and D decide.
+For F2-MuScriptor and F4, the deciding measure is therefore the distance to the DI (`floored_logmel`) on D, with L
+beside. Their counts are reported beside it, labelled "seen before the declaration". F5's counts stay among its
+judging measures, since none of its figures had been seen.
 This follows the user's rule: no bars, no caps. Effect sizes are reported with 90% intervals, and a fix is kept when it
 measurably brings the rebuild closer to the DI. Zero renders. `item_5` is in no set.
 
@@ -1392,8 +1403,8 @@ The fixes read them beside Basic Pitch's. Basic Pitch's notes stay the ones rebu
 
 | Fix | Rule | Operating points or candidates |
 |---|---|---|
-| F2-MuScriptor | A same-pitch re-find (`refind_pairs`) is joined into its sounding note when MuScriptor has no onset of that pitch within ±w of the re-find's onset. It joins and never deletes | w = 50, 100 and 150 ms |
-| F4 | `tx-veto` as track 1 declared it: an unpaired Basic Pitch note is dropped when a paired note in its onset group sits 12, 19 or 24 semitones below it | As declared, and beside it the paired note below confirmed by MuScriptor within 150 ms rather than 50 |
+| F2-MuScriptor | A same-pitch re-find (`refind_pairs`) is joined into its sounding note when MuScriptor has no onset of that pitch within ±w of the re-find's onset. It joins and never deletes | w = 50, 100 and 150 ms, all three reported; w is picked among them by D's distance |
+| F4 | `tx-veto` as track 1 declared it: an unpaired Basic Pitch note is dropped when a paired note in its onset group sits 12, 19 or 24 semitones below it | As declared, and beside it the paired note below confirmed by MuScriptor within 150 ms rather than 50 (a candidate definition, not a tuned bar) |
 | F5 | The context hybrid: keep a Basic Pitch note only when MuScriptor confirms it (same pitch, within 50 ms), unless MuScriptor has 2 or more onsets within 150 ms of it; there, F4's veto applies instead | The 150 ms context and the count of 2 are the auditor's candidate definition, not tuned bars; read beside at 100 ms |
 
 - **The plain vote** (`tx-vote`) is not adopted: it drops chord notes.
@@ -1407,10 +1418,22 @@ The fixes read them beside Basic Pitch's. Basic Pitch's notes stay the ones rebu
 each of F2-MuScriptor, F4 and F5 alone, on top of F1 and of no unverified fix. Each kept fix is added only to fixes
 already verified. Then the kept fixes are combined on D, with R3's ring and γ picks. Then E, held out.
 
-**E and the build need MuScriptor's notes where it has not run.** The 7 ear items' page windows and the 47 parts have
-no MuScriptor notes; stage b ran only on the truth windows and the 27 development windows. If F2-MuScriptor, F4 or F5
-is kept:
-- E's read and build 2 wait for a MuScriptor run on those windows: track 1's installed large model, with its gate's
-  settings and device, one job, zero renders, its note files hashed before they are read;
-- MuScriptor then enters the fs-notes build, replacing the transcriber 12c froze, as 12q records;
-- the first build's search renders stay set aside unread until R8 reads them.
+**E and the build need MuScriptor's notes where it has not run.** Stage b ran only on the truth windows and the 27
+development windows.
+- **E's windows.** Four of E's seven sit inside the 27, at the same windows: `item_102`, `item_160`, `item_46` (1 s) and
+  `item_57` (30 s). Three are other windows of development items: `item_77` (135 s, its development window at 30 s),
+  `item_49` (20 s, against 1 s) and `item_39` (0 s, against 1 s). The let-ring replacement for `item_5` (`item_123` on the stored
+  scans; `ear-items` has not run yet) is not a development item.
+- **The 47 parts** have no MuScriptor notes.
+- If F2-MuScriptor, F4 or F5 is kept, E's read and build 2 wait for a MuScriptor run on those windows: track 1's
+  installed large model, with its gate's settings and device, one job, zero renders, its note files hashed before they
+  are read. **Its dependencies, declared here; none is acted on in this amendment:**
+  - `note_tx.declared_input` refuses the row's parts and any GOAT window outside the 27, so track 1's input guard needs
+    its own amendment;
+  - the 7 panel parts are MedleyDB and Laminar Flow, and `phase_tx_go` says MedleyDB and Cambridge-MT wait for the
+    user's separate yes;
+  - BKS (set5) needs a rights check under MuScriptor's terms;
+  - the user's yes and the rights question go to the user.
+- MuScriptor then enters the fs-notes build, replacing the transcriber 12c froze, as 12q records. A MuScriptor-derived
+  build is a development yardstick and never ships.
+- The first build's search renders stay set aside unread until R8 reads them.
