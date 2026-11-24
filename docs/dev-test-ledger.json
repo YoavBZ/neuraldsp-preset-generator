@@ -5508,7 +5508,8 @@
        1
       ]
      },
-     "reading": "build 2 is heard same on 3 more of the 10 shared cards and on none fewer; the 90% interval over cards excludes 0 but 3 discordant cards cannot exclude chance (sign test p 0.25): improved, small sample. Tune faults heard on 3 shared cards fell to 1 (F1 rezeroes bends)"
+     "reading": "build 2 is heard same on 3 more of the 10 shared cards and on none fewer; not distinguishable from chance on 3 discordant cards (exact sign test p 0.25). With 10 cards the bootstrap interval clears zero almost by construction, so the sign test is the figure to read. Tune was heard on 3 shared cards on page 2 and on 1 on page 3, consistent with F1's re-zeroing of bends (not shown to be its cause)",
+     "caveat": "page 3 was heard after page 2, on the same items and reference clips, so familiarity can raise \"same\" answers: a caveat beside the read, not grounds to void the sitting"
     },
     "fault_kinds_in_the_users_words": [
      "One bend is missing (card 2, item_123 crunch, the new let-ring item)",
