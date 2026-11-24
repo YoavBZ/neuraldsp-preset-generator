@@ -4455,6 +4455,31 @@
      "to": "6687a5dcac9be3542ffd20f0426146c5dfc5387a",
      "why": "scratch_search.cmd_read only (reading_passing_only's 'no passing-only interval'); the 60 functions fs-notes' checks ran through keep their source (the pinned sha256 holds)"
     }
+   },
+   "phase_scratch_loudar_answers_stem": {
+    "sha256": "2b94dcf2d6328f9a6ceaa79d31d10d62f6b6a6136052ff58ce044bec407c94b7",
+    "file": "PF/fs/loudar/answers-ld-stem.json",
+    "made": "2026-11-24, `answers` from a frozen detached worktree of main at 0963d247 (L1's squash, #586), every guard passed, zero renders; the searches ran from a frozen worktree of main at 7f40979a (the code they used is unchanged by S1 and L1 in its search path)",
+    "about": "ld-stem's short row: 47 of 47 parts answered (23 deciding + 24 GOAT), 0 refused, so no rerun was due (reruns: none) and nothing reads at Cen; every record's dry guitar the hashed build's (phase_scratch_loudar_dry, build.json 92ddf8ae...), exactly 50 evaluations (budget_used 50, step 1 only), checkpoint '50'. refusal_report recorded (S1). No held-half value is read before this hash is on main",
+    "search_renders": 2397,
+    "rates": "2,397 search renders in 4,237 process-seconds (1.77 a render) on 3 processes",
+    "before": "the render gate opened on main's phase_nr_1_redo_ear verdict fault-content (no fs-notes report; slots_refusal None); start reads 186 renders (ld-stem 94, di-cut 46, stem-in 46), the control 22 renders (di-whole on the 2 check parts at a budget of 10 against row (b)'s records: PASS, no mismatches), the searches (--first 2 first, then 3 shards across the three names) 4,743: 4,951 renders in all, 00:22 to 01:24 wall on 2026-11-24. The disk guard (31 GB) stopped two shards at 00:47 (free disk 28 to 32 GB from other sessions' work); they were relaunched when it read 31 GB, skipping the finished parts, nothing overwritten. ld-rec has not run (it runs after the main read, any code: L1)"
+   },
+   "phase_scratch_loudar_answers_cut": {
+    "sha256": "baf1b8ca83f160140809862638efe5d88d80afe833fd96eb882d734dbaad5b63",
+    "file": "PF/fs/loudar/answers-di-cut.json",
+    "made": "2026-11-24, `answers` from a frozen detached worktree of main at 0963d247 (L1's squash, #586), every guard passed, zero renders; the searches ran from a frozen worktree of main at 7f40979a (the code they used is unchanged by S1 and L1 in its search path)",
+    "about": "di-cut's short row: 23 of 23 parts answered (the 23 deciding), 0 refused, so no rerun was due (reruns: none) and nothing reads at Cen; every record's dry guitar the hashed build's (phase_scratch_loudar_dry, build.json 92ddf8ae...), exactly 50 evaluations (budget_used 50, step 1 only), checkpoint '50'. refusal_report recorded (S1). No held-half value is read before this hash is on main",
+    "search_renders": 1173,
+    "rates": "1,173 search renders in 2,292 process-seconds (1.95 a render) on 3 processes"
+   },
+   "phase_scratch_loudar_answers_in": {
+    "sha256": "0c16a63eba1b96af7867dbdcc50a1ffd058e203a406404ef74abc485679782db",
+    "file": "PF/fs/loudar/answers-stem-in.json",
+    "made": "2026-11-24, `answers` from a frozen detached worktree of main at 0963d247 (L1's squash, #586), every guard passed, zero renders; the searches ran from a frozen worktree of main at 7f40979a (the code they used is unchanged by S1 and L1 in its search path)",
+    "about": "stem-in's short row: 23 of 23 parts answered (the 23 deciding), 0 refused, so no rerun was due (reruns: none) and nothing reads at Cen; every record's dry guitar the hashed build's (phase_scratch_loudar_dry, build.json 92ddf8ae...), exactly 50 evaluations (budget_used 50, step 1 only), checkpoint '50'. refusal_report recorded (S1). No held-half value is read before this hash is on main",
+    "search_renders": 1173,
+    "rates": "1,173 search renders in 1,824 process-seconds (1.55 a render) on 3 processes"
    }
   },
   {
