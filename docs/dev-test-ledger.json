@@ -4501,6 +4501,26 @@
     "about": "ld-rec's short row: 23 of 23 deciding parts answered, 0 refused (no rerun due, nothing reads at Cen); every record's dry guitar the hashed build-rec's (365a54a1...), exactly 50 evaluations (budget_used 50, step 1 only), checkpoint '50'. No held-half value is read before this hash is on main",
     "renders": "start reads 46 (12:57:29 to 12:59:21), search 1,173 (--first 2 first, 102 renders in 143 s; then 3 shards, 13:02 to 13:12): 1,219, about 15 wall minutes; 1,809 process-seconds for the search (1.54 a render)",
     "next": "score for ld-rec (92 render calls, 46 distinct renders), then read-rec, then the results PR"
+   },
+   "phase_scratch_loudar_outcome": {
+    "code": {
+     "ld-stem": "FL-undecided",
+     "ld-rec": "FL-undecided"
+    },
+    "ran": "2026-11-24, from frozen worktrees of merged main (start reads, control and searches at 7f40979a; answers at 0963d247; score and read at 016c724c; ld-stem-b's start reads at 016c724c; LOUDAR on the clean records at 016c724c, build-rec at 97110e5e; ld-rec's start, search and answers at c0d79f84; its score and read-rec at 07dd1b66); every guard passed; 6,680 render calls: the main row 5,323 (start 186, control 22, search 4,743, score 372 calls = 186 distinct renders), the seed gauge 46, ld-rec 1,311 (start 46, search 1,173, score 92 calls = 46 distinct); no training, separation or MPS job",
+    "audit": "the main read: an independent recompute from the per-part score records (handover 2026-11-24 audit-loudar-row): CONFIRMED WITH CORRECTIONS; every number reproduces to 3 dp; the four corrections taken in docs/scratch-search-results.md (the user-facing wording, GOAT's lag range, the seed gauge run, 372 calls = 186 distinct). ld-rec's read: an independent audit, CONFIRMED WITH CORRECTIONS: every figure reproduces and its inputs are the clean records; the corrections (the limit's wording, the +0.10 count) are taken",
+    "read_files_sha256": {
+     "report.json": "6a948b30fa56eae65780d8ca96bb40bdfebe5a773b67c8bd96d92f5ce657edef",
+     "rows.json": "6b38facb226b7eee2a52a914327c9d3291d83592fb2560dc1e5b25f9e4963cc2",
+     "report-rec.json": "37f95e4ccd77bd7d1ce99262baf4794ae261de8dee733effc9110e35ab5f0c70",
+     "rows-rec.json": "556286fc52c6cc1b99198b95a762d969d61334b22be7a67ab11b3fb103a83935"
+    },
+    "numbers": "by the score, BKS+panel: ld-stem D_blur (deciding; D_cut's upper end +0.028 under the switch) +0.067 [-0.090, +0.225], D_true +0.192 [+0.060, +0.324], G50 -0.051 [-0.159, +0.058] (BKS +0.053, panel -0.155, GOAT -0.243), D_null -0.319 [-0.804, +0.165] (BKS -0.340 [-0.545, -0.136]), D_cut +0.009 [-0.009, +0.028], against rt-m2l +0.180, room kept -0.54, parts at +0.10 or worse than Cen: 6 deciding, plus 2 GOAT (ld-rec: 7 deciding); comparators row (b) -0.242, row (c) -0.118; stem-in G50 +0.269, di-cut -0.233. ld-rec: D_blur +0.082 [-0.018, +0.182], D_true +0.207 [+0.086, +0.328], G50 -0.036 [-0.237, +0.166], D_null (against stem-in) -0.304 [-0.673, +0.064]; ld-rec less ld-stem (G50, paired) +0.015 [-0.166, +0.197] (BKS +0.027 [-0.026, +0.079]). 0 refused anywhere",
+    "reading": "FL-undecided, not failed. In plain words (the audit's): not shown different from the blurred true DI; clearly worse than the true DI, by 0.19 [0.06, 0.32]; the search lands level with the starting preset (G50 -0.05; BKS +0.05); much better than the raw stem (D_null -0.34 [-0.55, -0.14] on BKS). By the score, LOUDAR as released is not yet useful for the product. ld-rec reads the same: on these mixes, which have no other guitar, separation is not what limits LOUDAR; LOUDAR's own rebuild is the larger limit (clearly on BKS; the panel is too wide to say); \"the rebuild\" bundles timbre, timing and the prior's coverage; GOAT was not run for ld-rec; bottleneck names none, the main row not having fallen short",
+    "seed_gauge": "the seed-to-seed change in Cen's search-half start value (ld-stem-b less ld-stem, ln, 2 seeds on the 23 deciding parts; not the spread of G50 or D; decides nothing): no shift on the pool, +0.026 [-0.032, +0.084]; per-part noise about three times SMALL (median |change| 0.147, largest 0.376, 14 of 23 at 0.10 or more)",
+    "timing": "priced with timbre (the declared caveat); lags -33 to +7 ms on the deciding sets, GOAT -47 to +31 ms; stem-in within 1 ms on 21 of 23; the audit: not the main limit (Spearman of D_true against the sub-window share +0.198, the wrong sign; D_true +0.147 within 1 ms against +0.298 beyond)",
+    "post_hoc": "the audit's, deciding nothing: without AimeeNorwich (RAW_05_02), whose stem is already nearly dry and which LOUDAR makes worse, D_blur is +0.009 [-0.080, +0.099]; D_true leave-one-file-out +0.15 to +0.23; larger on clean than crunch",
+    "next": "not a fallback for the note rebuild (it does not beat keeping the starting preset). For the user: an oracle timing-aligned ld-stem row (diagnostic, needs the user's go; little expected); L3, LOUDAR's full row at 200 evaluations plus step 2 (about 12k renders, a declaration and a review), queued after fs-notes build 2's search. Parking is the user's call; nothing parks itself"
    }
   },
   {
