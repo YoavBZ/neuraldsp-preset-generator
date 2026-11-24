@@ -1780,3 +1780,12 @@ answers are unseen.
 
 **Next.** M1 (this declaration and code), then M2 (the two listings' sha256 as `phase_nr_1_redo_bend_lists`:
 `lists_sha256`, `windows_sha256`), then `isolate-bend --declared` from merged main.
+
+**M1 merged (#602, 2c73689b). M2: the bend listings hashed (ledger `phase_nr_1_redo_bend_lists`).** `lists.json`
+`9449f985…a864` (B's ten lists) and `windows.json` `0cb49d74…5eca` (Db's 14 windows), both made once from bf2cb95e;
+between it and the merge only `isolate-bend`'s reports and `e-read` changed, never the instruments. The declared
+`isolate-bend` refuses any other listing. With M2, guard 1 of the F6b ear arm is coded (the decision's step 4):
+`exposure` reports, per part and per ear item (`ear-items-b3.json` when made, else build 2's items, the faulted cards
+`item_102`, `item_123`, `item_39` first), whether b3k's `tr-di` sha256 differs from build 3's and how many stitched
+curves the keep flag changes; `e-read` reports the same on E beside its distances. Both still run only after the
+freeze.

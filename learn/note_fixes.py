@@ -1793,6 +1793,51 @@ def require_frozen(m, fixes):
     return rec
 
 
+FAULTED_ITEMS = ("item_102", "item_123", "item_39")   # build 2's cards c12, c2/c11, c4: reported first
+
+
+def b3k_fixes(fixes):
+    """(Pure.) The F6b ear arm b3k's fixes (12t, the decision agent's call): `fixes` with F6's keep set true."""
+    return dict(fixes, F6=dict(fixes["F6"], keep=True))
+
+
+def faulted_first(keys):
+    """(Pure.) The faulted cards' items first, in FAULTED_ITEMS' order, then the rest as given."""
+    keys = list(keys)
+    return [k for k in FAULTED_ITEMS if k in keys] + [k for k in keys if k not in FAULTED_ITEMS]
+
+
+def keep_curve_changes(notes, fixes, di=None):
+    """(Pure but for F2's DI.) On one window's timed notes, the stitched notes whose curve as played (`bend_curve`
+    against the window's notes) differs between `fixes` and b3k's (keep true). -> (fixed notes, b3k notes, count)."""
+    nf, rep = apply_fixes(notes, fixes, di)
+    nk, _ = apply_fixes(notes, b3k_fixes(fixes), di)
+    f6 = rep.get("F6") or {"chains": [], "joins": 0}
+    heads = stitched_heads(len(nf) + f6["joins"], f6["chains"])
+    return nf, nk, sum(1 for h in heads if NR.bend_curve(nf[h], nf) != NR.bend_curve(nk[h], nk))
+
+
+def tr_di_sha(notes, di, bank, ring, finish, loud):
+    """`tr-di`'s sha256 as the build saves it (float32 `.npy`)."""
+    import hashlib
+    import io
+
+    import numpy as np
+
+    y, _ = NR.rebuild_redo("tr-di", notes, len(di), bank, di, ring, finish=finish, loud=loud)
+    buf = io.BytesIO()
+    np.save(buf, np.asarray(y, np.float32))
+    return hashlib.sha256(buf.getvalue()).hexdigest()
+
+
+def b3k_row(notes, fixes, di, bank, ring, finish, loud):
+    """Guard 1's figures for one window (12t, the decision agent's call): whether b3k's `tr-di` sha256 differs from
+    build 3's, and how many stitched curves the keep flag changes."""
+    nf, nk, changed = keep_curve_changes(notes, fixes, di)
+    a, b = tr_di_sha(nf, di, bank, ring, finish, loud), tr_di_sha(nk, di, bank, ring, finish, loud)
+    return {"b3_tr_di_sha256": a, "b3k_tr_di_sha256": b, "b3k_differs": a != b, "curves_keep_changes": changed}
+
+
 def e_read(out_path, fixes, base, declared=False):
     """12t phase 5 (zero renders), after the freeze: on E (build 2's ear items, `ear-items-b2.json`), per item the
     chains stitched and joins, the bent-but-cleared unstitched notes, the annotated bends still fragmented, and the
@@ -1813,7 +1858,11 @@ def e_read(out_path, fixes, base, declared=False):
     bank = NR.Bank(NR.load_notes_doc(), excl=excl)
     pair = T.install_pair(T.load_manifest())
     items, dd = {}, []
-    for e in json.loads(T.ear_items_file("b2").read_text())["items"]:
+    loud, why = T.build_loudness(None, fixes)
+    if why:
+        raise SystemExit(why)
+    ear = {e["item"]: e for e in json.loads(T.ear_items_file("b2").read_text())["items"]}
+    for e in (ear[k] for k in faulted_first(ear)):
         di = SB.measure(T.window_audio(T.goat_audio(z, e["item"]), e["start_s"])[0])
         notes, _ = T.timed_notes(T.load_note("ear", e["item"], pair), di)
         nb, _ = apply_fixes(notes, base, di)
@@ -1829,9 +1878,11 @@ def e_read(out_path, fixes, base, declared=False):
                                 nf, stitched_heads(len(nf) + f6["joins"], f6["chains"]))),
                             "annotated_fragments": {"base": annotated_fragments(ann, nb),
                                                     "fixed": annotated_fragments(ann, nf)},
-                            "base": fb, "fixed": ff}
+                            "base": fb, "fixed": ff,
+                            "b3k": b3k_row(notes, fixes, di, bank, "ring-soft", SB.measure, loud)}
     body = {"plan": "docs/note-rebuild-plan.md 12t phase 5 (E)", "label": label, "head": head, "renders": 0,
             "fixes": fixes, "base": base, "items": items, "distance_less_base": interval90(dd),
+            "b3k_items_differing": [k for k, v in items.items() if v["b3k"]["b3k_differs"]],
             "seconds": time.time() - t0}
     NR.write_once(out_path, body)
     print(f"E-READ ({label}): distance less base {body['distance_less_base']}; -> {out_path}")
@@ -1839,12 +1890,10 @@ def e_read(out_path, fixes, base, declared=False):
 
 def exposure(out_path, fixes, declared=False):
     """12t phase 5 (zero renders): per part, the chains `fixes` stitch and whether its `tr-di` is byte-identical to
-    build 2's (`build-b2.json`), the build's ring and loudness (`fixes`' own "loud" when named). -> OUT.json."""
-    import hashlib
-    import io
-
-    import numpy as np
-
+    build 2's (`build-b2.json`), the build's ring and loudness (`fixes`' own "loud" when named). Beside, guard 1 of the
+    F6b ear arm (the decision agent's call): per part and per ear item (build 3's, else build 2's, the faulted cards
+    first), whether b3k's `tr-di` sha256 differs from build 3's and how many stitched curves the keep flag changes; the
+    ear items get no distance here. -> OUT.json."""
     from learn import note_transcribe as T
 
     t0 = time.time()
@@ -1857,24 +1906,33 @@ def exposure(out_path, fixes, declared=False):
     if why:
         raise SystemExit(why)
     bank = NR.Bank(NR.load_notes_doc(), excl=NR.load_exclusion())
-    parts = {}
-    for kind, key, info, rec, di, finish in T.build_todo(ear_file=T.ear_items_file("b2")):
-        if kind != "part":
-            continue
+    parts, ear = {}, {}
+    b3_items = T.REDO / "ear-items-b3.json"
+    ear_file = b3_items if b3_items.exists() else T.ear_items_file("b2")
+    for kind, key, info, rec, di, finish in T.build_todo(ear_file=ear_file):
         notes, _ = T.timed_notes(rec, di)
         nf, rep = apply_fixes(notes, fixes, di)
-        y, _ = NR.rebuild_redo("tr-di", nf, len(di), bank, di, b2["ring_variant"], finish=finish, loud=loud)
-        buf = io.BytesIO()
-        np.save(buf, np.asarray(y, np.float32))
-        sha = hashlib.sha256(buf.getvalue()).hexdigest()
-        parts[key] = {"chains": len((rep.get("F6") or {}).get("chains", [])),
-                      "joins": (rep.get("F6") or {}).get("joins", 0),
-                      "tr_di_sha256": sha, "identical_to_b2": sha == b2["parts"][key]["arms"]["tr-di"]["sha256"]}
+        row = b3k_row(notes, fixes, di, bank, b2["ring_variant"], finish, loud)
+        f6 = rep.get("F6") or {"chains": [], "joins": 0}
+        if kind == "ear":
+            ear[key] = {"chains": len(f6["chains"]), "joins": f6["joins"], **row}
+            continue
+        sha = row["b3_tr_di_sha256"]
+        parts[key] = {"chains": len(f6["chains"]), "joins": f6["joins"], "tr_di_sha256": sha,
+                      "identical_to_b2": sha == b2["parts"][key]["arms"]["tr-di"]["sha256"], "b3k": row}
+    ear = {k: ear[k] for k in faulted_first(ear)}
     body = {"plan": "docs/note-rebuild-plan.md 12t phase 5 (exposure)", "label": label, "head": head, "renders": 0,
             "fixes": fixes, "parts": parts, "changed": sorted(k for k, v in parts.items() if not v["identical_to_b2"]),
+            "ear_items_file": ear_file.name, "ear_b3k": ear,
+            "b3k_guard_1": {"ear_items_differing": [k for k, v in ear.items() if v["b3k_differs"]],
+                            "parts_differing": sorted(k for k, v in parts.items() if v["b3k"]["b3k_differs"]),
+                            "rule": "a b3k card only for an ear item whose b3k tr-di differs from build 3's; none: "
+                                    "F6b stays undecided, 'not exposed on this page'"},
             "seconds": time.time() - t0}
     NR.write_once(out_path, body)
-    print(f"EXPOSURE ({label}): {len(body['changed'])} of {len(parts)} parts' tr-di differ from build 2's -> {out_path}")
+    print(f"EXPOSURE ({label}): {len(body['changed'])} of {len(parts)} parts' tr-di differ from build 2's; b3k differs "
+          f"on ear items {body['b3k_guard_1']['ear_items_differing']} and "
+          f"{len(body['b3k_guard_1']['parts_differing'])} parts -> {out_path}")
 
 
 def main(argv=None):
