@@ -524,3 +524,16 @@ def test_build_1s_answers_hash_on_main_under_its_own_key():
     assert rec["build_sha256"] == lad[SN.dry_key()]["sha256"] != lad[SN.dry_key("b2")]["sha256"]
     assert SN.pair_answers_refusal(rec, None, lad[SN.dry_key()]) is None
     assert rec["sha256"] != lad[SN.answers_key("b2")]["sha256"]                 # each build's answers, its own key
+
+
+def test_build_2s_read_on_main_is_provisional():
+    import pathlib
+
+    from learn import scratch_notes as SN
+
+    e = T.entries((pathlib.Path(__file__).resolve().parents[1] / "docs" / "dev-test-ledger.json").read_text())
+    lad = e["preset-ladder"]
+    rec = lad["phase_scratch_notes_read_b2"]
+    assert rec["code_provisional"] is True and rec["ear"] == "ear fault-content"
+    assert rec["ear"] == SN.ear_label(e["note-rebuild"], lad[SN.dry_key("b2")]["sha256"])     # 12q R5
+    assert rec["answers_sha256"] == lad[SN.answers_key("b2")]["sha256"]
