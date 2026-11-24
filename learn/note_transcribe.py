@@ -1846,7 +1846,7 @@ def cmd_transcribe(_args):
     order = list(pool)
     random.Random(f"{EAR_SEED}|ear-items").shuffle(order)
     scans = run_bp([(goat_audio(z, it), "scan") for it in order], work / "scan")
-    kinds, starts, figs, kinds_ann, starts_ann, figs_ann = {}, {}, {}, {}, {}, {}
+    kinds, starts, kind_figs, kinds_ann, starts_ann, figs_ann = {}, {}, {}, {}, {}, {}
     for it, r in zip(order, scans):
         dur = goat_duration(z, it)
         notes, _ = clean_transcribed(notes_from_events(r["events"]))
@@ -1855,7 +1855,7 @@ def cmd_transcribe(_args):
             starts[it] = st
             w = [dict(n, on=n["on"] - st - 0.25, off=n["off"] - st - 0.25) for n in notes
                  if st + 0.25 <= n["on"] < st + 10.25]
-            kinds[it], figs[it] = kind_flags(w), kind_figures(w)
+            kinds[it], kind_figs[it] = kind_flags(w), kind_figures(w)
         ann = annotated_notes(it)                     # the ear kinds' amendment: single-note from the annotation
         sa = grid_window(ann, dur) if ann else None
         if sa is not None:
@@ -1863,7 +1863,7 @@ def cmd_transcribe(_args):
             wa = [dict(n, on=n["on"] - sa - 0.25, off=n["off"] - sa - 0.25) for n in ann
                   if sa + 0.25 <= n["on"] < sa + 10.25]
             kinds_ann[it], figs_ann[it] = kind_flags(wa), kind_figures(wa)
-    new, chosen = choose_ear_kinds(order, kinds, kinds_ann, figs, figs_ann)
+    new, chosen = choose_ear_kinds(order, kinds, kinds_ann, kind_figs, figs_ann)
     start_of = {k: (starts_ann if chosen[k]["source"] == "annotation" else starts)[new[k]] for k in KINDS}
     ear = [{"item": it, "start_s": probe_start(goat_duration(z, it)), "kind": None, "old": True}
            for it in old] + [{"item": new[k], "start_s": start_of[k], "kind": k, "kind_label": chosen[k]["label"],
@@ -1906,7 +1906,7 @@ def cmd_transcribe(_args):
     NR.write_once(ear_items_path(), {"plan": PLAN, "items": ear, "kinds_scanned": {k: sorted(v) for k, v in
                                                                                      kinds.items()},
                                      "kinds_annotated": {k: sorted(v) for k, v in kinds_ann.items()},
-                                     "figures": figs, "figures_annotated": figs_ann, "chosen": chosen,
+                                     "figures": kind_figs, "figures_annotated": figs_ann, "chosen": chosen,
                                      "ledger": f"{LEDGER_ID} {PHASE_EAR_KINDS}", "order_seed": EAR_SEED})
     out["ear_kinds"] = chosen
     sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}
@@ -2012,7 +2012,7 @@ def cmd_ear_items(_args):
     order = list(pool)
     random.Random(f"{EAR_SEED}|ear-items").shuffle(order)
     scan = REDO / "work" / "transcribe" / "scan"
-    kinds_tr, starts = {}, {}
+    kinds_tr, figs_tr, starts = {}, {}, {}
     for i, it in enumerate(order):
         f = scan / f"{i:03d}-scan.json"
         if not f.exists():
@@ -2021,10 +2021,13 @@ def cmd_ear_items(_args):
         st = grid_window(notes, goat_duration(z, it))
         if st is not None:
             starts[it] = st
-            kinds_tr[it] = kind_flags([dict(n, on=n["on"] - st - 0.25, off=n["off"] - st - 0.25) for n in notes
-                                       if st + 0.25 <= n["on"] < st + 10.25])
+            w = [dict(n, on=n["on"] - st - 0.25, off=n["off"] - st - 0.25) for n in notes
+                 if st + 0.25 <= n["on"] < st + 10.25]
+            kinds_tr[it], figs_tr[it] = kind_flags(w), kind_figures(w)
     kinds = ear_kinds_of(kinds_tr, {k: set(v) for k, v in (first.get("kinds_annotated") or {}).items()})
-    figs = dict(first.get("figures") or {})
+    figs = {it: {**(first.get("figures_annotated") or {}).get(it, {}), **{k: v for k, v in f.items()
+                                                                          if k not in ANNOTATED_KINDS}}
+            for it, f in figs_tr.items()}             # each kind's figure from its own source (12n)
     d_items = {w["item"] for w in read_dev_windows(dev_windows(z, excl, tn["items"]))} - \
         {e["item"] for e in first["items"]}                 # D: the fixes' development windows
     items, repl = replace_ruled_out_kinds(order, first["items"], figs, kinds, exclude=d_items)

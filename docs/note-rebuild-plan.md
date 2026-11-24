@@ -1370,3 +1370,10 @@ F3's reading is that its pair detector fails, not that joining glides does not h
 true splits (distance −0.005 there), and the harm comes from false joins on the scales and D's plucks. Queued: a
 discriminator sweep for glides like F2's, on how far the bend travels toward the next note and on the DI's band at
 the next onset.
+
+**A record fault in the first ear items (found 2026-11-24 running `ear-items --build-name b2`).** `ear-items.json`'s
+`figures` field holds the last part's check figures, not the kind figures. In `transcribe`, the parts loop reused the
+variable for each part's checks before the file was written. The picks (`chosen`) and `figures_annotated` are right.
+`transcribe` now keeps the kind figures under their own name. `ear-items` recomputes the transcription's kind figures
+from the first transcribe's stored scans, and they reproduce the first record: `item_5`'s let-ring figure is 0.158 in
+both. Zero renders.
