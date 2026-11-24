@@ -5153,6 +5153,38 @@
      "nit_3": "gate.json is no longer in SEARCH_FORBIDDEN: stage 2's search reads G1 there through gate_record (N1); it holds no settings",
      "nit_4": "re-read F matches the re-read notes against the full post-fix list, notes the rebuild skipped included, so it understates recall slightly; it is used only beside the read (said in build.json and the report)"
     }
+   },
+   "phase_scratch_exact_targets": {
+    "build_sha256": "1ee294d2d6711eeb0748e8dae7f0eb675684494dd087f8ab2d6001be3be6e780",
+    "build_file": "PF/fs/exact/build.json",
+    "check_score_sha256": "dfda8f104b476b3defc9c76466d900406aba076bdb72cd9cfcfed1baad993c0e",
+    "check_score_file": "PF/fs/exact/check-score/result.json",
+    "check_search_sha256": "bfb3d93a061f71f94d80c95931a57f951127d1d78de28149a5da90328121fa43",
+    "check_search_file": "PF/fs/exact/check-search/result.json",
+    "targets_sha256": "763d29d223d0acaaf53165c5602cee11dccf1200869c36298b9e8177d1b92351",
+    "targets_file": "PF/fs/exact/targets.json",
+    "records_sha256": "cf17e55e00530490174e919a5113a060a0f7a33c560193eecf37dc86aea9210e",
+    "records_file": "PF/fs/exact/records.json",
+    "floors_sha256": "dbea2111f819e4164390062bc8c8d366fa704208c432f90e915054d0d000e61e",
+    "floors_file": "PF/fs/exact/floors.json",
+    "ran": "2026-11-25, python -m learn.scratch_exact build, score-check, search-check, then targets, floors and floors-real --shard k/3 (three chains, one render process each), then floor-read, once each from main at 38f7dfa5 in a frozen detached worktree; no_bg_nice and caffeinate -i; nothing else rendering",
+    "phase_1": "build (zero renders, 345 s): the four proofs hold. (1) build 2 rebuilt byte for byte, 110 files; (2) the re-read's events equal build 2's round trip on 47 of 47 parts, the input samples equal on 47 of 47; (3) this module and the six pinned files equal main's (7 of 7); (4) xn-reread's pause share, max over parts and frame sizes, 0.401 on half A and 0.420 on half B (the bank guitar's stored maximum 0.190 and 0.340; J0 refuses above 0.5). xn-list byte-identical to the bank guitar on 0 of 47 parts, so no part shares xn-bank's record. Re-read F median 0.731 (against the full post-fix list: understates recall slightly)",
+    "checks": "A1: score-check PASS (24 renders; the six shared settings of row (c)'s two check parts reproduced exactly, held values and render sha256), search-check PASS (26 renders; this module's start reference and run_part with row (c)'s inputs reproduce row (c)'s stored step-1 curve and first render)",
+    "targets": "A2 (282 renders): 47 targets from 33 partners; the left mic type projected on 0 parts (T1, the orchestrator's call); each target differs from Cen on 22 to 35 keys; partner's select equal to the part's on 47 of 47; the lag check passes on 47 of 47 (exactly 0 at lag 0 on both halves, above 0 at lag +-1); Cen's held-half distance to the record 1.30 to 7.01",
+    "floors_real_check": "A4 (188 renders): row (b)'s answer through the true DI reproduces row (b)'s stored held value and render sha256 on 47 of 47",
+    "renders": "Phase A 802 ({'targets': 282, 'floors': 282, 'floors_real': 188, 'checks': 50}); build zero",
+    "floor_read": {
+     "note": "for order and rough size only, never a predicted D (A1): a fixed-preset floor is an upper bound on what search cannot recover. ln(d / d_Cen) on the held half, on BKS+GOAT (the 40), 90% intervals; negative is closer to the record than Cen. Exact world: the target through each guitar against the record, the bank guitar as the judge's DI, against Cen through the bank guitar. Real world: row (b)'s answer against the clean record, the true DI as the judge's DI, against C3r's stored Cen",
+     "exact_xn_bank": "0 on 47 of 47 (the record's own setting through its own guitar: d = 0)",
+     "exact_xn_swap": "+0.863 [+0.698, +1.028] (clean +1.096 [+0.936, +1.255], crunch +0.631 [+0.329, +0.932]); includes the true DI's input-level offset (the SB.measure clip, up to about 7 dB) at a fixed input gain, which the search can fix",
+     "exact_xn_reread": "+0.481 [+0.308, +0.654] (clean +0.683 [+0.462, +0.903], crunch +0.286 [-0.011, +0.584]), on 46 of 47 parts (39 of the 40)",
+     "exact_xn_list": "-0.646 [-0.830, -0.461] (clean -0.612 [-0.927, -0.297], crunch -0.680 [-0.989, -0.371]), on 46 of 47 parts (39 of the 40)",
+     "real_row_b_answer_true_di": "-0.264 [-0.310, -0.219] (row (b)'s stored G, reproduced)",
+     "real_row_b_answer_tr_di": "+0.557 [+0.446, +0.668]",
+     "real_tr_di_less_true": "+0.822 [+0.714, +0.930]",
+     "one_part_refused": "on one GOAT part J0 refuses the held half (B) for the target through xn-reread and through xn-list ('no measurable loudness on one side'; diagnosed with 2 extra renders outside the record: the render is finite and half A reads), so those two floors read on 46 parts. Beside only: the rows are scored through the bank guitar, which reads on this part, and this part's search half is A",
+     "order": "at the target preset xn-list sits closer to the record than Cen, xn-reread and xn-swap further; in the real world row (b)'s answer through tr-di sits +0.82 further than through the true DI"
+    }
    }
   },
   {
