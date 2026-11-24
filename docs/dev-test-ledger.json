@@ -4787,6 +4787,179 @@
      }
     },
     "reading": "by the score (cluster- and band-weighted means): build 2's answer is level with Cen on the 40 (+0.009 [-0.088, +0.106]); against row (c) +0.096 [+0.005, +0.187] (undecided by the user's SMALL and BIG; the interval is above 0); against row (b) +0.274 [+0.186, +0.361] (keeps none of row (b)'s gain, share -0.03). The curve is flat from 50 evaluations on (-0.005 to +0.020; cp200 +0.020, final +0.009), where row (c)'s is already -0.078 at 50. Crunch reads closer than clean in every pair. The shrunk arm is -0.077 [-0.161, +0.008] against Cen"
+   },
+   "phase_scratch_notes_read": {
+    "report_sha256": "5cc7e8074be29f38326461449a64fcfc4ade130a9994a0e9b2767e2168f11945",
+    "report_file": "PF/fs/notes/report.json",
+    "rows_sha256": "1be576e10be44a962afe45819d8c17612983deee231fa0a393f61dfbbe1eb6ee",
+    "rows_file": "PF/fs/notes/rows.json",
+    "answers_sha256": "fe7dddb543151b17c348e0e8f55aa7106559f09a7bedb8736a9162b83035fcff",
+    "ear": "ear fault-content",
+    "code_provisional": true,
+    "code": "FN-crunch (shrunk), provisional: 12q R5, build 1's ear verdict is fault-content (phase_nr_1_redo_ear), so the code is not the row's outcome; this record writes no phase_scratch_notes_outcome",
+    "score": "2026-11-24, python -m learn.scratch_notes score --shard k/3 once from main at ea242b00 in a frozen worktree: 47 of 47 parts scored, the scoring control 47 of 47 ok, 0 reruns, 0 refused; 940 renders in 727 s wall; every score record from the hashed answers (phase_scratch_notes_answers). Non-finite: on 4 parts one borrowed partner (goat item_69) replaced under the non-finite rule (the borrowed answer I only; G is the part's own answer)",
+    "read": "2026-11-24, python -m learn.scratch_notes read once from main at 53d3fff7 in a frozen worktree (12q R8: after build 2 was hashed on main; cmd_read byte-identical from 6b570cf5 on), zero renders; the pairs against row (b) and the curve recomputed beside it from the same score files with the module's own set_rows (zero renders)",
+    "headline_bks_goat_40": {
+     "note": "ln(x / Cen) on BKS+GOAT (the 40), 90% intervals; negative is closer than Cen. Every mean is `note_replay.summary`'s cluster- and band-weighted figure (pooled over BKS and GOAT). By the score only: the ear has not compared these presets",
+     "plain_unweighted_mean_40": {
+      "answer": 0.01,
+      "shrunk": -0.0564
+     },
+     "answer": {
+      "G_vs_Cen": {
+       "all": {
+        "mean": 0.029,
+        "lo90": -0.0719,
+        "hi90": 0.13
+       },
+       "clean": {
+        "mean": 0.1041,
+        "lo90": -0.1192,
+        "hi90": 0.3275
+       },
+       "crunch": {
+        "mean": -0.0461,
+        "lo90": -0.0958,
+        "hi90": 0.0036
+       }
+      },
+      "less_row_c": {
+       "all": {
+        "mean": 0.1157,
+        "lo90": 0.0197,
+        "hi90": 0.2117
+       },
+       "clean": {
+        "mean": 0.1828,
+        "lo90": -0.0323,
+        "hi90": 0.3979
+       },
+       "crunch": {
+        "mean": 0.0487,
+        "lo90": -0.0302,
+        "hi90": 0.1276
+       }
+      },
+      "less_row_b": {
+       "all": {
+        "mean": 0.2934,
+        "lo90": 0.2001,
+        "hi90": 0.3868
+       },
+       "clean": {
+        "mean": 0.4448,
+        "lo90": 0.2733,
+        "hi90": 0.6163
+       },
+       "crunch": {
+        "mean": 0.1421,
+        "lo90": 0.1066,
+        "hi90": 0.1776
+       }
+      },
+      "row_c_G": {
+       "mean": -0.0867,
+       "lo90": -0.1552,
+       "hi90": -0.0182
+      },
+      "row_b_G": {
+       "mean": -0.2644,
+       "lo90": -0.3102,
+       "hi90": -0.2186
+      },
+      "reading_less_row_c": "worse (the interval above 0, the mean at BIG 0.10 or beyond)"
+     },
+     "shrunk": {
+      "G_vs_Cen": {
+       "all": {
+        "mean": -0.0453,
+        "lo90": -0.1241,
+        "hi90": 0.0335
+       },
+       "clean": {
+        "mean": 0.009,
+        "lo90": -0.172,
+        "hi90": 0.1899
+       },
+       "crunch": {
+        "mean": -0.0995,
+        "lo90": -0.1566,
+        "hi90": -0.0424
+       }
+      },
+      "less_row_c": {
+       "all": {
+        "mean": 0.1024,
+        "lo90": 0.0385,
+        "hi90": 0.1663
+       },
+       "clean": {
+        "mean": 0.1573,
+        "lo90": 0.0162,
+        "hi90": 0.2984
+       },
+       "crunch": {
+        "mean": 0.0475,
+        "lo90": 0.0067,
+        "hi90": 0.0883
+       }
+      },
+      "less_row_b": {
+       "all": {
+        "mean": 0.1746,
+        "lo90": 0.1092,
+        "hi90": 0.24
+       },
+       "clean": {
+        "mean": 0.2713,
+        "lo90": 0.1398,
+        "hi90": 0.4028
+       },
+       "crunch": {
+        "mean": 0.0779,
+        "lo90": 0.0456,
+        "hi90": 0.1102
+       }
+      },
+      "row_c_G": {
+       "mean": -0.1477,
+       "lo90": -0.2006,
+       "hi90": -0.0948
+      },
+      "row_b_G": {
+       "mean": -0.2199,
+       "lo90": -0.2573,
+       "hi90": -0.1825
+      },
+      "reading_less_row_c": "worse"
+     },
+     "curve_answer_G": {
+      "cp50": {
+       "mean": -0.0039,
+       "lo90": -0.1033,
+       "hi90": 0.0954
+      },
+      "cp100": {
+       "mean": 0.0109,
+       "lo90": -0.09,
+       "hi90": 0.1118
+      },
+      "cp200": {
+       "mean": 0.0344,
+       "lo90": -0.0643,
+       "hi90": 0.1331
+      },
+      "final": {
+       "mean": 0.029,
+       "lo90": -0.0719,
+       "hi90": 0.13
+      }
+     },
+     "share_of_row_b_gain": -0.1097,
+     "search_gain_vs_held_G_r": 0.0041
+    },
+    "reading": "by the score (cluster- and band-weighted means): build 1's answer is undecided against Cen on the 40 (the interval spans 0; its top passes BIG 0.10) (+0.029 [-0.072, +0.130]); against row (c) +0.116 [+0.020, +0.212] (worse by the user's SMALL and BIG); against row (b) +0.293 [+0.200, +0.387]. The curve is flat from 50 evaluations on (-0.004 to +0.034; final +0.029). Crunch reads closer than clean in every pair. The shrunk arm is -0.045 [-0.124, +0.034] against Cen and +0.102 [+0.038, +0.166] against row (c) (worse). The ear-faulty build (R8), read beside build 2 (phase_scratch_notes_read_b2); their pair is pair-builds --build-name b2",
+    "correction_to_read_b2": "phase_scratch_notes_read_b2 words build 2's answer as \"level with Cen\" (+0.009 [-0.088, +0.106]); by `paired_reading` with the user's SMALL and BIG it is \"undecided\" (the interval spans 0, its top +0.106 passes BIG 0.10). Recorded here; that record is left as merged (the ledger is append-only)"
    }
   },
   {
