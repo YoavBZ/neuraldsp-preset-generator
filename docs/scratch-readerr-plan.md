@@ -659,3 +659,317 @@ queued, or the worktree is re-cut and the proofs rerun.
 
 **Privacy:** synthetic part keys in tests; the ledger holds hashes and counts only; the write-up never names the
 refused part, since its key holds file names.
+
+## 10. Phase 2b amendment (2026-11-26; ledger `phase_scratch_readerr_p2b`)
+
+Declared 2026-11-26, after the `xr-matched` row read **XH-both** (#638, audited; `phase_scratch_readerr_xr_outcome`),
+before anything in it is installed or run. The amendment (the handover's `plans/note-reading-phase2b-amendment.md`,
+planner Fable) passed an independent review (Opus, high): PASS WITH AMENDMENTS. Its eight binding amendments are
+built in below and win where they differ from the amendment's text.
+
+- **Code:** units D (`learn/readerr_run.py`: the `mt3` and `kong` calls, the pickle scan, the guarded load, the key
+  report, the network and process refusals), E (`learn/scratch_readerr.py`: `tx-notes`, `tx-score`, `select`, the
+  gate, `xr-cand`, `XP_TABLE`), F (`learn/readerr_tools.py`: `tx-install`, `tx-fetch`, the manifest reader) and G
+  (this section, the ledger key). They share no files and merge as one set after review (the orchestrator's call).
+- **Grepped first:** `readerr_tools`, `tx-install`, `tx-fetch`, `tx-notes`, `tx-score`, `ymt3`, `kong-fl`,
+  `kong-gaps`, `xr-cand`, `XP-`, `tools-gate`, `notes-tx`, `candidates-tx` and `phase_scratch_readerr_p2b` had no
+  hit in `docs/`, `learn/` or `tests/` on main.
+- **Keys to come:** `phase_scratch_readerr_tools` (the gate), `phase_scratch_readerr_notes_tx`,
+  `phase_scratch_readerr_candidates_tx`, `phase_scratch_readerr_outcome` (the RX code, with `select.json`'s sha256),
+  and only if a row runs: `phase_scratch_readerr_xr_dry_cand`, `phase_scratch_readerr_xr_answers_cand`,
+  `phase_scratch_readerr_xp_outcome`.
+
+**The goal.** At zero renders, does an open transcriber remove most of Basic Pitch's extras on the bench without
+adding misses? A row is priced only for a candidate the row could actually decide.
+
+**Why the rule changes.** `XH-both` named note error as Phase 2's figure (9f). Note error's would-pick cuts extras
+1,953 → 378 but doubles misses 302 → 620. "Misses not read worse" alone is too weak: one stored setting cuts 53% of
+extras with 28% more misses and still reads "undecided" on misses. The predicted net gain (10c) is what stops it. The
+rule below replaces note error as Phase 2's deciding figure.
+
+### 10a. The run flow
+
+**The manifest.** U4's download manifest (a hand-back, outside the repo) is read only when its sha256 is the one
+pinned in `readerr_tools.MANIFEST_SHA256`. Every URL, size, sha256, lock line and pinned path comes from it.
+
+**`tx-install`** (`readerr_tools`, zero renders). Two venvs under `tools/readerr/` under the data root, each made by
+pyenv's Python 3.12.13 (its version checked):
+
+- **Lock A:** `mt3-infer` 0.2.0 with torch 2.7.1 (52 wheels). **Lock B:** the Riley models with torch 2.8.0 (52
+  wheels).
+- **How:** `pip install --require-hashes --only-binary :all: --no-deps --no-cache-dir` from the manifest's lock
+  lines, each checked (one hashed pin a package, torch at the declared version). The installed set must equal the
+  lock (`pip list`).
+- **The two code archives (review amendment 7).** `hf_midi_transcription` at `96f6797` and the fork of
+  `piano_transcription_inference` at `cfe28ed`, each from its commit-pinned GitHub URL, checked against the
+  manifest's size and sha256 and the archive's own commit header. Their build files (`setup.py`, `pyproject.toml`)
+  are read and recorded. They are **unpacked, never built**: only the import package (and `hf_midi_transcription`'s
+  `instruments.json`) is unpacked, with tarfile's data filter, and one `.pth` file in lock B's site-packages points
+  there. No build code runs; setuptools sits in lock B with its hash, and is never called.
+- **No upstream import** in the install: the gate's refusals must come first (review amendment 7).
+- **Refusals:** an existing venv or record, a hash mismatch, or free disk that would end under the 31 GB guard. Free
+  disk is printed before and after. The record is `install-<lock>.json`. A failure moves what the run made aside.
+
+**`tx-fetch`.** The three checkpoints from the manifest's pinned `resolve/<commit>` URLs to its pinned paths:
+YourMT3+ `YPTF.MoE+Multi (noPS)` (kept named `last.ckpt`), `guitar-fl.pth` and `guitar-gaps.pth`. Size and sha256
+must equal the manifest's. A mismatching file is moved aside, never loaded, never deleted. `mt3.pth` is never fetched
+(O5). The same disk refusal and prints apply.
+
+**Writes.** `readerr_tools` writes only under `tools/readerr/` under the data root, never over a file. `scratch_readerr`
+writes only under `PF/fs/readerr/`, as before.
+
+**The gate (unit E, review amendment 8),** before any candidate is read. It calls D's modes and F's manifest reader,
+and writes `PF/fs/readerr/tools-gate.json`, hashed as `phase_scratch_readerr_tools`:
+
+1. **Pickle scan (review amendment 7).** Standard-library `pickletools` reads every pickle member of each zip
+   checkpoint (`data.pkl` and any other `.pkl`). It handles `GLOBAL` and `STACK_GLOBAL` with memo resolution. Any
+   global it can't resolve refuses, and so does any global outside the manifest's list for that file.
+2. **A fixed denylist** refuses, whatever the manifest lists: `builtins` `eval`, `exec`, `compile`, `getattr`,
+   `__import__` and `open`; and the modules `os`, `posix`, `subprocess`, `sys`, `importlib`, `runpy`, `socket`,
+   `shutil`, `pickle` and `marshal`. The allowlist is printed in the gate and audited before the hash PR.
+3. **Guarded load (O6).** Every `torch.load` goes through one wrapper. It accepts only the pinned path, opens the file
+   itself (a file object it did not open refuses), forces `weights_only=True`, and allowlists exactly that file's
+   scanned globals. The upstream loaders that hard-code `weights_only=False` are reached only through it.
+4. **Key report (O7).** Missing and unexpected keys after each load are written. A missing key the model needs
+   refuses.
+5. **No runtime fetch.** The offline variables are set. Before any upstream import, the runner's torch modes refuse
+   any socket connect, `os.system`, `os.exec*`, `os.spawn*`, `os.posix_spawn*`, `os.popen`, `subprocess` and
+   `_posixsubprocess` (review amendment 7). A test covers each.
+6. **Repeatable.** Three runs on 4 bench parts give identical events, two in one process and one fresh. A candidate
+   that does not repeat is reported and cannot be priced.
+7. **Timed on 3 parts first** (`--first 3`), at 1 and at 2 threads. The projection for all 133 inputs is printed
+   before the full run.
+
+**`tx-notes`** then runs every input through `readerr_run.py`. `tx-notes --combine` writes `notes-tx.json`; its sha256
+goes to main as `phase_scratch_readerr_notes_tx` before `tx-score`.
+
+### 10b. The candidates
+
+- **Inputs:** Phase 2a's 133. The 47 bench inputs are each checked against their stored `input_sha256`; the 79
+  Guitar-TECHS windows and the lists go through `real_di_source`, where P3 refuses. Each tool resamples with its own
+  loader, with versions recorded.
+
+| Id | Transcriber | Own settings, from one inference | Output |
+|---|---|---|---|
+| `ymt3` | YourMT3+ `YPTF.MoE+Multi (noPS)`, lock A | `programs`: `pitched`, every pitched programme (as shipped), or `guitar`, the guitar programmes only | No loudness, no bends |
+| `kong-fl` | Riley's `guitar-fl`, lock B | `onset_threshold` 0.2, 0.3, 0.4, 0.5 × `frame_threshold` 0.1, 0.2, 0.3; shipped 0.3 and 0.1 (the fork's defaults). The grid runs only if the pinned post-processor takes the thresholds without a patch (unit D reports which) | Loudness; no bends |
+| `kong-gaps` | Riley's `guitar-gaps`, lock B | The same | The same |
+
+- **The grids, declared (review amendment 5).** `kong` has 4 × 3 = 12 points a model; `ymt3` has 2. Each is scored
+  plain and as `+bp`: (12 + 12 + 2) × 2 = 52 lists at most.
+- **"Nearer the shipped settings" (review amendment 5).** For `kong`, the L1 distance in grid steps from the shipped
+  point (0.3, 0.1), each axis's step 0.1. For `ymt3`, every pitched programme is 0 and the guitar programmes only is
+  1. Ties go to the shipped point.
+- **The bends variant.** `<id>+bp` takes loudness and bends from its paired Basic Pitch note (`note_tx.ms_with_bp`).
+  This is applied after the candidate's own timing, from the stored re-read after F1, and F1 is not applied again.
+- **Same treatment, figures and reads as Phase 2a.**
+  - `scored_list` applies the clean-up, the window, the coarse offset, the ±20 ms snap and F1.
+  - On the bench: the 23 note figures, and the rebuilt guitar's `logmel`, `env_corr` and pause error against the
+    bank guitar.
+  - On the real-DI arm: the note figures, by P1, P2, chords, scales and the lists, file-clustered, sign only.
+  - Reads are paired against the stored re-read through `set_rows` on BKS+GOAT, with BKS alone, GOAT alone and all
+    47 beside. Every label is sign only.
+- **Output:** `candidates-tx.json`, hashed as `phase_scratch_readerr_candidates_tx`, with each candidate's licence
+  record (10f).
+- **MuScriptor stays out.** It needs the user's yes and never ships.
+
+### 10c. The selection rule (`select`, zero renders)
+
+**Fixed before anything is installed,** read by code from the hashed `xr/rows.json` (`phase_scratch_readerr_xr_outcome`
+`rows_sha256` c7bc4b14…). The values are from the answer arm, intent-to-treat, on the 40:
+
+- **E** = −0.2752 [−0.4057, −0.1448];
+- **M** = +0.2768 [+0.1414, +0.4121] (+0.277 rounded);
+- **h** = 0.1305, the half-width of E's interval: the bench's measured resolution for one row against another.
+
+**Per candidate c,** from its as-played counts on the 40 (the stored re-read has 1,624 extras and 246 misses there):
+
+- **x** = 1 − extras_c / extras_base, the share of extras removed;
+- **y** = misses_c / misses_base − 1, the share of misses added;
+- **g** = E·x + M·y, the predicted change in G against `xn-reread`. Below zero is better.
+
+**A candidate qualifies when every item holds.** Every item is read on the `+bp` variant, the list that would be
+priced (review amendment 3). Its counts equal the plain variant's, but its timing and dry figures differ.
+
+1. `extra_rate` reads "better" against the stored re-read, sign only, on the 40.
+2. `miss_rate` does not read "worse", sign only.
+3. **(Review amendment 3.)** `end_error` and `onset_error` (the matched notes' median absolute onset error, in ms,
+   after the snap) do not read "worse", sign only. g prices counts only. It ignores changes to matched notes' onsets, ends and bends, which
+   a new transcriber changes most.
+4. g ≤ −h: a row would be expected to decide it.
+5. **Cross-set, for any candidate whose settings the data chose.**
+   - The family's pick on BKS (the lowest g among members meeting 1 to 3 there) must meet 1 to 4 on GOAT, and the
+     reverse.
+   - If the two picks differ, the one nearer the shipped settings (10b) is taken, and it must pass both ways.
+   - A shipped-settings candidate needs no cross-set read.
+6. **No real-DI harm.** On P1, P2 or the lists, neither `extra_rate` nor `miss_rate` reads "worse" against Basic
+   Pitch.
+7. It repeats (gate item 6).
+
+**The pick.** The qualifier with the lowest g. Exact ties go first to no download, then to a licence the product can
+use. The priced list is the pick's `+bp` variant.
+
+**Leak-free.**
+- The rule and its constants are in this key before anything is installed.
+- `select` refuses unless both candidate files' sha256 are on main.
+- No J0 figure of any candidate exists before its guitar is hashed.
+
+**What it assumes.**
+- g is a straight-line prediction from two measured slopes, and it ignores E's and M's own intervals.
+- M's slope overstates a miss, because M also holds matched notes' timing, ends and bends. So the rule is harsh on
+  misses.
+- g is never a reading. Only the row decides.
+
+**Beside, never deciding.**
+- **The refusal-sensitive check (review amendment 4).** Everything is recomputed together from the passing-only
+  values: E −0.2203 [−0.3695, −0.0710], h 0.1492, M +0.2925. If the set of qualifiers changes (not only the pick),
+  the read is labelled `refusal-sensitive` and goes to the user before any row.
+- Each candidate's predicted odds of a decided row, if its half-width matches E's.
+- End error, the attack rates and the dry figures per candidate.
+- **The shrunk arm's caveat.** E is not shown there (−0.007 [−0.122, +0.109]), so the predicted gain is for the full
+  answer only.
+
+### 10d. How the rule feeds `RX_TABLE` (review amendment 1)
+
+The codes are unchanged; their inputs are redefined, superseding 9f's note-error line for `XH-both`. The code follows
+the pick's kind. The order is transcriber, setting, harm, undecided, none, and the first that holds is the code:
+
+| RX code | Under this rule | Next step |
+|---|---|---|
+| `RX-transcriber` | The pick (10c) is a downloaded transcriber | To the user with the licence table and the `xr-cand` row |
+| `RX-setting` | The pick is a no-download candidate | To the user with the `xr-cand` row |
+| `RX-harm` | Some candidate meets items 1 to 5 and 7, but item 6 fails | Reported; not priced |
+| `RX-undecided` | None qualifies; some candidate has g < 0 with item 1 ("better by the mean") | No priced row; to the user with each candidate's g |
+| `RX-none` | Nothing else | Basic Pitch as frozen stays; to the user |
+
+- **What the inputs mean.** "Decided better" is items 1 to 5 and 7. "Better by the mean" is g < 0 with item 1.
+  "Real worse" is item 6 failing. `RX-stop` and the table's other codes are unchanged.
+- **If none qualifies:** no priced row. By the stored figures, the best no-download candidate predicts about half of
+  what a row can resolve (seen, below), so about 13,000 renders would be expected to read undecided. Pricing it
+  anyway is the user's option, never the default.
+
+### 10e. The priced row: `xr-cand` (only on `RX-transcriber` or `RX-setting`, with the user's word)
+
+- **`xr-build --set cand`** (zero renders). It refuses unless main's `phase_scratch_readerr_outcome` names the
+  candidate. The guitar comes from the same `rebuild_redo` call, from the candidate's hashed `+bp` list. Four proofs
+  run before anything is written:
+  1. the stored re-read reproduces `dry/xn-reread`'s sha256 on 47 of 47;
+  2. the candidate's note files equal the listing's sha256;
+  3. the guitar's dry figures equal `tx-score`'s stored ones on 47 of 47;
+  4. CODE_FILES equal main's.
+
+  The build's sha256 goes to main as `phase_scratch_readerr_xr_dry_cand`.
+- **`xr-check` is rerun (review amendment 2),** about 50 renders, before the search. The source test stays beside it:
+  `cmd_xr_search`, `cmd_xr_score`, `load_xr_guitar`, `read_xr_parts` and every function they reach must be
+  byte-identical to main at `cd262a10`.
+  - Why the rerun: `xr-check` passed before #630 changed `scratch_readerr.py`, and unit E edits `XR_ROWS`,
+    `XR_SETS` and the choices to add `xr-cand`.
+  - A source test can't see the plugin or the render environment; only renders can.
+- **The rest of the row** is `xr-search`, `xr-answers` and `xr-score` with `--row xr-cand`, unchanged. The answers
+  hash is `phase_scratch_readerr_xr_answers_cand`.
+- **The read** (`xr-read --row xr-cand`), S1 as for `xr-matched`: intent-to-treat decides, passing-only beside.
+  - **P = G(`xr-cand`) − G(`xn-reread`)**, labelled by `paired_reading` at its defaults (review amendment 6;
+    `number_reading` has no "worse"), with `number_reading`'s "passes" beside.
+  - **L = G(`xr-cand`) − G(`xn-list`)**, labelled by `paired_reading`.
+  - **Beside:** P less its prediction g; G(`xr-cand`) − G(`xr-matched`); the shrunk arm; each set; checkpoints.
+
+**`XP_TABLE`** (the first that holds; coded and tested before any run):
+
+| Code | When | Meaning | Next step |
+|---|---|---|---|
+| `XP-stop` | A build proof or `xr-check` fails, a zero distance on a deciding setting, or a label is missing | Nothing is read | To the orchestrator |
+| `XP-anomaly` | L reads "better" | A transcriber's list beats the exact list | Audited before anything is said |
+| `XP-closes` | P passes, L "matches" | The candidate removes the shown reading cost | To the user with the licence question and the stem-notes step |
+| `XP-gain` | P passes, L "worse" or undecided | A shown gain; with L "worse", reading still costs L; with L undecided, "gain shown; the remaining cost not decided" (review amendment 6) | To the user with the licence question |
+| `XP-worse` | P reads "worse" | It lands further than Basic Pitch's re-read; the prediction failed | Not adopted; reported with g; no second row without an amendment |
+| `XP-undecided` | Anything else | Not decided; undecided is not failed | To the user with P's interval beside g |
+
+A test checks that every pair of labels ends in exactly one code.
+
+### 10f. Licences (copied by code: `readerr_tools.licence_record`)
+
+Each candidate's record in `candidates-tx.json` and `select.json` holds `code`, `weights_data` and `product_status`,
+copied from the manifest. Section 5's value is used where the manifest records none.
+
+| Candidate | Code | Weights and training data | Product status |
+|---|---|---|---|
+| Basic Pitch settings | Apache-2.0 | In the wheel | Usable |
+| `ymt3` | GPL-3.0 (the author's repo) or Apache-2.0 (the Space and `mt3-infer`'s copy) | No licence covers the weights | Unresolved |
+| `kong-fl` | MIT claimed, no LICENSE file (`hf_midi_transcription` and the fork) | Sold transcriptions aligned to commercial recordings; the base model trained on MAESTRO (CC BY-NC-SA) | Unclear, NC assumed |
+| `kong-gaps` | The same | GAPS: three claims disagree | Unclear, NC assumed |
+| soxr (a lock dependency) | LGPL-2.1-or-later | — | Noted |
+
+All are fine for development (O8). The user is asked only on `RX-transcriber`, with this table beside the proposed
+row.
+
+### 10g. CPU and disk
+
+**CPU, measured in Phase 2a.** `notes`: 133 inputs in 441.5 s of core time over 3 shards, 3.3 s an input. `score`:
+6,284 rebuilds in 8,414 s, 1.34 s a rebuild with its scoring.
+
+| Work | Count | Rate | Core time |
+|---|---|---|---|
+| Torch reads | 133 inputs × 3 checkpoints | Not measured on this CPU | Timed on 3 parts first |
+| Rebuilds | At most 52 lists × 47 parts = 2,444 | 1.34 s, measured | About 55 min (derived) |
+
+One runner process at a time, at most 2 threads, beside the render rows. The 20-minute render-rate check applies.
+
+**Disk.** About 43 GB was free when this was declared (40 GiB); the guard is 31 GB.
+
+| Item | Size |
+|---|---|
+| Weights (3 files) | 759,640,462 B |
+| Code archives | 4,838,161 B |
+| Wheels, locks A and B | 378,095,035 B |
+| **Download total** | **1,142,573,658 B** |
+| Two installed torch venvs | About 1.6 to 1.8 GiB, an estimate from MuScriptor's measured 857,916 KiB venv |
+| Note files | About 0.3 GB, from Phase 2a's measured 809 MB for 148 candidates |
+| The `xr-cand` row | About 0.1 GB (`xr/` holds 195 MB for two guitar sets and one row) |
+
+`tx-install` refuses unless free disk less the lock's wheels, one measured venv (857,916 KiB) and the archives stays
+at or above the guard. `tx-fetch` refuses unless free disk less the files to fetch stays at or above it.
+
+**Measured row cost (`xr-matched`).** 12,082 search renders (2 h 19 min), 96 start-reference renders and 552 score
+renders (7 min). `xn-reread` alone took 1 h 53 min for about 13,040 renders.
+
+### 10h. Seen before this rule was written (labelled so wherever printed)
+
+- **The best stored no-download candidate:** g −0.068 on the 40 (−0.075 on the 47, with 54% of extras removed and
+  26% more misses), against a needed −0.131.
+- **The shift vote at k = 4:** g −0.032 on the 40 (−0.029 on the 47).
+- **Note error's would-pick:** 378 extras and 620 misses, against 1,953 and 302.
+- **One stored setting:** cuts 53% of extras with 28% more misses, and reads "undecided" on misses.
+- **The constants:** E and M of `xr-matched`, both arms.
+- **Every Phase 2a figure** in `candidates.json`.
+
+No transcriber candidate's figure exists yet.
+
+### 10i. Order and checks
+
+**Order:**
+
+1. D, E, F and G (this declaration), the review, one merge (#638 is on main).
+2. `tx-install`, `tx-fetch`, the gate, and its hash PR (`phase_scratch_readerr_tools`).
+3. `tx-notes` and its hash PR, then `tx-score` and its hash PR.
+4. `select`, an independent audit, and the outcome PR (`phase_scratch_readerr_outcome`).
+5. Only on `RX-transcriber` or `RX-setting`, with the user's word, and when no rederive row waits for the slots:
+   1. `xr-build --set cand` and its hash PR;
+   2. `xr-check`;
+   3. the search on 3 shards;
+   4. the answers PR;
+   5. the score, `xr-read`, an audit, and the results PR (`phase_scratch_readerr_xp_outcome`).
+
+**Commands refuse:**
+- until main holds `phase_scratch_readerr_xr_outcome` with `XH-both`, `XH-extras` or `XH-rest`, and this key;
+- `readerr_tools` also refuses unless its own file equals origin/main's.
+
+**The check after the merge:**
+- the four units' test commands pass on main;
+- `git diff --quiet` over CODE_FILES, less this track's own files, exits 0;
+- only `phase_scratch_readerr*` keys changed;
+- from a frozen detached worktree, `tx-install` and the gate report before any candidate is read.
+
+**The guard widens.** CODE_FILES gains `learn/readerr_tools.py`. Nothing merges into `scratch_readerr.py` while an
+`xr-` command is queued.
+
+**Privacy.** Synthetic part keys and names in tests. The ledger holds hashes, counts and the declared constants only.
