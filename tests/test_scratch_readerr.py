@@ -1948,3 +1948,32 @@ def test_xr_read_cand_checks_select_against_mains_outcome(monkeypatch, tmp_path)
     X.write_once(X.tx_path("select"), {"rule": {"rows": {}}})
     with pytest.raises(SystemExit, match="select_sha256"):
         X.cmd_xr_read(_args(row="xr-cand"))
+
+
+def test_the_gates_spec_takes_the_manifests_sha256_not_a_second_hash(monkeypatch, tmp_path):
+    """The spec's model_sha256 is the manifest item's: if the file changed after the size and sha256 check, the
+    runner's guarded load (which re-hashes on its handle) refuses it, instead of being handed the changed file's
+    own hash."""
+    fake = _FakeTools(tmp_path)
+    _stub_tools(monkeypatch, fake)
+    for f in fake.CANDIDATES:
+        (tmp_path / f"{f}.ckpt").write_bytes(b"later")               # differs from what the manifest pins
+    monkeypatch.setattr(X, "readerr_dir", lambda: tmp_path / "readerr")
+    monkeypatch.setattr(X, "require_readerr", lambda *a: {})
+    monkeypatch.setattr(X, "require_trace", lambda m=None: {"parts": {}})
+    monkeypatch.setattr(X, "bench_inputs",
+                        lambda tr: {f"bench-{j:03d}": ("k", tmp_path / "x.wav", {}) for j in range(4)})
+    monkeypatch.setattr(X, "real_inputs", lambda mr, pair: ({}, {}))
+    monkeypatch.setattr(T, "redo_on_main", lambda: ({}, None))
+    monkeypatch.setattr(T, "load_manifest", lambda: {})
+    monkeypatch.setattr(T, "install_pair", lambda man: ("l", "m"))
+    monkeypatch.setattr(X, "gate_checkpoint_refusal", lambda item, path: None)   # the check passed earlier
+    seen = []
+
+    def fake_run(fam, spec, jobs, work, threads=1):
+        seen.append(spec["model_sha256"])
+        raise SystemExit("stopped after the first spec")
+    monkeypatch.setattr(X, "run_tx", fake_run)
+    with pytest.raises(SystemExit, match="stopped after the first spec"):
+        X.cmd_tx_gate(_args())
+    assert seen == ["0" * 64] and seen[0] != X.file_sha(tmp_path / "ymt3.ckpt")

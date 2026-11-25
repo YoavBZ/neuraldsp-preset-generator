@@ -3641,16 +3641,18 @@ def cmd_tx_gate(args):
     ids = sorted(bench)
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P2B}", "renders": 0, "families": {},
            "manifest_keys": sorted(man) if isinstance(man, dict) else None}
-    allows, cks = {}, {}
+    allows, cks, shas = {}, {}, {}
     for fam in TX_FAMILIES:                  # E1 and E3: every checkpoint and allowlist, before any runner call
         cks[fam] = pathlib.Path(RT.checkpoint_path(fam))
-        why = gate_checkpoint_refusal(manifest_item_of(man, fam), cks[fam])
+        item = manifest_item_of(man, fam)
+        why = gate_checkpoint_refusal(item, cks[fam])
         if why:
             raise SystemExit(f"{fam}: {why}")
         allows[fam] = tx_allow_globals(man, fam)
+        shas[fam] = item["sha256"]           # the manifest's, never a second hash of the file: the runner's guarded
+                                             # load re-hashes on its handle, so a change after this check is caught
     for fam in TX_FAMILIES:
-        ck, allow = cks[fam], allows[fam]
-        sha = file_sha(ck)
+        ck, allow, sha = cks[fam], allows[fam], shas[fam]
         spec = tx_spec(fam, ck, sha, allow)
         rep_jobs = [(i, bench[i][1]) for i in ids[:GATE_REPEAT_PARTS]]
         with tempfile.TemporaryDirectory(prefix=f"readerr-gate-{fam}-") as work:
