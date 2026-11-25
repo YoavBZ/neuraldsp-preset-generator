@@ -422,6 +422,39 @@ window). The pause error is the mean over the three sizes of 1 − agree; where 
 absolute value of the mean over the sizes of (`pauses_dry` − `pauses_true`) instead. The per-half pause shares `build.json` stores (`pauses[half][n_fft]`, for `xn-reread`
 and the bank guitar) are reported beside, never as the figure. `xr-build` stores both for its own guitars.
 
+**As built (unit C).** Both commands take `--shard k/n` (any n: they render nothing) and `--first n` (the timing run
+on 3 inputs), and skip an input already done; `--combine` runs once after every shard.
+
+- **`notes`:** per shard, three runner calls (the model loaded once a call), into a temporary folder.
+  - **The lead-in** is a one-point `bp-grid` at the stored point (`grid` holds the stored onset threshold alone),
+    because the runner refuses an empty grid. `make_spec` refuses one too, and a test runs every spec through
+    `readerr_run.check_spec`.
+  - **The proof runs first, per input:** bp-grid's top-level events and its stored-point events equal the stored
+    read's; the shift vote's anchor, and its k = 1 vote, each equal the stored events, compared directly. A bench
+    input that fails is not written, and the shard ends with `RX-stop`. For real-DI inputs the same comparison is a
+    reported check.
+  - **Each input's files sit in one folder,** `notes/inputs/<input>/`: the 148 runner candidates as
+    `<candidate>.json`, the raw reads as `raw-<read>.json`, and `summary.json`. The folder is built whole in a fresh
+    partial folder under `notes/partial/` and moved into place in one rename. An interrupted input leaves only a
+    partial folder, which is never read and never blocks its rerun (the run lists any it finds). This one folder per
+    input replaces the amendment's `notes/<candidate>/NNN.json`, so an input is written all at once.
+  - **Inputs** are named `bench-NNN`, `truth-NNN` and `list-<name>`, never by file or song. A truth window's input is
+    found among the truth report's stored inputs by its note file's `input_sha256`, and only those 79 are kept.
+  - **Timing** (seconds per shard) goes to a sidecar under `notes/timing/`, outside every hash chain, so
+    `notes.json`'s sha256 is the same however the run is sharded.
+- **`notes --combine`:** every input is done; `RX-stop` unless the bench proof holds on 47 of 47; then `notes.json`
+  lists every summary's sha256 (each summary lists its files' sha256).
+- **`score`:** refuses unless `notes.json`'s sha256 is main's `phase_scratch_readerr_notes`, and loads each candidate
+  only when its file is the listed one.
+  - A bench part rebuilds once per distinct note list (the stored point is the base). The base must equal
+    `trace.json`'s re-read. F6 uses main's `phase_nr_1_redo_fix_bend_frozen` rule.
+  - **The real-DI arm runs through F1,** as the bench does. F1 only re-zeroes bends, and the note figures read no
+    bend on real DIs, so the base's note figures there equal Phase 1's real-compare.
+  - Each input is written once to `score/inputs/<input>.json`; timing goes to a sidecar under `score/timing/`.
+- **`score --combine`:** `RX-stop` unless the base's rebuilt `logmel`, `env_corr` and mask equal `build.json`'s stored
+  `xn-reread` figures on 47 of 47. Then `candidates.json` holds the paired reads, the frontier table (the bench, and
+  each real-DI group), the real-DI arm (file-clustered, sign only), and the three would-picks, with `rx_code` null.
+
 ### 9b. The shift vote
 
 - **Offsets:** four reads at pads of 0, 35, 71 and 106 Basic Pitch frames: 0, 8,960, 18,176 and 27,136 samples at

@@ -12,7 +12,11 @@ bench best. "Transcriber" and "note reading", never "reader": in this repo the r
     $MAIN -m learn.scratch_readerr screen-check    # Phase 1: checkpoint 50 against the answer on every stored pair
     $MAIN -m learn.scratch_readerr freeze          # Phase 1, last: the tracking read and the frozen figure
     # the hash PR: phase_scratch_readerr_frozen (the five files' sha256), before anything in Phase 2
-    $MAIN -m learn.scratch_readerr score           # Phase 2a: unit C, not built here (refuses)
+    $MAIN -m learn.scratch_readerr notes --shard k/n [--first 3]   # Phase 2a: Basic Pitch's three reads an input
+    $MAIN -m learn.scratch_readerr notes --combine  # once: the bench proof on 47 of 47, notes.json
+    # the hash PR: phase_scratch_readerr_notes, before `score`
+    $MAIN -m learn.scratch_readerr score --shard k/n [--first 3]   # Phase 2a: the 149 candidates' figures
+    $MAIN -m learn.scratch_readerr score --combine  # once: the stored point on 47 of 47, candidates.json
     $MAIN -m learn.scratch_readerr read            # the RX read: after the xr- row (refuses)
 
 The Phase 2 amendment's `xr-` row (`phase_scratch_readerr_p2`; plan section 9):
@@ -933,8 +937,10 @@ def make_spec(mode, model, model_sha256, threads=1, lead_in_s=None, **kw):
         raise SystemExit(f"threads must be 1 to {MAX_THREADS}")
     if "settings" in spec and sorted(spec["settings"]) != sorted(BP_SETTING_KEYS):
         raise SystemExit(f"settings must be exactly {sorted(BP_SETTING_KEYS)}")
-    if "grid" in spec and (not isinstance(spec["grid"], dict) or set(spec["grid"]) - set(GRID_AXES)):
-        raise SystemExit(f"grid must be {{axis: [values]}} over {list(GRID_AXES)}")
+    if "grid" in spec and (not isinstance(spec["grid"], dict) or not spec["grid"] or set(spec["grid"]) - set(GRID_AXES)
+                           or any(not isinstance(v, list) or not v for v in spec["grid"].values())):
+        raise SystemExit(f"grid must be a non-empty {{axis: [values]}} over {list(GRID_AXES)}, each axis non-empty "
+                         "(the runner refuses an empty grid)")
     if "offsets_s" in spec:
         offs = spec["offsets_s"]
         if not isinstance(offs, list) or any(o < 0 for o in offs) or len(set(offs)) != len(offs):
@@ -2435,15 +2441,665 @@ def cmd_xr_read(_args):
     print(f"XH {code['code']}: {code['meaning']}. Next: {code['next']}; label {main_read['label']}")
 
 
-# --- Phase 2a's commands (unit C; not built here) ---------------------------------------------------------------------------
+# --- Phase 2a (unit C): the candidates (pure) -------------------------------------------------------------------------------
 
-PHASE2_STUB = ("Phase 2a's `notes` and `score` come with unit C (the same two files), after this declaration merges; "
-               "the RX read waits for the xr- row's code")
+PHASE_NOTES_KEY = PHASE_NOTES            # phase_scratch_readerr_notes: notes.json's sha256, before `score`
+P2A_LABEL = "descriptive: no figure decided (RX-untracked); sign only, not on J0's scale, no size ruled out"
+WOULD_PICK = "would-pick, not acted on"
+LEAD_IN_S = 1.0
+BASE = "base"                            # the stored re-read: every candidate is paired against it
+LEAD_ID = "lead-in"
+F6_ID = "f6"
+DRY_P2A = ("logmel", "env_corr", "pause_error")      # the rebuilt guitar against the bank guitar
+DRY_ORIENTATION = {"logmel": "error", "env_corr": "similarity", "pause_error": "error"}
+PICK_BY = ("note_error", "logmel", "env_corr")       # grid_pick printed three times, never acted on
+SHIFT_ID = {k: f"shift-k{k}" for k in SHIFT_KS}
+REAL_GROUPS = ("P1", "P2", "P1|chords", "P1|scales", "P2|chords", "P2|scales", "P2|techniques", "lists")
 
 
-def cmd_score(_args):
-    require_readerr(PHASE_FROZEN)
-    raise SystemExit(PHASE2_STUB)
+def grid_id(pt):
+    """(Pure.) A grid point's candidate id, e.g. grid-o0.5-f0.3-l58.0-m1."""
+    return (f"grid-o{pt['onset_threshold']}-f{pt['frame_threshold']}-l{float(pt['minimum_note_length'])}"
+            f"-m{int(bool(pt['melodia_trick']))}")
+
+
+STORED_ID = grid_id(STORED_POINT)
+
+
+def candidate_ids():
+    """(Pure.) The 149 candidates: the 144 grid points, the lead-in, the shift vote at k = 2, 3, 4, F6 on the stored
+    re-read."""
+    return [grid_id(p) for p in grid_points()] + [LEAD_ID] + [SHIFT_ID[k] for k in SHIFT_KS] + [F6_ID]
+
+
+def input_ids(n_bench, n_truth, list_names):
+    """(Pure.) Every input's id, never a file or song name: bench-NNN (the part's index in key order), truth-NNN (the
+    truth report's window order), list-<name> (the ten known lists)."""
+    return ([f"bench-{j:03d}" for j in range(n_bench)] + [f"truth-{i:03d}" for i in range(n_truth)]
+            + [f"list-{n}" for n in sorted(list_names)])
+
+
+def kind_of(iid):
+    return iid.split("-", 1)[0]
+
+
+def select(ids, shard=(0, 1), first=0):
+    """(Pure.) A shard's inputs: every n-th of the sorted ids from k; with `first`, only its first n (timing)."""
+    k, n = shard
+    out = [x for j, x in enumerate(sorted(ids)) if j % n == k]
+    return out[:first] if first else out
+
+
+def notes_specs(model, model_sha256):
+    """(Pure.) The three reads per input: the 144-point grid, the stored point with a 1-s lead-in (a one-point grid:
+    the runner refuses an empty one), the four shifts."""
+    base = dict(NT.BP_SETTINGS)
+    return {"grid": make_spec("bp-grid", model, model_sha256, settings=base, grid=declared_grid_spec()),
+            "lead": make_spec("bp-grid", model, model_sha256, settings=base,
+                              grid={"onset_threshold": [base["onset_threshold"]]}, lead_in_s=LEAD_IN_S),
+            "shift": make_spec("bp-shift", model, model_sha256, settings=base, offsets_s=list(SHIFT_OFFSETS_S))}
+
+
+def events_of(notes):
+    """(Pure.) Notes back to the runner's event records (on, off, pitch, amp, bends)."""
+    return [{"on": n["on"], "off": n["off"], "pitch": n["pitch"], "amp": n.get("amp", 0.0),
+             "bends": list(n.get("bends") or [])} for n in notes]
+
+
+def candidates_from_records(grid_rec, lead_rec, shift_rec):
+    """(Pure.) One input's 148 runner candidates as event lists, each re-based read's clipped bends trimmed
+    (`record_notes`): every grid point, the lead-in's read, and the shift vote at k = 2, 3, 4 on the anchor (the
+    zero-offset read) against the three shifted reads. -> (candidates, checks: the anchor and k = 1, beside: the
+    unanchored notes)."""
+    g = record_notes(grid_rec)
+    out = {grid_id(x["settings"]): events_of(x["notes"]) for x in g["grid"]}
+    lead = record_notes(lead_rec)
+    out[LEAD_ID] = events_of(lead["events"])
+    sh = record_notes(shift_rec)
+    by = {s["offset_s"]: s["notes"] for s in sh["shifts"]}
+    anchor = by[0.0]
+    others = [by[o] for o in SHIFT_OFFSETS_S[1:]]
+    for k in SHIFT_KS:
+        out[SHIFT_ID[k]] = events_of(shift_vote(anchor, others, k)[0])
+    k1, votes = shift_vote(anchor, others, 1)
+    un = shift_unanchored(anchor, others)
+    return out, {"anchor": events_of(anchor), "k1": events_of(k1), "votes": votes}, {
+        "unanchored": events_of(un), "unanchored_count": len(un)}
+
+
+def notes_proofs(grid_rec, shift_rec, checks, stored_events):
+    """(Pure.) One input's proofs: bp-grid's top-level events equal the stored read's (the declared proof); the
+    shift vote's anchor (the zero-offset read) and its k = 1 vote each reproduce the stored events, each compared with
+    them directly."""
+    stored = events_of(NT.notes_from_events(stored_events))
+    return {"grid_top_equal": grid_rec["events"] == stored_events,
+            "grid_stored_point_equal": next(x["events"] for x in grid_rec["grid"]
+                                            if point_key(x["settings"]) == point_key(STORED_POINT)) == stored_events,
+            "anchor_equal": checks["anchor"] == stored, "k1_equal": checks["k1"] == stored}
+
+
+def coverage_refusal(expected, done):
+    """(Pure.) Why a combine may not run, or None: every expected input has its per-input file."""
+    miss = sorted(set(expected) - set(done))
+    extra = sorted(set(done) - set(expected))
+    if miss:
+        return f"{len(miss)} input(s) not done yet: run every shard first"
+    if extra:
+        return f"{len(extra)} unexpected input file(s)"
+    return None
+
+
+def bench_proof_refusal(summaries, n_bench=47):
+    """(Pure.) RX-stop unless bp-grid's top-level events equal the stored re-read on every bench input (47 of 47)."""
+    bench = {k: v for k, v in summaries.items() if kind_of(k) == "bench"}
+    ok = sum(1 for v in bench.values() if v["proofs"]["grid_top_equal"])
+    if len(bench) != n_bench or ok != n_bench:
+        return f"RX-stop: bp-grid's top-level events equal the stored re-read on {ok} of {n_bench}"
+    return None
+
+
+def counts_of(an):
+    """(Pure.) A window's counts for the frontier table."""
+    return {"truth": an["truth"], "est": an["est"], "matched": an["matched"], "extras": dict(an["extras"]),
+            "misses": dict(an["misses"])}
+
+
+def frontier(per_input, cands):
+    """(Pure.) The frontier table: per candidate (and the base) pooled precision, recall, extras by class and misses by
+    class over the inputs given. per_input: {iid: {cand: {"counts": ...}}}."""
+    out = {}
+    for c in [BASE] + list(cands):
+        cs = [r[c]["counts"] for r in per_input.values() if c in r]
+        if not cs:
+            continue
+        t, e, m = (sum(x[q] for x in cs) for q in ("truth", "est", "matched"))
+        out[c] = {"inputs": len(cs), "precision": m / e if e else None, "recall": m / t if t else None,
+                  "extras": {k: sum(x["extras"].get(k, 0) for x in cs) for k in EXTRA_CLASSES},
+                  "misses": {k: sum(x["misses"].get(k, 0) for x in cs) for k in MISS_ORDER}}
+    return out
+
+
+def p2a_figures():
+    """(Pure.) The figures every bench candidate carries: the 23 note figures and the rebuilt guitar's three."""
+    return NOTE_FIGURES + DRY_P2A
+
+
+def p2a_orientation(f):
+    return DRY_ORIENTATION[f] if f in DRY_ORIENTATION else ORIENTATION[f]
+
+
+def paired_reads(per_part, cand, rows_of):
+    """(Pure but for `rows_of`.) A candidate's paired differences against the base, per figure: per part cand less
+    base, then `rows_of(values)` (set_rows: the 40 pooled, BKS, GOAT, all 47), labelled sign only by the figure's
+    orientation. per_part: {pkey: {cand: {"figures": {...}}}}."""
+    out = {}
+    for f in p2a_figures():
+        d = {}
+        for k, r in per_part.items():
+            a, b = (r.get(cand) or {}).get("figures", {}).get(f), (r.get(BASE) or {}).get("figures", {}).get(f)
+            if a is not None and b is not None:
+                d[k] = a - b
+        rows = rows_of(d) if d else None
+        out[f] = {"parts": len(d), "rows": rows, "label": sign_label((rows or {}).get("bks_goat"), p2a_orientation(f)),
+                  "words": P2A_LABEL}
+    return out
+
+
+def real_reads(rows, cand):
+    """(Pure.) The real-DI arm, note figures only: per group (P1, P2, each player and kind, the lists) the candidate
+    less the base per window, then `note_versions.set_numbers` (file-clustered), labelled sign only. rows: [{group,
+    kind, cluster, iid, figures: {cand: {...}}}]."""
+    out = {}
+    for g in REAL_GROUPS:
+        inside = [r for r in rows if (r["group"] == g if "|" not in g else f"{r['group']}|{r['kind']}" == g)]
+        if not inside:
+            continue
+        out[g] = {}
+        for f in NOTE_FIGURES:
+            d = []
+            for r in inside:
+                a, b = (r["figures"].get(cand) or {}).get(f), (r["figures"].get(BASE) or {}).get(f)
+                if a is not None and b is not None:
+                    d.append((r["cluster"], {"d": a - b}))
+            iv = NV.set_numbers(d, "d")
+            out[g][f] = {"interval": iv, "label": sign_label(iv if iv and iv.get("lo90") is not None else None,
+                                                             ORIENTATION[f])}
+    return out
+
+
+def would_picks(per_part, mean_rows_of):
+    """(Pure but for `mean_rows_of`.) `grid_pick` three times (note error, logmel, env_corr), each marked "would-pick,
+    not acted on"; an edge minimum is reported, never extended. mean_rows_of(values) -> the 40's pooled interval."""
+    pts = grid_points()
+    out = {}
+    for f in PICK_BY:
+        vals = {grid_id(p): {k: (r.get(grid_id(p)) or {}).get("figures", {}).get(f) for k, r in per_part.items()}
+                for p in pts}
+        means = {}
+        for p in pts:
+            iv = mean_rows_of({k: v for k, v in vals[grid_id(p)].items() if v is not None})
+            means[grid_id(p)] = (iv or {}).get("mean")
+
+        def diff_of(p, mn, vals=vals):
+            a, b = vals[grid_id(p)], vals[grid_id(mn)]
+            return mean_rows_of({k: a[k] - b[k] for k in a if a[k] is not None and b.get(k) is not None})
+        got = grid_pick(pts, lambda p: means[grid_id(p)], diff_of, p2a_orientation(f))
+        out[f] = {"words": WOULD_PICK, "minimum": grid_id(got["minimum"]) if got else None,
+                  "pick": grid_id(got["pick"]) if got else None, "near": [grid_id(x) for x in got["near"]] if got else [],
+                  "distance": got["distance"] if got else None,
+                  "edge_reported_not_extended": got["edge"] if got else None, "selected_from": len(pts)}
+    return out
+
+
+def stored_point_refusal(per_part, xb_parts):
+    """(Pure.) RX-stop unless, at the stored point, the base's rebuilt guitar's logmel, env_corr and mask equal
+    build.json's stored xn-reread figures on every part (47 of 47)."""
+    bad = 0
+    for k, r in per_part.items():
+        got = (r.get(BASE) or {}).get("stored_check") or {}
+        want = xb_parts[k]["guitars"]["xn-reread"]["figures"]
+        if not (got.get("logmel") == want.get("logmel") and got.get("env_corr") == want.get("env_corr")
+                and got.get("mask") == {str(n): v for n, v in (want.get("mask") or {}).items()}):
+            bad += 1
+    if bad or len(per_part) != len(xb_parts):
+        return (f"RX-stop: at the stored point the rebuilt guitar's figures equal build.json's on "
+                f"{len(per_part) - bad} of {len(xb_parts)}")
+    return None
+
+
+# --- Phase 2a: paths ----------------------------------------------------------------------------------------------------
+
+def p2a_path(kind, cand=None, iid=None, root=None):
+    """Phase 2a's files, under PF/fs/readerr/. Each input's notes sit in one folder, notes/inputs/<input>/ (the
+    candidates <candidate>.json, the raw reads raw-<read>.json, summary.json), made whole in a partial folder and moved
+    into place at once (`move_into_place`); `root` names that partial folder while it is built. Then notes.json;
+    score/inputs/<input>.json, candidates.json; the timing sidecars under notes/timing/ and score/timing/, never in
+    a hash chain."""
+    r = readerr_dir()
+    folder = pathlib.Path(root) if root is not None else r / "notes" / "inputs" / str(iid)
+    if kind == "input-dir":
+        return folder
+    if kind == "cand":
+        return folder / f"{cand}.json"
+    if kind == "raw":
+        return folder / f"raw-{cand}.json"
+    if kind == "notes-input":
+        return folder / "summary.json"
+    if kind == "partial":
+        return r / "notes" / "partial"
+    if kind == "timing":
+        return r / cand / "timing"
+    if kind == "listing":
+        return r / "notes.json"
+    if kind == "score-input":
+        return r / "score" / "inputs" / f"{iid}.json"
+    if kind == "candidates":
+        return r / "candidates.json"
+    raise ValueError(kind)
+
+
+# --- Phase 2a: the inputs ------------------------------------------------------------------------------------------------
+
+def bench_inputs(tr):
+    """{bench id: (part key, wav, stored record)} for the 47 bench inputs (exact/work/reread/NNN-tr-di.*), each wav's
+    sha256 its stored record's `input_sha256`; parts in key order, as `scratch_exact.cmd_build` ran them."""
+    out = {}
+    for j, key in enumerate(sorted(tr["parts"])):
+        w = SX.work_dir() / "reread" / f"{j:03d}-{BANK_ARM}.wav"
+        rec = json.loads(w.with_suffix(".json").read_text())
+        if file_sha(w) != rec["input_sha256"]:
+            raise SystemExit(f"bench input {j}: the wav is not the stored record's input")
+        out[f"bench-{j:03d}"] = (key, w, rec)
+    return out
+
+
+def _by_input_sha(folder, wanted):
+    """{sha256: wav} for exactly the inputs `wanted` (the note files' `input_sha256`) among a work folder's stored
+    records; refused when one is missing. Nothing else in the folder is kept."""
+    want, out = set(wanted), {}
+    for p in sorted(pathlib.Path(folder).glob("*.json")):
+        sha = json.loads(p.read_text()).get("input_sha256")
+        w = p.with_suffix(".wav")
+        if sha in want and w.exists():
+            out[sha] = w
+    miss = want - set(out)
+    if miss:
+        raise SystemExit(f"{len(miss)} note file input(s) are not in {pathlib.Path(folder).name}")
+    return out
+
+
+def real_inputs(mr, pair):
+    """{truth or list id: (source, wav, stored events, meta)} for the real-DI arm, every one through `real_di_source`
+    (P3 never): the truth report's 79 windows (their stored Basic Pitch input, found by the note file's
+    `input_sha256`) and the ten lists (the install gate's stored inputs)."""
+    listing = NT.require_truth(mr)
+    report = NT.require_truth_report(mr.get(NR.LEDGER_ID))
+    by_key = {w["key"]: w for w in listing["windows"]}
+    recs = []
+    for w in report["windows"]:
+        real_di_source(f"truth:{w['key']}", listing)
+        recs.append(TX.bp_note("truth", w["key"], w["note_file_sha256"], pair))
+    work = _by_input_sha(NT.REDO / "work" / "truth-report", [r["input_sha256"] for r in recs])
+    out = {}
+    for i, (w, rec) in enumerate(zip(report["windows"], recs)):
+        wav = work[rec["input_sha256"]]
+        if file_sha(wav) != rec["input_sha256"]:
+            raise SystemExit(f"truth window {i}: the wav is not the note file's input")
+        win = by_key[w["key"]]
+        out[f"truth-{i:03d}"] = (f"truth:{w['key']}", wav, rec["events"],
+                                 {"group": w["player"], "kind": w["kind"], "pre_s": rec["pre_s"], "window": win,
+                                  "cluster": f"{win['player']}|{win['kind']}|{win['name']}"})
+    known = TX.gate_known()
+    for p in sorted((NT.gate_work_dir() / "known").glob("*.json")):
+        nm = p.stem.split("-", 1)[1]
+        rec = json.loads(p.read_text())
+        real_di_source(f"list:{nm}")
+        w = p.with_suffix(".wav")
+        if file_sha(w) != rec["input_sha256"] or rec["events"] != known[nm]:
+            raise SystemExit(f"list {nm}: the stored input is not the gate's")
+        out[f"list-{nm}"] = (f"list:{nm}", w, rec["events"], {"group": "lists", "kind": None, "pre_s": 0.0,
+                                                               "cluster": nm})
+    return out, listing
+
+
+def run_runner(spec_name, spec, mode, jobs, work):
+    """Basic Pitch's runner (`learn/readerr_run.py`, the venv's interpreter, -I, one thread) on [(iid, wav)] in one
+    process, outputs into `work` (a temporary folder). -> {iid: record}, each checked by `runner_refusal`."""
+    import os
+
+    pairs = [(wav, pathlib.Path(work) / f"{spec_name}-{iid}.json") for iid, wav in jobs]
+    env = runner_env(os.environ, False)
+    env.update({k: "1" for k in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS")})
+    r = subprocess.run(runner_argv(NT.BP_PYTHON, mode, spec, pairs), capture_output=True, text=True, env=env)
+    if r.returncode:
+        raise SystemExit(f"readerr_run {mode} failed: {r.stderr.strip()[-400:]}")
+    out = {}
+    for (iid, wav), (_, o) in zip(jobs, pairs):
+        rec = json.loads(pathlib.Path(o).read_text())
+        why = runner_refusal(rec, mode, spec, file_sha(wav))
+        if why:
+            raise SystemExit(f"{iid} ({spec_name}): {why}")
+        out[iid] = rec
+    return out
+
+
+# --- Phase 2a: notes (zero renders, Basic Pitch only) -------------------------------------------------------------------------
+
+def cmd_notes(args):
+    """Phase 2a's `notes` (zero renders), a shard at a time (`--shard k/n`, `--first` for timing): per input, three
+    runner reads in the Basic Pitch venv (one thread; the model loaded once a read): the 144-point grid, the stored
+    point with a 1-s lead-in, the four shifts. Proof before anything of an input is written: bp-grid's top-level
+    events equal the stored read's (and the shift vote's anchor and k = 1 reproduce it). Then every runner candidate
+    (`candidates_from_records`) to notes/<candidate>/<input>.json, the raw reads to notes/raw/, and the input's summary.
+    An input already done is skipped. `--combine`, once every shard is done: RX-stop unless the bench proof holds on
+    47 of 47; else notes.json, the listing (every file's sha256), whose sha256 goes to main as
+    phase_scratch_readerr_notes before `score`."""
+    m = require_readerr(PHASE_FROZEN, PHASE_P2)
+    tr = require_trace(m)
+    mr, why = NT.redo_on_main()
+    if why:
+        raise SystemExit(why)
+    pair = NT.install_pair(NT.load_manifest())
+    man = NT.load_manifest()
+    if man["model_sha256"] != pair[1]:
+        raise SystemExit("the manifest's model is not the install's")
+    bench = bench_inputs(tr)
+    real, _listing = real_inputs(mr, pair)
+    ids = sorted(bench) + sorted(real)
+    if getattr(args, "combine", False):
+        return notes_combine(ids, bench)
+    specs = notes_specs(man["model_path"], man["model_sha256"])
+    done = done_inputs("notes")
+    todo = [i for i in select(ids, args.shard, getattr(args, "first", 0)) if i not in done]
+    if not todo:
+        print("RX NOTES: nothing to do in this shard")
+        return
+    import tempfile
+
+    partial = p2a_path("partial")
+    left = sorted(x.name for x in partial.iterdir()) if partial.exists() else []
+    if left:
+        print(f"RX NOTES: {len(left)} partial folder(s) from an interrupted run under {partial.name}/ (never read; "
+              "safe to remove)", flush=True)
+
+    wav_of = {i: (bench[i][1] if i in bench else real[i][1]) for i in todo}
+    stored_of = {i: (bench[i][2]["events"] if i in bench else real[i][2]) for i in todo}
+    t0 = time.time()
+    with tempfile.TemporaryDirectory(prefix="readerr-notes-") as work:
+        recs = {name: run_runner(name, specs[name], "bp-shift" if name == "shift" else "bp-grid",
+                                 [(i, wav_of[i]) for i in todo], work) for name in ("grid", "lead", "shift")}
+        secs = round(time.time() - t0, 1)
+        stops = []
+        for i in todo:
+            cands, checks, beside = candidates_from_records(recs["grid"][i], recs["lead"][i], recs["shift"][i])
+            proofs = notes_proofs(recs["grid"][i], recs["shift"][i], checks, stored_of[i])
+            if kind_of(i) == "bench" and not all(proofs.values()):
+                stops.append(i)
+                continue
+            staging = new_staging(i)
+            shas = {c: write_once(p2a_path("cand", c, i, root=staging), {"input": i, "candidate": c, "events": ev})
+                    for c, ev in sorted(cands.items())}
+            raw = {n: write_once(p2a_path("raw", n, i, root=staging), recs[n][i]) for n in ("grid", "lead", "shift")}
+            write_once(p2a_path("notes-input", iid=i, root=staging), {
+                "plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P2}", "input": i, "input_sha256": file_sha(wav_of[i]),
+                "proofs": proofs, "candidates": shas, "raw": raw, "beside": beside, "votes": checks["votes"]})
+            move_into_place(staging, p2a_path("input-dir", iid=i))
+    write_timing("notes", args.shard, {"inputs": todo, "written": len(todo) - len(stops), "reads_seconds": secs,
+                                        "seconds": round(time.time() - t0, 1)})
+    print(f"RX NOTES shard {args.shard[0]}/{args.shard[1]}: {len(todo) - len(stops)} of {len(todo)} inputs written "
+          f"in {time.time() - t0:.0f} s ({secs} s of reads)")
+    if stops:
+        raise SystemExit(f"RX-stop: bp-grid's top-level events differ from the stored re-read on {len(stops)} bench "
+                         "input(s): nothing of them written; to the orchestrator")
+
+
+def new_staging(iid):
+    """A fresh partial folder for one input, under notes/partial/ (a unique name: a crashed run's leftover never
+    blocks a rerun, and is never read)."""
+    import tempfile
+
+    partial = p2a_path("partial")
+    partial.mkdir(parents=True, exist_ok=True)
+    return pathlib.Path(tempfile.mkdtemp(prefix=f"{iid}-", dir=partial))
+
+
+def move_into_place(staging, final):
+    """An input's notes folder, complete, moved into place in one rename (the same file system): never over a folder,
+    never outside PF/fs/readerr/."""
+    staging, final = pathlib.Path(staging), pathlib.Path(final)
+    root = pathlib.Path(readerr_dir()).resolve()
+    if root not in final.resolve().parents or root not in staging.resolve().parents:
+        raise SystemExit(f"{final}: outside {root}")
+    if final.exists():
+        raise SystemExit(f"{final} exists: never overwritten")
+    final.parent.mkdir(parents=True, exist_ok=True)
+    staging.rename(final)
+    return final
+
+
+def done_inputs(kind):
+    """The inputs whose files are complete: a notes folder with its summary, or a score file."""
+    if kind == "notes":
+        d = readerr_dir() / "notes" / "inputs"
+        return {x.name for x in d.iterdir() if (x / "summary.json").exists()} if d.exists() else set()
+    d = readerr_dir() / "score" / "inputs"
+    return {x.stem for x in d.glob("*.json")} if d.exists() else set()
+
+
+def write_timing(command, shard, body):
+    """The timing sidecar (seconds, shard), outside every hash chain, so a listing's sha256 is the same however the
+    run is sharded."""
+    tag = f"shard-{shard[0]}-of-{shard[1]}-{time.strftime('%Y%m%d-%H%M%S')}"
+    return write_once(p2a_path("timing", command) / f"{tag}.json", dict(body, command=command, shard=list(shard)))
+
+
+def notes_combine(ids, bench):
+    path = p2a_path("listing")
+    NT.never_overwrite(path)
+    done = done_inputs("notes")
+    why = coverage_refusal(ids, done)
+    if why:
+        raise SystemExit(why)
+    summ = {i: json.loads(p2a_path("notes-input", iid=i).read_text()) for i in ids}
+    why = bench_proof_refusal(summ, len(bench))
+    if why:
+        raise SystemExit(why)
+    cands = candidate_ids()[:-1]
+    for i, s in summ.items():
+        if sorted(s["candidates"]) != sorted(cands):
+            raise SystemExit(f"{i}: not the 148 runner candidates")
+        for c, sha in s["candidates"].items():
+            if file_sha(p2a_path("cand", c, i)) != sha:
+                raise SystemExit(f"{i} {c}: the file changed since `notes`")
+    body = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P2}", "renders": 0, "candidates": candidate_ids(),
+            "runner_candidates": len(cands), "inputs": {i: {"summary_sha256": file_sha(p2a_path("notes-input", iid=i)),
+                                                           "input_sha256": s["input_sha256"]} for i, s in summ.items()},
+            "proofs": {k: sum(1 for i, s in summ.items() if kind_of(i) == "bench" and s["proofs"][k])
+                       for k in ("grid_top_equal", "grid_stored_point_equal", "anchor_equal", "k1_equal")},
+            "real_checks": {k: sum(1 for i, s in summ.items() if kind_of(i) != "bench" and s["proofs"][k])
+                            for k in ("grid_top_equal", "anchor_equal")},
+            "unanchored": {"bench": sum(s["beside"]["unanchored_count"] for i, s in summ.items() if kind_of(i) == "bench"),
+                           "real": sum(s["beside"]["unanchored_count"] for i, s in summ.items() if kind_of(i) != "bench")},
+            "counts": {"bench": len(bench), "real": len(ids) - len(bench)}, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    sha = write_once(path, body)
+    print(f"RX NOTES COMBINE: {len(ids)} inputs; bench proofs {body['proofs']}; real checks {body['real_checks']}; "
+          f"sha256 {sha} (into the ledger as {PHASE_NOTES_KEY} before `score`)")
+
+
+# --- Phase 2a: score (zero renders) -------------------------------------------------------------------------------------------
+
+def load_candidate(listing, iid, cand):
+    """A runner candidate's events, refused unless its input summary is the listing's and the file the summary's."""
+    sp = p2a_path("notes-input", iid=iid)
+    if file_sha(sp) != listing["inputs"][iid]["summary_sha256"]:
+        raise SystemExit(f"{iid}: the input summary is not the hashed listing's")
+    s = json.loads(sp.read_text())
+    p = p2a_path("cand", cand, iid)
+    if file_sha(p) != s["candidates"][cand]:
+        raise SystemExit(f"{iid} {cand}: not the listed file")
+    return json.loads(p.read_text())["events"]
+
+
+def scored_list(events, di, fixes, length_s, pre_s=0.0):
+    """A candidate's events as the stored re-read was treated: `timed_notes` against the DI it was read from, then
+    the fixes; with the notes before the snap and the clean-up's losses for the anatomy. -> (notes, presnap, lost)."""
+    notes, trep = NT.timed_notes({"events": events, "pre_s": pre_s}, di)
+    fixed, _ = NF.apply_fixes(notes, fixes, di)
+    off_s = trep["window_offset_ms"] / 1000.0
+    return (fixed, presnap_notes(events, pre_s, off_s, length_s), lost_on_timeline(events, pre_s, off_s, length_s))
+
+
+def cmd_score_p2a(args):
+    """Phase 2a's `score` (zero renders), a shard at a time (`--shard k/n`, `--first` for timing): per bench part, the
+    base (the stored re-read) and the 149 candidates (F6: build 3's frozen rule on the stored re-read), each timed and
+    fixed as the re-read was; the note figures on the as-played list (`anatomy`, `note_figures`) and the rebuilt
+    guitar's logmel, env_corr and pause error against the bank guitar (`rebuild_redo` as proof 4; one rebuild per
+    distinct list). Per real-DI input, the note figures only. An input already done is skipped. `--combine`, once
+    every shard is done: RX-stop unless the base's rebuilt figures equal build.json's on 47 of 47; then per candidate
+    the paired differences (set_rows: the 40, BKS, GOAT, all 47), the frontier table, the real-DI arm and grid_pick
+    three ways, every line descriptive. -> score/inputs/<input>.json, candidates.json. No RX code."""
+    m = require_readerr(PHASE_FROZEN, PHASE_P2, PHASE_NOTES_KEY)
+    listing = NT.require_file_hash(m, PHASE_NOTES_KEY, p2a_path("listing"))
+    tr = require_trace(m)
+    xb = SX.require_xbuild(m)
+    mr, why = NT.redo_on_main()
+    if why:
+        raise SystemExit(why)
+    ids = sorted(listing["inputs"])
+    if getattr(args, "combine", False):
+        return score_combine(m, ids, xb)
+    import numpy as np
+
+    from learn import song_bank as SB
+
+    b2 = SX.bank_build(m)
+    pair = NT.install_pair(NT.load_manifest())
+    rule = ((mr.get(NR.LEDGER_ID) or {}).get(NF.PHASE_F6_FROZEN) or {}).get("rule")
+    if not rule or not rule.get("F6"):
+        raise SystemExit(f"no {NF.PHASE_F6_FROZEN} rule on main")
+    fixes = tr["fixes"]
+    f6_fixes = dict(fixes, F6=rule["F6"])
+    excl, _, _, _ = NT._dev_context()
+    bank = NR.Bank(NR.load_notes_doc(), excl=excl)
+    finish_of = {key: fin for kind, key, _i, _r, _d, fin in NT.build_todo(pair, NT.ear_items_file(BUILD2))
+                 if kind == "part"}
+    bench = bench_inputs(tr)
+    real, truth_listing = real_inputs(mr, pair)
+    ta = None
+    cands = candidate_ids()
+    done = done_inputs("score")
+    todo = [i for i in select(ids, args.shard, getattr(args, "first", 0)) if i not in done]
+    t0, seconds = time.time(), {}
+    for i in todo:
+        t1 = time.time()
+        if kind_of(i) == "bench":
+            key, _w, rec = bench[i]
+            row = tr["parts"][key]
+            bank64 = np.asarray(NT.load_dry(BANK_ARM, key, b2), np.float64)
+            L = len(bank64) / NR.SR
+            truth = row["played"]
+            lists = {BASE: scored_list(rec["events"], bank64, fixes, L)}
+            if lists[BASE][0] != row["reread"]:
+                raise SystemExit(f"{i}: the base is not trace.json's re-read")
+            lists[F6_ID] = scored_list(rec["events"], bank64, f6_fixes, L)
+            for c in cands:
+                if c != F6_ID:
+                    lists[c] = scored_list(load_candidate(listing, i, c), bank64, fixes, L)
+            cache, res = {}, {}
+            for c, (notes, pre, lost) in lists.items():
+                an = anatomy(truth, notes, pre, lost)
+                figs = note_figures(an, truth, notes, L)
+                ck = json.dumps(notes, sort_keys=True)
+                if ck not in cache:
+                    y, _ = NR.rebuild_redo(BANK_ARM, notes, len(bank64), bank, bank64, tr["ring_variant"],
+                                           finish=finish_of[key], loud=None)
+                    d = np.asarray(np.asarray(y, np.float32), np.float64)
+                    fig = NR.figures(bank64, d)
+                    cache[ck] = {"logmel": fig["logmel"], "env_corr": fig["env_corr"],
+                                 "pause_error": pause_error(fig), "mask": fig["mask"]}
+                dry = cache[ck]
+                res[c] = {"figures": dict(figs, logmel=dry["logmel"], env_corr=dry["env_corr"],
+                                          pause_error=dry["pause_error"]), "counts": counts_of(an)}
+                if c == BASE:
+                    res[c]["stored_check"] = {"logmel": dry["logmel"], "env_corr": dry["env_corr"],
+                                              "mask": {str(n): v for n, v in dry["mask"].items()}}
+            body = {"input": i, "part": key, "kind": "bench", "candidates": res, "rebuilds": len(cache)}
+        else:
+            source, _w, events, meta = real[i]
+            if kind_of(i) == "truth":
+                ta = ta or NT.TruthAudio(truth_listing)
+                di, _, _, truth = ta.window(meta["window"])
+            else:
+                nm = i.split("-", 1)[1]
+                di = SB.measure(NT.known_audio(nm, bank))
+                truth = [dict(n) for n in NT.KNOWN_NOTES[nm]]
+            L = len(di) / NR.SR
+            lists = {BASE: scored_list(events, di, fixes, L, meta["pre_s"]),
+                     F6_ID: scored_list(events, di, f6_fixes, L, meta["pre_s"])}
+            for c in cands:
+                if c != F6_ID:
+                    lists[c] = scored_list(load_candidate(listing, i, c), di, fixes, L, meta["pre_s"])
+            res = {}
+            for c, (notes, pre, lost) in lists.items():
+                an = anatomy(truth, notes, pre, lost)
+                res[c] = {"figures": note_figures(an, truth, notes, L), "counts": counts_of(an)}
+            body = {"input": i, "kind": kind_of(i), "group": meta["group"], "kind_of_window": meta["kind"],
+                    "cluster": meta["cluster"], "candidates": res}
+        body.update(plan=PLAN, listing_sha256=file_sha(p2a_path("listing")))
+        write_once(p2a_path("score-input", iid=i), body)
+        seconds[i] = round(time.time() - t1, 1)
+        print(f"{i}: {len(body['candidates'])} lists scored in {seconds[i]} s", flush=True)
+    write_timing("score", args.shard, {"inputs": todo, "seconds_per_input": seconds,
+                                        "seconds": round(time.time() - t0, 1)})
+    print(f"RX SCORE shard {args.shard[0]}/{args.shard[1]}: {len(todo)} inputs in {time.time() - t0:.0f} s")
+
+
+def score_combine(m, ids, xb):
+    path = p2a_path("candidates")
+    NT.never_overwrite(path)
+    done = done_inputs("score")
+    why = coverage_refusal(ids, done)
+    if why:
+        raise SystemExit(why)
+    lsha = file_sha(p2a_path("listing"))
+    rows = {i: json.loads(p2a_path("score-input", iid=i).read_text()) for i in ids}
+    if any(r["listing_sha256"] != lsha for r in rows.values()):
+        raise SystemExit("a score file was made from another listing")
+    per_part = {r["part"]: r["candidates"] for r in rows.values() if r["kind"] == "bench"}
+    why = stored_point_refusal(per_part, xb["parts"])
+    if why:
+        raise SystemExit(why)
+    draw, sd = SX.context()
+    cands = candidate_ids()
+    real_rows = [{"group": r["group"], "kind": r["kind_of_window"], "cluster": r["cluster"], "iid": i,
+                  "figures": {c: v["figures"] for c, v in r["candidates"].items()}}
+                 for i, r in rows.items() if r["kind"] != "bench"]
+
+    def rows_of(vals):
+        return _rows(sd, draw, vals)
+
+    def mean_rows_of(vals):
+        return _rows(sd, draw, vals)["bks_goat"]
+    body = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P2}", "renders": 0, "words": P2A_LABEL, "rx_code": None,
+            "listing_sha256": lsha, "base": "the stored re-read (xn-reread's notes)", "stored_point": STORED_ID,
+            "paired": {c: paired_reads(per_part, c, rows_of) for c in cands},
+            "frontier": {"bench": frontier({k: v for k, v in per_part.items()}, cands),
+                         **{g: frontier({r["iid"]: rows[r["iid"]]["candidates"] for r in real_rows
+                                         if (r["group"] == g if "|" not in g else f"{r['group']}|{r['kind']}" == g)},
+                                        cands) for g in REAL_GROUPS}},
+            "real": {c: real_reads(real_rows, c) for c in cands},
+            "would_pick": would_picks(per_part, mean_rows_of),
+            "rebuilds": sum(r.get("rebuilds", 0) for r in rows.values() if r["kind"] == "bench"),
+            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    sha = write_once(path, body)
+    for f, w in body["would_pick"].items():
+        print(f"{f}: {w['words']}: minimum {w['minimum']}, pick {w['pick']}, edge {w['edge_reported_not_extended']}")
+    print(f"RX SCORE COMBINE: {len(per_part)} parts, {len(real_rows)} real-DI inputs; {P2A_LABEL}; sha256 {sha}")
+
+
+# --- the RX read (after the xr- row; not built here) --------------------------------------------------------------------------
+
+PHASE2_STUB = "the RX read waits for the xr- row's XH code and its own amendment"
 
 
 def cmd_read(_args):
@@ -2452,8 +3108,8 @@ def cmd_read(_args):
 
 
 COMMANDS = {"trace": cmd_trace, "anatomy": cmd_anatomy, "real-compare": cmd_real_compare,
-            "screen-check": cmd_screen_check, "freeze": cmd_freeze, "score": cmd_score, "read": cmd_read,
-            "xr-build": cmd_xr_build, "xr-check": cmd_xr_check, "xr-search": cmd_xr_search,
+            "screen-check": cmd_screen_check, "freeze": cmd_freeze, "notes": cmd_notes, "score": cmd_score_p2a,
+            "read": cmd_read, "xr-build": cmd_xr_build, "xr-check": cmd_xr_check, "xr-search": cmd_xr_search,
             "xr-answers": cmd_xr_answers, "xr-score": cmd_xr_score, "xr-read": cmd_xr_read}
 NEEDS_ROW = ("xr-search", "xr-answers", "xr-score")
 
@@ -2469,14 +3125,32 @@ def main(argv=None):
     ap.add_argument("cmd", choices=sorted(COMMANDS))
     ap.add_argument("--row", choices=XR_ROWS)
     ap.add_argument("--set", choices=sorted(XR_SETS), default="first", help="xr-build's set")
-    ap.add_argument("--shard", type=S._shard, default=(0, 1))
-    ap.add_argument("--first", type=int, default=0, help="search only this shard's first n parts")
+    ap.add_argument("--shard", type=parse_shard, default=(0, 1))
+    ap.add_argument("--first", type=int, default=0, help="only this shard's first n parts or inputs (timing)")
+    ap.add_argument("--combine", action="store_true", help="notes or score: gather every shard's files, once")
     ap.add_argument("--rerun", action="store_true",
                     help="search or score again, once, only the parts whose record refused (S1: then Cen)")
     args = ap.parse_args(argv)
     if args.cmd in NEEDS_ROW and not args.row:
         ap.error(f"{args.cmd} needs --row")
+    if args.cmd in RENDER_COMMANDS and args.shard[1] > RENDER_SHARDS:
+        ap.error(f"{args.cmd} renders: at most {RENDER_SHARDS} shards (render processes)")
     COMMANDS[args.cmd](args)
+
+
+RENDER_COMMANDS = ("xr-check", "xr-search", "xr-score")
+RENDER_SHARDS = 3                        # at most 3 render processes on the machine
+
+
+def parse_shard(text):
+    """`k/n` with 0 <= k < n. The render commands keep scratch_search's cap of 3 shards; notes and score take any n."""
+    try:
+        k, n = (int(x) for x in text.split("/"))
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{text!r}: k/n")
+    if not 0 <= k < n:
+        raise argparse.ArgumentTypeError(f"{text!r}: 0 <= k < n")
+    return k, n
 
 
 if __name__ == "__main__":
