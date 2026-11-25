@@ -56,9 +56,11 @@ def test_code_files_cover_the_module_the_runner_and_every_guarded_file():
     assert set(SX.CODE_FILES) | set(T.CODE_FILES) | {"learn/note_tx.py", "learn/tx_run.py"} <= set(X.CODE_FILES)
     assert {"learn/note_replay.py", "learn/pipeline_fix.py", "learn/song_bank.py", "learn/cc_build.py",
             "learn/full_controls_c1b.py", "learn/local_objective.py", "learn/knob_ceiling.py",
-            "analysis/aligned.py"} <= set(X.CODE_FILES)
-    assert len(X.CODE_FILES) == len(set(X.CODE_FILES)) == 25
+            "analysis/aligned.py", "learn/readerr_tools.py"} <= set(X.CODE_FILES)
+    assert len(X.CODE_FILES) == len(set(X.CODE_FILES)) == 26
     for f in X.CODE_FILES:
+        if f == "learn/readerr_tools.py" and not (REPO / f).exists():
+            continue                                     # unit F builds it beside this unit; they merge together
         assert (REPO / f).exists(), f
 
 
@@ -545,7 +547,9 @@ def test_make_spec_refuses_what_the_runner_refuses():
         X.make_spec("kong", "/m.pth", "nope")
     with pytest.raises(SystemExit, match="grid must be"):
         X.make_spec("bp-grid", "/m.onnx", SHA, settings=base, grid={"maximum_frequency": [1]})
-    assert X.make_spec("mt3", "/m.pth", SHA, options={"a": 1})["options"] == {"a": 1}
+    assert X.make_spec("mt3", "/m.pth", SHA, options={"programs": "guitar"})["options"] == {"programs": "guitar"}
+    with pytest.raises(SystemExit, match="options must be an object over"):
+        X.make_spec("mt3", "/m.pth", SHA, options={"a": 1})
 
 
 def test_the_runner_record_check():
@@ -709,7 +713,7 @@ def test_every_file_write_goes_through_write_once():
                 f = node.func
                 name = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", None)
                 if name in writers or name == "open":
-                    allowed = (fn.name in ("write_once", "write_once_npy", "write_bytes_once", "new_staging", "move_into_place")
+                    allowed = (fn.name in ("write_once", "write_once_npy", "write_bytes_once", "new_staging", "move_into_place", "tx_staging")
                                or (fn.name == "npy_bytes_sha" and name == "save"))
                     assert allowed, (fn.name, name)
 
@@ -797,7 +801,8 @@ def test_the_cli():
     with pytest.raises(SystemExit):
         X.main(["candidates"])
     assert set(X.COMMANDS) == {"trace", "anatomy", "real-compare", "screen-check", "freeze", "notes", "score", "read",
-                               "xr-build", "xr-check", "xr-search", "xr-answers", "xr-score", "xr-read"}
+                               "xr-build", "xr-check", "xr-search", "xr-answers", "xr-score", "xr-read",
+                               "tx-gate", "tx-notes", "tx-score", "select"}
     with pytest.raises(SystemExit):
         X.main(["xr-search"])                                    # needs --row
     with pytest.raises(SystemExit):
@@ -1063,7 +1068,8 @@ def test_xr_paths_and_keys(monkeypatch, tmp_path):
         X.write_bytes_once(S.rerun_path(p), b"{}")
     assert [X.xr_answers_key(r) for r in X.XR_ROWS] == ["phase_scratch_readerr_xr_answers_matched",
                                                         "phase_scratch_readerr_xr_answers_found",
-                                                        "phase_scratch_readerr_xr_answers_filled"]
+                                                        "phase_scratch_readerr_xr_answers_filled",
+                                                        "phase_scratch_readerr_xr_answers_cand"]
     assert X.xr_dry_key("first") == X.PHASE_XR_DRY and X.xr_dry_key("found") == "phase_scratch_readerr_xr_dry_found"
     for k in (X.PHASE_P2, X.PHASE_XR_DRY, X.PHASE_XR_OUTCOME, X.xr_answers_key("xr-matched")):
         assert k.startswith(X.KEY_PREFIX) and not k.startswith(X.GUARDED_PREFIXES)
@@ -1463,3 +1469,379 @@ def test_timing_sits_outside_every_hash_chain(monkeypatch, tmp_path):
                     assert not {k.value for k in d.keys if isinstance(k, ast.Constant)} & {"seconds", "seconds_shard",
                                                                                           "reads_seconds"}, name
         assert keys is not None
+
+
+# --- Phase 2b (unit E): the transcribers, select, the XP table ------------------------------------------------------------
+
+def test_the_transcriber_candidates_and_their_declared_grids():
+    txc = X.tx_candidates()
+    assert len(txc) == 26 and len(X.select_ids()) == 149 + 26
+    assert sorted(c for c in txc if c.startswith("ymt3")) == ["ymt3-guitar", "ymt3-pitched"]
+    kong = [c for c, (f, _) in txc.items() if f == "kong-fl"]
+    assert len(kong) == 12 and "kong-fl-o0.3-f0.1" in kong and "kong-gaps-o0.5-f0.3" in txc
+    assert X.tx_distance("kong-fl", {"onset_threshold": 0.5, "frame_threshold": 0.3}) == 4
+    assert X.tx_distance("ymt3", {"programs": "guitar"}) == 1 and X.tx_distance("ymt3", {"programs": "pitched"}) == 0
+    for c in X.select_ids():
+        X.family_of(c)
+    assert X.family_of("ymt3-guitar+bp") == {"family": "ymt3", "kind": "transcriber", "distance": 1, "shipped": False}
+    assert X.family_of("shift-k4")["distance"] == 2 and X.family_of("lead-in")["shipped"]
+    assert X.family_of(X.STORED_ID)["shipped"] and X.family_of("grid-o0.6-f0.3-l58.0-m1")["distance"] == 1
+    with pytest.raises(ValueError):
+        X.family_of("set0/part01")
+
+
+def test_the_torch_specs_and_records_follow_the_d_e_contract():
+    s = X.tx_spec("kong-gaps", "/k.pth", SHA)
+    assert s["options"] == {"onset_threshold": 0.3, "frame_threshold": 0.1} and s["threads"] == 1
+    pts = X.torch_points(s)
+    assert len(pts) == 12 and pts[0] == {"onset_threshold": 0.2, "frame_threshold": 0.1}
+    with pytest.raises(SystemExit, match="grid must be"):
+        X.make_spec("kong", "/k.pth", SHA, options={}, grid={"programs": ["pitched"]})
+    rec = _rec("kong", s, grid=[{"options": p, "events": [_ev()]} for p in reversed(pts)])
+    assert X.runner_refusal(rec, "kong", s, "b" * 64) is None          # the order of a torch grid is not fixed
+    assert "grid is not" in X.runner_refusal(dict(rec, grid=rec["grid"][1:]), "kong", s, "b" * 64)
+    bad = dict(rec, grid=[dict(g, events=[]) if g["options"] == s["options"] else g for g in rec["grid"]])
+    assert "top-level" in X.runner_refusal(bad, "kong", s, "b" * 64)
+    y = X.tx_spec("ymt3", "/y.ckpt", SHA)
+    got = X.tx_candidates_from("ymt3", _rec("mt3", y, grid=[{"options": {"programs": p}, "events": [_ev()]}
+                                                           for p in ("pitched", "guitar")]))
+    assert sorted(got) == ["ymt3-guitar", "ymt3-pitched"]
+
+
+def _rows_file(e=(-0.275, -0.406, -0.145), m=0.277, ep=(-0.220, -0.370, -0.071), mp=0.293):
+    def iv(t):
+        return {"mean": t[0], "lo90": t[1], "hi90": t[2]}
+    return {"arms": {"answer": {"rows": {"itt": {"E": {"bks_goat": iv(e)}, "M": {"bks_goat": iv((m, 0.1, 0.4))}},
+                                         "per": {"E": {"bks_goat": iv(ep)}, "M": {"bks_goat": iv((mp, 0.1, 0.4))}}}}}}
+
+
+def test_g_and_h_come_from_the_rows_file():
+    c = X.select_constants(_rows_file())
+    assert c["E"] == -0.275 and c["M"] == 0.277 and c["h"] == pytest.approx(0.1305)
+    p = X.select_constants(_rows_file(), "per")
+    assert p["E"] == -0.220 and p["h"] == pytest.approx(0.1495) and p["treat"] == "per"
+    base = {"extras": 1624, "misses": 246}
+    assert X.predicted_g({"extras": 1624, "misses": 246}, base, c) == pytest.approx(0.0)
+    g = X.predicted_g({"extras": 812, "misses": 246}, base, c)          # half the extras gone, no miss added
+    assert g == pytest.approx(-0.275 * 0.5)
+    g2 = X.predicted_g({"extras": 812, "misses": 369}, base, c)         # ... and half again as many misses
+    assert g2 == pytest.approx(-0.275 * 0.5 + 0.277 * 0.5)
+
+
+BASE_C = {s: {"extras": 1000, "misses": 200} for s in X.SELECT_SETS}
+CONSTS = {"E": -0.3, "M": 0.3, "h": 0.1}
+GOOD = {f: "better" if f == "extra_rate" else "undecided" for f in X.SELECT_ITEMS}
+
+
+def _cand(kind="setting", family="lead-in", distance=0, shipped=True, extras=500, misses=200, labels=None,
+          real_worse=False, repeats=True, status="usable", per_set=None):
+    counts = {s: {"extras": extras, "misses": misses} for s in X.SELECT_SETS}
+    counts.update(per_set or {})
+    lab = {s: dict(GOOD) for s in X.SELECT_SETS}
+    for s, v in (labels or {}).items():
+        lab[s].update(v)
+    return {"kind": kind, "family": family, "distance": distance, "shipped": shipped, "counts": counts,
+            "labels": lab, "real_worse": real_worse, "repeats": repeats, "licence": {"product_status": status}}
+
+
+def test_the_six_items_and_amendment_3s_two():
+    ok = X.select_rule({"c": _cand()}, BASE_C, CONSTS)
+    r = ok["rows"]["c"]
+    assert r["g"] == pytest.approx(-0.15) and r["qualifies"] and ok["pick"] == "c"
+    for name, kw in (("extra_rate", {"labels": {"deciding": {"extra_rate": "undecided"}}}),
+                     ("miss_rate", {"labels": {"deciding": {"miss_rate": "worse"}}}),
+                     ("end_error", {"labels": {"deciding": {"end_error": "worse"}}}),
+                     ("onset_error", {"labels": {"deciding": {X.ONSET_ERROR: "worse"}}}),
+                     ("g", {"extras": 900}),                               # g -0.03: short of -h
+                     ("item5", {"real_worse": True}), ("item6", {"repeats": False})):
+        got = X.select_rule({"c": _cand(**kw)}, BASE_C, CONSTS)["rows"]["c"]
+        assert not got["qualifies"], name
+    harm = X.select_rule({"c": _cand(real_worse=True)}, BASE_C, CONSTS)["rows"]["c"]
+    assert harm["harm"] and not harm["qualifies"]
+    missing = X.select_rule({"c": _cand(labels={"deciding": {"miss_rate": None}})}, BASE_C, CONSTS)["rows"]["c"]
+    assert not missing["qualifies"]                                      # no label is not "not worse"
+
+
+def test_the_cross_set_pick_and_the_nearer_rule():
+    fam = {"a": _cand(family="f", distance=1, shipped=False, extras=400),
+           "b": _cand(family="f", distance=2, shipped=False, extras=300)}
+    pick = X.family_pick(fam, BASE_C, CONSTS)
+    assert pick == {"pick": "b", "passes": True, "bks_pick": "b", "goat_pick": "b"}
+    split = {"a": _cand(family="f", distance=1, shipped=False, per_set={"bks": {"extras": 300, "misses": 200},
+                                                                         "goat": {"extras": 450, "misses": 200}}),
+             "b": _cand(family="f", distance=2, shipped=False, per_set={"bks": {"extras": 450, "misses": 200},
+                                                                         "goat": {"extras": 300, "misses": 200}})}
+    got = X.family_pick(split, BASE_C, CONSTS)
+    assert (got["bks_pick"], got["goat_pick"], got["pick"]) == ("a", "b", "a") and got["passes"]
+    weak = dict(split, a=_cand(family="f", distance=1, shipped=False, per_set={"bks": {"extras": 300, "misses": 200},
+                                                                                "goat": {"extras": 800,
+                                                                                         "misses": 200}}))
+    w = X.family_pick(weak, BASE_C, CONSTS)
+    assert w["pick"] == "a" and not w["passes"]                         # the nearer pick fails on GOAT
+    sel = X.select_rule(dict(weak, s=_cand()), BASE_C, CONSTS)
+    assert not sel["rows"]["a"]["item4"] and not sel["rows"]["b"]["item4"] and sel["rows"]["s"]["item4"]
+
+
+def test_the_pick_and_its_ties():
+    c = {"t": _cand(kind="transcriber", family="ymt3", extras=300, status="unresolved"),
+         "s": _cand(extras=300)}
+    sel = X.select_rule(c, BASE_C, CONSTS)
+    assert sel["pick"] == "s"                                           # an exact tie: no download first
+    c2 = {"t1": _cand(kind="transcriber", family="ymt3", extras=300, status="unresolved"),
+          "t2": _cand(kind="transcriber", family="kong-fl", extras=300)}
+    assert X.select_rule(c2, BASE_C, CONSTS)["pick"] == "t2"            # then a usable licence
+    c3 = {"t": _cand(kind="transcriber", family="ymt3", extras=200), "s": _cand(extras=300)}
+    assert X.select_rule(c3, BASE_C, CONSTS)["pick"] == "t"            # the lowest g otherwise
+
+
+def _rx_reference(cands):
+    sel = X.select_rule(cands, BASE_C, CONSTS)
+    if sel["pick"]:
+        return "RX-transcriber" if cands[sel["pick"]]["kind"] == "transcriber" else "RX-setting"
+    if any(r["harm"] for r in sel["rows"].values()):
+        return "RX-harm"
+    if any(r["g"] < 0 and r["extra_rate"] for r in sel["rows"].values()):
+        return "RX-undecided"
+    return "RX-none"
+
+
+def test_every_case_ends_in_one_rx_code_by_the_picks_kind():
+    variants = {"tx_best": _cand(kind="transcriber", family="ymt3", extras=200),
+                "set_ok": _cand(extras=300), "harm": _cand(extras=300, real_worse=True),
+                "mean": _cand(extras=900), "none": _cand(extras=1000, labels={"deciding": {"extra_rate": "worse"}}),
+                "mean_no_item1": _cand(extras=900, labels={"deciding": {"extra_rate": "undecided"}})}
+    seen = set()
+    for n in range(1, 4):
+        for combo in itertools.combinations(variants, n):
+            cands = {k: variants[k] for k in combo}
+            got = X.rx_p2b(X.select_rule(cands, BASE_C, CONSTS))
+            assert got["code"] == _rx_reference(cands), combo
+            assert got["next"] == X.RX_P2B_NEXT[got["code"]]
+            seen.add(got["code"])
+    assert seen == set(X.RX_P2B_NEXT)
+    both = {"t": _cand(kind="transcriber", family="ymt3", extras=350), "s": _cand(extras=300)}
+    assert X.rx_p2b(X.select_rule(both, BASE_C, CONSTS))["code"] == "RX-setting"    # amendment 1's gap closed
+    assert X.rx_p2b(X.select_rule({"m": variants["mean_no_item1"]}, BASE_C, CONSTS))["code"] == "RX-none"
+
+
+def test_the_passing_only_recompute_labels_a_changed_qualifier_set():
+    cands = {"a": _cand(extras=500), "b": _cand(extras=620)}           # b: g -0.114 at h 0.1; short at h 0.15
+    sel = X.select_rule(cands, BASE_C, CONSTS)
+    sel_p = X.select_rule(cands, BASE_C, dict(CONSTS, h=0.15))
+    assert sel["pick"] == sel_p["pick"] == "a" and sel["qualifiers"] != sel_p["qualifiers"]
+    lab = X.refusal_sensitive_p2b(sel, sel_p)
+    assert lab["label"] == S.REFUSAL_SENSITIVE                         # the set changed, the pick did not
+    assert X.refusal_sensitive_p2b(sel, sel)["label"] is None
+
+
+def _xp_reference(pn, pp, ll, stop):
+    if stop or None in (pn, pp, ll):
+        return "XP-stop"
+    if ll == "better":
+        return "XP-anomaly"
+    if pn == "passes":
+        return "XP-closes" if ll == "matches" else "XP-gain"
+    if pp == "worse":
+        return "XP-worse"
+    return "XP-undecided"
+
+
+def test_every_pair_of_labels_ends_in_exactly_one_xp_code():
+    seen = set()
+    for pn, pp, ll, stop in itertools.product(E_NUMBERS, PAIRED, PAIRED, (False, True)):
+        got = X.xp_code({"P_number": pn, "P": pp, "L": ll}, stop)
+        assert got["code"] == _xp_reference(pn, pp, ll, stop), (pn, pp, ll, stop)
+        assert got["code"] in X.XP_CODES and "{" not in got["meaning"]
+        seen.add(got["code"])
+    assert seen == set(X.XP_CODES)
+    X.xp_table_guard()
+    und = X.xp_code({"P_number": "passes", "P": "better", "L": "undecided"})
+    assert und["code"] == "XP-gain" and und["meaning"] == "gain shown; the remaining cost not decided"
+    assert X.xp_code({"P_number": "passes", "P": "better", "L": "worse"})["meaning"].startswith("a shown gain")
+    assert X.xp_code({"P_number": "fails", "P": "worse", "L": "worse"})["code"] == "XP-worse"
+    assert X.xp_labels(_iv(0.2, 0.1, 0.3), _iv(0.0, -0.05, 0.04)) == {"P_number": "fails", "P": "worse",
+                                                                      "L": "matches"}
+
+
+def test_the_xp_guard_and_its_s1_read(monkeypatch):
+    p, w = _iv(-0.2, -0.3, -0.12), _iv(0.2, 0.1, 0.3)
+    r = X.xp_read({"P": p, "L": w}, {"P": p, "L": _iv(0.0, -0.05, 0.04)})
+    assert r["itt"]["code"] == "XP-gain" and r["passing_only"]["code"] == "XP-closes" and r["label"]
+    monkeypatch.setattr(X, "XP_CODES", tuple(reversed(X.XP_CODES)))
+    with pytest.raises(SystemExit, match="six declared"):
+        X.xp_table_guard()
+
+
+def test_the_bends_variant_borrows_from_the_paired_basic_pitch_note():
+    bp = [_n(1.0, 60, bends=[1, 2, 3], amp=0.8), _n(2.0, 62, amp=0.4)]
+    tx = [{"on": 1.01, "off": 1.4, "pitch": 60, "amp": 0.0, "bends": []}, {"on": 3.0, "off": 3.3, "pitch": 70,
+                                                                          "amp": 0.0, "bends": []}]
+    got = X.with_bp(tx, bp)
+    assert got[0]["bends"] == [1, 2, 3] and got[0]["amp"] == 0.8 and got[0]["on"] == 1.01
+    assert got[1]["bends"] == [] and got[1]["amp"] == pytest.approx(0.6)   # unpaired: the median loudness
+    assert len(got) == len(tx)
+
+
+def test_labels_real_harm_and_counts_by_set():
+    paired = {f: {"rows": {"bks_goat": _iv(-0.1, -0.2, -0.01), "bks": _iv(0.1, 0.01, 0.2),
+                           "goat": {"mean": None, "lo90": None, "hi90": None}}} for f in X.SELECT_ITEMS}
+    lab = X.labels_from(paired, paired[X.ONSET_ERROR])
+    assert lab["deciding"]["extra_rate"] == "better" and lab["bks"]["miss_rate"] == "worse"
+    assert lab["goat"]["end_error"] is None
+    real = {"P1": {"extra_rate": {"label": {"reading": "undecided"}}}, "lists": {"miss_rate": {"label": {"reading":
+                                                                                                         "worse"}}}}
+    assert X.real_worse_of(real) and not X.real_worse_of({"P1": {"extra_rate": {"label": None}}})
+    per = {"bks/p1": {"c": {"extras": {"harmonic": 3}, "misses": {"rest": 1}}},
+           "goat/p2": {"c": {"extras": {"harmonic": 1, "rest": 1}, "misses": {}}},
+           "panel/p3": {"c": {"extras": {"harmonic": 9}, "misses": {"rest": 9}}}}
+    got = X.counts_by_set(per, {k: k.split("/")[0] for k in per}, ["c"])["c"]
+    assert got["deciding"] == {"extras": 5, "misses": 1, "parts": 2} and got["goat"]["extras"] == 2
+    assert X.frontier_equal_refusal({"a": {"x": 1}}, {"a": {"x": 1}}) is None
+    assert "RX-stop" in X.frontier_equal_refusal({"a": {"x": 2}}, {"a": {"x": 1}})
+
+
+def test_the_gate_repeat_and_its_report():
+    s = X.tx_spec("ymt3", "/y.ckpt", SHA)
+    r = _rec("mt3", s, grid=[{"options": {"programs": "pitched"}, "events": [_ev()]}], scan={"globals": ["x"]})
+    assert X.runner_report(r) == {"scan": {"globals": ["x"]}}
+    assert X.repeat_holds([{"a": r}, {"a": dict(r)}, {"a": r}])
+    other = dict(r, grid=[{"options": {"programs": "pitched"}, "events": []}])
+    assert not X.repeat_holds([{"a": r}, {"a": other}]) and not X.repeat_holds([])
+
+
+def test_phase_2b_paths_sit_under_readerr(monkeypatch, tmp_path):
+    monkeypatch.setattr(X, "readerr_dir", lambda: tmp_path / "readerr")
+    root = (tmp_path / "readerr").resolve()
+    for kind in ("listing", "candidates", "select", "gate", "partial"):
+        assert root in X.tx_path(kind).resolve().parents
+    assert X.tx_path("gate").name == "tools-gate.json" and X.tx_path("select").name == "select.json"
+    st = X.tx_staging("bench-000")
+    X.write_once(X.tx_path("notes-input", iid="bench-000", root=st), {})
+    assert X.tx_done("notes") == set()
+    X.move_into_place(st, X.tx_path("input-dir", iid="bench-000"))
+    assert X.tx_done("notes") == {"bench-000"}
+    assert X.xr_path("check", "xr-cand").parent.name == "check-cand" and X.xr_path("check").parent.name == "check"
+    assert X.xr_path("rows", "xr-cand").name == "rows-cand.json" and X.xr_path("rows").name == "rows.json"
+    assert X.xr_dry_key("cand") == "phase_scratch_readerr_xr_dry_cand"
+    assert X.xr_answers_key("xr-cand") == "phase_scratch_readerr_xr_answers_cand"
+    for k in (X.PHASE_P2B, X.PHASE_TOOLS, X.PHASE_NOTES_TX, X.PHASE_CANDIDATES_TX, X.PHASE_XP_OUTCOME):
+        assert k.startswith(X.KEY_PREFIX) and not k.startswith(X.GUARDED_PREFIXES)
+
+
+@pytest.mark.parametrize("cmd", ["tx-gate", "tx-notes", "tx-score", "select"])
+def test_phase_2b_commands_wait_for_their_keys(monkeypatch, cmd):
+    _on_main_with(monkeypatch, _main(X.PHASE, X.PHASE_FROZEN, X.PHASE_P2), {f: True for f in X.CODE_FILES})
+    with pytest.raises(SystemExit, match="phase_scratch_readerr_p2b"):
+        X.COMMANDS[cmd](_args())
+
+
+@pytest.mark.parametrize("cmd,key", [("tx-notes", "phase_scratch_readerr_tools"),
+                                     ("tx-score", "phase_scratch_readerr_tools"),
+                                     ("select", "phase_scratch_readerr_tools"),
+                                     ("tx-gate", "phase_scratch_readerr_xr_outcome")])
+def test_phase_2b_commands_wait_for_their_hashes(monkeypatch, cmd, key):
+    _on_main_with(monkeypatch, _main(X.PHASE, X.PHASE_FROZEN, X.PHASE_P2, X.PHASE_P2B), {f: True for f in X.CODE_FILES})
+    with pytest.raises(SystemExit, match=key):
+        X.COMMANDS[cmd](_args())
+
+
+def test_the_cand_row_waits_for_its_outcome_and_its_own_check(monkeypatch):
+    m = _main(X.PHASE, X.PHASE_FROZEN, X.PHASE_P2, X.PHASE_P2B, X.PHASE_OUTCOME)
+    _on_main_with(monkeypatch, m, {f: True for f in X.CODE_FILES})
+    with pytest.raises(SystemExit, match="names no priced candidate"):
+        X.cmd_xr_build(_args(set="cand"))
+    m[X.PHASE_OUTCOME] = {"code": "RX-none"}
+    with pytest.raises(SystemExit, match="names no priced candidate"):
+        X.cmd_xr_build(_args(set="cand"))
+    with pytest.raises(SystemExit, match="phase_scratch_readerr_xr_dry_cand"):
+        X.cmd_xr_check(_args(row="xr-cand"))                          # amendment 2: its own rerun, after the build
+    m[X.PHASE_OUTCOME] = {"code": "RX-setting", "candidate": "shift-k3"}
+    assert X.require_cand_outcome(m) == "shift-k3"
+    assert X.CHECK_ROW == {"xr-cand": "xr-cand"} and X.set_of_row("xr-cand") == "cand"
+
+
+class _FakeTools:
+    """Unit F's interface, stubbed: load_manifest, venv_python, checkpoint_path, licence_record."""
+
+    def __init__(self, root):
+        self.root = pathlib.Path(root)
+
+    def load_manifest(self):
+        return {"files": []}
+
+    def venv_python(self, lock):
+        return self.root / f"venv-{lock}" / "bin" / "python"
+
+    def checkpoint_path(self, cand_id):
+        return self.root / f"{cand_id}.ckpt"
+
+    def licence_record(self, cand_id):
+        return {"code": "GPL-3.0 or Apache-2.0" if cand_id == "ymt3" else "MIT claimed",
+                "weights_data": "unlicensed" if cand_id == "ymt3" else "NC assumed",
+                "product_status": "unresolved" if cand_id == "ymt3" else "unclear"}
+
+
+def test_the_gate_refuses_without_a_pinned_checkpoint(monkeypatch, tmp_path):
+    import sys
+
+    fake = _FakeTools(tmp_path)
+    monkeypatch.setitem(sys.modules, "learn.readerr_tools", fake)
+    import learn
+
+    monkeypatch.setattr(learn, "readerr_tools", fake, raising=False)
+    monkeypatch.setattr(X, "readerr_dir", lambda: tmp_path / "readerr")
+    monkeypatch.setattr(X, "require_readerr", lambda *a: {})
+    monkeypatch.setattr(X, "require_trace", lambda m=None: {"parts": {}})
+    monkeypatch.setattr(X, "bench_inputs", lambda tr: {})
+    monkeypatch.setattr(X, "real_inputs", lambda mr, pair: ({}, {}))
+    monkeypatch.setattr(T, "redo_on_main", lambda: ({}, None))
+    monkeypatch.setattr(T, "load_manifest", lambda: {})
+    monkeypatch.setattr(T, "install_pair", lambda man: ("l", "m"))
+    with pytest.raises(SystemExit, match="ymt3: no checkpoint at its pinned path"):
+        X.cmd_tx_gate(_args())
+    assert not X.tx_path("gate").exists()
+
+
+def test_the_licence_fields_ride_with_every_candidate():
+    c2a = {"paired": {c: {} for c in X.candidate_ids()}, "real": {}}
+    ctx = {"paired": {c + X.BP_SUFFIX: {} for c in X.tx_candidates()}, "real": {}, "onset_error_2a": {},
+           "counts_by_set": {c: {} for c in X.select_ids()},
+           "licence": {f: _FakeTools("/x").licence_record(f) for f in X.TX_FAMILIES}}
+    gate = {"families": {f: {"repeats": f != "kong-gaps"} for f in X.TX_FAMILIES}}
+    got = X.select_inputs(c2a, ctx, gate)
+    assert got["lead-in"]["licence"] == X.BP_LICENCE and got["lead-in"]["repeats"]
+    assert got["ymt3-pitched+bp"]["licence"]["product_status"] == "unresolved"
+    assert not got["kong-gaps-o0.3-f0.1+bp"]["repeats"] and got["kong-fl-o0.3-f0.1+bp"]["repeats"]
+    assert set(got) == set(X.select_ids())
+
+
+def _reached_fns(src, roots):
+    tree = ast.parse(src)
+    defs = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+    seen, todo = set(), list(roots)
+    while todo:
+        name = todo.pop()
+        if name in seen or name not in defs:
+            continue
+        seen.add(name)
+        local = {a.arg for a in ast.walk(defs[name].args) if isinstance(a, ast.arg)}
+        todo += [n.id for n in ast.walk(defs[name]) if isinstance(n, ast.Name) and n.id in defs and n.id not in local]
+    return {k: ast.dump(defs[k]) for k in seen}
+
+
+def test_the_xr_row_code_is_what_ran_beside_the_check_rerun():
+    """Amendment 2: xr-check reruns before any xr-cand search (above). Beside it, the source test: every function
+    `cmd_xr_search`, `cmd_xr_score`, `load_xr_guitar` and `read_xr_parts` reach is byte-identical to main at cd262a10,
+    but for the three declared edits: the check per row (`cmd_xr_search`'s one line, `require_xr_check`) and the paths
+    for xr-cand's check, rows and report (`xr_path`)."""
+    import subprocess
+
+    old = subprocess.run(["git", "-C", str(REPO), "show", "cd262a10:learn/scratch_readerr.py"], capture_output=True,
+                         text=True)
+    if old.returncode:
+        pytest.skip("cd262a10 is not in this checkout's history")
+    roots = ("cmd_xr_search", "cmd_xr_score", "load_xr_guitar", "read_xr_parts")
+    a, b = _reached_fns(old.stdout, roots), _reached_fns(SRC, roots)
+    allowed = {"cmd_xr_search", "require_xr_check", "xr_path"}
+    assert set(a) == set(b)
+    assert {f for f in a if a[f] != b[f]} <= allowed
