@@ -29,6 +29,20 @@ The Phase 2 amendment's `xr-` row (`phase_scratch_readerr_p2`; plan section 9):
     $MAIN -m learn.scratch_readerr xr-score --row xr-matched --shard 0/3 [--rerun]
     $MAIN -m learn.scratch_readerr xr-read                  # zero renders, once: E, M, XH_TABLE's code
 
+The Phase 2b amendment (`phase_scratch_readerr_p2b`; unit E here, unit F's `learn/readerr_tools.py` installs and
+fetches, unit D's `learn/readerr_run.py` runs the torch modes):
+
+    $MAIN -m learn.scratch_readerr tx-gate                  # once: checkpoints, repeat, timing -> tools-gate.json
+    # the hash PR: phase_scratch_readerr_tools
+    $MAIN -m learn.scratch_readerr tx-notes --shard k/n [--first 3]; tx-notes --combine   # -> notes-tx.json
+    # the hash PR: phase_scratch_readerr_notes_tx
+    $MAIN -m learn.scratch_readerr tx-score --shard k/n [--first 3]; tx-score --combine   # -> candidates-tx.json
+    # the hash PR: phase_scratch_readerr_candidates_tx
+    $MAIN -m learn.scratch_readerr select                   # once: the rule, the RX code -> select.json; an audit
+    # only on RX-transcriber or RX-setting and the user's word:
+    $MAIN -m learn.scratch_readerr xr-build --set cand; xr-check --row xr-cand; xr-search --row xr-cand ...
+    $MAIN -m learn.scratch_readerr xr-read --row xr-cand    # P, L, XP_TABLE's code
+
 Every command refuses unless this checkout runs main's code and keys: `scratch_exact.require_exact` (its seven files,
 the `phase_scratch_exact*` keys, `scratch_search.on_main`) with the exact test's targets, four answers keys and
 outcome on main, then this module's own guard: CODE_FILES (this module, `learn/readerr_run.py` and every module either
@@ -89,7 +103,8 @@ def _dedupe(xs):
 
 LAZY_IMPORTS = ("learn/note_replay.py", "learn/pipeline_fix.py", "learn/song_bank.py",   # imported inside
                 "learn/cc_build.py", "learn/full_controls_c1b.py", "learn/local_objective.py",   # commands
-                "learn/knob_ceiling.py", "analysis/aligned.py")
+                "learn/knob_ceiling.py", "analysis/aligned.py",
+                "learn/readerr_tools.py")    # unit F (Phase 2b): the installs, the manifest reader, the licences
 CODE_FILES = _dedupe(OWN_FILES + SX.CODE_FILES + NT.CODE_FILES + TX.CODE_FILES + LAZY_IMPORTS)
 OUT_FILES = ("trace", "anatomy", "real-compare", "screen", "freeze")   # Phase 1's files, hashed in PHASE_FROZEN
 
@@ -902,14 +917,20 @@ def sign_agreement(a, b):
 # --- the runner contract (pure; `learn/readerr_run.py`, PR #617) ------------------------------------------------------------
 
 RECORD_KEYS = ("mode", "versions", "model_sha256", "threads", "spec", "input_sha256", "seconds", "events")
+TORCH_RECORD_KEYS = ("scan", "load_report", "guards")   # #641: every torch record also carries these
 EVENT_KEYS = ("on", "off", "pitch", "amp", "bends")
 RUNNER_MODES = ("bp-grid", "bp-shift", "mt3", "kong")
 SPEC_COMMON = ("model", "model_sha256", "threads", "lead_in_s")
-SPEC_MODE = {"bp-grid": ("settings", "grid"), "bp-shift": ("settings", "offsets_s"), "mt3": ("options",),
-             "kong": ("options",)}
+SPEC_MODE = {"bp-grid": ("settings", "grid"), "bp-shift": ("settings", "offsets_s"),
+             "mt3": ("options", "grid", "allow_globals"), "kong": ("options", "grid", "allow_globals")}
+TORCH_MODES = ("mt3", "kong")
+TORCH_DECLARED = {"mt3": {"programs": ("pitched", "guitar")},   # Phase 2b's D-E contract: the axes and their values
+                  "kong": {"onset_threshold": (0.2, 0.3, 0.4, 0.5), "frame_threshold": (0.1, 0.2, 0.3)}}
+TORCH_AXES = {m: tuple(v) for m, v in TORCH_DECLARED.items()}
 SPEC_REQUIRED = {"bp-grid": ("model", "model_sha256", "settings", "grid"),
                  "bp-shift": ("model", "model_sha256", "settings", "offsets_s"),
-                 "mt3": ("model", "model_sha256"), "kong": ("model", "model_sha256")}
+                 "mt3": ("model", "model_sha256", "options", "allow_globals"),
+                 "kong": ("model", "model_sha256", "options", "allow_globals")}   # #641: the checkpoint's pickle globals
 MAX_THREADS = 2
 BP_SETTING_KEYS = tuple(NT.BP_SETTINGS)  # bp_run.SETTING_KEYS: the runner's `settings` holds exactly these
 
@@ -937,10 +958,28 @@ def make_spec(mode, model, model_sha256, threads=1, lead_in_s=None, **kw):
         raise SystemExit(f"threads must be 1 to {MAX_THREADS}")
     if "settings" in spec and sorted(spec["settings"]) != sorted(BP_SETTING_KEYS):
         raise SystemExit(f"settings must be exactly {sorted(BP_SETTING_KEYS)}")
-    if "grid" in spec and (not isinstance(spec["grid"], dict) or not spec["grid"] or set(spec["grid"]) - set(GRID_AXES)
+    axes = TORCH_AXES[mode] if mode in TORCH_MODES else tuple(GRID_AXES)
+    if "grid" in spec and (not isinstance(spec["grid"], dict) or not spec["grid"] or set(spec["grid"]) - set(axes)
                            or any(not isinstance(v, list) or not v for v in spec["grid"].values())):
-        raise SystemExit(f"grid must be a non-empty {{axis: [values]}} over {list(GRID_AXES)}, each axis non-empty "
+        raise SystemExit(f"grid must be a non-empty {{axis: [values]}} over {list(axes)}, each axis non-empty "
                          "(the runner refuses an empty grid)")
+    if mode in TORCH_MODES:
+        dec = TORCH_DECLARED[mode]
+        o = spec.get("options")
+        if not isinstance(o, dict) or set(o) != set(axes):
+            raise SystemExit(f"{mode}: options must hold exactly {list(axes)}")
+        bad = sorted(a for a, v in o.items() if v not in dec[a])
+        bad += sorted(a for a, vs in (spec.get("grid") or {}).items() for v in vs if v not in dec[a])
+        if bad:
+            raise SystemExit(f"{mode}: values outside the declared ones on {sorted(set(bad))}")
+        if any(len(set(vs)) != len(vs) for vs in (spec.get("grid") or {}).values()):
+            raise SystemExit(f"{mode}: a grid axis repeats a value")
+    if "allow_globals" in spec:
+        a = spec["allow_globals"]
+        if not isinstance(a, list) or not a or not all(isinstance(n, str) and "." in n.strip(".") for n in a):
+            raise SystemExit("allow_globals must be a non-empty list of 'module.name' strings")
+        if len(set(a)) != len(a):
+            raise SystemExit("allow_globals repeats a name")
     if "offsets_s" in spec:
         offs = spec["offsets_s"]
         if not isinstance(offs, list) or any(o < 0 for o in offs) or len(set(offs)) != len(offs):
@@ -1038,7 +1077,46 @@ def runner_refusal(rec, mode, spec, input_sha):
         zero = next((s for s in got if s["offset_s"] == 0), None)
         if rec["events"] != (zero["events"] if zero is not None else []):
             return "bp-shift's top-level events are not the zero offset's read"
+    if mode in TORCH_MODES:
+        miss = [k for k in TORCH_RECORD_KEYS if k not in rec]
+        if miss:
+            return f"{mode}'s record lacks {miss} (#641: the scan, the load report and the guards)"
+    if mode in TORCH_MODES and "grid" in spec:
+        got = rec.get("grid")
+        if not isinstance(got, list):
+            return f"{mode}'s record has no grid"
+        want = sorted(json.dumps(o, sort_keys=True) for o in torch_points(spec))
+        try:
+            have = sorted(json.dumps(g["options"], sort_keys=True) for g in got)
+        except (KeyError, TypeError):
+            return f"{mode}: a grid entry lacks its options"
+        if have != want:
+            return f"{mode}'s grid is not the spec's"
+        for g in got:
+            why = events_refusal(g.get("events"))
+            if why:
+                return f"grid options {g['options']}: {why}"
+        base = next((g for g in got if g["options"] == torch_base(spec)), None)
+        if base is not None and base["events"] != rec["events"]:
+            return f"{mode}'s top-level events are not the read at its options"
     return None
+
+
+def torch_base(spec):
+    """(Pure.) A torch spec's base options: its `options`, each axis left out at the grid's first value."""
+    out = {a: v[0] for a, v in (spec.get("grid") or {}).items()}
+    out.update(spec.get("options") or {})
+    return out
+
+
+def torch_points(spec):
+    """(Pure.) A torch spec's grid as options dicts: the product over the grid's axes (an axis left out of the grid
+    holds its `options` value)."""
+    base = torch_base(spec)
+    out = [dict(base)]
+    for a, vals in (spec.get("grid") or {}).items():
+        out = [dict(q, **{a: v}) for q in out for v in vals]
+    return out
 
 
 # Basic Pitch's own time map (basic_pitch.note_creation.model_frames_to_time and its constants), in pure Python
@@ -1668,10 +1746,11 @@ def shift_unanchored(anchor, shifted):
 
 # --- Phase 2: the hybrid note lists (pure) -----------------------------------------------------------------------------
 
-XR_ROWS = ("xr-matched", "xr-found", "xr-filled")
-XR_SHORT = {"xr-matched": "matched", "xr-found": "found", "xr-filled": "filled"}
+XR_ROWS = ("xr-matched", "xr-found", "xr-filled", "xr-cand")
+XR_SHORT = {"xr-matched": "matched", "xr-found": "found", "xr-filled": "filled", "xr-cand": "cand"}
 XR_BESIDE = ("hand-plain",)             # built and reported, never searched
-XR_SETS = {"first": ("xr-matched", "hand-plain"), "found": ("xr-found",), "filled": ("xr-filled",)}
+XR_SETS = {"first": ("xr-matched", "hand-plain"), "found": ("xr-found",), "filled": ("xr-filled",),
+           "cand": ("xr-cand",)}             # Phase 2b's priced row: built only when main's RX code names it
 XR_SET_ASKED = {"found": "XH-rest", "filled": "XH-undecided"}   # each later list only when the code asks for it
 JOIN_REPORT_EXTRAS = ("timing", "octave-sub", "semitone-sub")
 JOIN_REPORT_MISSES = ("timing", "substitution")
@@ -1863,8 +1942,8 @@ def xr_path(kind, row=None, pk=None):
     """Every xr- path: under PF/fs/readerr/xr/, by kind. -> path (refused outside readerr)."""
     if kind == "build":
         p = xr_dir() / f"build-{row}.json"
-    elif kind == "check":
-        p = xr_dir() / "check" / "result.json"
+    elif kind == "check":                # the first check; xr-cand's own rerun (Phase 2b amendment 2)
+        p = xr_dir() / ("check" if row in (None, "xr-matched") else f"check-{XR_SHORT[row]}") / "result.json"
     elif kind in ("dry", "search", "start-ref", "score", "check-search", "check-score", "check-start-ref"):
         if pk is None:
             raise ValueError("a part's path needs its key")
@@ -1875,7 +1954,7 @@ def xr_path(kind, row=None, pk=None):
             raise ValueError(row)
         p = xr_dir() / f"answers-{row}.json"
     elif kind in ("rows", "report"):
-        p = xr_dir() / f"{kind}.json"
+        p = xr_dir() / (f"{kind}.json" if row in (None, "xr-matched") else f"{kind}-{XR_SHORT[row]}.json")
     else:
         raise ValueError(kind)
     root = pathlib.Path(readerr_dir()).resolve()
@@ -1953,8 +2032,8 @@ def require_xr_build(m, set_name, hashed=True):
     return b
 
 
-def require_xr_check():
-    p = xr_search_open(xr_path("check"))
+def require_xr_check(row=None):
+    p = xr_search_open(xr_path("check", row))
     if not p.exists():
         raise SystemExit("xr-check has not run")
     r = json.loads(p.read_text())
@@ -2041,6 +2120,8 @@ def cmd_xr_build(args):
     set_name = getattr(args, "set", None) or "first"
     if set_name not in XR_SETS:
         raise SystemExit(f"unknown build set {set_name!r}")
+    if set_name == "cand":
+        return cmd_xr_build_cand(args)
     m = require_readerr(PHASE_FROZEN, PHASE_P2)
     if set_name != "first":
         got = ((m.get(PHASE_XR_OUTCOME) or {}).get("code"))
@@ -2146,12 +2227,21 @@ def cmd_xr_build(args):
 # --- Phase 2: xr-check (renders, once) ---------------------------------------------------------------------------------------
 
 def cmd_xr_check(_args):
+    if getattr(_args, "row", None) == "xr-cand":
+        return cmd_xr_check_row(_args, "xr-cand")
+    return cmd_xr_check_row(_args, None)
+
+
+def cmd_xr_check_row(_args, row):
     """xr-check (about 50 renders), once: on `scratch_notes.check_parts`' two parts with xn-reread's stored guitar,
     this module's start reference and `run_part(budget=10, step1_only=True)` must equal xn-reread's stored first 10
     evaluations (`search_check_verdict`), and this module's score of xn-reread's hashed answers must equal its stored
-    score files (`score_check_verdict`). A mismatch is XH-stop. -> xr/check/."""
-    m = require_readerr(PHASE_FROZEN, PHASE_P2, PHASE_XR_DRY, SX.answers_key("xn-reread"))
-    res_p = xr_path("check")
+    score files (`score_check_verdict`). A mismatch is XH-stop. -> xr/check/. `--row xr-cand` is Phase 2b
+    amendment 2's rerun before any xr-cand search, into its own xr/check-cand/ (the first check is never rewritten),
+    after xr-cand's guitar is hashed (phase_scratch_readerr_xr_dry_cand)."""
+    needs = (PHASE_XR_DRY,) if row is None else (PHASE_P2B, xr_dry_key(set_of_row(row)))
+    m = require_readerr(PHASE_FROZEN, PHASE_P2, *needs, SX.answers_key("xn-reread"))
+    res_p = xr_path("check", row)
     NT.never_overwrite(res_p)
     from learn import cc_build as CB
     from learn import full_controls_c1b as C
@@ -2176,20 +2266,21 @@ def cmd_xr_check(_args):
         ref_blank = SX.load_record_blank(p, records)
         px = SX.synthetic_part(p)
         sref, used = SX.start_reference("xn-reread", px, x32, ref_blank, CB.new_renderer,
-                                        fresh_xr_path("check-start-ref", None, k), sha)
+                                        fresh_xr_path("check-start-ref", row, k), sha)
         rec = S.run_part(px, "xn-reread", SX.REF, x32, ref_blank, CB.new_renderer, lists, budget=SN.CHECK_BUDGET,
                          start_ref=sref, dry_sha256=sha, step1_only=True)
         total += rec.get("renders", 0) + used
-        write_once(fresh_xr_path("check-search", None, k), rec)
+        write_once(fresh_xr_path("check-search", row, k), rec)
         new_s[k], old_s[k] = rec, json.loads(SX.search_path("xn-reread", k).read_text())
         bank32 = NT.load_dry(BANK_ARM, k, b2)
         sc, used = SX.score_exact_part(px, ans["parts"][k], bank32, SX.load_record(k, records), 0,
                                        tg["parts"][k]["cen_held"], CB.new_renderer)
         total += used
-        write_once(fresh_xr_path("check-score", None, k), sc)
+        write_once(fresh_xr_path("check-score", row, k), sc)
         new_c[k], old_c[k] = sc, json.loads(SX.score_path("xn-reread", k).read_text())
     vs, vc = SN.search_check_verdict(new_s, old_s), SX.score_check_verdict(new_c, old_c)
-    res = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P2}", "renders": total, "budget": SN.CHECK_BUDGET,
+    res = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P2 if row is None else PHASE_P2B}", "row": row or "first",
+           "renders": total, "budget": SN.CHECK_BUDGET,
            "search": vs, "score": vc, "passed": vs["passed"] and vc["passed"],
            "mismatches": {"search": vs["mismatches"], "score": vc["mismatches"]},
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
@@ -2212,7 +2303,7 @@ def cmd_xr_search(args):
     set_name = set_of_row(row)
     m = require_readerr(PHASE_FROZEN, PHASE_P2, xr_dry_key(set_name))
     build = require_xr_build(m, set_name)
-    require_xr_check()
+    require_xr_check(CHECK_ROW.get(row))
     records = SX.require_records(m)
     from learn import cc_build as CB
     from learn import full_controls_c1b as C
@@ -2385,7 +2476,10 @@ def cmd_xr_read(_args):
     passing-only beside, refusal-sensitive when the codes differ. set_rows on BKS+GOAT decides; BKS alone, GOAT alone,
     clean, crunch, all 47, checkpoints 50, 100, 200 and leave-one-cluster-out beside. Beside, never deciding: the
     share -E / reading proper (`fieller_share`) and the forward test (the change in logmel and env_corr against E).
-    The rows are saved before the code. -> xr/rows.json, xr/report.json."""
+    The rows are saved before the code. -> xr/rows.json, xr/report.json. `--row xr-cand` reads the priced row
+    instead (`cmd_xr_read_cand`, XP_TABLE)."""
+    if getattr(_args, "row", None) == "xr-cand":
+        return cmd_xr_read_cand(_args)
     row = "xr-matched"
     m = require_readerr(PHASE_FROZEN, PHASE_P2, PHASE_XR_DRY, xr_answers_key(row))
     xh_table_guard()
@@ -3097,6 +3191,1092 @@ def score_combine(m, ids, xb):
     print(f"RX SCORE COMBINE: {len(per_part)} parts, {len(real_rows)} real-DI inputs; {P2A_LABEL}; sha256 {sha}")
 
 
+# --- Phase 2b (`phase_scratch_readerr_p2b`, unit E): the transcribers' candidates (pure) -------------------------------
+
+PHASE_P2B = "phase_scratch_readerr_p2b"
+PHASE_TOOLS = "phase_scratch_readerr_tools"              # tools-gate.json: the checkpoints, the repeat, the timing
+PHASE_NOTES_TX = "phase_scratch_readerr_notes_tx"        # notes-tx.json, before tx-score
+PHASE_CANDIDATES = "phase_scratch_readerr_candidates"    # Phase 2a's candidates.json (on main)
+PHASE_CANDIDATES_TX = "phase_scratch_readerr_candidates_tx"   # candidates-tx.json, before select
+PHASE_XP_OUTCOME = "phase_scratch_readerr_xp_outcome"    # the XP code, after an audit
+CHECK_ROW = {"xr-cand": "xr-cand"}       # amendment 2: xr-check reruns before any xr-cand search, into its own file
+BP_SUFFIX = "+bp"                        # loudness and bends borrowed from the paired Basic Pitch note
+TX_THREADS = 1                           # every torch read at one thread; the gate times 1 and 2
+TX_FAMILIES = {   # amendment 5: the declared grids and the shipped settings (the distance's zero)
+    "ymt3": {"lock": "A", "mode": "mt3", "axes": TORCH_DECLARED["mt3"], "shipped": {"programs": "pitched"}},
+    "kong-fl": {"lock": "B", "mode": "kong", "axes": TORCH_DECLARED["kong"],
+                "shipped": {"onset_threshold": 0.3, "frame_threshold": 0.1}},
+    "kong-gaps": {"lock": "B", "mode": "kong", "axes": TORCH_DECLARED["kong"],
+                  "shipped": {"onset_threshold": 0.3, "frame_threshold": 0.1}},
+}
+BP_LICENCE = {"code": "Apache-2.0", "weights_data": "in the wheel", "product_status": "usable"}
+PRODUCT_USABLE = "usable"
+GATE_REPEAT_PARTS = 4                    # amendment item 5: three runs on 4 bench parts
+GATE_TIMING_PARTS = 3                    # item 6: timed on 3 parts, at 1 and at 2 threads
+ONSET_ERROR = "onset_error"              # amendment 3: the matched notes' median |onset error| (ms), as played
+
+
+def tx_points(fam):
+    """(Pure.) A family's declared options: the product over its axes in order, the first outermost."""
+    out = [{}]
+    for a, vals in TX_FAMILIES[fam]["axes"].items():
+        out = [dict(q, **{a: v}) for q in out for v in vals]
+    return out
+
+
+def tx_id(fam, opts):
+    """(Pure.) A transcriber candidate's id: ymt3-pitched, kong-fl-o0.3-f0.1."""
+    if TX_FAMILIES[fam]["mode"] == "mt3":
+        return f"{fam}-{opts['programs']}"
+    return f"{fam}-o{opts['onset_threshold']}-f{opts['frame_threshold']}"
+
+
+def tx_candidates():
+    """(Pure.) Every transcriber candidate: {plain id: (family, options)}; 26 at the declaration."""
+    return {tx_id(f, o): (f, o) for f in TX_FAMILIES for o in tx_points(f)}
+
+
+def tx_distance(fam, opts):
+    """(Pure.) Amendment 5's distance to the shipped settings: YourMT3+'s programmes one step apart (every pitched
+    programme shipped); the Riley models' L1 in grid steps on (onset, frame)."""
+    sh = TX_FAMILIES[fam]["shipped"]
+    d = 0
+    for a, vals in TX_FAMILIES[fam]["axes"].items():
+        vals = list(vals)
+        d += abs(vals.index(opts[a]) - vals.index(sh[a]))
+    return d
+
+
+def tx_spec(fam, model, model_sha256, allow_globals, threads=TX_THREADS):
+    """(Pure.) A family's one read: its shipped options, the declared grid from one inference, and the checkpoint's
+    pickle globals (#641: the runner's guarded load allows exactly these)."""
+    f = TX_FAMILIES[fam]
+    return make_spec(f["mode"], model, model_sha256, threads=threads, options=dict(f["shipped"]),
+                     grid={a: list(v) for a, v in f["axes"].items()}, allow_globals=list(allow_globals))
+
+
+def tx_manifest_item(fam):
+    """The manifest item id of a family's checkpoint: unit F's `readerr_tools.CANDIDATES`, never a second copy."""
+    from learn import readerr_tools as RT
+
+    return RT.CANDIDATES[fam]
+
+
+def manifest_item_of(man, fam):
+    """(Pure but for the id.) The family's checkpoint item in the manifest, refused unless exactly one."""
+    items = [i for i in (man or {}).get("items") or [] if i.get("id") == tx_manifest_item(fam)]
+    if len(items) != 1:
+        raise SystemExit(f"the manifest holds {len(items)} items for {fam}")
+    return items[0]
+
+
+def gate_checkpoint_refusal(item, path):
+    """E1, before any run: the checkpoint at its pinned path, its size and sha256 the manifest item's
+    (`checkpoint_refusal`; the spec's own model_sha256 check against the file would be circular)."""
+    path = pathlib.Path(path)
+    if not path.exists():
+        return "no checkpoint at its pinned path (tx-fetch first)"
+    if item.get("size_bytes") is None or path.stat().st_size != item["size_bytes"]:
+        return f"the checkpoint's size {path.stat().st_size} is not the manifest's {item.get('size_bytes')}"
+    return checkpoint_refusal({"path": item.get("pinned_path") or str(path), "sha256": item.get("sha256")},
+                              file_sha(path))
+ALLOW_FIELD = "pickle_globals"           # the manifest item's list of "module.name" globals (see tx_allow_globals)
+
+
+def tx_allow_globals(man, fam):
+    """(Pure.) A checkpoint's pickle globals from the manifest (`readerr_tools.load_manifest()`): its item's
+    `pickle_globals`, a list of "module.name". Refused when the manifest lists none: the allowlist is never guessed."""
+    g = manifest_item_of(man, fam).get(ALLOW_FIELD)
+    if not isinstance(g, list) or not g:
+        raise SystemExit(f"the manifest lists no {ALLOW_FIELD} for {fam}: the guarded load's allowlist has no source")
+    return list(g)
+
+
+def family_of(cid):
+    """(Pure.) A selection candidate's family, kind and distance to its shipped settings: the Basic Pitch grid (by
+    `grid_distance` from the stored point), the shift vote (k - 2: k = 2 keeps the most), the lead-in and F6 alone
+    (shipped), or a transcriber's family (its `+bp` list). -> {family, kind, distance, shipped}."""
+    base = cid[:-len(BP_SUFFIX)] if cid.endswith(BP_SUFFIX) else cid
+    txc = tx_candidates()
+    if base in txc:
+        fam, opts = txc[base]
+        d = tx_distance(fam, opts)
+        return {"family": fam, "kind": "transcriber", "distance": d, "shipped": d == 0}
+    if cid.startswith("grid-"):
+        pt = next(p for p in grid_points() if grid_id(p) == cid)
+        d = grid_distance(pt, STORED_POINT, GRID_AXES)
+        return {"family": "bp-grid", "kind": "setting", "distance": d, "shipped": d == 0}
+    if cid in SHIFT_ID.values():
+        k = int(cid.rsplit("k", 1)[1])
+        return {"family": "shift", "kind": "setting", "distance": k - min(SHIFT_KS), "shipped": False}
+    if cid in (LEAD_ID, F6_ID):
+        return {"family": cid, "kind": "setting", "distance": 0, "shipped": True}
+    raise ValueError(cid)
+
+
+def select_ids():
+    """(Pure.) The candidates `select` reads: Phase 2a's 149 and every transcriber's `+bp` list (every item is read on
+    the list that would be priced)."""
+    return candidate_ids() + [c + BP_SUFFIX for c in tx_candidates()]
+
+
+# --- Phase 2b: select's rule (pure) ------------------------------------------------------------------------------------
+
+SELECT_ITEMS = ("extra_rate", "miss_rate", "end_error", ONSET_ERROR)   # items 1, 2 and amendment 3's two, sign only
+SELECT_SETS = ("deciding", "bks", "goat")
+
+
+def select_constants(rows, treat="itt"):
+    """(Pure.) The rule's constants read from the hashed xr/rows.json (answer arm, the 40): E's mean and its interval's
+    half-width h, and M's mean. treat "itt" decides; "per" is the passing-only recompute (amendment 4)."""
+    r = rows["arms"]["answer"]["rows"][treat]
+    e, m = r["E"]["bks_goat"], r["M"]["bks_goat"]
+    return {"E": e["mean"], "M": m["mean"], "h": (e["hi90"] - e["lo90"]) / 2, "treat": treat}
+
+
+def predicted_g(counts, base, consts):
+    """(Pure.) g = E x + M y: x the share of extras removed, y the share of misses added, on one set's counts."""
+    if not base["extras"] or not base["misses"]:
+        return None
+    x = 1 - counts["extras"] / base["extras"]
+    y = counts["misses"] / base["misses"] - 1
+    return consts["E"] * x + consts["M"] * y
+
+
+def items_on(c, base, consts, s):
+    """(Pure.) One candidate's items on one set s: extra_rate "better"; miss_rate, end error and onset error not
+    "worse" (sign only); g <= -h. c: {counts: {set: {extras, misses}}, labels: {set: {figure: reading}}}."""
+    lab = (c.get("labels") or {}).get(s) or {}
+    g = predicted_g(c["counts"][s], base[s], consts)
+    return {"extra_rate": lab.get("extra_rate") == "better",
+            "miss_rate": lab.get("miss_rate") not in ("worse", None),
+            "end_error": lab.get("end_error") not in ("worse", None),
+            ONSET_ERROR: lab.get(ONSET_ERROR) not in ("worse", None),
+            "g": g, "g_ok": g is not None and g <= -consts["h"]}
+
+
+def _form2(it):
+    return it["extra_rate"] and it["miss_rate"] and it["end_error"] and it[ONSET_ERROR]
+
+
+def family_pick(members, base, consts):
+    """(Pure.) Item 4, the cross-set rule, for a family whose settings the data chose: on BKS, the member with the
+    lowest g among those meeting items 1 and 2 (and amendment 3's two) there must meet items 1 to 3 on GOAT, and the
+    reverse; if the two picks differ, the one nearer the shipped settings is taken and must pass both ways.
+    members: {cid: candidate}. -> {pick, passes, bks_pick, goat_pick}."""
+    def best(s):
+        ok = [(cid, items_on(c, base, consts, s)) for cid, c in members.items()]
+        ok = [(cid, it) for cid, it in ok if _form2(it) and it["g"] is not None]
+        if not ok:
+            return None
+        return min(ok, key=lambda t: (t[1]["g"], members[t[0]]["distance"], t[0]))[0]
+
+    def passes_on(cid, s):
+        it = items_on(members[cid], base, consts, s)
+        return _form2(it) and it["g_ok"]
+    pb, pg = best("bks"), best("goat")
+    if pb is None or pg is None:
+        return {"pick": None, "passes": False, "bks_pick": pb, "goat_pick": pg}
+    if pb == pg:
+        return {"pick": pb, "passes": passes_on(pb, "goat") and passes_on(pb, "bks"), "bks_pick": pb, "goat_pick": pg}
+    nearer = min((pb, pg), key=lambda cid: (members[cid]["distance"], cid))
+    return {"pick": nearer, "passes": passes_on(nearer, "bks") and passes_on(nearer, "goat"), "bks_pick": pb,
+            "goat_pick": pg}
+
+
+def select_rule(cands, base, consts):
+    """(Pure.) The selection rule (amendment section 3 with review amendments 1, 3 and 5): per candidate the items on
+    the 40, item 4 (shipped, or its family's cross-set pick that passes), item 5 (no real-DI harm), item 6 (it
+    repeats); the qualifiers; the pick (lowest g; ties no download first, then a usable licence, then by id).
+    cands: {cid: {kind, family, distance, shipped, counts, labels, real_worse, repeats, licence}}. -> dict."""
+    fams = {}
+    for cid, c in cands.items():
+        if not c["shipped"]:
+            fams.setdefault(c["family"], {})[cid] = c
+    picks = {f: family_pick(ms, base, consts) for f, ms in fams.items()}
+    rows = {}
+    for cid, c in cands.items():
+        it = items_on(c, base, consts, "deciding")
+        if c["shipped"]:
+            i4 = True
+        else:
+            fp = picks[c["family"]]
+            i4 = fp["pick"] == cid and fp["passes"]
+        i123 = _form2(it) and it["g_ok"]
+        rows[cid] = dict(it, item4=i4, item5=not c["real_worse"], item6=bool(c["repeats"]),
+                         decided_better=i123 and i4 and bool(c["repeats"]),
+                         qualifies=i123 and i4 and not c["real_worse"] and bool(c["repeats"]),
+                         harm=i123 and i4 and c["real_worse"] and bool(c["repeats"]),
+                         better_by_mean=it["g"] is not None and it["g"] < 0 and it["extra_rate"])
+    qual = sorted(cid for cid, r in rows.items() if r["qualifies"])
+
+    def tie(cid):
+        c = cands[cid]
+        return (rows[cid]["g"], c["kind"] != "setting",
+                (c.get("licence") or {}).get("product_status") != PRODUCT_USABLE, cid)
+    pick = min(qual, key=tie) if qual else None
+    return {"rows": rows, "families": picks, "qualifiers": qual, "pick": pick,
+            "pick_kind": cands[pick]["kind"] if pick else None}
+
+
+RX_P2B_NEXT = {   # the codes unchanged; their inputs and next steps under this rule (amendment 1's order)
+    "RX-transcriber": "to the user with the licence table and the xr-cand row",
+    "RX-setting": "to the user with the xr-cand row",
+    "RX-harm": "reported; not priced",
+    "RX-undecided": "no priced row; to the user with each candidate's g",
+    "RX-none": "Basic Pitch as frozen stays; to the user",
+}
+
+
+def rx_p2b(sel):
+    """(Pure.) The RX code by the pick's kind (review amendment 1): transcriber, setting, harm, undecided, none.
+    RX-undecided is "some candidate better by the mean (g < 0 with item 1), none qualifies"."""
+    rows = sel["rows"]
+    if sel["pick"] is not None:
+        code = "RX-transcriber" if sel["pick_kind"] == "transcriber" else "RX-setting"
+    elif any(r["harm"] for r in rows.values()):
+        code = "RX-harm"
+    elif any(r["better_by_mean"] for r in rows.values()):
+        code = "RX-undecided"
+    else:
+        code = "RX-none"
+    return {"code": code, "next": RX_P2B_NEXT[code], "pick": sel["pick"]}
+
+
+def refusal_sensitive_p2b(sel_itt, sel_pass):
+    """(Pure.) Amendment 4: with passing-only E, M and h recomputed together, "refusal-sensitive" when the set of
+    qualifiers (or the pick) changes."""
+    changed = sel_itt["qualifiers"] != sel_pass["qualifiers"] or sel_itt["pick"] != sel_pass["pick"]
+    return {"label": S.REFUSAL_SENSITIVE if changed else None, "qualifiers_itt": sel_itt["qualifiers"],
+            "qualifiers_passing": sel_pass["qualifiers"], "pick_itt": sel_itt["pick"], "pick_passing": sel_pass["pick"]}
+
+
+# --- Phase 2b: the priced row's table (pure) ------------------------------------------------------------------------------
+
+XP_TABLE = (    # (code, when (the first that holds), meaning, next)
+    ("XP-stop", "a build proof fails, a zero distance on a deciding setting, or a label is missing",
+     "nothing is read", "to the orchestrator"),
+    ("XP-anomaly", "L reads 'better'", "a transcriber's list beats the exact list", "audited before anything is said"),
+    ("XP-closes", "P passes and L matches", "the candidate removes the shown reading cost",
+     "to the user with the licence question and the stem-notes step"),
+    ("XP-gain", "P passes, L not matching", "{gain_words}", "to the user with the licence question"),
+    ("XP-worse", "P reads 'worse' (paired_reading at its defaults)",
+     "it lands further than Basic Pitch's re-read; the prediction failed",
+     "not adopted; reported with g; no second row without an amendment"),
+    ("XP-undecided", "anything else", "not decided; undecided is not failed", "to the user with P's interval beside g"),
+)
+XP_CODES = tuple(c for c, *_ in XP_TABLE)
+
+
+def xp_table_guard():
+    if XP_CODES != ("XP-stop", "XP-anomaly", "XP-closes", "XP-gain", "XP-worse", "XP-undecided"):
+        raise SystemExit("XP_TABLE's codes are not the six declared, in order")
+
+
+def xp_labels(p_iv, l_iv):
+    """(Pure.) P by `number_reading` (a gain) and `paired_reading` (its "worse", amendment 6); L by `paired_reading`;
+    all at their defaults."""
+    return {"P_number": S.number_reading(p_iv), "P": (SN.paired_reading(p_iv) or {}).get("reading"),
+            "L": (SN.paired_reading(l_iv) or {}).get("reading")}
+
+
+def xp_code(labels, stop=False):
+    """(Pure.) XP_TABLE's code, the first that holds (amendment 6: XP-closes only when L matches; with L undecided
+    the gain is shown and the remaining cost not decided)."""
+    pn, pp, ll = labels.get("P_number"), labels.get("P"), labels.get("L")
+    if stop or pn is None or pp is None or ll is None:
+        code = "XP-stop"
+    elif ll == "better":
+        code = "XP-anomaly"
+    elif pn == "passes" and ll == "matches":
+        code = "XP-closes"
+    elif pn == "passes":
+        code = "XP-gain"
+    elif pp == "worse":
+        code = "XP-worse"
+    else:
+        code = "XP-undecided"
+    row = next(r for r in XP_TABLE if r[0] == code)
+    words = row[2].format(gain_words=("a shown gain; reading still costs L" if ll == "worse" else
+                                      "gain shown; the remaining cost not decided"))
+    return {"code": code, "when": row[1], "meaning": words, "next": row[3]}
+
+
+def xp_read(itt, passing):
+    """(Pure.) S1, as for xr-matched: intent-to-treat decides, passing-only beside, "refusal-sensitive" when the codes
+    differ."""
+    code = xp_code(xp_labels(itt.get("P"), itt.get("L")))
+    pc = None
+    if passing is not None:
+        ok = passing.get("P") is not None and passing.get("L") is not None
+        pc = S.passing_code(lambda: xp_code(xp_labels(passing["P"], passing["L"])), ok)
+    return {"itt": code, "passing_only": pc, "label": S.refusal_label(code["code"], (pc or {}).get("code"))}
+
+
+# --- Phase 2b: paths -------------------------------------------------------------------------------------------------------
+
+def tx_path(kind, cand=None, iid=None, root=None):
+    """Phase 2b's files, under PF/fs/readerr/: notes-tx/inputs/<input>/ (built whole in notes-tx/partial/ and moved),
+    notes-tx.json; score-tx/inputs/<input>.json, candidates-tx.json; select.json; tools-gate.json; the timing
+    sidecars under tx-notes/timing/ and tx-score/timing/."""
+    r = readerr_dir()
+    folder = pathlib.Path(root) if root is not None else r / "notes-tx" / "inputs" / str(iid)
+    if kind == "input-dir":
+        return folder
+    if kind == "cand":
+        return folder / f"{cand}.json"
+    if kind == "raw":
+        return folder / f"raw-{cand}.json"
+    if kind == "notes-input":
+        return folder / "summary.json"
+    if kind == "partial":
+        return r / "notes-tx" / "partial"
+    if kind == "listing":
+        return r / "notes-tx.json"
+    if kind == "score-input":
+        return r / "score-tx" / "inputs" / f"{iid}.json"
+    if kind == "candidates":
+        return r / "candidates-tx.json"
+    if kind == "select":
+        return r / "select.json"
+    if kind == "gate":
+        return r / "tools-gate.json"
+    raise ValueError(kind)
+
+
+def tx_staging(iid):
+    """A fresh partial folder for one input's transcriber notes (never read; never blocks a rerun)."""
+    import tempfile
+
+    partial = tx_path("partial")
+    partial.mkdir(parents=True, exist_ok=True)
+    return pathlib.Path(tempfile.mkdtemp(prefix=f"{iid}-", dir=partial))
+
+
+def tx_done(kind):
+    if kind == "notes":
+        d = readerr_dir() / "notes-tx" / "inputs"
+        return {x.name for x in d.iterdir() if (x / "summary.json").exists()} if d.exists() else set()
+    d = readerr_dir() / "score-tx" / "inputs"
+    return {x.stem for x in d.glob("*.json")} if d.exists() else set()
+
+
+def require_hashed(m, key, path):
+    """A file whose sha256 must be main's `key` (a {sha256, counts} body). -> its JSON."""
+    return NT.require_file_hash(m, key, path)
+
+
+# --- Phase 2b: the tools gate (the transcriber runs; zero renders) ---------------------------------------------------------
+
+def run_tx(fam, spec, jobs, work, threads=TX_THREADS):
+    """One transcriber family's runner call in its own venv (unit F's `venv_python`), offline (`runner_env`), at most
+    2 threads, on [(tag, wav)] in one process (the model loaded once). -> {tag: record}, each `runner_refusal`-checked."""
+    import os
+
+    from learn import readerr_tools as RT
+
+    pairs = [(wav, pathlib.Path(work) / f"{fam}-{tag}.json") for tag, wav in jobs]
+    env = runner_env(os.environ, True)
+    env.update({k: str(threads) for k in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS")})
+    mode = TX_FAMILIES[fam]["mode"]
+    r = subprocess.run(runner_argv(RT.venv_python(TX_FAMILIES[fam]["lock"]), mode, spec, pairs), capture_output=True,
+                       text=True, env=env)
+    if r.returncode:
+        raise SystemExit(f"readerr_run {mode} ({fam}) failed: {r.stderr.strip()[-400:]}")
+    out = {}
+    for (tag, wav), (_, o) in zip(jobs, pairs):
+        rec = json.loads(pathlib.Path(o).read_text())
+        why = runner_refusal(rec, mode, spec, file_sha(wav))
+        if why:
+            raise SystemExit(f"{fam} {tag}: {why}")
+        out[tag] = rec
+    return out
+
+
+def record_events(rec):
+    """(Pure.) A torch record's every read: {options as JSON: events}, the top-level read under "top"."""
+    out = {"top": rec["events"]}
+    for g in rec.get("grid") or []:
+        key = json.dumps(g["options"], sort_keys=True)
+        out[key] = g["events"]
+    return out
+
+
+def repeat_holds(runs):
+    """(Pure.) Gate item 5: every run's reads, input by input, identical. runs: [{tag: record}]."""
+    if not runs:
+        return False
+    first = {t: record_events(r) for t, r in runs[0].items()}
+    return all({t: record_events(r) for t, r in run.items()} == first for run in runs[1:])
+
+
+def runner_report(rec):
+    """(Pure.) What the runner reports beyond the contract: #641's `scan`, `load_report` and `guards`, and anything
+    else it adds (never refused as unknown)."""
+    return {k: v for k, v in rec.items() if k not in RECORD_KEYS + ("grid",)}
+
+
+def cmd_tx_gate(args):
+    """The tools gate (zero renders), once, before any transcriber candidate is read: per family, the pinned
+    checkpoint (unit F's `checkpoint_path`) hashed; the runner (unit D's mode, through `run_tx`) run on 4 bench inputs
+    three times (two in one process, one fresh): identical reads, or the candidate cannot be priced; timed on 3 bench
+    inputs at 1 and at 2 threads, with the projection for every input; D's scan, load and key report as the runner
+    gives it; the licence record (unit F's `licence_record`). -> tools-gate.json, hashed as phase_scratch_readerr_tools
+    before `tx-notes`."""
+    m = require_readerr(PHASE_FROZEN, PHASE_P2, PHASE_P2B, PHASE_XR_OUTCOME)
+    path = tx_path("gate")
+    NT.never_overwrite(path)
+    import tempfile
+
+    from learn import readerr_tools as RT
+
+    man = RT.load_manifest()
+    tr = require_trace(m)
+    bench = bench_inputs(tr)
+    mr, why = NT.redo_on_main()
+    if why:
+        raise SystemExit(why)
+    real, _ = real_inputs(mr, NT.install_pair(NT.load_manifest()))
+    n_inputs = len(bench) + len(real)
+    ids = sorted(bench)
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P2B}", "renders": 0, "families": {},
+           "manifest_keys": sorted(man) if isinstance(man, dict) else None}
+    allows, cks, shas = {}, {}, {}
+    for fam in TX_FAMILIES:                  # E1 and E3: every checkpoint and allowlist, before any runner call
+        cks[fam] = pathlib.Path(RT.checkpoint_path(fam))
+        item = manifest_item_of(man, fam)
+        why = gate_checkpoint_refusal(item, cks[fam])
+        if why:
+            raise SystemExit(f"{fam}: {why}")
+        allows[fam] = tx_allow_globals(man, fam)
+        shas[fam] = item["sha256"]           # the manifest's, never a second hash of the file: the runner's guarded
+                                             # load re-hashes on its handle, so a change after this check is caught
+    for fam in TX_FAMILIES:
+        ck, allow, sha = cks[fam], allows[fam], shas[fam]
+        spec = tx_spec(fam, ck, sha, allow)
+        rep_jobs = [(i, bench[i][1]) for i in ids[:GATE_REPEAT_PARTS]]
+        with tempfile.TemporaryDirectory(prefix=f"readerr-gate-{fam}-") as work:
+            one = run_tx(fam, spec, [(f"{t}-a", w) for t, w in rep_jobs] + [(f"{t}-b", w) for t, w in rep_jobs], work)
+            fresh = run_tx(fam, spec, [(f"{t}-f", w) for t, w in rep_jobs], work)
+            runs = [{t: one[f"{t}-a"] for t, _ in rep_jobs}, {t: one[f"{t}-b"] for t, _ in rep_jobs},
+                    {t: fresh[f"{t}-f"] for t, _ in rep_jobs}]
+            timing = {}
+            for th in (1, 2):
+                t0 = time.time()
+                recs = run_tx(fam, tx_spec(fam, ck, sha, allow, threads=th), [(f"{i}-t{th}", bench[i][1]) for i in
+                                                                        ids[:GATE_TIMING_PARTS]], work, threads=th)
+                wall = time.time() - t0
+                timing[str(th)] = {"wall_s": round(wall, 1), "per_input_s": round(wall / GATE_TIMING_PARTS, 2),
+                                   "runner_seconds": [r["seconds"] for r in recs.values()],
+                                   "projection_s": round(wall / GATE_TIMING_PARTS * n_inputs, 0)}
+        first = fresh[f"{ids[0]}-f"]
+        out["families"][fam] = {"checkpoint_sha256": sha, "allow_globals": allow,
+                                "scan": first.get("scan"), "load_report": first.get("load_report"),
+                                "guards": first.get("guards"), "lock": TX_FAMILIES[fam]["lock"], "spec_options":
+                                spec["options"], "grid": spec["grid"], "repeats": repeat_holds(runs),
+                                "timing": timing, "inputs": n_inputs,
+                                "runner_report": runner_report(fresh[f"{ids[0]}-f"]),
+                                "versions": fresh[f"{ids[0]}-f"]["versions"], "licence": RT.licence_record(fam)}
+        print(f"{fam}: repeats {out['families'][fam]['repeats']}; per input {timing['1']['per_input_s']} s at 1 thread, "
+              f"{timing['2']['per_input_s']} s at 2; projection {timing['1']['projection_s']:.0f} s for {n_inputs} "
+              "inputs", flush=True)
+    sha = write_once(path, out)
+    print(f"RX TX-GATE: {len(out['families'])} families; sha256 {sha} (into the ledger as {PHASE_TOOLS})")
+
+
+def require_gate(m):
+    g = require_hashed(m, PHASE_TOOLS, tx_path("gate"))
+    for fam in TX_FAMILIES:
+        if fam not in g["families"]:
+            raise SystemExit(f"tools-gate.json has no {fam}")
+    return g
+
+
+def checkpoint_for(fam, gate):
+    """The family's checkpoint at its pinned path, refused unless its sha256 is the gate's (hashed on main)."""
+    from learn import readerr_tools as RT
+
+    ck = pathlib.Path(RT.checkpoint_path(fam))
+    if file_sha(ck) != gate["families"][fam]["checkpoint_sha256"]:
+        raise SystemExit(f"{fam}: the checkpoint is not the gate's")
+    return ck
+
+
+# --- Phase 2b: tx-notes (zero renders) --------------------------------------------------------------------------------------
+
+def tx_candidates_from(fam, rec):
+    """(Pure.) One family's candidate events from its record: {tx id: events}, one per declared option set."""
+    out = {}
+    for g in rec["grid"]:
+        out[tx_id(fam, g["options"])] = [dict(e) for e in g["events"]]
+    return out
+
+
+def cmd_tx_notes(args):
+    """Phase 2b's `tx-notes` (zero renders), a shard at a time (`--shard k/n`, `--first n`): per family one runner
+    call on the shard's inputs (the same 136 stored inputs as Phase 2a; the real-DI inputs through `real_di_source`),
+    the checkpoint the gate's; per input, every candidate's events, the raw reads and a summary, built whole in a
+    partial folder and moved into notes-tx/inputs/<input>/. `--combine`: every input done, then notes-tx.json, hashed
+    as phase_scratch_readerr_notes_tx before `tx-score`."""
+    m = require_readerr(PHASE_FROZEN, PHASE_P2, PHASE_P2B, PHASE_TOOLS)
+    gate = require_gate(m)
+    tr = require_trace(m)
+    mr, why = NT.redo_on_main()
+    if why:
+        raise SystemExit(why)
+    bench = bench_inputs(tr)
+    real, _ = real_inputs(mr, NT.install_pair(NT.load_manifest()))
+    ids = sorted(bench) + sorted(real)
+    if getattr(args, "combine", False):
+        return tx_notes_combine(ids, gate)
+    done = tx_done("notes")
+    todo = [i for i in select(ids, args.shard, getattr(args, "first", 0)) if i not in done]
+    if not todo:
+        print("RX TX-NOTES: nothing to do in this shard")
+        return
+    import tempfile
+
+    wav_of = {i: (bench[i][1] if i in bench else real[i][1]) for i in todo}
+    t0 = time.time()
+    with tempfile.TemporaryDirectory(prefix="readerr-tx-notes-") as work:
+        recs = {}
+        for fam in TX_FAMILIES:
+            ck = checkpoint_for(fam, gate)
+            recs[fam] = run_tx(fam, tx_spec(fam, ck, gate["families"][fam]["checkpoint_sha256"],
+                                            gate["families"][fam]["allow_globals"]),
+                               [(i, wav_of[i]) for i in todo], work)
+        for i in todo:
+            staging = tx_staging(i)
+            shas = {}
+            for fam in TX_FAMILIES:
+                for c, ev in sorted(tx_candidates_from(fam, recs[fam][i]).items()):
+                    shas[c] = write_once(tx_path("cand", c, i, root=staging), {"input": i, "candidate": c, "events": ev})
+            raw = {fam: write_once(tx_path("raw", fam, i, root=staging), recs[fam][i]) for fam in TX_FAMILIES}
+            write_once(tx_path("notes-input", iid=i, root=staging), {
+                "plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P2B}", "input": i, "input_sha256": file_sha(wav_of[i]),
+                "candidates": shas, "raw": raw})
+            move_into_place(staging, tx_path("input-dir", iid=i))
+    write_timing("tx-notes", args.shard, {"inputs": todo, "seconds": round(time.time() - t0, 1)})
+    print(f"RX TX-NOTES shard {args.shard[0]}/{args.shard[1]}: {len(todo)} inputs in {time.time() - t0:.0f} s")
+
+
+def tx_notes_combine(ids, gate):
+    path = tx_path("listing")
+    NT.never_overwrite(path)
+    why = coverage_refusal(ids, tx_done("notes"))
+    if why:
+        raise SystemExit(why)
+    cands = sorted(tx_candidates())
+    inputs = {}
+    for i in ids:
+        sp = tx_path("notes-input", iid=i)
+        s = json.loads(sp.read_text())
+        if sorted(s["candidates"]) != cands:
+            raise SystemExit(f"{i}: not the {len(cands)} transcriber candidates")
+        for c, sha in s["candidates"].items():
+            if file_sha(tx_path("cand", c, i)) != sha:
+                raise SystemExit(f"{i} {c}: the file changed since `tx-notes`")
+        inputs[i] = {"summary_sha256": file_sha(sp), "input_sha256": s["input_sha256"]}
+    body = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P2B}", "renders": 0, "candidates": cands,
+            "gate_checkpoints": {f: v["checkpoint_sha256"] for f, v in gate["families"].items()}, "inputs": inputs,
+            "counts": {"inputs": len(ids), "candidates": len(cands)}}
+    sha = write_once(path, body)
+    print(f"RX TX-NOTES COMBINE: {len(ids)} inputs, {len(cands)} candidates; sha256 {sha} (into the ledger as "
+          f"{PHASE_NOTES_TX} before `tx-score`)")
+
+
+def load_tx_candidate(listing, iid, cand):
+    sp = tx_path("notes-input", iid=iid)
+    if file_sha(sp) != listing["inputs"][iid]["summary_sha256"]:
+        raise SystemExit(f"{iid}: the transcriber summary is not the hashed listing's")
+    s = json.loads(sp.read_text())
+    p = tx_path("cand", cand, iid)
+    if file_sha(p) != s["candidates"][cand]:
+        raise SystemExit(f"{iid} {cand}: not the listed file")
+    return json.loads(p.read_text())["events"]
+
+
+# --- Phase 2b: tx-score (zero renders) ---------------------------------------------------------------------------------------
+
+def with_bp(notes, base_notes):
+    """(Pure.) The `+bp` list: the candidate's own notes after its timing, each borrowing loudness and bends from its
+    paired Basic Pitch note of the stored re-read after F1 (`note_tx.ms_with_bp`); F1 is not applied again."""
+    out, _ = TX.ms_with_bp(notes, base_notes)
+    return out
+
+
+def figures_p2b(an, truth, notes, length_s):
+    """(Pure.) The note figures and amendment 3's onset error (the matched notes' median |onset error|, ms, as
+    played)."""
+    return dict(note_figures(an, truth, notes, length_s), onset_error=an["onset_ms_after_snap"]["median_abs"])
+
+
+def tx_lists(listing, iid, events_base, di, fixes, L, pre_s, base_fixed):
+    """Every transcriber candidate's two lists for one input: as read (`scored_list`) and its `+bp` variant
+    (`with_bp` on the same timing). -> {id: (notes, presnap, lost)}."""
+    out = {}
+    for c in tx_candidates():
+        notes, pre, lost = scored_list(load_tx_candidate(listing, iid, c), di, fixes, L, pre_s)
+        out[c] = (notes, pre, lost)
+        out[c + BP_SUFFIX] = (with_bp(notes, base_fixed), pre, lost)
+    return out
+
+
+def cmd_tx_score(args):
+    """Phase 2b's `tx-score` (zero renders), a shard at a time: per bench part the base (the stored re-read), the 26
+    transcriber candidates as read and as `+bp`, each with the 23 note figures, the onset error and the rebuilt
+    guitar's logmel, env_corr and pause error (one rebuild per distinct list); and, for select, every Phase 2a
+    candidate's as-played counts and onset error recomputed from its hashed notes (no rebuild). Per real-DI input,
+    the note figures only. `--combine`: RX-stop unless the base's rebuilt figures equal build.json's on 47 of 47 and
+    the recomputed Phase 2a counts give candidates.json's frontier exactly; then candidates-tx.json: the paired reads
+    (the 40, BKS, GOAT, all 47), the frontier, the real-DI arm, the counts by set, the licence fields. Descriptive;
+    no RX code."""
+    m = require_readerr(PHASE_FROZEN, PHASE_P2, PHASE_P2B, PHASE_TOOLS, PHASE_NOTES_TX, PHASE_NOTES_KEY,
+                        PHASE_CANDIDATES)
+    listing = require_hashed(m, PHASE_NOTES_TX, tx_path("listing"))
+    listing2a = NT.require_file_hash(m, PHASE_NOTES_KEY, p2a_path("listing"))
+    tr = require_trace(m)
+    xb = SX.require_xbuild(m)
+    mr, why = NT.redo_on_main()
+    if why:
+        raise SystemExit(why)
+    ids = sorted(listing["inputs"])
+    if getattr(args, "combine", False):
+        return tx_score_combine(m, ids, xb, listing2a)
+    import numpy as np
+
+    from learn import song_bank as SB
+
+    b2 = SX.bank_build(m)
+    pair = NT.install_pair(NT.load_manifest())
+    rule = ((mr.get(NR.LEDGER_ID) or {}).get(NF.PHASE_F6_FROZEN) or {}).get("rule")
+    if not rule or not rule.get("F6"):
+        raise SystemExit(f"no {NF.PHASE_F6_FROZEN} rule on main")
+    fixes = tr["fixes"]
+    f6_fixes = dict(fixes, F6=rule["F6"])
+    excl, _, _, _ = NT._dev_context()
+    bank = NR.Bank(NR.load_notes_doc(), excl=excl)
+    finish_of = {key: fin for kind, key, _i, _r, _d, fin in NT.build_todo(pair, NT.ear_items_file(BUILD2))
+                 if kind == "part"}
+    bench = bench_inputs(tr)
+    real, truth_listing = real_inputs(mr, pair)
+    ta = None
+    done = tx_done("score")
+    todo = [i for i in select(ids, args.shard, getattr(args, "first", 0)) if i not in done]
+    t0, seconds = time.time(), {}
+    for i in todo:
+        t1 = time.time()
+        if kind_of(i) == "bench":
+            key, _w, rec = bench[i]
+            row = tr["parts"][key]
+            bank64 = np.asarray(NT.load_dry(BANK_ARM, key, b2), np.float64)
+            L = len(bank64) / NR.SR
+            truth = row["played"]
+            base = scored_list(rec["events"], bank64, fixes, L)
+            if base[0] != row["reread"]:
+                raise SystemExit(f"{i}: the base is not trace.json's re-read")
+            lists = dict({BASE: base}, **tx_lists(listing, i, rec["events"], bank64, fixes, L, 0.0, base[0]))
+            cache, res = {}, {}
+            for c, (notes, pre, lost) in lists.items():
+                an = anatomy(truth, notes, pre, lost)
+                ck = json.dumps(notes, sort_keys=True)
+                if ck not in cache:
+                    y, _ = NR.rebuild_redo(BANK_ARM, notes, len(bank64), bank, bank64, tr["ring_variant"],
+                                           finish=finish_of[key], loud=None)
+                    fig = NR.figures(bank64, np.asarray(np.asarray(y, np.float32), np.float64))
+                    cache[ck] = {"logmel": fig["logmel"], "env_corr": fig["env_corr"],
+                                 "pause_error": pause_error(fig), "mask": fig["mask"]}
+                dry = cache[ck]
+                res[c] = {"figures": dict(figures_p2b(an, truth, notes, L), logmel=dry["logmel"],
+                                          env_corr=dry["env_corr"], pause_error=dry["pause_error"]),
+                          "counts": counts_of(an)}
+                if c == BASE:
+                    res[c]["stored_check"] = {"logmel": dry["logmel"], "env_corr": dry["env_corr"],
+                                              "mask": {str(n): v for n, v in dry["mask"].items()}}
+            p2a = {}
+            for c in candidate_ids():
+                ev = rec["events"] if c == F6_ID else load_candidate(listing2a, i, c)
+                notes, pre, lost = scored_list(ev, bank64, f6_fixes if c == F6_ID else fixes, L)
+                an = anatomy(truth, notes, pre, lost)
+                p2a[c] = {"counts": counts_of(an), "onset_error": an["onset_ms_after_snap"]["median_abs"]}
+            body = {"input": i, "part": key, "kind": "bench", "candidates": res, "phase2a": p2a,
+                    "rebuilds": len(cache)}
+        else:
+            _source, _w, events, meta = real[i]
+            if kind_of(i) == "truth":
+                ta = ta or NT.TruthAudio(truth_listing)
+                di, _, _, truth = ta.window(meta["window"])
+            else:
+                nm = i.split("-", 1)[1]
+                di = SB.measure(NT.known_audio(nm, bank))
+                truth = [dict(n) for n in NT.KNOWN_NOTES[nm]]
+            L = len(di) / NR.SR
+            base = scored_list(events, di, fixes, L, meta["pre_s"])
+            lists = dict({BASE: base}, **tx_lists(listing, i, events, di, fixes, L, meta["pre_s"], base[0]))
+            res = {}
+            for c, (notes, pre, lost) in lists.items():
+                an = anatomy(truth, notes, pre, lost)
+                res[c] = {"figures": figures_p2b(an, truth, notes, L), "counts": counts_of(an)}
+            body = {"input": i, "kind": kind_of(i), "group": meta["group"], "kind_of_window": meta["kind"],
+                    "cluster": meta["cluster"], "candidates": res}
+        body.update(plan=PLAN, listing_sha256=file_sha(tx_path("listing")))
+        write_once(tx_path("score-input", iid=i), body)
+        seconds[i] = round(time.time() - t1, 1)
+        print(f"{i}: {len(body['candidates'])} lists scored in {seconds[i]} s", flush=True)
+    write_timing("tx-score", args.shard, {"inputs": todo, "seconds_per_input": seconds,
+                                           "seconds": round(time.time() - t0, 1)})
+    print(f"RX TX-SCORE shard {args.shard[0]}/{args.shard[1]}: {len(todo)} inputs in {time.time() - t0:.0f} s")
+
+
+def counts_by_set(per_part, sets_of, cands):
+    """(Pure.) Per candidate the as-played extras and misses pooled on the 40 ("deciding"), BKS and GOAT.
+    per_part: {pkey: {cand: counts}}."""
+    out = {}
+    for c in cands:
+        out[c] = {}
+        for s in SELECT_SETS:
+            ks = [k for k in per_part if (sets_of[k] in DECIDING if s == "deciding" else sets_of[k] == s)]
+            cs = [per_part[k][c] for k in ks if c in per_part[k]]
+            out[c][s] = {"extras": sum(sum(x["extras"].values()) for x in cs),
+                         "misses": sum(sum(x["misses"].values()) for x in cs), "parts": len(cs)}
+    return out
+
+
+def frontier_equal_refusal(recomputed, stored):
+    """(Pure.) RX-stop unless the Phase 2a counts recomputed here give candidates.json's bench frontier exactly."""
+    bad = sorted(c for c in stored if c in recomputed and recomputed[c] != stored[c])
+    miss = sorted(set(stored) - set(recomputed))
+    if bad or miss:
+        return f"RX-stop: the recomputed Phase 2a counts differ from candidates.json's frontier on {len(bad) + len(miss)}"
+    return None
+
+
+def tx_score_combine(m, ids, xb, listing2a):
+    from learn import readerr_tools as RT
+
+    path = tx_path("candidates")
+    NT.never_overwrite(path)
+    why = coverage_refusal(ids, tx_done("score"))
+    if why:
+        raise SystemExit(why)
+    lsha = file_sha(tx_path("listing"))
+    rows = {i: json.loads(tx_path("score-input", iid=i).read_text()) for i in ids}
+    if any(r["listing_sha256"] != lsha for r in rows.values()):
+        raise SystemExit("a score file was made from another listing")
+    per_part = {r["part"]: r["candidates"] for r in rows.values() if r["kind"] == "bench"}
+    why = stored_point_refusal(per_part, xb["parts"])
+    if why:
+        raise SystemExit(why)
+    c2a = require_hashed(m, PHASE_CANDIDATES, p2a_path("candidates"))
+    p2a_counts = {r["part"]: {c: v["counts"] for c, v in r["phase2a"].items()} for r in rows.values()
+                  if r["kind"] == "bench"}
+    re_front = frontier({k: {c: {"counts": v} for c, v in cs.items()} for k, cs in p2a_counts.items()},
+                        candidate_ids())
+    why = frontier_equal_refusal({c: v for c, v in re_front.items() if c != BASE},
+                                 {c: v for c, v in c2a["frontier"]["bench"].items() if c != BASE})
+    if why:
+        raise SystemExit(why)
+    draw, sd = SX.context()
+    sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}
+    txc = sorted(c for c in rows[ids[0]]["candidates"] if c != BASE)
+
+    def rows_of(vals):
+        return _rows(sd, draw, vals)
+    real_rows = [{"group": r["group"], "kind": r["kind_of_window"], "cluster": r["cluster"], "iid": i,
+                  "figures": {c: v["figures"] for c, v in r["candidates"].items()}}
+                 for i, r in rows.items() if r["kind"] != "bench"]
+    onset_2a = {}
+    for c in candidate_ids():
+        d = {k: r["phase2a"][c]["onset_error"] - r["candidates"][BASE]["figures"]["onset_error"]
+             for k, r in ((rr["part"], rr) for rr in rows.values() if rr["kind"] == "bench")
+             if r["phase2a"][c]["onset_error"] is not None and r["candidates"][BASE]["figures"]["onset_error"] is not None}
+        rr_ = rows_of(d) if d else None
+        onset_2a[c] = {"parts": len(d), "rows": rr_, "label": sign_label((rr_ or {}).get("bks_goat"), "error"),
+                       "words": P2A_LABEL}
+    paired = {}
+    for c in txc:
+        pr = paired_reads(per_part, c, rows_of)
+        d = {}
+        for k, r in per_part.items():
+            a, b = r[c]["figures"].get(ONSET_ERROR), r[BASE]["figures"].get(ONSET_ERROR)
+            if a is not None and b is not None:
+                d[k] = a - b
+        rr_ = rows_of(d) if d else None
+        pr[ONSET_ERROR] = {"parts": len(d), "rows": rr_, "label": sign_label((rr_ or {}).get("bks_goat"), "error"),
+                           "words": P2A_LABEL}
+        paired[c] = pr
+    base_counts = counts_by_set({k: {BASE: v[BASE]["counts"]} for k, v in per_part.items()}, sets_of, [BASE])[BASE]
+    body = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P2B}", "renders": 0, "words": P2A_LABEL, "rx_code": None,
+            "listing_sha256": lsha, "candidates_2a_sha256": file_sha(p2a_path("candidates")), "candidates": txc,
+            "paired": paired, "onset_error_2a": onset_2a,
+            "frontier": {"bench": frontier(per_part, txc)},
+            "real": {c: real_reads(real_rows, c) for c in txc},
+            "counts_by_set": dict(counts_by_set({k: {c: v[c]["counts"] for c in [BASE] + txc}
+                                                 for k, v in per_part.items()}, sets_of, [BASE] + txc),
+                                  **counts_by_set(p2a_counts, sets_of, candidate_ids())),
+            "base_counts": base_counts,
+            "licence": {f: RT.licence_record(f) for f in TX_FAMILIES},
+            "rebuilds": sum(r.get("rebuilds", 0) for r in rows.values() if r["kind"] == "bench"),
+            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    sha = write_once(path, body)
+    print(f"RX TX-SCORE COMBINE: {len(per_part)} parts, {len(real_rows)} real-DI inputs, {len(txc)} lists; base "
+          f"on the 40 {base_counts['deciding']}; {P2A_LABEL}; sha256 {sha} (into the ledger as {PHASE_CANDIDATES_TX})")
+
+
+# --- Phase 2b: select (zero renders) ---------------------------------------------------------------------------------------
+
+def labels_from(paired, onset):
+    """(Pure.) A candidate's item labels by set from its paired reads: {set: {figure: reading}}."""
+    out = {}
+    for s, key in (("deciding", "bks_goat"), ("bks", "bks"), ("goat", "goat")):
+        out[s] = {}
+        for f in SELECT_ITEMS:
+            src = onset if f == ONSET_ERROR else (paired or {}).get(f)
+            rows = (src or {}).get("rows") or {}
+            iv = rows.get(key)
+            if s != "deciding" and iv and iv.get("mean") is None:
+                iv = None
+            out[s][f] = (sign_label(iv, ORIENTATION.get(f, "error")) or {}).get("reading")
+    return out
+
+
+def real_worse_of(real):
+    """(Pure.) Item 5: on P1, P2 or the lists, extra_rate or miss_rate reads "worse" against Basic Pitch."""
+    for g in ("P1", "P2", "lists"):
+        for f in ("extra_rate", "miss_rate"):
+            lab = ((((real or {}).get(g) or {}).get(f) or {}).get("label")) or {}
+            if lab.get("reading") == "worse":
+                return True
+    return False
+
+
+def select_inputs(c2a, ctx, gate):
+    """(Pure.) Every selection candidate's record from the two hashed candidate files and the gate."""
+    out = {}
+    for cid in select_ids():
+        fam = family_of(cid)
+        if fam["kind"] == "setting":
+            paired, onset, real, lic, rep = (c2a["paired"].get(cid), ctx["onset_error_2a"].get(cid),
+                                             c2a["real"].get(cid), BP_LICENCE, True)
+        else:
+            paired, real = ctx["paired"].get(cid), ctx["real"].get(cid)
+            onset = (paired or {}).get(ONSET_ERROR)
+            lic, rep = ctx["licence"][fam["family"]], gate["families"][fam["family"]]["repeats"]
+        out[cid] = dict(fam, counts=ctx["counts_by_set"][cid], labels=labels_from(paired, onset),
+                        real_worse=real_worse_of(real), repeats=rep, licence=lic)
+    return out
+
+
+def cmd_select(_args):
+    """`select` (zero renders), once: refused unless candidates.json and candidates-tx.json are hashed on main; the
+    rule's constants from the hashed xr/rows.json; the rule (`select_rule`) on Phase 2a's candidates and every
+    transcriber's `+bp` list; the RX code by the pick's kind (`rx_p2b`); beside, the full passing-only recompute
+    (amendment 4) and its label, each candidate's g, end error, attack rates and dry figures, the shrunk arm's caveat
+    and the licence fields. -> select.json; after an audit its code into phase_scratch_readerr_outcome."""
+    m = require_readerr(PHASE_FROZEN, PHASE_P2, PHASE_P2B, PHASE_TOOLS, PHASE_CANDIDATES, PHASE_CANDIDATES_TX,
+                        PHASE_XR_OUTCOME)
+    path = tx_path("select")
+    NT.never_overwrite(path)
+    c2a = require_hashed(m, PHASE_CANDIDATES, p2a_path("candidates"))
+    ctx = require_hashed(m, PHASE_CANDIDATES_TX, tx_path("candidates"))
+    if ctx["candidates_2a_sha256"] != file_sha(p2a_path("candidates")):
+        raise SystemExit("candidates-tx.json was made from another candidates.json")
+    gate = require_gate(m)
+    why = SX.field_refusal(m, PHASE_XR_OUTCOME, "rows_sha256", file_sha(xr_path("rows")))
+    if why:
+        raise SystemExit(why)
+    rows = json.loads(xr_path("rows").read_text())
+    consts, consts_p = select_constants(rows, "itt"), select_constants(rows, "per")
+    cands = select_inputs(c2a, ctx, gate)
+    base = ctx["base_counts"]
+    sel, sel_p = select_rule(cands, base, consts), select_rule(cands, base, consts_p)
+    code = rx_p2b(sel)
+    sens = refusal_sensitive_p2b(sel, sel_p)
+    beside = {cid: {"g_passing": sel_p["rows"][cid]["g"],
+                    "end_error": (c2a["paired"].get(cid) or ctx["paired"].get(cid) or {}).get("end_error", {}).get(
+                        "label"),
+                    "attacks": {f: (c2a["paired"].get(cid) or ctx["paired"].get(cid) or {}).get(f, {}).get("label")
+                                for f in ("attack_miss_rate", "extra_attack_rate")},
+                    "dry": {f: (c2a["paired"].get(cid) or ctx["paired"].get(cid) or {}).get(f, {}).get("label")
+                            for f in DRY_P2A}} for cid in cands}
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P2B}", "renders": 0,
+           "rows_sha256": file_sha(xr_path("rows")), "candidates_sha256": file_sha(p2a_path("candidates")),
+           "candidates_tx_sha256": file_sha(tx_path("candidates")), "constants": consts,
+           "constants_passing": consts_p, "base_counts": base, "rule": sel, "code": code, "refusal": sens,
+           "beside": beside, "licences": {cid: c["licence"] for cid, c in cands.items()},
+           "shrunk_caveat": "E is not shown on the shrunk answer (passing-only -0.007 [-0.122, +0.109]): the predicted "
+                            "gain is for the full answer only",
+           "words": "g is a straight-line prediction from two measured slopes, never a reading; only a row decides",
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    sha = write_once(path, out)
+    print(f"RX SELECT: {code['code']} (pick {code['pick']}); qualifiers {sel['qualifiers']}; passing-only "
+          f"{sens['qualifiers_passing']} -> {sens['label']}; h {consts['h']:.4f}; sha256 {sha}")
+
+
+# --- Phase 2b: the priced row xr-cand (renders only after the user's word) --------------------------------------------------
+
+def require_cand_outcome(m):
+    """main's RX outcome naming the priced candidate: RX-transcriber or RX-setting with its `candidate`."""
+    rec = m.get(PHASE_OUTCOME) or {}
+    if rec.get("code") not in ("RX-transcriber", "RX-setting") or rec.get("candidate") not in select_ids():
+        raise SystemExit(f"main's {PHASE_OUTCOME} names no priced candidate (RX-transcriber or RX-setting with its "
+                         "candidate)")
+    return rec["candidate"]
+
+
+def cand_list(cid, i, events, di, fixes, f6_fixes, L, pre_s, base_fixed, listing2a, listing_tx):
+    """The priced candidate's list for one input, as tx-score or score made it."""
+    fam = family_of(cid)
+    if fam["kind"] == "setting":
+        ev = events if cid == F6_ID else load_candidate(listing2a, i, cid)
+        return scored_list(ev, di, f6_fixes if cid == F6_ID else fixes, L, pre_s)[0]
+    plain = cid[:-len(BP_SUFFIX)]
+    notes, _pre, _lost = scored_list(load_tx_candidate(listing_tx, i, plain), di, fixes, L, pre_s)
+    return with_bp(notes, base_fixed)
+
+
+def cmd_xr_build_cand(args):
+    """xr-build --set cand (zero renders): refused unless main's phase_scratch_readerr_outcome names the candidate;
+    per part the candidate's hashed list rebuilt as every xr- guitar. Four proofs before anything is written: (1) the
+    stored re-read reproduces dry/xn-reread's sha256 on 47 of 47; (2) the candidate's note files equal the listing's
+    (each load checks it); (3) the guitar's dry figures equal tx-score's (or score's) stored ones on 47 of 47; (4)
+    CODE_FILES equal main's. -> xr/dry/xr-cand/, xr/build-cand.json, hashed as phase_scratch_readerr_xr_dry_cand."""
+    m = require_readerr(PHASE_FROZEN, PHASE_P2, PHASE_P2B, PHASE_OUTCOME)
+    cid = require_cand_outcome(m)
+    out_p = xr_path("build", "cand")
+    NT.never_overwrite(out_p)
+    import numpy as np
+
+    from analysis import aligned as A
+
+    from learn import knob_ceiling as K
+
+    tr = require_trace(m)
+    xb = SX.require_xbuild(m)
+    b2 = SX.bank_build(m)
+    mr, why = NT.redo_on_main()
+    if why:
+        raise SystemExit(why)
+    rule = ((mr.get(NR.LEDGER_ID) or {}).get(NF.PHASE_F6_FROZEN) or {}).get("rule") or {}
+    fixes = tr["fixes"]
+    f6_fixes = dict(fixes, F6=rule.get("F6"))
+    listing2a = NT.require_file_hash(m, PHASE_NOTES_KEY, p2a_path("listing"))
+    kind = family_of(cid)["kind"]
+    listing_tx = require_hashed(m, PHASE_NOTES_TX, tx_path("listing")) if kind == "transcriber" else None
+    draw, _sd = SX.context()
+    by = {p["pkey"]: p for p in draw["parts"]}
+    pinned = pinned_identity()
+    pair = NT.install_pair(NT.load_manifest())
+    excl, _, _, _ = NT._dev_context()
+    bank = NR.Bank(NR.load_notes_doc(), excl=excl)
+    finish_of = {key: fin for k_, key, _i, _r, _d, fin in NT.build_todo(pair, NT.ear_items_file(BUILD2)) if k_ == "part"}
+    bench = bench_inputs(tr)
+    lo, hi = SX._trim()
+    t0 = time.time()
+    built, bad = {}, {1: [], 3: []}
+    for i, (key, _w, rec) in sorted(bench.items()):
+        bank64 = np.asarray(NT.load_dry(BANK_ARM, key, b2), np.float64)
+        L = len(bank64) / NR.SR
+        base = scored_list(rec["events"], bank64, fixes, L)[0]
+
+        def rebuild(notes):
+            y, rep = NR.rebuild_redo(BANK_ARM, notes, len(bank64), bank, bank64, tr["ring_variant"],
+                                     finish=finish_of[key], loud=None)
+            return np.asarray(y, np.float32), rep
+        if npy_bytes_sha(rebuild(base)[0]) != xb["parts"][key]["guitars"]["xn-reread"]["sha256"]:
+            bad[1].append(key)
+        notes = cand_list(cid, i, rec["events"], bank64, fixes, f6_fixes, L, 0.0, base, listing2a, listing_tx)
+        y32, rep = rebuild(notes)
+        y = np.asarray(y32, np.float64)
+        figs = NR.figures(bank64, y)
+        stored_p = (tx_path("score-input", iid=i) if kind == "transcriber" else p2a_path("score-input", iid=i))
+        stored = json.loads(stored_p.read_text())["candidates"][cid]["figures"]
+        if not (stored.get("logmel") == figs["logmel"] and stored.get("env_corr") == figs["env_corr"]
+                and stored.get("pause_error") == pause_error(figs)):
+            bad[3].append(key)
+        pauses = {h: {str(n): float(NT.judge_pause_share(y[lo:hi], 0, h, n)) for n in A.FRAME_SIZES}
+                  for h in K.R.HALVES}
+        built[key] = {"y32": y32, "notes": len(notes), "report": rep, "figures": figs,
+                      "pause_error": pause_error(figs), "pauses": pauses,
+                      "identical_to": next((xn for xn in ("xn-reread", "xn-list")
+                                            if xb["parts"][key]["guitars"][xn]["sha256"] == npy_bytes_sha(y32)), None)}
+        print(f"{i}: proofs {'=' if key not in bad[1] else 'DIFFERS'} {'=' if key not in bad[3] else 'DIFFERS'}",
+              flush=True)
+    n = len(bench)
+    proofs = {"reread_equal": n - len(bad[1]), "notes_listed": n, "figures_equal": n - len(bad[3]),
+              "pinned": pinned, "parts": n}
+    if any(bad.values()) or not all(pinned.values()):
+        raise SystemExit(f"XP-stop: a build proof fails ({ {k: len(v) for k, v in bad.items()} }, pinned "
+                         f"{sum(pinned.values())} of {len(pinned)}): nothing written; to the orchestrator")
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P2B}", "renders": 0, "set": "cand", "rows": ["xr-cand"],
+           "candidate": cid, "proofs": proofs, "proofs_hold": True, "parts": {}}
+    risk = []
+    for key, g in built.items():
+        y32 = g.pop("y32")
+        g["sha256"], g["audio_sha256"] = npy_bytes_sha(y32), S.npy_sha(y32)
+        g["file_sha256"] = write_once_npy(xr_path("dry", "xr-cand", key), y32)
+        if g["file_sha256"] != g["sha256"]:
+            raise SystemExit("xr-cand: the written guitar is not the one built")
+        if max(g["pauses"][by[key]["search"]].values()) > 0.5:
+            risk.append(key)
+        out["parts"][key] = {"guitars": {"xr-cand": g}}
+    out["refusal_risk"] = {"report": "parts whose search-half pause share would make J0 refuse; a report, not a stop",
+                           "parts": [{"row": "xr-cand", "part": k} for k in risk]}
+    out["seconds"] = round(time.time() - t0, 1)
+    sha = write_once(out_p, out)
+    print(f"XP BUILD cand ({cid}): proofs {proofs['reread_equal']}, {proofs['figures_equal']} of {n}, pinned "
+          f"{sum(pinned.values())} of {len(pinned)}; J0 refusal risk on {len(risk)}; sha256 {sha} (into the ledger as "
+          f"{xr_dry_key('cand')})")
+
+
+def cmd_xr_read_cand(_args):
+    """xr-read --row xr-cand (zero renders), once: per part on the answer arm (shrunk beside) P = G(xr-cand) -
+    G(xn-reread) and L = G(xr-cand) - G(xn-list); S1 (intent-to-treat decides, passing-only beside); XP_TABLE's code;
+    beside, P less its prediction g (select.json), G(xr-cand) - G(xr-matched), each set, the checkpoints. The rows
+    before the code. -> xr/rows-cand.json, xr/report-cand.json."""
+    row = "xr-cand"
+    m = require_readerr(PHASE_FROZEN, PHASE_P2, PHASE_P2B, PHASE_OUTCOME, xr_dry_key("cand"), xr_answers_key(row),
+                        xr_answers_key("xr-matched"))
+    xp_table_guard()
+    for p_ in (xr_path("rows", row), xr_path("report", row)):
+        NT.never_overwrite(p_)
+    require_xr_check(row)
+    cid = require_cand_outcome(m)
+    why = SX.field_refusal(m, PHASE_OUTCOME, "select_sha256", file_sha(tx_path("select")))
+    if why:
+        raise SystemExit(why)
+    sel = json.loads(tx_path("select").read_text())
+    draw, sd = SX.context()
+    rn = {r: SX.row_numbers(m, draw, r) for r in ("xn-reread", "xn-list")}
+    rn[row] = xr_row_numbers(m, draw, row)
+    rn["xr-matched"] = xr_row_numbers(m, draw, "xr-matched")
+    arms = {}
+    for arm, f in SX.ARMS.items():
+        d = {t: {"P": SX.paired(rn[row][t], rn["xn-reread"][t], f), "L": SX.paired(rn[row][t], rn["xn-list"][t], f),
+                 "vs_matched": SX.paired(rn[row][t], rn["xr-matched"][t], f)} for t in ("itt", "per")}
+        rows_ = {t: {n: _rows(sd, draw, v) for n, v in d[t].items()} for t in d}
+        arms[arm] = {"rows": rows_, "read": xp_read({n: rows_["itt"][n]["bks_goat"] for n in ("P", "L")},
+                                                    {n: rows_["per"][n]["bks_goat"] for n in ("P", "L")})}
+    g = (sel["rule"]["rows"].get(cid) or {}).get("g")
+    p_mean = ((arms["answer"]["rows"]["itt"]["P"]["bks_goat"]) or {}).get("mean")
+    beside = {"candidate": cid, "g": g, "P_less_g": None if g is None or p_mean is None else p_mean - g,
+              "checkpoints": {cp: {n: _rows(sd, draw, SX.paired(rn[row]["itt"], rn[o]["itt"], cp))["bks_goat"]
+                                   for n, o in (("P", "xn-reread"), ("L", "xn-list"))}
+                              for cp in ("G_cp50", "G_cp100", "G_cp200")}}
+    out = {"plan": PLAN, "time": time.strftime("%Y-%m-%d %H:%M:%S"), "renders": 0, "row": row,
+           "answers_sha256": {r: rn[r]["answers_sha256"] for r in rn}}
+    write_once(xr_path("rows", row), dict(out, arms=arms, beside=beside))
+    main_read = arms["answer"]["read"]
+    code = main_read["itt"]
+    write_once(xr_path("report", row), dict(out, arms=arms, beside=beside, xp=main_read, code=code["code"],
+                                            shrunk=arms["shrunk"]["read"]["itt"]["code"],
+                                            next=("to the user with both reads" if main_read["label"] else
+                                                  code["next"])))
+    r_ = arms["answer"]["rows"]["itt"]
+    print(f"P on the 40 {r_['P']['bks_goat']}; L {r_['L']['bks_goat']}; g {g}")
+    print(f"XP {code['code']}: {code['meaning']}. Next: {code['next']}; label {main_read['label']}")
+
+
 # --- the RX read (after the xr- row; not built here) --------------------------------------------------------------------------
 
 PHASE2_STUB = "the RX read waits for the xr- row's XH code and its own amendment"
@@ -3110,7 +4290,8 @@ def cmd_read(_args):
 COMMANDS = {"trace": cmd_trace, "anatomy": cmd_anatomy, "real-compare": cmd_real_compare,
             "screen-check": cmd_screen_check, "freeze": cmd_freeze, "notes": cmd_notes, "score": cmd_score_p2a,
             "read": cmd_read, "xr-build": cmd_xr_build, "xr-check": cmd_xr_check, "xr-search": cmd_xr_search,
-            "xr-answers": cmd_xr_answers, "xr-score": cmd_xr_score, "xr-read": cmd_xr_read}
+            "xr-answers": cmd_xr_answers, "xr-score": cmd_xr_score, "xr-read": cmd_xr_read, "tx-gate": cmd_tx_gate,
+            "tx-notes": cmd_tx_notes, "tx-score": cmd_tx_score, "select": cmd_select}
 NEEDS_ROW = ("xr-search", "xr-answers", "xr-score")
 
 
