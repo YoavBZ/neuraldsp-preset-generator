@@ -709,7 +709,7 @@ def test_every_file_write_goes_through_write_once():
                 f = node.func
                 name = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", None)
                 if name in writers or name == "open":
-                    allowed = (fn.name in ("write_once", "write_once_npy", "write_bytes_once")
+                    allowed = (fn.name in ("write_once", "write_once_npy", "write_bytes_once", "new_staging", "move_into_place")
                                or (fn.name == "npy_bytes_sha" and name == "save"))
                     assert allowed, (fn.name, name)
 
@@ -1381,3 +1381,85 @@ def test_the_cli_shards_spread_cpu_work_but_never_renders():
             X.parse_shard(bad)
     with pytest.raises(SystemExit):
         X.main(["xr-score", "--row", "xr-matched", "--shard", "0/4"])
+
+
+# --- #630's review fixes ----------------------------------------------------------------------------------------------------
+
+def test_every_notes_spec_passes_the_runners_own_check():
+    from learn import readerr_run as RR
+
+    s = X.notes_specs("/m.onnx", SHA)
+    for name, mode in (("grid", "bp-grid"), ("lead", "bp-grid"), ("shift", "bp-shift")):
+        assert RR.check_spec(mode, s[name]) == s[name], name
+    assert s["lead"]["grid"] == {"onset_threshold": [T.BP_SETTINGS["onset_threshold"]]}
+    assert X.expected_grid(s["lead"]) == [dict(T.BP_SETTINGS)]
+    assert RR.grid_points(s["lead"]["settings"], s["lead"]["grid"]) == X.expected_grid(s["lead"])
+    with pytest.raises(SystemExit):
+        RR.check_spec("bp-grid", dict(s["lead"], grid={}))       # what make_spec now refuses too
+
+
+def test_make_spec_refuses_an_empty_grid_as_the_runner_does():
+    base = dict(T.BP_SETTINGS)
+    for grid in ({}, {"onset_threshold": []}, {"onset_threshold": 0.5}):
+        with pytest.raises(SystemExit, match="non-empty"):
+            X.make_spec("bp-grid", "/m.onnx", SHA, settings=base, grid=grid)
+
+
+def test_the_k1_proof_compares_with_the_stored_events_directly():
+    stored = [_ev(0.5, 0.9), dict(_ev(1.5, 1.9), pitch=62)]
+    s, g, lead, sh = _records(stored)
+    _, checks, _ = X.candidates_from_records(g, lead, sh)
+    assert X.notes_proofs(g, sh, checks, stored)["k1_equal"]
+    bent = dict(checks, k1=checks["k1"][:1])                   # a k = 1 that lost a note: the proof sees it
+    got = X.notes_proofs(g, sh, bent, stored)
+    assert got["anchor_equal"] and not got["k1_equal"]
+
+
+def test_by_input_sha_keeps_only_the_note_files_inputs(tmp_path):
+    for n, sha in (("000-P1", "a" * 64), ("001-P1", "b" * 64), ("002-goat", "c" * 64)):
+        (tmp_path / f"{n}.json").write_text(json.dumps({"input_sha256": sha}))
+        (tmp_path / f"{n}.wav").write_bytes(b"x")
+    got = X._by_input_sha(tmp_path, ["a" * 64, "b" * 64])
+    assert set(got) == {"a" * 64, "b" * 64} and got["a" * 64].name == "000-P1.wav"
+    with pytest.raises(SystemExit, match="1 note file input"):
+        X._by_input_sha(tmp_path, ["a" * 64, "d" * 64])
+
+
+def test_an_inputs_notes_move_into_place_whole(monkeypatch, tmp_path):
+    monkeypatch.setattr(X, "readerr_dir", lambda: tmp_path / "readerr")
+    st = X.new_staging("bench-000")
+    assert st.parent == X.p2a_path("partial")
+    X.write_once(X.p2a_path("cand", "lead-in", "bench-000", root=st), {"events": []})
+    assert X.done_inputs("notes") == set()                     # a partial folder is never an input done
+    X.write_once(X.p2a_path("notes-input", iid="bench-000", root=st), {"candidates": {}})
+    final = X.move_into_place(st, X.p2a_path("input-dir", iid="bench-000"))
+    assert not st.exists() and final == X.p2a_path("input-dir", iid="bench-000")
+    assert X.p2a_path("cand", "lead-in", "bench-000").exists() and X.done_inputs("notes") == {"bench-000"}
+    crashed = X.new_staging("bench-001")                        # an interrupted input's leftover ...
+    X.write_once(X.p2a_path("cand", "lead-in", "bench-001", root=crashed), {"events": []})
+    again = X.new_staging("bench-001")                          # ... never blocks its rerun
+    assert again != crashed and X.done_inputs("notes") == {"bench-000"}
+    other = X.new_staging("bench-000")
+    with pytest.raises(SystemExit, match="never overwritten"):
+        X.move_into_place(other, X.p2a_path("input-dir", iid="bench-000"))
+    with pytest.raises(SystemExit, match="outside"):
+        X.move_into_place(other, tmp_path / "elsewhere")
+
+
+def test_timing_sits_outside_every_hash_chain(monkeypatch, tmp_path):
+    monkeypatch.setattr(X, "readerr_dir", lambda: tmp_path / "readerr")
+    X.write_timing("notes", (1, 4), {"seconds": 12.5})
+    t = list(X.p2a_path("timing", "notes").glob("*.json"))
+    assert len(t) == 1 and json.loads(t[0].read_text())["shard"] == [1, 4]
+    assert "seconds_shard" not in SRC
+    tree = ast.parse(SRC)
+    for name in ("cmd_notes", "notes_combine", "score_combine"):
+        fn = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == name)
+        keys = {k.value for d in ast.walk(fn) if isinstance(d, ast.Dict) for k in d.keys if isinstance(k, ast.Constant)}
+        writes = [c for c in ast.walk(fn) if isinstance(c, ast.Call) and getattr(c.func, "id", None) == "write_once"]
+        for c in writes:
+            for d in ast.walk(c):
+                if isinstance(d, ast.Dict):
+                    assert not {k.value for k in d.keys if isinstance(k, ast.Constant)} & {"seconds", "seconds_shard",
+                                                                                          "reads_seconds"}, name
+        assert keys is not None

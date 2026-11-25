@@ -937,8 +937,10 @@ def make_spec(mode, model, model_sha256, threads=1, lead_in_s=None, **kw):
         raise SystemExit(f"threads must be 1 to {MAX_THREADS}")
     if "settings" in spec and sorted(spec["settings"]) != sorted(BP_SETTING_KEYS):
         raise SystemExit(f"settings must be exactly {sorted(BP_SETTING_KEYS)}")
-    if "grid" in spec and (not isinstance(spec["grid"], dict) or set(spec["grid"]) - set(GRID_AXES)):
-        raise SystemExit(f"grid must be {{axis: [values]}} over {list(GRID_AXES)}")
+    if "grid" in spec and (not isinstance(spec["grid"], dict) or not spec["grid"] or set(spec["grid"]) - set(GRID_AXES)
+                           or any(not isinstance(v, list) or not v for v in spec["grid"].values())):
+        raise SystemExit(f"grid must be a non-empty {{axis: [values]}} over {list(GRID_AXES)}, each axis non-empty "
+                         "(the runner refuses an empty grid)")
     if "offsets_s" in spec:
         offs = spec["offsets_s"]
         if not isinstance(offs, list) or any(o < 0 for o in offs) or len(set(offs)) != len(offs):
@@ -2489,10 +2491,12 @@ def select(ids, shard=(0, 1), first=0):
 
 
 def notes_specs(model, model_sha256):
-    """(Pure.) The three reads per input: the 144-point grid, the stored point with a 1-s lead-in, the four shifts."""
+    """(Pure.) The three reads per input: the 144-point grid, the stored point with a 1-s lead-in (a one-point grid:
+    the runner refuses an empty one), the four shifts."""
     base = dict(NT.BP_SETTINGS)
     return {"grid": make_spec("bp-grid", model, model_sha256, settings=base, grid=declared_grid_spec()),
-            "lead": make_spec("bp-grid", model, model_sha256, settings=base, grid={}, lead_in_s=LEAD_IN_S),
+            "lead": make_spec("bp-grid", model, model_sha256, settings=base,
+                              grid={"onset_threshold": [base["onset_threshold"]]}, lead_in_s=LEAD_IN_S),
             "shift": make_spec("bp-shift", model, model_sha256, settings=base, offsets_s=list(SHIFT_OFFSETS_S))}
 
 
@@ -2524,13 +2528,14 @@ def candidates_from_records(grid_rec, lead_rec, shift_rec):
 
 
 def notes_proofs(grid_rec, shift_rec, checks, stored_events):
-    """(Pure.) One input's proofs: bp-grid's top-level events equal the stored read's (the declared proof), and the
-    shift vote's anchor, and k = 1, reproduce the stored events."""
+    """(Pure.) One input's proofs: bp-grid's top-level events equal the stored read's (the declared proof); the
+    shift vote's anchor (the zero-offset read) and its k = 1 vote each reproduce the stored events, each compared with
+    them directly."""
+    stored = events_of(NT.notes_from_events(stored_events))
     return {"grid_top_equal": grid_rec["events"] == stored_events,
             "grid_stored_point_equal": next(x["events"] for x in grid_rec["grid"]
                                             if point_key(x["settings"]) == point_key(STORED_POINT)) == stored_events,
-            "anchor_equal": checks["anchor"] == events_of(NT.notes_from_events(stored_events)),
-            "k1_equal": checks["k1"] == checks["anchor"]}
+            "anchor_equal": checks["anchor"] == stored, "k1_equal": checks["k1"] == stored}
 
 
 def coverage_refusal(expected, done):
@@ -2664,16 +2669,26 @@ def stored_point_refusal(per_part, xb_parts):
 
 # --- Phase 2a: paths ----------------------------------------------------------------------------------------------------
 
-def p2a_path(kind, cand=None, iid=None):
-    """Phase 2a's files, under PF/fs/readerr/: notes/<candidate>/<input>.json, notes/raw/<read>/<input>.json,
-    notes/inputs/<input>.json, notes.json; score/inputs/<input>.json, candidates.json."""
+def p2a_path(kind, cand=None, iid=None, root=None):
+    """Phase 2a's files, under PF/fs/readerr/. Each input's notes sit in one folder, notes/inputs/<input>/ (the
+    candidates <candidate>.json, the raw reads raw-<read>.json, summary.json), made whole in a partial folder and moved
+    into place at once (`move_into_place`); `root` names that partial folder while it is built. Then notes.json;
+    score/inputs/<input>.json, candidates.json; the timing sidecars under notes/timing/ and score/timing/, never in
+    a hash chain."""
     r = readerr_dir()
+    folder = pathlib.Path(root) if root is not None else r / "notes" / "inputs" / str(iid)
+    if kind == "input-dir":
+        return folder
     if kind == "cand":
-        return r / "notes" / cand / f"{iid}.json"
+        return folder / f"{cand}.json"
     if kind == "raw":
-        return r / "notes" / "raw" / cand / f"{iid}.json"
+        return folder / f"raw-{cand}.json"
     if kind == "notes-input":
-        return r / "notes" / "inputs" / f"{iid}.json"
+        return folder / "summary.json"
+    if kind == "partial":
+        return r / "notes" / "partial"
+    if kind == "timing":
+        return r / cand / "timing"
     if kind == "listing":
         return r / "notes.json"
     if kind == "score-input":
@@ -2698,13 +2713,18 @@ def bench_inputs(tr):
     return out
 
 
-def _by_input_sha(folder):
-    out = {}
+def _by_input_sha(folder, wanted):
+    """{sha256: wav} for exactly the inputs `wanted` (the note files' `input_sha256`) among a work folder's stored
+    records; refused when one is missing. Nothing else in the folder is kept."""
+    want, out = set(wanted), {}
     for p in sorted(pathlib.Path(folder).glob("*.json")):
-        rec = json.loads(p.read_text())
+        sha = json.loads(p.read_text()).get("input_sha256")
         w = p.with_suffix(".wav")
-        if w.exists() and rec.get("input_sha256"):
-            out[rec["input_sha256"]] = (w, rec)
+        if sha in want and w.exists():
+            out[sha] = w
+    miss = want - set(out)
+    if miss:
+        raise SystemExit(f"{len(miss)} note file input(s) are not in {pathlib.Path(folder).name}")
     return out
 
 
@@ -2714,15 +2734,15 @@ def real_inputs(mr, pair):
     `input_sha256`) and the ten lists (the install gate's stored inputs)."""
     listing = NT.require_truth(mr)
     report = NT.require_truth_report(mr.get(NR.LEDGER_ID))
-    work = _by_input_sha(NT.REDO / "work" / "truth-report")
     by_key = {w["key"]: w for w in listing["windows"]}
-    out = {}
-    for i, w in enumerate(report["windows"]):
+    recs = []
+    for w in report["windows"]:
         real_di_source(f"truth:{w['key']}", listing)
-        rec = TX.bp_note("truth", w["key"], w["note_file_sha256"], pair)
-        if rec["input_sha256"] not in work:
-            raise SystemExit(f"truth window {i}: its stored input is not in the truth report's work folder")
-        wav, _ = work[rec["input_sha256"]]
+        recs.append(TX.bp_note("truth", w["key"], w["note_file_sha256"], pair))
+    work = _by_input_sha(NT.REDO / "work" / "truth-report", [r["input_sha256"] for r in recs])
+    out = {}
+    for i, (w, rec) in enumerate(zip(report["windows"], recs)):
+        wav = work[rec["input_sha256"]]
         if file_sha(wav) != rec["input_sha256"]:
             raise SystemExit(f"truth window {i}: the wav is not the note file's input")
         win = by_key[w["key"]]
@@ -2789,11 +2809,18 @@ def cmd_notes(args):
     if getattr(args, "combine", False):
         return notes_combine(ids, bench)
     specs = notes_specs(man["model_path"], man["model_sha256"])
-    todo = [i for i in select(ids, args.shard, getattr(args, "first", 0)) if not p2a_path("notes-input", iid=i).exists()]
+    done = done_inputs("notes")
+    todo = [i for i in select(ids, args.shard, getattr(args, "first", 0)) if i not in done]
     if not todo:
         print("RX NOTES: nothing to do in this shard")
         return
     import tempfile
+
+    partial = p2a_path("partial")
+    left = sorted(x.name for x in partial.iterdir()) if partial.exists() else []
+    if left:
+        print(f"RX NOTES: {len(left)} partial folder(s) from an interrupted run under {partial.name}/ (never read; "
+              "safe to remove)", flush=True)
 
     wav_of = {i: (bench[i][1] if i in bench else real[i][1]) for i in todo}
     stored_of = {i: (bench[i][2]["events"] if i in bench else real[i][2]) for i in todo}
@@ -2809,13 +2836,16 @@ def cmd_notes(args):
             if kind_of(i) == "bench" and not all(proofs.values()):
                 stops.append(i)
                 continue
-            shas = {c: write_once(p2a_path("cand", c, i), {"input": i, "candidate": c, "events": ev})
+            staging = new_staging(i)
+            shas = {c: write_once(p2a_path("cand", c, i, root=staging), {"input": i, "candidate": c, "events": ev})
                     for c, ev in sorted(cands.items())}
-            raw = {n: write_once(p2a_path("raw", n, i), recs[n][i]) for n in ("grid", "lead", "shift")}
-            write_once(p2a_path("notes-input", iid=i), {
+            raw = {n: write_once(p2a_path("raw", n, i, root=staging), recs[n][i]) for n in ("grid", "lead", "shift")}
+            write_once(p2a_path("notes-input", iid=i, root=staging), {
                 "plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P2}", "input": i, "input_sha256": file_sha(wav_of[i]),
-                "proofs": proofs, "candidates": shas, "raw": raw, "beside": beside,
-                "votes": checks["votes"], "seconds_shard": secs})
+                "proofs": proofs, "candidates": shas, "raw": raw, "beside": beside, "votes": checks["votes"]})
+            move_into_place(staging, p2a_path("input-dir", iid=i))
+    write_timing("notes", args.shard, {"inputs": todo, "written": len(todo) - len(stops), "reads_seconds": secs,
+                                        "seconds": round(time.time() - t0, 1)})
     print(f"RX NOTES shard {args.shard[0]}/{args.shard[1]}: {len(todo) - len(stops)} of {len(todo)} inputs written "
           f"in {time.time() - t0:.0f} s ({secs} s of reads)")
     if stops:
@@ -2823,10 +2853,50 @@ def cmd_notes(args):
                          "input(s): nothing of them written; to the orchestrator")
 
 
+def new_staging(iid):
+    """A fresh partial folder for one input, under notes/partial/ (a unique name: a crashed run's leftover never
+    blocks a rerun, and is never read)."""
+    import tempfile
+
+    partial = p2a_path("partial")
+    partial.mkdir(parents=True, exist_ok=True)
+    return pathlib.Path(tempfile.mkdtemp(prefix=f"{iid}-", dir=partial))
+
+
+def move_into_place(staging, final):
+    """An input's notes folder, complete, moved into place in one rename (the same file system): never over a folder,
+    never outside PF/fs/readerr/."""
+    staging, final = pathlib.Path(staging), pathlib.Path(final)
+    root = pathlib.Path(readerr_dir()).resolve()
+    if root not in final.resolve().parents or root not in staging.resolve().parents:
+        raise SystemExit(f"{final}: outside {root}")
+    if final.exists():
+        raise SystemExit(f"{final} exists: never overwritten")
+    final.parent.mkdir(parents=True, exist_ok=True)
+    staging.rename(final)
+    return final
+
+
+def done_inputs(kind):
+    """The inputs whose files are complete: a notes folder with its summary, or a score file."""
+    if kind == "notes":
+        d = readerr_dir() / "notes" / "inputs"
+        return {x.name for x in d.iterdir() if (x / "summary.json").exists()} if d.exists() else set()
+    d = readerr_dir() / "score" / "inputs"
+    return {x.stem for x in d.glob("*.json")} if d.exists() else set()
+
+
+def write_timing(command, shard, body):
+    """The timing sidecar (seconds, shard), outside every hash chain, so a listing's sha256 is the same however the
+    run is sharded."""
+    tag = f"shard-{shard[0]}-of-{shard[1]}-{time.strftime('%Y%m%d-%H%M%S')}"
+    return write_once(p2a_path("timing", command) / f"{tag}.json", dict(body, command=command, shard=list(shard)))
+
+
 def notes_combine(ids, bench):
     path = p2a_path("listing")
     NT.never_overwrite(path)
-    done = {p.stem for p in (readerr_dir() / "notes" / "inputs").glob("*.json")}
+    done = done_inputs("notes")
     why = coverage_refusal(ids, done)
     if why:
         raise SystemExit(why)
@@ -2917,8 +2987,9 @@ def cmd_score_p2a(args):
     real, truth_listing = real_inputs(mr, pair)
     ta = None
     cands = candidate_ids()
-    todo = [i for i in select(ids, args.shard, getattr(args, "first", 0)) if not p2a_path("score-input", iid=i).exists()]
-    t0 = time.time()
+    done = done_inputs("score")
+    todo = [i for i in select(ids, args.shard, getattr(args, "first", 0)) if i not in done]
+    t0, seconds = time.time(), {}
     for i in todo:
         t1 = time.time()
         if kind_of(i) == "bench":
@@ -2974,16 +3045,19 @@ def cmd_score_p2a(args):
                 res[c] = {"figures": note_figures(an, truth, notes, L), "counts": counts_of(an)}
             body = {"input": i, "kind": kind_of(i), "group": meta["group"], "kind_of_window": meta["kind"],
                     "cluster": meta["cluster"], "candidates": res}
-        body.update(plan=PLAN, listing_sha256=file_sha(p2a_path("listing")), seconds=round(time.time() - t1, 1))
+        body.update(plan=PLAN, listing_sha256=file_sha(p2a_path("listing")))
         write_once(p2a_path("score-input", iid=i), body)
-        print(f"{i}: {len(body['candidates'])} lists scored in {body['seconds']} s", flush=True)
+        seconds[i] = round(time.time() - t1, 1)
+        print(f"{i}: {len(body['candidates'])} lists scored in {seconds[i]} s", flush=True)
+    write_timing("score", args.shard, {"inputs": todo, "seconds_per_input": seconds,
+                                        "seconds": round(time.time() - t0, 1)})
     print(f"RX SCORE shard {args.shard[0]}/{args.shard[1]}: {len(todo)} inputs in {time.time() - t0:.0f} s")
 
 
 def score_combine(m, ids, xb):
     path = p2a_path("candidates")
     NT.never_overwrite(path)
-    done = {p.stem for p in (readerr_dir() / "score" / "inputs").glob("*.json")}
+    done = done_inputs("score")
     why = coverage_refusal(ids, done)
     if why:
         raise SystemExit(why)
@@ -3016,7 +3090,7 @@ def score_combine(m, ids, xb):
             "real": {c: real_reads(real_rows, c) for c in cands},
             "would_pick": would_picks(per_part, mean_rows_of),
             "rebuilds": sum(r.get("rebuilds", 0) for r in rows.values() if r["kind"] == "bench"),
-            "seconds": sum(r["seconds"] for r in rows.values()), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     sha = write_once(path, body)
     for f, w in body["would_pick"].items():
         print(f"{f}: {w['words']}: minimum {w['minimum']}, pick {w['pick']}, edge {w['edge_reported_not_extended']}")
