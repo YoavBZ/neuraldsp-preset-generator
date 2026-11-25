@@ -573,3 +573,28 @@ def test_build_3s_answers_hash_on_main_under_its_own_key():
     assert rec["build_name"] == "b3" and rec["build_sha256"] == lad[SN.dry_key("b3")]["sha256"]
     assert SN.pair_answers_refusal(rec, "b3", lad[SN.dry_key("b3")]) is None
     assert rec["sha256"] not in {lad[SN.answers_key(n)]["sha256"] for n in (None, "b2")}   # each build's own answers
+
+
+def test_build_3s_read_on_main_is_provisional():
+    import pathlib
+
+    from learn import scratch_notes as SN
+
+    e = T.entries((pathlib.Path(__file__).resolve().parents[1] / "docs" / "dev-test-ledger.json").read_text())
+    lad = e["preset-ladder"]
+    rec = lad["phase_scratch_notes_read_b3"]
+    assert rec["code_provisional"] is True and rec["ear"] == "ear pending"
+    assert rec["ear"] == SN.ear_label(e["note-rebuild"], lad[SN.dry_key("b3")]["sha256"])     # 12q R5
+    assert rec["answers_sha256"] == lad[SN.answers_key("b3")]["sha256"]
+    assert "phase_scratch_notes_outcome" not in lad                                           # no outcome while provisional
+
+
+def test_build_3_less_build_2_on_main_is_read_under_c3():
+    import pathlib
+
+    e = T.entries((pathlib.Path(__file__).resolve().parents[1] / "docs" / "dev-test-ledger.json").read_text())
+    rec = e["preset-ladder"]["phase_scratch_notes_pair_b3"]
+    assert rec["renders"] == 0 and rec["code_provisional"] is True and rec["pair"] == "b3 less build b2"
+    assert rec["file"].endswith("notes-b3/pair-b2.json") and "stated_before" in rec
+    for a in rec["arms"].values():                       # 12t C3: all parts with carried zeros, changed parts beside
+        assert a["itt"]["parts"] == 47 and a["changed_only"]["parts"] == 26

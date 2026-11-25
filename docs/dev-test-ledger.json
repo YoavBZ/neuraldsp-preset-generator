@@ -5455,6 +5455,356 @@
     "code": "RX-untracked",
     "figure": "note_error",
     "screen": "no screen"
+   },
+   "phase_scratch_notes_read_b3": {
+    "report_sha256": "543ae0395b042a9d321790e539b23321cbf1543c36d9b72e5feec3578400a41c",
+    "report_file": "PF/fs/notes-b3/report.json",
+    "rows_sha256": "f279c449d5e6502ff8a03929cb26316f073733a728a620644d8431885d1291a9",
+    "rows_file": "PF/fs/notes-b3/rows.json",
+    "answers_sha256": "d070e4f1f8aaf44e3791609ce3132bcf0c30af8bb90ce081c66218fbf61e5194",
+    "ear": "ear pending",
+    "code_provisional": true,
+    "code": "FN-worse (both arms), provisional: 12q R5, build 3's ear verdict is pending (its page is not yet read), so the code is not the row's outcome; this record writes no phase_scratch_notes_outcome",
+    "score": "2026-11-25, python -m learn.scratch_notes score --build-name b3 --shard k/3 once from main at cc6dc144 (#620's merge) in a frozen worktree: 47 of 47 parts scored (the 21 carried parts too, from build 3's hashed answers), the scoring control 47 of 47 ok, 0 reruns, 0 non-finite, 0 refused; 940 renders in 732 s wall on 3 processes. On the 21 carried parts each part's own held values (cen, answer, checkpoints, shrunk) equal build 2's score files exactly; only the centre and the borrowed partners' entries differ, as they read other parts' answers",
+    "read": "2026-11-25, python -m learn.scratch_notes read --build-name b3 once from the same worktree, zero renders",
+    "headline_bks_goat_40": {
+     "answer": {
+      "G_vs_Cen": {
+       "all": {
+        "mean": 0.0284,
+        "lo90": -0.0795,
+        "hi90": 0.1362
+       },
+       "clean": {
+        "mean": 0.0764,
+        "lo90": -0.1636,
+        "hi90": 0.3165
+       },
+       "crunch": {
+        "mean": -0.0197,
+        "lo90": -0.0888,
+        "hi90": 0.0493
+       }
+      },
+      "less_row_c": {
+       "all": {
+        "mean": 0.1151,
+        "lo90": 0.0122,
+        "hi90": 0.2179
+       },
+       "clean": {
+        "mean": 0.1551,
+        "lo90": -0.0678,
+        "hi90": 0.3779
+       },
+       "crunch": {
+        "mean": 0.0751,
+        "lo90": -0.0312,
+        "hi90": 0.1813
+       }
+      },
+      "less_row_b": {
+       "all": {
+        "mean": 0.2928,
+        "lo90": 0.195,
+        "hi90": 0.3906
+       },
+       "clean": {
+        "mean": 0.4171,
+        "lo90": 0.2326,
+        "hi90": 0.6017
+       },
+       "crunch": {
+        "mean": 0.1685,
+        "lo90": 0.1062,
+        "hi90": 0.2307
+       }
+      },
+      "row_c_G": {
+       "mean": -0.0867,
+       "lo90": -0.1552,
+       "hi90": -0.0182
+      },
+      "reading_less_row_c": "worse"
+     },
+     "shrunk": {
+      "G_vs_Cen": {
+       "all": {
+        "mean": -0.0439,
+        "lo90": -0.1372,
+        "hi90": 0.0495
+       },
+       "clean": {
+        "mean": -0.008,
+        "lo90": -0.2297,
+        "hi90": 0.2136
+       },
+       "crunch": {
+        "mean": -0.0797,
+        "lo90": -0.1413,
+        "hi90": -0.018
+       }
+      },
+      "less_row_c": {
+       "all": {
+        "mean": 0.1038,
+        "lo90": 0.0236,
+        "hi90": 0.1841
+       },
+       "clean": {
+        "mean": 0.1403,
+        "lo90": -0.0526,
+        "hi90": 0.3332
+       },
+       "crunch": {
+        "mean": 0.0673,
+        "lo90": 0.0184,
+        "hi90": 0.1163
+       }
+      },
+      "less_row_b": {
+       "all": {
+        "mean": 0.176,
+        "lo90": 0.0974,
+        "hi90": 0.2547
+       },
+       "clean": {
+        "mean": 0.2543,
+        "lo90": 0.0829,
+        "hi90": 0.4258
+       },
+       "crunch": {
+        "mean": 0.0977,
+        "lo90": 0.0586,
+        "hi90": 0.1368
+       }
+      },
+      "row_c_G": {
+       "mean": -0.1477,
+       "lo90": -0.2006,
+       "hi90": -0.0948
+      },
+      "reading_less_row_c": "worse"
+     },
+     "curve_answer_G": {
+      "cp50": {
+       "mean": 0.0059,
+       "lo90": -0.0896,
+       "hi90": 0.1014
+      },
+      "cp100": {
+       "mean": 0.0174,
+       "lo90": -0.0836,
+       "hi90": 0.1183
+      },
+      "cp200": {
+       "mean": 0.0376,
+       "lo90": -0.0729,
+       "hi90": 0.1481
+      },
+      "final": {
+       "mean": 0.0284,
+       "lo90": -0.0795,
+       "hi90": 0.1362
+      }
+     },
+     "share_of_row_b_gain": -0.1072,
+     "search_gain_vs_held_G_r": 0.1411,
+     "plain_unweighted_mean_40": {
+      "answer": 0.0118,
+      "shrunk": -0.0537
+     },
+     "note": "ln(x / Cen) on BKS+GOAT (the 40), 90% intervals; negative is closer than Cen. Means are `note_replay.summary`'s cluster- and band-weighted figures (pooled over BKS and GOAT). less_row_b and the plain mean were computed beside the read from the same score files with the module's own read_row_parts, paired_values and set_rows (zero renders); the curve is the read's own rows. By the score only: the ear has not compared these presets"
+    },
+    "reading": "by the score (cluster- and band-weighted means): build 3's answer is level with Cen on the 40 (+0.028 [-0.080, +0.136]); against row (c) +0.115 [+0.012, +0.218] (labelled worse by the user's SMALL and BIG: the interval above 0 and the mean just past BIG 0.10; build 2's was +0.096, undecided); against row (b) +0.293 [+0.195, +0.391] (share of row (b)'s gain -0.11). The curve is flat from 50 evaluations on (+0.006 to +0.038). The shrunk arm is -0.044 [-0.137, +0.050] against Cen and +0.104 [+0.024, +0.184] against row (c) (labelled worse). The label is provisional and decides nothing while the ear is pending"
+   },
+   "phase_scratch_notes_pair_b3": {
+    "sha256": "aa3fbae662d79211315bb510b6ed394e732c016b8523628307e639ae009ac1be",
+    "file": "PF/fs/notes-b3/pair-b2.json",
+    "built": "2026-11-25 14:16:58",
+    "pair": "b3 less build b2",
+    "renders": 0,
+    "code_provisional": true,
+    "ran": "2026-11-25, python -m learn.scratch_notes pair-builds --build-name b3 --against b2 once from main at cc6dc144 in a frozen worktree, zero renders; both builds from their hashed answers (phase_scratch_notes_answers_b3, phase_scratch_notes_answers_b2) and score files; --against took its require_row keys from b2 (12t C3)",
+    "stated_before": "the all-parts read, carried parts adding an exact 0, is likely 'matches / level' (12t C3); the changed-parts-only pair is read beside it",
+    "ear": {
+     "b3": "ear pending",
+     "b2": "ear fault-content"
+    },
+    "refused": {
+     "b3": 0,
+     "b2": 0
+    },
+    "carried": "21 of 47 parts (15 of the 40) carried from build 2 (carry.json); each measured exactly 0 in both arms before C3 sets it to 0, so the all-parts figure's zeros are measured, not assumed",
+    "tr_di_changed": "26 of 47 parts, 25 of the 40 (11 clean, 14 crunch) and one panel part",
+    "arms": {
+     "answer": {
+      "itt": {
+       "parts": 47,
+       "bks_goat": {
+        "all": {
+         "mean": 0.0193,
+         "lo90": -0.0003,
+         "hi90": 0.0389
+        },
+        "clean": {
+         "mean": 0.0169,
+         "lo90": -0.0181,
+         "hi90": 0.0519
+        },
+        "crunch": {
+         "mean": 0.0216,
+         "lo90": -0.0108,
+         "hi90": 0.0541
+        }
+       },
+       "reading": {
+        "reading": "matches",
+        "level_not_readable": true
+       }
+      },
+      "passing_only": {
+       "parts": 47,
+       "bks_goat": {
+        "all": {
+         "mean": 0.0193,
+         "lo90": -0.0003,
+         "hi90": 0.0389
+        },
+        "clean": {
+         "mean": 0.0169,
+         "lo90": -0.0181,
+         "hi90": 0.0519
+        },
+        "crunch": {
+         "mean": 0.0216,
+         "lo90": -0.0108,
+         "hi90": 0.0541
+        }
+       },
+       "reading": {
+        "reading": "matches",
+        "level_not_readable": true
+       }
+      },
+      "changed_only": {
+       "parts": 26,
+       "bks_goat": {
+        "all": {
+         "mean": 0.0308,
+         "lo90": -0.001,
+         "hi90": 0.0627
+        },
+        "clean": {
+         "mean": 0.0327,
+         "lo90": -0.1579,
+         "hi90": 0.2234
+        },
+        "crunch": {
+         "mean": 0.032,
+         "lo90": -0.0191,
+         "hi90": 0.083
+        }
+       },
+       "reading": {
+        "reading": "matches",
+        "level_not_readable": false
+       }
+      }
+     },
+     "shrunk": {
+      "itt": {
+       "parts": 47,
+       "bks_goat": {
+        "all": {
+         "mean": 0.0327,
+         "lo90": 0.0137,
+         "hi90": 0.0516
+        },
+        "clean": {
+         "mean": 0.0334,
+         "lo90": -0.0029,
+         "hi90": 0.0698
+        },
+        "crunch": {
+         "mean": 0.0319,
+         "lo90": 0.0097,
+         "hi90": 0.0541
+        }
+       },
+       "reading": {
+        "reading": "matches",
+        "level_not_readable": false
+       }
+      },
+      "passing_only": {
+       "parts": 47,
+       "bks_goat": {
+        "all": {
+         "mean": 0.0327,
+         "lo90": 0.0137,
+         "hi90": 0.0516
+        },
+        "clean": {
+         "mean": 0.0334,
+         "lo90": -0.0029,
+         "hi90": 0.0698
+        },
+        "crunch": {
+         "mean": 0.0319,
+         "lo90": 0.0097,
+         "hi90": 0.0541
+        }
+       },
+       "reading": {
+        "reading": "matches",
+        "level_not_readable": false
+       }
+      },
+      "changed_only": {
+       "parts": 26,
+       "bks_goat": {
+        "all": {
+         "mean": 0.0523,
+         "lo90": 0.0242,
+         "hi90": 0.0804
+        },
+        "clean": {
+         "mean": 0.0633,
+         "lo90": -0.0217,
+         "hi90": 0.1484
+        },
+        "crunch": {
+         "mean": 0.0463,
+         "lo90": 0.0149,
+         "hi90": 0.0778
+        }
+       },
+       "reading": {
+        "reading": "undecided",
+        "level_not_readable": false
+       }
+      }
+     }
+    },
+    "changed_on_40": {
+     "answer": {
+      "changed_on_40": 25,
+      "closer": 9,
+      "farther": 14,
+      "exactly_0": 2,
+      "plain_unweighted_mean_changed_40": 0.032
+     },
+     "shrunk": {
+      "changed_on_40": 25,
+      "closer": 6,
+      "farther": 17,
+      "exactly_0": 2,
+      "plain_unweighted_mean_changed_40": 0.053
+     }
+    },
+    "note": "ln(x / Cen) differences, build 3 less build 2, 90% intervals; negative is build 3 closer. Means are `note_replay.summary`'s cluster- and band-weighted figures on BKS+GOAT. itt is C3's all-parts intent-to-treat figure (carried parts an exact 0); changed_only the 26 parts whose tr-di differs. With 0 refusals in either build, passing_only equals itt",
+    "reading": "by the score: build 3 less build 2, answer arm +0.019 [-0.000, +0.039] on the 40, all parts (matches; level, not readable by the score: the interval inside +-SMALL 0.05), as stated before; changed parts only +0.031 [-0.001, +0.063] (matches); shrunk arm +0.033 [+0.014, +0.052] all parts (matches), changed parts only +0.052 [+0.024, +0.080] (undecided: the interval above 0, the mean just past SMALL 0.05). F6 moves the search's answers by less than the score can read; the shrunk arm leans slightly to build 2. Readings use the user's SMALL and BIG and only label; the ear page for build 3 is unread"
    }
   },
   {
