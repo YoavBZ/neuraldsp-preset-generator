@@ -924,6 +924,16 @@ def test_the_join_report():
     assert jr == {"joins": 2, "joins_anatomy_refind": 2, "joined_ends_past_partner": 1,
                   "extras_left_out": {"timing": 1, "octave-sub": 0, "semitone-sub": 0},
                   "misses": {"timing": 0, "substitution": 1}}
+    assert rep["ends"] == {0: 2.5, 5: 5.4}
+
+
+def test_the_join_report_keys_each_end_on_the_notes_own_index():
+    reread = [_n(5.01, 67, off=5.4), _n(1.0, 60, off=1.5), _n(1.4, 60, off=1.9)]   # kept notes out of onset order
+    exact = [_n(1.0, 60, off=1.6), _n(5.0, 67, off=5.5)]
+    _, rep = X.xr_matched(reread, exact)
+    assert rep["ends"] == {0: 5.4, 1: 1.9} and rep["joins"] == [2] and rep["extended"] == [1]
+    jr = X.join_report(rep, reread, exact, [None, None, "re-find"], [None, None])
+    assert jr["joined_ends_past_partner"] == 1 and jr["joins_anatomy_refind"] == 1
 
 
 def test_the_hybrids_on_random_lists():
@@ -1014,12 +1024,17 @@ def test_leave_one_cluster_out_and_the_forward_test():
     clus = {"a": "c1", "b": "c1", "c": "c2", "d": "c3"}
     got = X.leave_one_cluster_out(vals, clus, lambda v: sum(v.values()))
     assert got == {"c1": 7.0, "c2": 7.0, "c3": 6.0}
-    e = {"set0/p1": -0.3, "set0/p2": -0.1, "set1/p3": 0.1, "set1/p4": 0.2, "set1/p5": 0.3}
-    dry = {"set0/p1": -1.0, "set0/p2": -0.5, "set1/p3": 0.2, "set1/p4": 0.4, "set1/p5": 0.5}
+    e = {"bks/p1": -0.3, "bks/p2": -0.1, "goat/p3": 0.1, "goat/p4": 0.2, "goat/p5": 0.3,
+         "panel/p6": 0.5, "panel/p7": -0.5}
+    dry = {"bks/p1": -1.0, "bks/p2": -0.5, "goat/p3": 0.2, "goat/p4": 0.4, "goat/p5": 0.5,
+           "panel/p6": -2.0, "panel/p7": 2.0}
     sets = {k: k.split("/")[0] for k in e}
     f = X.forward_test(e, dry, sets)
-    assert f["parts"] == 5 and f["spearman"] == pytest.approx(1.0) and f["sign_agreement"] == 1.0
-    assert f["set1"] == pytest.approx(1.0) and f["set0"] is None   # under 3 parts: no rho
+    assert f["parts"] == 5 and f["spearman"] == pytest.approx(1.0) and f["sign_agreement"] == 1.0   # the 40 pool
+    assert f["all_47"]["parts"] == 7 and f["all_47"]["spearman"] < 1.0 and f["all_47"]["sign_agreement"] == \
+        pytest.approx(5 / 7)                                     # the panel only beside
+    assert f["goat"] == pytest.approx(1.0) and f["bks"] is None   # under 3 parts: no rho
+    assert "panel" in f
 
 
 # --- Phase 2: paths, writes, the search's forbidden list, read_xr_parts --------------------------------------------------

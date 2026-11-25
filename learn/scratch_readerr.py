@@ -1695,10 +1695,11 @@ def xr_matched(reread, exact):
     joined = NF.join_refinds(tagged, rp, joins)
     out = [n for n in joined if n["_k"] in kept]
     extended = [n["_k"] for n in out if n["off"] != reread[n["_k"]]["off"]]
+    ends = {n["_k"]: n["off"] for n in out}              # each kept note's end after the joins, by its re-read index
     for n in out:
         del n["_k"]
     return out, {"kept": len(kept), "joined": len(joins), "removed": len(reread) - len(kept) - len(joins),
-                 "joins": sorted(joins), "extended": sorted(extended), "pairs": pairs}
+                 "joins": sorted(joins), "extended": sorted(extended), "ends": ends, "pairs": pairs}
 
 
 def xr_found(reread, exact):
@@ -1724,14 +1725,10 @@ def xr_lists(reread, exact):
 def join_report(rep, reread, exact, est_classes, truth_classes):
     """(Pure.) Beside the build (review amendment 4): the joins; how many of them the nominal anatomy calls re-finds;
     the joined ends that run past the exact partner's end; and the true notes dropped with timing or substitution
-    extras (the extras of those classes left out, the misses of those classes)."""
+    extras (the extras of those classes left out, the misses of those classes). Each joined end is read from
+    `xr_matched`'s report by the kept note's own re-read index (`_k`), never by list order."""
     partner = {j: i for i, j in rep["pairs"]}
-    m, _ = xr_matched(reread, exact)
-    ends = {}
-    kept_order = sorted(partner)
-    for idx, j in enumerate(kept_order):
-        ends[j] = m[idx]["off"]
-    past = sum(1 for j in rep["extended"] if ends[j] > exact[partner[j]]["off"])
+    past = sum(1 for j in rep["extended"] if rep["ends"][j] > exact[partner[j]]["off"])
     return {"joins": rep["joined"], "joins_anatomy_refind": sum(est_classes[j] == "re-find" for j in rep["joins"]),
             "joined_ends_past_partner": past,
             "extras_left_out": {c: sum(1 for j, x in enumerate(est_classes) if x == c and j not in rep["joins"])
@@ -1831,16 +1828,18 @@ def leave_one_cluster_out(values, cluster_of, interval_of):
     return out
 
 
-def forward_test(e, dry, sets_of):
+def forward_test(e, dry, sets_of, deciding=DECIDING):
     """(Pure.) The forward test, beside: per part the change in a dry figure (the xr-matched guitar less xn-reread's,
-    each against the bank guitar) against E; Spearman pooled and within each set, and sign agreement. No median
-    split. dry: {pkey: change}."""
+    each against the bank guitar) against E; Spearman and sign agreement pooled on the 40 (BKS+GOAT), as every other
+    read, with each set's Spearman and all 47 beside. No median split. dry: {pkey: change}."""
     ks = [k for k in e if dry.get(k) is not None and e[k] is not None]
-    out = {"parts": len(ks), "spearman": SN.spearman([(dry[k], e[k]) for k in ks]),
-           "sign_agreement": sign_agreement({k: e[k] for k in ks}, {k: dry[k] for k in ks})}
+
+    def read(sub):
+        return {"parts": len(sub), "spearman": SN.spearman([(dry[k], e[k]) for k in sub]),
+                "sign_agreement": sign_agreement({k: e[k] for k in sub}, {k: dry[k] for k in sub})}
+    out = dict(read([k for k in ks if sets_of[k] in deciding]), all_47=read(ks))
     for s in sorted({sets_of[k] for k in ks}):
-        sub = [k for k in ks if sets_of[k] == s]
-        out[s] = SN.spearman([(dry[k], e[k]) for k in sub])
+        out[s] = SN.spearman([(dry[k], e[k]) for k in ks if sets_of[k] == s])
     return out
 
 

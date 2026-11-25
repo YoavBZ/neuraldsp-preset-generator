@@ -418,8 +418,8 @@ and win where they differ from the amendment's text.
 the same figure for every Phase 2 guitar) is defined from its stored mask fields: for each of J0's three frame sizes
 (1,024, 2,048 and 4,096), `figures.mask[n_fft].agree` is the share of frames on which the guitar's playing-frame mask
 (within 40 dB of its loudest frame) agrees with the bank guitar's (`note_rebuild.mask_agreement`, over the whole
-window). The pause error is the mean over the three sizes of 1 − agree; where `agree` is not stored, |`pauses_dry` −
-`pauses_true`| is used instead. The per-half pause shares `build.json` stores (`pauses[half][n_fft]`, for `xn-reread`
+window). The pause error is the mean over the three sizes of 1 − agree; where `agree` is not stored, it is the
+absolute value of the mean over the sizes of (`pauses_dry` − `pauses_true`) instead. The per-half pause shares `build.json` stores (`pauses[half][n_fft]`, for `xn-reread`
 and the bank guitar) are reported beside, never as the figure. `xr-build` stores both for its own guitars.
 
 ### 9b. The shift vote
@@ -529,7 +529,8 @@ Per part, on the answer arm, with shrunk beside:
   intent-to-treat.
 - **Beside, never deciding:** the share −E over reading proper, by `SX.fieller_share`; and the forward test: per part
   the change in `logmel` and in `env_corr` (the `xr-matched` guitar less `xn-reread`'s, each against the bank guitar)
-  against E, Spearman pooled and within each set, and sign agreement, no median split. A dry figure becomes Phase 2's
+  against E: Spearman and sign agreement pooled on the 40, as every other read, with each set's Spearman and all 47
+  beside; no median split. A dry figure becomes Phase 2's
   scoring figure only by a further amendment.
 - The rows are saved (`xr/rows.json`) before the code (`xr/report.json`).
 
