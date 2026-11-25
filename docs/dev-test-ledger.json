@@ -5860,6 +5860,57 @@
     "seconds": 2262.8,
     "ran": "2026-11-25 14:18:36 to 14:56:41, python -m learn.scratch_rederive ladder once from main at b89aabda in a frozen detached worktree; one process, nice 10, single-threaded (OMP/BLAS/vecLib at 1 thread), caffeinate -i, no_bg_nice; zero renders; build 3's score renders beside it"
    },
+   "phase_scratch_rederive_answers_now": {
+    "phase": "Phase 3b's hash PR (docs/rederive-plan.md section 10): xf-now's answers, before any score",
+    "sha256": "e6affa217bc277a7089e4dd599a8df4fe080776d4fd382f0915d1775b0efa2db",
+    "file": "PF/fs/rederive/answers-xf-now.json",
+    "row": "xf-now: today's rule handed in-M (the ladder's xf-now guitars), searched against the exact-notes records (xn-record, blanked outside the search half) at lag 0, as scratch_exact's rows",
+    "ran": "2026-11-25: check-score --for bench and check-search --for bench, then search --row xf-now --shard k/3 (three chains, one render process each, setopt no_bg_nice, caffeinate -i) and one --rerun pass a shard, then answers --row xf-now (zero renders), all from a frozen detached worktree of main at f44df45c (#626)",
+    "checks": {
+     "check_score": {
+      "passed": true,
+      "renders": 24,
+      "mismatches": 0,
+      "sha256": "0f78635cac574b072e9035ec204d42f21e76fd1a901b2cc65c0e1ab29c4f04d7"
+     },
+     "check_search": {
+      "passed": true,
+      "renders": 26,
+      "mismatches": 0,
+      "sha256": "478f9c8eebf2a8a94ef5635ec39fe45540815f04ee4c8c79818e4eb85410881d"
+     },
+     "note": "both reproduce row (c)'s stored files exactly (the six shared settings' held values and render sha256; the first 10 evaluations of step 1)"
+    },
+    "parts": 47,
+    "refused": 0,
+    "reruns": 0,
+    "carried": 0,
+    "search_renders": 12404,
+    "start_reference_renders": 94,
+    "renders": 12498,
+    "shards": {
+     "0/3": {
+      "renders": 4234,
+      "seconds": 6731
+     },
+     "1/3": {
+      "renders": 4281,
+      "seconds": 6798
+     },
+     "2/3": {
+      "renders": 3983,
+      "seconds": 6627
+     }
+    },
+    "wall": "16:35:13 to 18:28:56 (about 1.9 h), the three shards beside the fit's niced converge",
+    "coverage": "the searched dims covered every key on which the target differs from Cen on 47 of 47 parts (T1)",
+    "inputs_sha256": {
+     "ladder": "9872cb2405b45b629e5eb6f59d5daffc60ff59dd0c09b3a8e85da6f3b107eda2",
+     "exact_build": "1ee294d2d6711eeb0748e8dae7f0eb675684494dd087f8ab2d6001be3be6e780",
+     "draw": "b9672bc333e08afb17ef967c5535b3d73c8b307cf57351f80b23823e29bde050"
+    },
+    "next": "score --row xf-now --shard k/3, then read --stage 1 (xf_stage1 on D_now = G(xf-now) - G(xn-bank), the 40)"
+   },
    "phase_scratch_readerr_p2": {
     "declared": "2026-11-25, after Phase 1's audit (PASS, RX-untracked; phase_scratch_readerr_frozen), before anything in it runs",
     "plan": "docs/scratch-readerr-plan.md section 9; the amendment (handover plans/note-reading-phase2-amendment.md, planner Fable) passed an independent review (Opus, high), PASS WITH AMENDMENTS; its six binding amendments are built in and win where they differ; units A (the xr- row) and B (this declaration) as one PR (the orchestrator's call)",
