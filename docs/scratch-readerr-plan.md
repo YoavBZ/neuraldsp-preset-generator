@@ -422,6 +422,25 @@ window). The pause error is the mean over the three sizes of 1 − agree; where 
 absolute value of the mean over the sizes of (`pauses_dry` − `pauses_true`) instead. The per-half pause shares `build.json` stores (`pauses[half][n_fft]`, for `xn-reread`
 and the bank guitar) are reported beside, never as the figure. `xr-build` stores both for its own guitars.
 
+**As built (unit C).** Both commands take `--shard k/n` (any n: they render nothing) and `--first n` (the timing run
+on 3 inputs), and skip an input already done; `--combine` runs once after every shard.
+
+- **`notes`:** per shard, three runner calls (the model loaded once a call), into a temporary folder. Per input, the
+  proof runs first: bp-grid's top-level events and its stored-point events equal the stored read's, and the shift
+  vote's anchor and k = 1 reproduce it. A bench input that fails is not written, and the shard ends with `RX-stop`.
+  The real-DI inputs' equality is reported as a check. Then, written once: `notes/<candidate>/<input>.json` for the
+  148 runner candidates, `notes/raw/<read>/<input>.json` and the input's summary `notes/inputs/<input>.json`. Inputs
+  are named `bench-NNN`, `truth-NNN` and `list-<name>`, never by file or song.
+- **`notes --combine`:** every input is done; `RX-stop` unless the bench proof holds on 47 of 47; then `notes.json`
+  lists every summary's and file's sha256.
+- **`score`:** refuses unless `notes.json`'s sha256 is main's `phase_scratch_readerr_notes`, and loads each candidate
+  only when its file is the listed one. A bench part rebuilds once per distinct note list (the stored point is the
+  base). The base must equal `trace.json`'s re-read. F6 uses main's `phase_nr_1_redo_fix_bend_frozen` rule. Each
+  input is written once to `score/inputs/<input>.json`.
+- **`score --combine`:** `RX-stop` unless the base's rebuilt `logmel`, `env_corr` and mask equal `build.json`'s stored
+  `xn-reread` figures on 47 of 47. Then `candidates.json` holds the paired reads, the frontier table (the bench, and
+  each real-DI group), the real-DI arm (file-clustered, sign only), and the three would-picks, with `rx_code` null.
+
 ### 9b. The shift vote
 
 - **Offsets:** four reads at pads of 0, 35, 71 and 106 Basic Pitch frames: 0, 8,960, 18,176 and 27,136 samples at

@@ -25,7 +25,7 @@ SHA = "a" * 64
 
 
 def _args(**kw):
-    base = {"shard": (0, 1), "first": 0, "rerun": False, "row": "xr-matched", "set": "first"}
+    base = {"shard": (0, 1), "first": 0, "rerun": False, "row": "xr-matched", "set": "first", "combine": False}
     base.update(kw)
     return type("A", (), base)()
 
@@ -780,9 +780,9 @@ def test_the_modules_own_guard_refuses_other_code_or_keys(monkeypatch, tmp_path)
         X.require_readerr()
     monkeypatch.setattr(NRp, "ledger_entry", lambda: m)
     with pytest.raises(SystemExit, match="phase_scratch_readerr_frozen"):
-        X.cmd_score(_args())                                     # Phase 2 waits for the frozen key ...
+        X.cmd_score_p2a(_args())                                 # Phase 2 waits for the frozen key ...
     _on_main_with(monkeypatch, _main(X.PHASE, X.PHASE_FROZEN), {f: True for f in X.CODE_FILES})
-    with pytest.raises(SystemExit, match="come with unit C"):
+    with pytest.raises(SystemExit, match="waits for the xr- row"):
         X.cmd_read(_args())                                      # ... and then refuses: not built
     monkeypatch.setattr(X, "readerr_dir", lambda: tmp_path)
     for cmd in ("anatomy", "real-compare", "screen-check", "freeze"):
@@ -796,7 +796,7 @@ def test_the_modules_own_guard_refuses_other_code_or_keys(monkeypatch, tmp_path)
 def test_the_cli():
     with pytest.raises(SystemExit):
         X.main(["candidates"])
-    assert set(X.COMMANDS) == {"trace", "anatomy", "real-compare", "screen-check", "freeze", "score", "read",
+    assert set(X.COMMANDS) == {"trace", "anatomy", "real-compare", "screen-check", "freeze", "notes", "score", "read",
                                "xr-build", "xr-check", "xr-search", "xr-answers", "xr-score", "xr-read"}
     with pytest.raises(SystemExit):
         X.main(["xr-search"])                                    # needs --row
@@ -1198,3 +1198,186 @@ def test_the_later_lists_are_built_only_when_the_code_asks(monkeypatch):
         X.cmd_xr_build(_args(set="hand-plain"))
     with pytest.raises(SystemExit, match="searched rows"):
         X.cmd_xr_search(_args(row="hand-plain"))
+
+
+# --- Phase 2a (unit C): notes and score ------------------------------------------------------------------------------------
+
+def test_the_149_candidates():
+    ids = X.candidate_ids()
+    assert len(ids) == len(set(ids)) == 149
+    assert X.STORED_ID in ids and X.STORED_ID == "grid-o0.5-f0.3-l58.0-m1"
+    assert ids[144:] == ["lead-in", "shift-k2", "shift-k3", "shift-k4", "f6"]
+    assert [X.grid_id(p) for p in X.grid_points()] == ids[:144]
+    assert X.BASE not in ids
+
+
+def test_input_ids_name_no_file_and_shards_partition_them():
+    ids = X.input_ids(47, 79, ["chords-six", "bend"])
+    assert len(ids) == 128 and ids[0] == "bench-000" and ids[47] == "truth-000" and ids[-2:] == ["list-bend",
+                                                                                                 "list-chords-six"]
+    assert {X.kind_of(i) for i in ids} == {"bench", "truth", "list"}
+    shards = [X.select(ids, (k, 5)) for k in range(5)]
+    assert sorted(sum(shards, [])) == sorted(ids) and not set(shards[0]) & set(shards[1])
+    assert X.select(ids, (1, 5), first=3) == shards[1][:3]
+
+
+def test_the_three_reads_per_input():
+    s = X.notes_specs("/m.onnx", SHA)
+    assert len(X.expected_grid(s["grid"])) == 144 and s["grid"]["settings"] == dict(T.BP_SETTINGS)
+    assert X.expected_grid(s["lead"]) == [dict(T.BP_SETTINGS)] and s["lead"]["lead_in_s"] == 1.0
+    assert s["shift"]["offsets_s"] == list(X.SHIFT_OFFSETS_S) and "lead_in_s" not in s["shift"]
+    assert all(v["threads"] == 1 and v["model_sha256"] == SHA for v in s.values())
+
+
+def _rec_grid(spec, events_at, top):
+    return _rec("bp-grid", spec, events=top, grid=[{"settings": p, "events": events_at(p)} for p in X.expected_grid(spec)])
+
+
+def _records(stored, lead_extra=None):
+    s = X.notes_specs("/m.onnx", SHA)
+
+    def at(p):
+        return stored if X.point_key(p) == X.point_key(X.STORED_POINT) else stored[:1]
+    g = _rec_grid(s["grid"], at, stored)
+    lead_ev = [dict(e) for e in stored] + ([lead_extra] if lead_extra else [])
+    lead = _rec_grid(s["lead"], lambda p: lead_ev, lead_ev)
+    shifts = [{"offset_s": o, "pad_samples": round(o * 22050), "events": stored if i < 2 else stored[:2]}
+              for i, o in enumerate(X.SHIFT_OFFSETS_S)]
+    sh = _rec("bp-shift", s["shift"], events=stored, shifts=shifts)
+    return s, g, lead, sh
+
+
+def test_candidates_from_runner_records():
+    stored = [_ev(0.5, 0.9), dict(_ev(1.5, 1.9), pitch=62), dict(_ev(2.5, 2.9), pitch=64)]
+    clipped = {"on": 0.0, "off": round(_bp_time(250) - 1.0, 4), "pitch": 70, "amp": 0.5, "bends": list(range(200))}
+    s, g, lead, sh = _records(stored, lead_extra=clipped)
+    for name, rec, mode in (("grid", g, "bp-grid"), ("lead", lead, "bp-grid"), ("shift", sh, "bp-shift")):
+        assert X.runner_refusal(rec, mode, s[name], "b" * 64) is None, name
+    cands, checks, beside = X.candidates_from_records(g, lead, sh)
+    assert sorted(cands) == sorted(X.candidate_ids()[:-1])           # 148: all but F6
+    assert cands[X.STORED_ID] == stored and cands["grid-o0.3-f0.2-l58.0-m1"] == stored[:1]
+    trimmed = next(e for e in cands["lead-in"] if e["pitch"] == 70)
+    assert len(trimmed["bends"]) == sum(1 for i in range(50, 250) if _bp_time(i) >= 1.0)   # the lead-in's clip trimmed
+    assert cands["shift-k2"] == stored and cands["shift-k3"] == stored[:2] and cands["shift-k4"] == stored[:2]
+    assert checks["votes"] == [4, 4, 2] and checks["k1"] == checks["anchor"] == stored
+    assert beside["unanchored_count"] == 0
+    proofs = X.notes_proofs(g, sh, checks, stored)
+    assert proofs == {"grid_top_equal": True, "grid_stored_point_equal": True, "anchor_equal": True, "k1_equal": True}
+    bad = X.notes_proofs(g, sh, checks, stored[:2])
+    assert not bad["grid_top_equal"] and not bad["anchor_equal"]
+
+
+def test_the_combines_refusals():
+    assert X.coverage_refusal(["a", "b"], ["a", "b"]) is None
+    assert "not done yet" in X.coverage_refusal(["a", "b"], ["a"])
+    assert "unexpected" in X.coverage_refusal(["a"], ["a", "c"])
+    ok = {f"bench-{j:03d}": {"proofs": {"grid_top_equal": True}} for j in range(47)}
+    assert X.bench_proof_refusal(dict(ok, **{"truth-000": {"proofs": {"grid_top_equal": False}}})) is None
+    bad = dict(ok, **{"bench-003": {"proofs": {"grid_top_equal": False}}})
+    assert "RX-stop" in X.bench_proof_refusal(bad) and "46 of 47" in X.bench_proof_refusal(bad)
+    assert "RX-stop" in X.bench_proof_refusal({k: v for k, v in ok.items() if k != "bench-000"})
+
+
+def _figs(**kw):
+    base = {f: 0.5 for f in X.p2a_figures()}
+    base.update(kw)
+    return {"figures": base, "counts": {"truth": 10, "est": 12, "matched": 8, "extras": {"harmonic": 4},
+                                        "misses": {"rest": 2}}}
+
+
+def test_the_frontier_table():
+    per = {"p1": {X.BASE: _figs(), "lead-in": _figs()}, "p2": {X.BASE: _figs()}}
+    f = X.frontier(per, ["lead-in", "f6"])
+    assert f[X.BASE]["inputs"] == 2 and f[X.BASE]["precision"] == pytest.approx(16 / 24)
+    assert f[X.BASE]["recall"] == pytest.approx(0.8) and f[X.BASE]["extras"]["harmonic"] == 8
+    assert f["lead-in"]["inputs"] == 1 and "f6" not in f
+
+
+def test_paired_reads_are_descriptive_sign_only_and_oriented():
+    per = {f"set0/p{i}": {X.BASE: _figs(), "lead-in": _figs(note_error=0.4, env_corr=0.6)} for i in range(4)}
+    got = X.paired_reads(per, "lead-in", lambda d: {"bks_goat": _iv(sum(d.values()) / len(d), min(d.values()) - 0.01,
+                                                                    max(d.values()) - 0.005)})
+    assert set(got) == set(X.p2a_figures())
+    assert got["note_error"]["label"]["reading"] == "better" and got["note_error"]["words"] == X.P2A_LABEL
+    assert got["env_corr"]["label"]["reading"] == "better"          # a similarity that rose: better
+    up = X.paired_reads(per, "lead-in", lambda d: {"bks_goat": _iv(0.1, 0.05, 0.15)})
+    assert up["env_corr"]["label"]["reading"] == "better" and up["note_error"]["label"]["reading"] == "worse"
+    assert got["note_error"]["label"]["words"] == X.SIGN_ONLY and got["logmel"]["parts"] == 4
+
+
+def test_the_real_di_arm_by_group_and_file():
+    rows = [{"group": "P1", "kind": "chords", "cluster": f"P1|chords|n{i // 2}", "iid": f"truth-{i:03d}",
+             "figures": {X.BASE: {"note_error": 0.5}, "lead-in": {"note_error": 0.4 - 0.01 * i}}} for i in range(6)]
+    rows += [{"group": "lists", "kind": None, "cluster": "l1", "iid": "list-l1",
+              "figures": {X.BASE: {"note_error": 0.2}, "lead-in": {"note_error": 0.2}}}]
+    got = X.real_reads(rows, "lead-in")
+    assert set(got) == {"P1", "P1|chords", "lists"}
+    iv = got["P1"]["note_error"]["interval"]
+    assert iv["clusters"] == 3 and iv["hi90"] < 0 and got["P1"]["note_error"]["label"]["reading"] == "better"
+    assert got["lists"]["note_error"]["label"] is None               # one list: no interval
+    assert got["P1|chords"]["note_error"]["interval"] == iv
+
+
+def test_grid_pick_three_ways_would_pick_not_acted_on():
+    per = {}
+    for k in ("bks/p1", "goat/p2"):
+        per[k] = {}
+        for p in X.grid_points():
+            ne = abs(p["onset_threshold"] - 0.3) + (0 if p["melodia_trick"] else 0.01)
+            per[k][X.grid_id(p)] = {"figures": {"note_error": ne, "logmel": 1.0 + ne, "env_corr": 0.9 - ne}}
+
+    def mean_rows_of(vals):
+        m = sum(vals.values()) / len(vals)
+        return _iv(m, m - 0.001, m + 0.001)
+    got = X.would_picks(per, mean_rows_of)
+    assert set(got) == set(X.PICK_BY)
+    for f in X.PICK_BY:
+        assert got[f]["words"] == X.WOULD_PICK and got[f]["selected_from"] == 144
+        assert got[f]["minimum"].startswith("grid-o0.3-") and got[f]["edge_reported_not_extended"]["extend"]
+        assert got[f]["pick"] == got[f]["minimum"]                  # nothing else level with it here
+
+
+def test_the_stored_point_check():
+    want = {"logmel": 7.1, "env_corr": 0.97, "mask": {"1024": {"agree": 0.9}}}
+    xb = {"p1": {"guitars": {"xn-reread": {"figures": want}}}}
+    ok = {"p1": {X.BASE: {"stored_check": {"logmel": 7.1, "env_corr": 0.97, "mask": {"1024": {"agree": 0.9}}}}}}
+    assert X.stored_point_refusal(ok, xb) is None
+    off = {"p1": {X.BASE: {"stored_check": {"logmel": 7.1000001, "env_corr": 0.97, "mask": {"1024": {"agree": 0.9}}}}}}
+    assert "RX-stop" in X.stored_point_refusal(off, xb)
+    assert "RX-stop" in X.stored_point_refusal({}, xb)
+
+
+def test_phase_2a_paths_sit_under_readerr(monkeypatch, tmp_path):
+    monkeypatch.setattr(X, "readerr_dir", lambda: tmp_path / "readerr")
+    root = (tmp_path / "readerr").resolve()
+    for kind, c, i in (("cand", "lead-in", "bench-000"), ("raw", "grid", "truth-001"), ("notes-input", None, "list-x"),
+                       ("listing", None, None), ("score-input", None, "bench-001"), ("candidates", None, None)):
+        assert root in X.p2a_path(kind, c, i).resolve().parents
+    with pytest.raises(ValueError):
+        X.p2a_path("elsewhere")
+    assert X.p2a_path("listing").name == "notes.json" and X.p2a_path("candidates").name == "candidates.json"
+
+
+@pytest.mark.parametrize("cmd", ["notes", "score"])
+def test_phase_2a_commands_wait_for_their_keys(monkeypatch, cmd):
+    _on_main_with(monkeypatch, _main(X.PHASE), {f: True for f in X.CODE_FILES})
+    with pytest.raises(SystemExit, match="phase_scratch_readerr_frozen"):
+        X.COMMANDS[cmd](_args())
+    _on_main_with(monkeypatch, _main(X.PHASE, X.PHASE_FROZEN), {f: True for f in X.CODE_FILES})
+    with pytest.raises(SystemExit, match="phase_scratch_readerr_p2"):
+        X.COMMANDS[cmd](_args())
+
+
+def test_score_waits_for_the_notes_listings_hash(monkeypatch):
+    _on_main_with(monkeypatch, _main(X.PHASE, X.PHASE_FROZEN, X.PHASE_P2), {f: True for f in X.CODE_FILES})
+    with pytest.raises(SystemExit, match="phase_scratch_readerr_notes"):
+        X.cmd_score_p2a(_args())
+
+
+def test_the_cli_shards_spread_cpu_work_but_never_renders():
+    assert X.parse_shard("5/8") == (5, 8)
+    for bad in ("3/3", "1", "a/b", "-1/2"):
+        with pytest.raises(Exception):
+            X.parse_shard(bad)
+    with pytest.raises(SystemExit):
+        X.main(["xr-score", "--row", "xr-matched", "--shard", "0/4"])
