@@ -7406,6 +7406,16 @@
      "unanchored_bench": 107,
      "unanchored_real": 58
     }
+   },
+   "phase_scratch_readerr_candidates": {
+    "sha256": "108466679b3251defdf2cadec656a026d89b495203dbe05e6d4ace0b8ad53206",
+    "counts": {
+     "candidates": 149,
+     "bench_parts": 47,
+     "real_inputs": 89,
+     "base_check_parts": 47,
+     "rebuilds": 6284
+    }
    }
   },
   {
