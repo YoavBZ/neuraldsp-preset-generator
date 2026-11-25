@@ -65,6 +65,7 @@ def test_the_key_prefix_is_outside_every_guarded_prefix():
 def test_the_pinned_files_hold_scratch_exacts_and_the_redos():
     assert set(SE.CODE_FILES) <= set(RD.PINNED) and set(NT.CODE_FILES) <= set(RD.PINNED)
     assert "learn/scratch_exact.py" in RD.PINNED and "learn/song_bank.py" in RD.PINNED
+    assert {"learn/di_robustness.py", "learn/direc_check.py", "learn/confirm_run.py"} <= set(RD.PINNED)
     assert RD.CODE_FILES[0] == "learn/scratch_rederive.py" and len(set(RD.CODE_FILES)) == len(RD.CODE_FILES)
     for f in RD.CODE_FILES:
         assert (REPO / f).exists(), f
@@ -449,7 +450,9 @@ def test_the_three_input_forms():
     x, _ = NR.rebuild_redo("tr-di", notes, n, _bank(), di, "ring-soft", finish=_half)
     assert f.dtype == np.float64 and _sha(np, f) == _sha(np, np.asarray(np.asarray(x, np.float32), np.float64))
     m = RD.input_form("in-M", notes, n, _bank(), "ring-soft", T, di, _half, measure=lambda a: 3.0 * a, raw=raw)
-    assert _sha(np, m) == _sha(np, 3.0 * raw)
+    assert _sha(np, m) == _sha(np, np.asarray(np.asarray(3.0 * raw, np.float32), np.float64))
+    assert m.dtype == np.float64 and np.array_equal(m, m.astype(np.float32))      # di_section's float32 rounding
+    assert not np.array_equal(m, 3.0 * raw)                                     # ... is applied, not skipped
     u = RD.input_form("in-U", notes, n, _bank(), "ring-soft", T, di, raw=raw)
     assert np.sqrt(np.mean(u ** 2)) == pytest.approx(np.sqrt(np.mean(di ** 2)), rel=1e-9)
     k = np.sqrt(np.mean(di ** 2)) / (np.sqrt(np.mean(raw ** 2)) + 1e-12)
@@ -532,6 +535,10 @@ def _fake_ladder_world(monkeypatch, tmp_path, list_ok=True):
     monkeypatch.setattr(NR, "load_notes_doc", lambda: None)
     monkeypatch.setattr(NR, "Bank", lambda doc, excl=None: bank)
     monkeypatch.setattr(SB, "measure", lambda x: 2.0 * np.asarray(x, np.float64))
+    from learn import confirm_run as CR
+
+    (tmp_path / "average.npy").write_bytes(b"made-up average")
+    monkeypatch.setattr(CR, "AVERAGE", tmp_path / "average.npy")
     return key
 
 
@@ -543,6 +550,7 @@ def test_the_ladder_on_a_made_up_part(monkeypatch, tmp_path, capsys):
     assert "in-F is X 1 of 1" in out and "is xn-list 1 of 1" in out and "rebuild_redo's 1 of 1" in out
     lad = json.loads(RD.ladder_path().read_text())
     assert lad["proofs_hold"] and lad["deciding_parts"] == 1 and lad["renders"] == 0
+    assert lad["average_sha256"] == S.file_sha(tmp_path / "average.npy")       # the measure step's average file
     assert lad["proofs"] == {p: {"held": 1, "of": 1} for p in ("in_f_is_x", "today_on_in_f_is_xn_list",
                                                                "xf_now_is_rebuild_redo")}
     rec = json.loads(RD.part_path(key).read_text())

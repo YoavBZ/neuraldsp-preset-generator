@@ -55,12 +55,14 @@ real songs `note_transcribe.build_todo` hands the rule `note_replay.di_section`,
 | Input | How it is built | Role |
 |---|---|---|
 | `in-F` | `compose(T)` with the part's finish, as float32 (the bank guitar X itself) | beside: what `xn-list` saw |
-| `in-M` | `song_bank.measure(denoise_above(synthesise_redo(T))[:n])` (amendment 4) | **decides**: the form real songs hand over |
+| `in-M` | `song_bank.measure(denoise_above(synthesise_redo(T))[:n])` (amendment 4), rounded to float32 | **decides**: the form real songs hand over |
 | `in-U` | `denoise_above(synthesise_redo(T))[:n]`, scaled to the true DI's RMS | beside: fully unfinished |
 
 `synthesise_redo(T)` runs on the padded length, as in `rebuild_redo`. The probe figures match only with the hiss
-removal (`denoise_above`) inside `in-M`. `in-M` is taken exactly as amendment 4 writes it, as float64; `di_section`'s
-own float32 rounding is not applied. The pick and both decisive rows run in `in-M`.
+removal (`denoise_above`) inside `in-M`. `in-M` is amendment 4's formula with `di_section`'s own float32
+rounding applied (`note_replay.di_section` returns the measured DI as float32), so it matches the real DI's form down
+to the sample type. The probe figures in `in-M` (section 12) were computed in float64 and stay labelled seen. The pick
+and both decisive rows run in `in-M`.
 
 ## 4. The ladder (zero renders; `python -m learn.scratch_rederive ladder`)
 
@@ -82,10 +84,15 @@ Three proofs, each on 47 of 47 parts, before a part writes anything:
 The ladder stores only the guitars to be rendered: the `in-M` guitars of `xf-now` and of the four rung rows, under
 `PF/fs/rederive/dry/<row>/`, each file written once. Every other cell is reported (sha256, byte-identical to X and to
 `xf-now`, `logmel_distance` and envelope correlation to X) and not stored. A part's record goes under
-`PF/fs/rederive/ladder/`; `ladder.json` is written once, only when every part's proofs hold. Beside, per input form on
+`PF/fs/rederive/ladder/`; `ladder.json` (with the average guitar file's sha256, `confirm_run.AVERAGE`, which the
+measure step reads) is written once, only when every part's proofs hold. Beside, per input form on
 the 40 and all 47: today's rule's distance to X; its errors against T (tuning and tilt, absolute; each group's level;
 mutes found within 30 ms, `MUTE_FADE_S`, counted extra and missed); per chain cell the parts whose `in-M` guitar
 differs from `xf-now`'s, which is the number of parts each rung row must search.
+
+The mute match is many-to-one, not a pairing: a re-derived mute is extra when no true mute lies within 30 ms of it,
+a true mute is missed when no re-derived mute lies within 30 ms of it, and one mute may count as found for several
+of the other list's (so true less missed need not equal re-derived less extra).
 
 ## 5. The diagnosis (zero renders; Unit 2, `learn/rederive_diag.py`)
 
@@ -216,9 +223,9 @@ spanning, above, an end at zero, and every malformed form) and each ends in exac
 ## 11. Guards, data and privacy
 
 - Every command refuses unless this checkout runs main's code (this module, `scratch_exact.py` and its six pinned
-  files, `note_transcribe.CODE_FILES`, `song_bank.py`, `di_robustness.py`) and keys (`phase_scratch_rederive*` and
-  `phase_scratch_exact*`; `scratch_search.on_main`; `note_transcribe.redo_on_main`), and main holds the draw, build 2's
-  hash (`phase_scratch_notes_dry_b2`), the exact-notes declaration and Phase A's hashes (`phase_scratch_exact_targets`)
+  files, `note_transcribe.CODE_FILES`, `song_bank.py`, `di_robustness.py`, `direc_check.py`, `confirm_run.py`) and
+  keys (`phase_scratch_rederive*` and `phase_scratch_exact*`; `scratch_search.on_main`; `note_transcribe.redo_on_main`),
+  and main holds the draw, build 2's hash (`phase_scratch_notes_dry_b2`), the exact-notes declaration and Phase A's hashes (`phase_scratch_exact_targets`)
   and this declaration.
 - The per-PR check, against each PR's own base: with `BASE=$(git merge-base origin/main HEAD)`, `git diff --quiet $BASE
   HEAD --` over `note_transcribe.CODE_FILES`, `learn/scratch_exact.py`, `learn/scratch_search.py`,
@@ -267,8 +274,8 @@ or from stored results, before this declaration. They are labelled seen wherever
   with D is 0.35 to 0.53; agreement on the searches' common first trials keeps the row order (rank agreement 0.98,
   0.92, 0.84) but its per-part Spearman with D is −0.28 to −0.41 (common prefix a median 13, 6 and 4 trials);
   dry-domain distance to X has Spearman +0.42 to +0.60.
-- **Real songs.** Build 2 less row (b): 0.290 on the 15 tilt parts against 0.270 on the 25 (plain means; reproduced by
-  the first review); the audited Spearman of D* with the real gap is −0.12; build 2's real floor read +0.557, +0.822
+- **Real songs.** Build 2 less row (b): +0.274 [+0.186, +0.361] on the 40; 0.290 on the 15 tilt parts against 0.270
+  on the 25 (plain means; reproduced by the first review); the audited Spearman of D* with the real gap is −0.12; build 2's real floor read +0.557, +0.822
   above the true DI.
 - **A self-consistent rule prototype** (two worst parts, untuned): envelope correlation with X 0.376 → 0.9985 on the
   sw50r part and 0.824 → 0.986 on item_69; neither byte-identical. The plain correction step closed item_69's tilt error

@@ -12,7 +12,7 @@ changing it: `derive` (the four values, `rebuild_redo`'s own estimators in its o
 | Input | What it is |
 |---|---|
 | `in-F` | X finished, as the bench handed it (`compose` of T, as float32): what `xn-list` was rebuilt from |
-| `in-M` | `song_bank.measure(denoise_above(synthesise_redo(T))[:n])`: the form real songs hand over (decides) |
+| `in-M` | `song_bank.measure(denoise_above(synthesise_redo(T))[:n])` as float32 (`di_section`'s rounding): decides |
 | `in-U` | `denoise_above(synthesise_redo(T))[:n]` at the true DI's RMS, unfinished (beside) |
 
     $MAIN -m learn.scratch_rederive ladder      # zero renders, once: T, R and every cell per part and input
@@ -26,9 +26,9 @@ guitars the rows render: `xf-now` and the four chain cells (the rung rows' guita
 (`learn/rederive_rows.py`) are later units.
 
 Every command refuses unless this checkout runs main's code (this module, `scratch_exact.py` and its six pinned files,
-`note_transcribe.CODE_FILES`, `song_bank.py`) and keys (the `phase_scratch_rederive*` and `phase_scratch_exact*` keys;
-`scratch_search.on_main`; `note_transcribe.redo_on_main`), and main holds the draw, build 2's hash, the exact-notes
-build's hash and this declaration.
+`note_transcribe.CODE_FILES`, `song_bank.py`, `di_robustness.py`, `direc_check.py`, `confirm_run.py`) and keys (the
+`phase_scratch_rederive*` and `phase_scratch_exact*` keys; `scratch_search.on_main`; `note_transcribe.redo_on_main`),
+and main holds the draw, build 2's hash, the exact-notes build's hash and this declaration.
 
 The pure parts (`VALUE_CELLS`, `cell_values`, `chain_fixed`, `values_key`, `mute_errors`, `value_errors`, `XF_TABLE`,
 `xf_stage1`, `xf_stage2`, `xf_read`, `RF_TABLE`, `rf_code`, the guards) are tested in tests/test_scratch_rederive.py on
@@ -80,7 +80,8 @@ STAGE_1, STAGE_2 = (NOW_ROW,), (FIX_ROW,)   # the bench table's two stages (the 
 DECIDING = SE.DECIDING                   # BKS+GOAT, the 40; all 47 beside
 SMALL, BIG = S.SMALL, S.BIG              # 0.05, 0.10: they label only
 MUTE_MATCH_S = NR.MUTE_FADE_S            # beside only: a mute counts as found when the other list has one within 30 ms
-PINNED = tuple(dict.fromkeys(SE.CODE_FILES + NT.CODE_FILES + ("learn/song_bank.py", "learn/di_robustness.py")))
+PINNED = tuple(dict.fromkeys(SE.CODE_FILES + NT.CODE_FILES + ("learn/song_bank.py", "learn/di_robustness.py",
+                                                              "learn/direc_check.py", "learn/confirm_run.py")))
 CODE_FILES = ("learn/scratch_rederive.py",) + PINNED
 GUARDED_PREFIXES = ("phase_fs", "phase_scratch_notes", "phase_scratch_exact", "phase_scratch_readerr", "phase_nr")
 
@@ -453,7 +454,8 @@ def compose(notes, n, bank, ring, finish, values, loud=None, rate=NR.SR):
 def input_form(kind, notes, n, bank, ring, T, di, finish=None, loud=None, measure=None, raw=None, rate=NR.SR):
     """The form of X the rule is handed, built from the true values T (float64):
     `in-F` X finished: `compose` of T with the part's finish, rounded to float32 as the bench's bank guitar was;
-    `in-M` `song_bank.measure(denoise_above(synthesise_redo(T))[:n])` (`measure` stands in only in tests);
+    `in-M` `song_bank.measure(denoise_above(synthesise_redo(T))[:n])`, rounded to float32 as
+    `note_replay.di_section` rounds the real DI (`measure` stands in only in tests);
     `in-U` `denoise_above(synthesise_redo(T))[:n]` scaled to the true DI's RMS.
     `raw`: `unfinished(..., T)` when already made (in-M and in-U share it)."""
     import numpy as np
@@ -470,7 +472,7 @@ def input_form(kind, notes, n, bank, ring, T, di, finish=None, loud=None, measur
             from learn import song_bank as SB
 
             measure = SB.measure
-        return np.asarray(measure(raw), np.float64)
+        return np.asarray(np.asarray(measure(raw), np.float32), np.float64)
     d = np.asarray(di, np.float64)
     return raw * (np.sqrt(np.mean(d ** 2)) / (np.sqrt(np.mean(raw ** 2)) + 1e-12))
 
@@ -572,6 +574,7 @@ def cmd_ladder(_args):
     NT.never_overwrite(ladder_path())
     import numpy as np
 
+    from learn import confirm_run as CR
     from learn import note_fixes as NF
     from learn import pipeline_fix as P
 
@@ -667,7 +670,8 @@ def cmd_ladder(_args):
            "fixes": fixes, "ring_variant": ring, "loud_gamma": loud, "inputs": list(INPUTS),
            "deciding_input": DECIDING_INPUT, "elements": list(ELEMENTS), "value_cells": list(VALUE_CELLS),
            "chain_cells": list(CHAIN_CELLS), "written": list(LADDER_WRITES), "mute_match_s": MUTE_MATCH_S,
-           "pinned": pinned, "proofs": {p: {"held": v, "of": n_all} for p, v in held.items()},
+           "average_sha256": S.file_sha(CR.AVERAGE), "pinned": pinned,
+           "proofs": {p: {"held": v, "of": n_all} for p, v in held.items()},
            "proofs_hold": True, "deciding_parts": len(deciding),
            "summary": {"the_40": ladder_summary(recs, deciding), "all_47": ladder_summary(recs, keys)},
            "parts": {k: {"record_sha256": S.file_sha(part_path(k)), "files": recs[k]["files"]} for k in keys},
