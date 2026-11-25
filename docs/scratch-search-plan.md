@@ -1286,6 +1286,9 @@ decision (Go 4) stays the user's. Code: `learn/scratch_exact.py`; tests: `tests/
 `PF/fs/exact/`, each file written once. Grepped first: no `phase_scratch_exact*` key, row name (`xn-bank`, `xn-swap`,
 `xn-reread`, `xn-list`), code (`XN-*`) or `scratch_exact` exists in `docs/`, `learn/`, `tests/` or the ledger.
 
+**Status (2026-11-25):** ran and audited, `XN-both` (`phase_scratch_exact_outcome`). The next step, the note-reading
+diagnosis on this bench, is declared in [scratch-readerr-plan.md](scratch-readerr-plan.md) (`phase_scratch_readerr`).
+
 **The question.** On guitars the bank reproduces exactly, what share of the whole dry-guitar mismatch cost comes from
 note reading (Basic Pitch) and what share from the replay-from-samples method? The share is reported to the user beside
 the real gap: real build 2 less row (b), +0.274 [+0.186, +0.361] on the 40 (`phase_scratch_notes_read_b2`). **No
