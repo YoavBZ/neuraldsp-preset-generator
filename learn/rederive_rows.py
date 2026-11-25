@@ -589,9 +589,9 @@ def cmd_check_search(args):
 def cmd_floors(args):
     """Beside only (2 renders a distinct guitar a part; gates nothing): at the part's target preset, `xf-fix` and the
     four chain cells, each primed alone, judged on both halves against the record with the bank guitar as the judge's
-    DI at lag 0; ln(d / d_Cen) on the held half, as `scratch_exact floors`. A guitar byte-identical to one already rendered
-    for the part takes its result. On the checks' two parts `xn-list` is rendered again: its stored floor must repeat
-    (render sha256 and both halves' distances). -> floors/<part>.json."""
+    DI at lag 0; ln(d / d_Cen) on the held half, as `scratch_exact floors`. A guitar byte-identical to one already
+    rendered for the part takes its result. On the checks' two parts `xn-list` is rendered again: its stored floor must
+    repeat (render sha256 and both halves' distances). -> floors/<part>.json."""
     _guard_shard(args)
     m = require_rows(RD.PHASE_LADDER, RD.PHASE_FROZEN, RD.answers_key(NOW_ROW))
     xb = SE.require_xbuild(m)

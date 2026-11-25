@@ -36,7 +36,7 @@ def _args(**kw):
     return type("A", (), dict(base, **kw))()
 
 
-# --- names, gates, the carry (pure) -------------------------------------------------------------------------------------------
+# --- names, gates, the carry (pure) -----------------------------------------------------------------------------------
 
 def test_names():
     assert RR.CODE_FILES[0] == RR.MODULE == "learn/rederive_rows.py" and set(RD.CODE_FILES) < set(RR.CODE_FILES)
@@ -117,7 +117,7 @@ def test_the_phases_each_command_reads():
     assert RR.row_phases("fs-refit") == (RD.PHASE_FROZEN, RD.PHASE_BENCH_OUTCOME, SE.PHASE_B2_ANSWERS)
 
 
-# --- the read's parts and codes (pure) -----------------------------------------------------------------------------------------
+# --- the read's parts and codes (pure) --------------------------------------------------------------------------------
 
 def test_the_design_time_parts_by_rule():
     dec = ["bks__a|x", "bks__b|y", "goat__c|z", "goat__d|w"]
@@ -193,7 +193,7 @@ def test_the_seen_figures_are_the_declarations():
     assert not RR._close(_iv(0.3216, 0.1797, 0.4624), RR.SEEN["D_list"]) and not RR._close(None, (0, 0, 0))
 
 
-# --- the forbidden files (pure) -------------------------------------------------------------------------------------------------
+# --- the forbidden files (pure) ---------------------------------------------------------------------------------------
 
 def test_the_search_never_opens_anything_scored(tmp_path):
     ex, rd = tmp_path / "fs" / "exact", tmp_path / "fs" / "rederive"
@@ -227,12 +227,13 @@ def test_the_paths():
     assert RR.rows_dir() != SE.exact_dir() and RR.search_path("xn-bank", "k") != SE.search_path("xn-bank", "k")
 
 
-# --- the source: the shared steps are called unchanged ------------------------------------------------------------------------
+# --- the source: the shared steps are called unchanged ----------------------------------------------------------------
 
 def _calls():
     out = set()
     for node in ast.walk(TREE):
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+        f = getattr(node, "func", None)
+        if isinstance(node, ast.Call) and isinstance(f, ast.Attribute) and isinstance(f.value, ast.Name):
             out.add(f"{node.func.value.id}.{node.func.attr}")
     return out
 
@@ -285,7 +286,7 @@ def test_the_guarded_files_are_unchanged_against_the_base():
     assert r.returncode == 0
 
 
-# --- the guards: every command refuses -------------------------------------------------------------------------------------
+# --- the guards: every command refuses --------------------------------------------------------------------------------
 
 CASES = [("check-score", {}), ("check-score", {"side": "real"}), ("check-search", {}), ("floors", {}),
          ("floor-real", {}), ("null-build", {}), ("read", {}), ("read", {"stage": "2"}), ("read", {"stage": "rungs"}),
@@ -371,7 +372,7 @@ def test_the_cli():
         RR.main(["read", "--stage", "3"])
 
 
-# --- the bench search in a fake world (numpy; skipped on the light runner) ----------------------------------------------------
+# --- the bench search in a fake world (numpy; skipped on the light runner) --------------------------------------------
 
 K1, K2 = "bks__set0__k1.wav@1.0#r.wav|ac20", "goat__item_0@2.0#r.wav|pr12"     # synthetic keys
 
@@ -418,7 +419,8 @@ def _bench_world(monkeypatch, tmp_path, now_same_as_x=True):
                  rd / "answers-xf-now.json", rd / "score" / "xf-now" / f"{SE._f(K1)}.json", ex / "rows.json"]
     for f in forbidden:
         P.save(f, {"held": {"answer": 1.0}})
-    m = {SE.PHASE_TARGETS: {"build_sha256": S.file_sha(SE.build_path()), "records_sha256": S.file_sha(SE.records_path())},
+    m = {SE.PHASE_TARGETS: {"build_sha256": S.file_sha(SE.build_path()),
+                            "records_sha256": S.file_sha(SE.records_path())},
          RD.PHASE_LADDER: {"ladder_sha256": S.file_sha(RD.ladder_path())}}
     monkeypatch.setattr(RR, "require_rows", lambda *ph: m)
     monkeypatch.setattr(SE, "bank_build", lambda mm: b2)
