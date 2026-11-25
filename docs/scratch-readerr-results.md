@@ -30,14 +30,18 @@ same records, and read against those rows:
 - **E passes** (the 90% interval wholly below zero, the mean beyond −0.10), and **M reads "worse"**. That is XH-both:
   the extras cost, and the rest (the misses and the found notes' timing, ends and bends) costs too.
 - **Passing-only gives the same code**, so the read is not refusal-sensitive. In passing-only, E still passes.
-- **The share sits beside.** −E over reading proper is 0.50 [0.29, 0.72] (Fieller, bounded). Of reading proper's cost
-  on this bench, about half is the extras. The other half is the misses with the found notes' timing, ends and bends.
+- **The share sits beside.** −E over reading proper is 0.50 [0.29, 0.72] (Fieller, bounded). Without the refused part
+  (which reads as wholly extras) it is 0.43 [0.16, 0.67]; on the shrunk answer 0.37 [−0.21, 0.74]. Of reading proper's
+  cost on this bench, the extras make about half on the full answer (0.43 without the refused part; beside, not
+  decided). The rest is the misses with the found notes' timing, ends and bends.
 - **The checkpoints agree on E:** −0.293 at 50 evaluations, −0.291 at 100, −0.283 at 200. M grows with the search,
   from +0.095 at 50 to +0.227 at 200.
 - **Leave-one-cluster-out** (32 clusters) keeps both. E's mean runs from −0.309 to −0.245, with every upper end below
   −0.11. M's mean runs from +0.236 to +0.318, with every lower end above +0.10.
 - **The shrunk answer, beside, reads XH-rest.** E is −0.067 [−0.160, +0.025] and M +0.113 [+0.047, +0.180]. Shrunk
-  never decides.
+  never decides. Passing-only, the shrunk E is −0.007 [−0.122, +0.109] (GOAT +0.033): on the shrunk answer the
+  extras' gain is not shown, and its −0.067 comes mostly from the refused part. The extras' cost shows on the full
+  answer.
 
 **The refused part.** One BKS part refused its search at the start, twice; J0 refuses its search half. Under S1 it
 reads at Cen. It is the part `xn-list` also refused, and the one `xr-build` listed for its pause share.
@@ -55,14 +59,19 @@ bank guitar, against E). No dry figure becomes Phase 2's scoring figure without 
 | `logmel` | +0.305 | +0.262 | +0.383 | 0.825 | +0.204, 0.787 |
 | `env_corr` | −0.316 | −0.053 | −0.530 | 0.400 | −0.284, 0.383 |
 
-Both lean the expected way in both sets: a drop in `logmel` and a rise in `env_corr` go with a lower E.
+Both lean the expected way in both sets: a drop in `logmel` and a rise in `env_corr` go with a lower E. No interval:
+not decided. For `env_corr` the expected sign is opposite, so its sign agreement of 0.400 means 60% of parts lean the
+expected way.
 
 **What it can't show.**
 
-- **The joined ends.** The join hands each re-find's end to its note. On the bench, the 565 joins leave 380 found notes
-  ending past their exact partner's end (`xr-build`'s join report). So `xr-matched` takes the extras away, but some of its
-  held notes ring longer than the exact notes do. E prices "no extras, Basic Pitch's own ends", not a clean
-  extras-only change.
+- **The joined ends.** The join hands each re-find's end to its note. The joins extend 480 kept notes (from the #629
+  review); 380 of them end past the exact partner's end (`xr-build`'s join report). Of the 380, 122 already did before
+  the join, against 69% of unextended kept notes (both from the #629 review). The median overrun is 118 ms (from the
+  #629 review). 204 run past the as-played end, and 114 past a later same-pitch exact onset, a miss effect counted in M
+  (both from the #629 review). The join adds no sounding span beyond `xn-reread`'s, so it does not bias E. 328 of the
+  565 joins are re-finds by the anatomy (409 on the nominal list). Left out with the extras: 10 timing and 21
+  substitution extras; misses 53 timing and 58 substitution.
 - **It is an oracle.** The extras are removed by matching against the exact list, which no transcriber has. The row
   says the extras cost on this bench; it doesn't say a real rule can find them.
 - **The bench prices fidelity only.** The bank guitar is the song as Basic Pitch heard it.
@@ -77,6 +86,9 @@ Both lean the expected way in both sets: a drop in `logmel` and a rise in `env_c
 - Phase 2a's would-picks stay descriptive (`candidates.json`, `phase_scratch_readerr_candidates`). By note error, the
   grid's level set nearest the stored point is onset 0.7, frame 0.5, 58 ms, Melodia on: −0.138 [−0.174, −0.102] on the
   40, sign only, not on J0's scale. That is not acted on until Phase 2's read.
+- Note error is the table's declared figure, not one shown to follow the cost (Phase 1: −0.035 pooled, −0.15 BKS,
+  +0.08 GOAT, sets disagree). Its Phase 2a would-pick trades extras for misses (1,953 → 378 extras, 302 → 620 misses),
+  and XH-both says misses cost too, so no note-error pick is trusted before it is priced.
 
 **Cost (measured).** Every render ran on main's code, from frozen worktrees, at most 3 render processes:
 
