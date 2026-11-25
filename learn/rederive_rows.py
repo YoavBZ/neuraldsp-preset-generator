@@ -724,6 +724,8 @@ def cmd_floors(args):
         if out.exists():
             continue
         SE.disk_guard()
+        if pk in repeat:                                 # written once, like every other output (before any render)
+            NT.never_overwrite(repeat_path(pk))
         t = json.loads(SE.target_path(pk).read_text())
         if t["record_file_sha256"] != S.file_sha(SE.record_path(pk)):
             raise SystemExit(f"{pk}: the record is not the target step's")
@@ -753,6 +755,7 @@ def cmd_floors(args):
         rec.update(renders=renders, time=time.strftime("%Y-%m-%d %H:%M:%S"))
         P.save(out, rec)
         if pk in repeat:                                 # the flag alone: xf-fix's search never opens floors
+            NT.never_overwrite(repeat_path(pk))
             P.save(repeat_path(pk), {"plan": PLAN, "part": pk, "xn_list_repeats": rec["xn_list_repeats"],
                                      "floor_sha256": S.file_sha(out)})
         print(f"{pk[-50:]}: floors {[(g, v['floor']) for g, v in rec['guitars'].items()]}"

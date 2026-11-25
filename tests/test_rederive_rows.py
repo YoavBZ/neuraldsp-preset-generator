@@ -682,6 +682,23 @@ def _real_world(monkeypatch, tmp_path, rf, mismatch=()):
     return w
 
 
+def test_the_floor_repeat_flag_is_never_overwritten(monkeypatch, tmp_path):
+    """floors writes floor-repeat/<part>.json once: an existing flag refuses before any render."""
+    from learn import audibility_measure as AM
+    from learn import pipeline_fix as P
+
+    w = _bench_world(monkeypatch, tmp_path)
+    w["m"][RD.answers_key("xf-now")] = {"sha256": "aa"}
+    P.save(RR.stage1_path(), {"code": None, "go_on": True, "answers_now_sha256": "aa"})
+    monkeypatch.setattr(RR, "bench_world", lambda m, row, b2, xb: {"b2": b2, "xb": xb})
+    monkeypatch.setattr(SN, "check_parts", lambda parts: [K1])
+    monkeypatch.setattr(AM, "fresh_render", lambda *a, **k: pytest.fail("rendered before the refusal"))
+    P.save(RR.repeat_path(K1), {"xn_list_repeats": True})
+    with pytest.raises(SystemExit, match="never overwritten"):
+        RR.cmd_floors(_args())
+    assert "never_overwrite(repeat_path(pk))" in SRC and SRC.count("never_overwrite(repeat_path(pk))") == 2
+
+
 def test_the_bridge_carries_build_2s_records_before_its_search(monkeypatch, tmp_path, capsys):
     w = _real_world(monkeypatch, tmp_path, {K1: lambda x: x, K2: lambda x: x * 0.25})   # part 1's rf2 is tr-di
     with pytest.raises(SystemExit, match="carry has not run"):
