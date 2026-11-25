@@ -5185,6 +5185,40 @@
      "one_part_refused": "on one GOAT part J0 refuses the held half (B) for the target through xn-reread and through xn-list ('no measurable loudness on one side'; diagnosed with 2 extra renders outside the record: the render is finite and half A reads), so those two floors read on 46 parts. Beside only: the rows are scored through the bank guitar, which reads on this part, and this part's search half is A",
      "order": "at the target preset xn-list sits closer to the record than Cen, xn-reread and xn-swap further; in the real world row (b)'s answer through tr-di sits +0.82 further than through the true DI"
     }
+   },
+   "phase_scratch_exact_answers_bank": {
+    "sha256": "a7923f378cbaed61298467533cb730428cff0f1b854af7193f257ee748ab1306",
+    "file": "PF/fs/exact/answers-xn-bank.json",
+    "ran": "2026-11-25, python -m learn.scratch_exact search --row xn-bank then --row xn-swap --shard k/3 (three chains, one render process each), then one --rerun pass per row, from main at 781d5ae8 in a frozen detached worktree (re-cut after #613; no code differs from 38f7dfa5; the byte-identity proofs rerun there: 7 of 7 pinned files equal main's, build 2 rebuilt byte for byte, 110 files); answers --row once each, zero renders",
+    "parts": 47,
+    "refused": 0,
+    "reruns": 0,
+    "search_renders": 12412,
+    "start_reference_renders": 94,
+    "search": "47 of 47 records answered; step 2 canonical on 47, no fallback, no technical refusal (the --rerun pass found nothing to rerun)",
+    "coverage": "T1: the searched dims covered every key on which the target differs from Cen on 47 of 47",
+    "wall": "about 6,300 s a shard chain per row on 3 processes (xn-bank and xn-swap in turn)"
+   },
+   "phase_scratch_exact_answers_swap": {
+    "sha256": "40a49a5bfd8b984af5b67bd8003f3e723b5babbb0b1033aea9f0974b51357014",
+    "file": "PF/fs/exact/answers-xn-swap.json",
+    "ran": "2026-11-25, python -m learn.scratch_exact search --row xn-bank then --row xn-swap --shard k/3 (three chains, one render process each), then one --rerun pass per row, from main at 781d5ae8 in a frozen detached worktree (re-cut after #613; no code differs from 38f7dfa5; the byte-identity proofs rerun there: 7 of 7 pinned files equal main's, build 2 rebuilt byte for byte, 110 files); answers --row once each, zero renders",
+    "parts": 47,
+    "refused": 0,
+    "reruns": 0,
+    "search_renders": 12300,
+    "start_reference_renders": 94,
+    "search": "47 of 47 records answered; step 2 canonical on 47, no fallback, no technical refusal (the --rerun pass found nothing to rerun)",
+    "coverage": "T1: the searched dims covered every key on which the target differs from Cen on 47 of 47",
+    "wall": "about 6,300 s a shard chain per row on 3 processes (xn-bank and xn-swap in turn)"
+   },
+   "phase_scratch_exact_phase_a_review": {
+    "review": "#613 (phase_scratch_exact_targets) passed independent review with nits, merged unchanged as 781d5ae8 to keep the machine busy; the nits are recorded here (the ledger is append-only)",
+    "nit_1": "the xn-reread and xn-list floors read on 46 parts (39 of the 40): dropping the worst case (an infinite distance) makes them lean optimistic",
+    "nit_2": "the 802 total excludes the 2 diagnostic renders on GOAT item_69 (kept outside PF): 804 renders in Phase A in all",
+    "nit_3": "Phase 1's input samples are equal on 47 of 47, which is stronger than the PEAK-chunk caveat implied: the round trip's inputs are the same audio, only libsndfile's PEAK-chunk timestamp differs",
+    "nit_4": "on GOAT item_69 the bank guitar peaks at +7.43 dBFS (float samples, no clipping)",
+    "item_69_cause": "probable cause of the half-B refusal on item_69 (the orchestrator's addition): the target's noise gate (on, threshold -56 dB, input gain -16 dB) likely closes on the quieter re-derived guitars (half B RMS -27.5 dB for xn-reread and -28.7 dB for xn-list, against the bank guitar's -25.2 dB). That is a real level-re-derivation cost, not an artefact"
    }
   },
   {
