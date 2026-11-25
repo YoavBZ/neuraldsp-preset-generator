@@ -89,6 +89,7 @@ KONG_GRID = {"onset_threshold": (0.2, 0.3, 0.4, 0.5), "frame_threshold": (0.1, 0
 KONG_SHIPPED = {"onset_threshold": 0.3, "frame_threshold": 0.1}    # the fork's PianoTranscription at cfe28ed
 KONG_FIXED = {"offset_threshold": 0.3, "pedal_offset_threshold": 0.2}   # the fork's own, never varied
 KONG_MODEL_TYPE = "Regress_onset_offset_frame_velocity_CRNN"       # hf_midi_transcription's choice for non-piano
+KONG_FORK_COMMIT = "cfe28ed26be892ad7d4e8a9aadcf95cb904c9320"      # the manifest's pin; the files' sha256 recorded too
 KONG_BATCH = 8                           # hf_midi_transcription's default batch size
 KONG_SEGMENT_S = 10                      # hf_midi_transcription: segment_samples = 10 * sample_rate
 KONG_RAW_KEYS = ("reg_onset_output", "reg_offset_output", "frame_output", "velocity_output")
@@ -720,13 +721,20 @@ def install_torch_guards(torch, guard, report, setter=setattr):
     setter(torch.nn.Module, "load_state_dict", report.wrapper())
 
 
-def _dist_version(name):
-    from importlib import metadata
-
-    try:
-        return metadata.version(name)
-    except metadata.PackageNotFoundError:
-        return None
+def module_versions(names):
+    """Versions read from the imported modules themselves, never from package metadata (lock B's two code archives are
+    unpacked, not pip-registered): {name: `__version__` or None} for each module already imported, plus
+    {name.file: sha256} for each `.py` named "package.module" (the pinned code identified by its own bytes)."""
+    out = {}
+    for name in names:
+        mod = sys.modules.get(name)
+        if mod is None:
+            out[name] = None
+        elif "." in name:
+            out[f"{name}.sha256"] = file_sha(mod.__file__)
+        else:
+            out[name] = getattr(mod, "__version__", None)
+    return out
 
 
 # --- the torch modes: one adapter per tool (to confirm on install) ----------------------------------------------------------
@@ -748,7 +756,10 @@ class Mt3Adapter:
         if ad.model_key != MT3_MODEL_KEY:
             refuse(f"mt3: the checkpoint loaded as {ad.model_key}, not {MT3_MODEL_KEY}")
         self.ad = ad
-        self.versions = {"mt3_infer": _dist_version("mt3-infer"), "torchaudio": _dist_version("torchaudio")}
+        import torchaudio  # noqa: F401                    # its own resample; imported for its version
+
+        self.versions = module_versions(("mt3_infer", "torchaudio", "mt3_infer.adapters.yourmt3",
+                                         "mt3_infer.models.yourmt3.inference_loader"))
 
     def read(self, path):
         import numpy as np
@@ -787,14 +798,17 @@ class KongAdapter:
     no patch is needed; offset 0.3 and pedal 0.2 as shipped."""
 
     def __init__(self, spec, threads):
+        import librosa  # noqa: F401                       # its loader; imported for its version
+        import piano_transcription_inference.utilities  # noqa: F401
         from piano_transcription_inference import PianoTranscription, sample_rate
 
         self.sr = sample_rate
         self.tr = PianoTranscription(KONG_MODEL_TYPE, checkpoint_path=spec["model"],
                                      segment_samples=KONG_SEGMENT_S * sample_rate, batch_size=KONG_BATCH, device="cpu")
-        self.versions = {"piano_transcription_inference": _dist_version("piano_transcription_inference"),
-                         "hf_midi_transcription": _dist_version("hf_midi_transcription"),
-                         "librosa": _dist_version("librosa")}
+        self.versions = dict(module_versions(("librosa", "piano_transcription_inference.inference",
+                                              "piano_transcription_inference.utilities",
+                                              "piano_transcription_inference.models")),
+                             piano_transcription_inference_commit=KONG_FORK_COMMIT)
 
     def read(self, path):
         import librosa
@@ -843,8 +857,8 @@ def run_torch(mode, spec, pairs, model_sha, threads):
         refuse(f"{mode}: the checkpoint was not loaded through the guarded load")
     if not report.rows:
         refuse(f"{mode}: no load_state_dict was reported")
-    versions = dict(adapter.versions, torch=torch.__version__, numpy=_dist_version("numpy"),
-                    python=sys.version.split()[0])
+    versions = dict(adapter.versions, torch=torch.__version__, python=sys.version.split()[0],
+                    **module_versions(("numpy",)))
     for src, dst in pairs:
         t0 = time.perf_counter()
         with tempfile.TemporaryDirectory(prefix="readerr-") as workdir:

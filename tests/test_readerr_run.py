@@ -434,6 +434,16 @@ def test_mt3_select_programs():
         R.mt3_select(notes, "drums")
 
 
+def test_module_versions_from_the_modules_not_metadata():
+    got = R.module_versions(("pytest", "json", "json.decoder", "synthetic_never_imported_module"))
+    assert got["pytest"] == pytest.__version__ and got["json"] == json.__version__
+    assert got["json.decoder.sha256"] == R.file_sha(sys.modules["json.decoder"].__file__)
+    assert got["synthetic_never_imported_module"] is None
+    src = (REPO / "learn" / "readerr_run.py").read_text()
+    assert "importlib.metadata" not in src and "from importlib import metadata" not in src
+    assert R.KONG_FORK_COMMIT == "cfe28ed26be892ad7d4e8a9aadcf95cb904c9320"
+
+
 def test_kong_events():
     notes = [{"onset_time": 0.1, "offset_time": 0.5, "midi_note": 64, "velocity": 127},
              {"onset_time": 0.2, "offset_time": 0.3, "midi_note": 40, "velocity": 0}]
@@ -960,26 +970,19 @@ def test_bp_modes_match_bp_run_on_a_synthetic_tone(tmp_path):
 
 # --- the torch modes, where their venvs and checkpoints are installed (skipped on CI) --------------------------------------
 
-READERR_TOOLS = pathlib.Path("~/ndsp-presets/tools/readerr").expanduser()
-SMOKE = {"mt3": ("mt3_infer", READERR_TOOLS / "mt3_checkpoints" / "yourmt3" /
-                 "mc13_256_g4_all_v7_mt3f_sqr_rms_moe_wf4_n8k2_silu_rope_rp_b36_nops" / "last.ckpt",
-                 {"programs": "pitched"}, {"programs": ["pitched", "guitar"]}),
-         "kong": ("piano_transcription_inference", READERR_TOOLS / "riley" / "guitar-fl.pth",
-                  dict(R.KONG_SHIPPED), {"onset_threshold": [0.2, 0.5]})}
-
-
-def _tool_python(module):
-    for py in sorted(READERR_TOOLS.glob("*/bin/python")):
-        if subprocess.run([str(py), "-I", "-c", f"import {module}"], capture_output=True).returncode == 0:
-            return py
-    return None
+SMOKE = {"mt3": ("A", "ymt3", {"programs": "pitched"}, {"programs": ["pitched", "guitar"]}),
+         "kong": ("B", "kong-fl", dict(R.KONG_SHIPPED), {"onset_threshold": [0.2, 0.5]})}
 
 
 @pytest.mark.parametrize("mode", R.TORCH_MODES)
 def test_torch_mode_smoke_in_its_venv(tmp_path, mode):
-    module, ckpt, options, grid = SMOKE[mode]
-    py = _tool_python(module) if READERR_TOOLS.is_dir() else None
-    if py is None or not ckpt.is_file():
+    tools = pytest.importorskip("learn.readerr_tools")                # unit F: the venvs' and checkpoints' paths
+    lock, cand, options, grid = SMOKE[mode]
+    try:
+        py, ckpt = tools.venv_python(lock), tools.checkpoint_path(cand)
+    except SystemExit:                                                # no manifest here
+        pytest.skip(f"no {mode} install here")
+    if not py.exists() or not ckpt.is_file():
         pytest.skip(f"no {mode} venv or checkpoint here")
     src = tmp_path / "synthetic.wav"
     _tone_wav(src, seconds=3.0, sr=16000)
@@ -993,4 +996,5 @@ def test_torch_mode_smoke_in_its_venv(tmp_path, mode):
     out = json.loads(dst.read_text())
     assert out["mode"] == mode and out["spec"] == spec and len(out["grid"]) == 2
     assert out["load_report"] and not any(row["missing"] for row in out["load_report"])
+    assert out["versions"]["torch"] and all(v is not None for v in out["versions"].values())   # read from modules
     assert all(e["on"] >= 0 and e["off"] > e["on"] and e["bends"] == [] for e in out["events"])
