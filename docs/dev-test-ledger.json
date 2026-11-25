@@ -5895,6 +5895,23 @@
      "phase_scratch_readerr_notes"
     ],
     "grepped": "no XH-, xr-matched, xr-found, xr-filled, hand-plain or phase_scratch_readerr_p2 existed in docs/, learn/, tests/ or the ledger before this declaration (XR- avoided: a substring of TXR-)"
+   },
+   "phase_scratch_readerr_xr_dry": {
+    "sha256": "1b22a854641a961d0322d0944f788336f68065ffbdcc949d1bb56bc5d01002e0",
+    "counts": {
+     "parts": 47,
+     "reread_equal": 47,
+     "list_equal": 47,
+     "pairs_equal": 47,
+     "pinned": 25,
+     "kept": 3210,
+     "joined": 565,
+     "removed": 1383,
+     "joins_anatomy_refind": 328,
+     "joined_ends_past_partner": 380,
+     "refusal_risk_xr_matched": 1,
+     "refusal_risk_hand_plain": 3
+    }
    }
   },
   {
