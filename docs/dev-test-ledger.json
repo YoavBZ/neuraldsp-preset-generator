@@ -5440,6 +5440,21 @@
      "machine": "the planner's 47-part probe about 10.5 CPU minutes on one core beside the search; load average 27 to 29 on 8 cores during the second probe, render servers near 60% CPU"
     },
     "cant_show": "the bench rewards recovering build 2's own values, artefacts included; the bridge still reads every input from the true DI; in-M is a stand-in judged from the code; the fit may not repeat (every such fit listed); one bank, one transcriber, one seed, the score only"
+   },
+   "phase_scratch_readerr_frozen": {
+    "trace_sha256": "3c577b95d1ed3538134a4742b3442ac3d7ef23b162e76af1cd69b4d72ae400a7",
+    "anatomy_sha256": "3df7504ab62f64bf9fd8366abae74608fcb55e90ddc9c9a55417b7442051ebb5",
+    "real_compare_sha256": "041e3547a1025cd06a2930ad8457b6b6db33941d06d1b96929e3cb762e665906",
+    "screen_sha256": "4d41c252427a600efe0b159ba864d7d1c382798853ce125ea2a29c46ecf5405f",
+    "freeze_sha256": "5c111183a01a6ad6b88e1d7c4f0a778b7b41e037599c576f9f853eb5f384e8d9",
+    "counts": {
+     "parts": 47,
+     "figures": 29,
+     "tracking": 0
+    },
+    "code": "RX-untracked",
+    "figure": "note_error",
+    "screen": "no screen"
    }
   },
   {
