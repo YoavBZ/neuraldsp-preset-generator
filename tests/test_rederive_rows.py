@@ -11,6 +11,7 @@ import subprocess
 import pytest
 
 from learn import note_transcribe as NT
+from learn import rederive_fit as RF
 from learn import rederive_rows as RR
 from learn import scratch_exact as SE
 from learn import scratch_notes as SN
@@ -45,7 +46,8 @@ def test_names():
     assert RR.FLOOR_ROWS == ("xf-fix", "xf-tuning", "xf-mutes", "xf-tilt", "xf-levels")
     assert sorted(RR.COMMANDS) == sorted(["check-score", "check-search", "floors", "floor-real", "null-build", "search",
                                           "answers", "score", "read", "read-real", "reproduce"])
-    assert RR.MAX_SHARDS == 3 and RR.NULL_CHANGE is None
+    assert RR.MAX_SHARDS == 3 and RR.NULL_CHANGE == {"kind": "gain_db", "value": 0.01}
+    assert RR.null_change_refusal(RR.NULL_CHANGE) is None
 
 
 def test_the_carry_sources_are_rows_searched_before():
@@ -223,15 +225,70 @@ def test_the_answers_path_of_every_row():
             RR.answers_path(bad)
 
 
+def test_unit_3s_files_are_read_through_its_own_code():
+    """`rederive_fit` (Unit 3, PR #625) is imported, never copied: its builds' rows, record paths and guitar paths."""
+    assert RR.RF is RF and RR.BUILDS is RF.BUILDS and RR.BUILDS == {"bench": "xf-fix", "real": "fs-refit"}
+    for kind, row in RF.BUILDS.items():
+        assert RR.build_path(kind) == RF.build_record_path(kind)
+        assert RR.guitar_path(row, "a/b") == RF.guitar_path(row, "a/b")
+    assert RR.guitar_row("fs-refit") == RR.guitar_row("rf2") == "fs-refit" and RR.guitar_row("xf-fix") == "xf-fix"
+    defined = {n.name for n in TREE.body if isinstance(n, ast.FunctionDef)}
+    assert not defined & {"build_record_path", "frozen_path", "fit_dir", "freeze_body", "fit"}
+    calls = _calls()
+    assert {"RF.guitar_path", "RF.build_record_path", "RF.frozen_path"} <= calls
+
+
+def test_the_paths_follow_stubs_of_unit_3s(monkeypatch, tmp_path):
+    monkeypatch.setattr(RF, "guitar_path", lambda row, pk: tmp_path / "g" / row / pk)
+    monkeypatch.setattr(RF, "build_record_path", lambda which: tmp_path / f"b-{which}.json")
+    assert RR.guitar_path("xf-fix", "k") == tmp_path / "g" / "xf-fix" / "k"
+    assert RR.guitar_path("fs-refit", "k") == tmp_path / "g" / "fs-refit" / "k"
+    assert RR.build_path("real") == tmp_path / "b-real.json"
+
+
+FROZEN = {"sha256": "f" * 64, "rule": {"candidate": "c03"}, "stop": 9,
+          "build_bench": {"sha256": "b" * 64, "row": "xf-fix"}, "build_real": {"sha256": "r" * 64, "row": "fs-refit"}}
+
+
+def test_the_frozen_key_as_freeze_prints_it():
+    m = {RD.PHASE_FROZEN: FROZEN}
+    assert RR.frozen_refusal(m, "bench", "b" * 64) is None and RR.frozen_refusal(m, "real", "r" * 64) is None
+    assert "is not main's" in RR.frozen_refusal(m, "bench", "r" * 64)
+    assert "has no build_real sha256" in RR.frozen_refusal({RD.PHASE_FROZEN: {"sha256": "f"}}, "real", "r" * 64)
+    assert "has no build_bench" in RR.frozen_refusal({}, "bench", "b")
+    bad = {RD.PHASE_FROZEN: dict(FROZEN, build_bench={"sha256": "b" * 64, "row": "fs-refit"})}
+    assert "is for fs-refit" in RR.frozen_refusal(bad, "bench", "b" * 64)
+
+
+def test_a_build_record_in_unit_3s_format():
+    part = {"file_sha256": "1", "audio_sha256": "2", "values": {}, "pass_used": 3}
+    bench = {"row": "xf-fix", "rule": "c03", "stop": 9, "parts": {"k1": part, "k2": part}}
+    real = {"row": "fs-refit", "build": "rf2", "rule": "c03", "stop": 9, "parts": {"k1": part},
+            "rule_off_is_x": {"held": 1, "of": 1}}
+    assert RR.build_refusal(bench, "bench", FROZEN) is None and RR.build_refusal(real, "real", FROZEN) is None
+    assert "is for fs-refit" in RR.build_refusal(dict(bench, row="fs-refit"), "bench", FROZEN)
+    assert "frozen rule and stop" in RR.build_refusal(dict(bench, rule="today"), "bench", FROZEN)
+    assert "frozen rule and stop" in RR.build_refusal(dict(bench, stop=8), "bench", FROZEN)
+    assert "names no" in RR.build_refusal(dict(bench, parts={"k1": {"file_sha256": "1"}}), "bench", FROZEN)
+    assert "names no" in RR.build_refusal(dict(bench, parts={}), "bench", FROZEN)
+    assert "rule off" in RR.build_refusal(dict(real, rule_off_is_x={"held": 0, "of": 1}), "real", FROZEN)
+    assert "rule off" in RR.build_refusal({k: v for k, v in real.items() if k != "rule_off_is_x"}, "real", FROZEN)
+    w = {"bench": bench, "real": real, "ladder": {"parts": {"k1": {"files": {"xf-now": {"audio_sha256": "n"}}}}}}
+    assert RR.file_entry("xf-fix", "k1", w) is part and RR.file_entry("fs-refit", "k1", w) is part
+    assert RR.guitar_sha("xf-fix", "k1", w) == "2" and RR.guitar_sha("xf-now", "k1", w) == "n"
+    assert RR.guitar_sha("xf-fix", "zz", w) is None and RR.guitar_sha("xf-null", "k1", w) is None
+
+
 def test_the_paths():
     assert RR.rows_dir() == RD.rederive_dir()
     for row in RD.LADDER_WRITES:
         assert RR.guitar_path(row, "bks__k/1") == RD.dry_path(row, "bks__k/1")
-    assert RR.guitar_path("rf2", "k").parent.name == "rf2" and RR.guitar_path("xf-null", "k").parent.name == "xf-null"
+    assert RR.guitar_path("xf-null", "k").parent.name == "xf-null"
     with pytest.raises(ValueError):
         RR.guitar_path("xn-list", "k")
     assert RR.search_path("xf-now", "a/b").name == "a__b.json" and RR.score_path("xf-now", "k").parent.name == "xf-now"
-    assert RR.build_path("bench").name == "build-bench.json" and RR.build_path("real").name == "build-real.json"
+    for k in ("bench", "real"):
+        assert RR.build_path(k) == RF.build_record_path(k)
     assert RR.check_dir("real", "check-score").parent.parent.name == "checks"
     for bad in (("x", "check-score"), ("bench", "score")):
         with pytest.raises(ValueError):
@@ -266,7 +323,7 @@ def test_the_shared_steps_are_never_redefined_or_patched():
     defined = {n.name for n in TREE.body if isinstance(n, (ast.FunctionDef, ast.ClassDef))}
     assert not names & defined
     assert "start_reference" not in defined and "score_exact_part" not in defined
-    aliases = {"S", "SE", "SN", "RD", "NT", "NR", "R", "P", "AM", "CB", "LO", "C", "K"}
+    aliases = {"S", "SE", "SN", "RD", "RF", "NT", "NR", "R", "P", "AM", "CB", "LO", "C", "K"}
     for node in ast.walk(TREE):
         targets = node.targets if isinstance(node, ast.Assign) else [node.target] if isinstance(
             node, (ast.AugAssign, ast.AnnAssign)) else []
@@ -433,7 +490,7 @@ def _bench_world(monkeypatch, tmp_path, now_same_as_x=True):
         P.save(f, {"held": {"answer": 1.0}})
     m = {SE.PHASE_TARGETS: {"build_sha256": S.file_sha(SE.build_path()),
                             "records_sha256": S.file_sha(SE.records_path())},
-         RD.PHASE_LADDER: {"ladder_sha256": S.file_sha(RD.ladder_path())}}
+         RD.PHASE_LADDER: {"sha256": S.file_sha(RD.ladder_path())}}
     monkeypatch.setattr(RR, "require_rows", lambda *ph: m)
     monkeypatch.setattr(SE, "bank_build", lambda mm: b2)
     monkeypatch.setattr(NT, "load_dry", lambda arm, k, b: X[k])
@@ -518,11 +575,11 @@ def test_a_guitar_that_is_not_the_declared_one_refuses(monkeypatch, tmp_path):
 
 def test_the_ladder_must_be_mains(monkeypatch, tmp_path):
     w = _bench_world(monkeypatch, tmp_path)
-    w["m"][RD.PHASE_LADDER] = {"ladder_sha256": "0" * 64}
+    w["m"][RD.PHASE_LADDER] = {"sha256": "0" * 64}
     with pytest.raises(SystemExit, match="is not main's phase_scratch_rederive_ladder"):
         RR.cmd_search(_args(row="xf-now"))
-    del w["m"][RD.PHASE_LADDER]["ladder_sha256"]
-    with pytest.raises(SystemExit, match="has no ladder_sha256"):
+    w["m"][RD.PHASE_LADDER] = {"ladder_sha256": S.file_sha(RD.ladder_path())}     # the old field name: refused
+    with pytest.raises(SystemExit, match="has no sha256"):
         RR.cmd_search(_args(row="xf-now"))
 
 
@@ -550,17 +607,25 @@ def test_the_real_row_carries_build_2s_record_once_its_start_reference_repeats(m
     w = _bench_world(monkeypatch, tmp_path)
     nb = tmp_path / "fs" / "notes-b2"
     monkeypatch.setattr(SN, "build_dir", lambda name=None: nb if name == "b2" else tmp_path / "fs" / "notes")
+    fit = tmp_path / "fs" / "rederive" / "stub-fit"                  # rederive_fit's paths stood in for
+    monkeypatch.setattr(RF, "guitar_path", lambda row, pk: fit / "dry" / row / f"{SE._f(pk)}.npy")
+    monkeypatch.setattr(RF, "build_record_path", lambda which: fit / f"build-{which}.json")
+    monkeypatch.setattr(RF, "frozen_path", lambda: fit / "frozen.json")
     rf = {K1: w["X"][K1], K2: w["X"][K2] * 0.25}                     # part 1's rf2 is build 2's tr-di
-    rb = {"proofs_hold": True, "parts": {}}
+    rb = {"plan": "p", "renders": 0, "row": "fs-refit", "build": "rf2", "rule": "c03", "stop": 9, "parts": {},
+          "rule_off_is_x": {"held": 2, "of": 2}, "hits": []}
     for k, y in rf.items():
-        p = RR.guitar_path("rf2", k)
+        p = RF.guitar_path("fs-refit", k)
         p.parent.mkdir(parents=True, exist_ok=True)
         np.save(p, y)
-        rb["parts"][k] = {"files": {"rf2": {"file_sha256": S.file_sha(p), "audio_sha256": S.npy_sha(y)}}}
+        rb["parts"][k] = {"file_sha256": S.file_sha(p), "audio_sha256": S.npy_sha(y), "values": {}, "pass_used": 2,
+                          "end": "repeat", "reached": False, "identical_to_x": k == K1}
         P.save(SN.record_path("search", k, "b2"), {"part": k, "dry": "tr-di", "dry_sha256": w["xs"][k]})
         P.save(SN.record_path("start-ref", k, "b2"), {"render_sha256": "r-" + k})
-    P.save(RR.build_path("real"), rb)
-    w["m"][RD.PHASE_FROZEN] = {"build_real_sha256": S.file_sha(RR.build_path("real"))}
+    P.save(RF.build_record_path("real"), rb)
+    P.save(RF.frozen_path(), {"rule": {"candidate": "c03"}})
+    w["m"][RD.PHASE_FROZEN] = dict(FROZEN, sha256=S.file_sha(RF.frozen_path()),
+                                   build_real={"sha256": S.file_sha(RF.build_record_path("real")), "row": "fs-refit"})
     w["m"][RD.PHASE_BENCH_OUTCOME] = {"code": "XF-closed"}
     monkeypatch.setattr(S, "load_ref_blank", lambda sd, p, ref: np.zeros(8))
     sref = []
@@ -600,7 +665,31 @@ def test_the_bridge_waits_for_the_bench(monkeypatch, tmp_path):
     with pytest.raises(SystemExit, match="does not ask for the null row"):
         RR.cmd_null_build(_args())
     w["m"][RD.PHASE_BENCH_OUTCOME] = {"code": "XF-part"}
+    monkeypatch.setattr(RR, "NULL_CHANGE", None)
     with pytest.raises(SystemExit, match="not declared"):
         RR.cmd_null_build(_args())
     with pytest.raises(SystemExit, match="only after stage 1"):
         RR.cmd_search(_args(row="xf-fix"))
+
+
+def test_the_null_row_builds_and_searches_on_xf_part(monkeypatch, tmp_path):
+    np = pytest.importorskip("numpy")
+    w = _bench_world(monkeypatch, tmp_path)
+    w["m"][RD.PHASE_BENCH_OUTCOME] = {"code": "XF-part"}
+    (tmp_path / "b2.json").write_text("{}")
+    monkeypatch.setattr(NT, "build_path", lambda name=None: tmp_path / "b2.json")
+    RR.cmd_null_build(_args())
+    rec = json.loads(RR.null_build_path().read_text())
+    assert rec["change"] == RR.NULL_CHANGE and set(rec["parts"]) == {K1, K2}
+    for k in (K1, K2):
+        y = np.load(RR.guitar_path("xf-null", k))
+        assert S.npy_sha(y) == rec["parts"][k]["files"]["xf-null"]["audio_sha256"] != w["xs"][k]
+        assert np.allclose(y, w["X"][k] * 10 ** (0.01 / 20), atol=1e-7)
+    with pytest.raises(SystemExit, match="never overwritten"):
+        RR.cmd_null_build(_args())
+    RR.cmd_search(_args(row="xf-null"))
+    assert [c["part"] for c in w["calls"]["search"]] == [K1, K2]
+    assert all(c["dry"] == "xf-null" and c["lag"] == 0 for c in w["calls"]["search"])
+    monkeypatch.setattr(RR, "NULL_CHANGE", {"kind": "gain_db", "value": 0.02})
+    with pytest.raises(SystemExit, match="another change"):
+        RR.cmd_search(_args(row="xf-null", rerun=True))

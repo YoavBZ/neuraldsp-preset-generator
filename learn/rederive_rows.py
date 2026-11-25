@@ -42,14 +42,16 @@ Reads: intervals from `scratch_notes.set_rows` on BKS+GOAT, all 47 beside; label
 and build 2 less row (b) from the stored files exactly as the exact-notes read stored them.
 
 Every command refuses unless this checkout runs main's code (this module and `scratch_rederive`'s pinned files) and
-keys, and main holds the hashes the command reads (`PHASES`). Shards: at most 3.
+keys, and main holds the hashes the command reads (each command's keys). Shards: at most 3.
 
-The builders' contract (Unit 3, `learn/rederive_fit.py`; `BUILDS`): `build-bench.json` and `build-real.json` under
-`PF/fs/rederive/`, each with `proofs_hold` and, per part, `files[<row>] = {file_sha256, audio_sha256}` (as the ladder's
-records), the guitar at `PF/fs/rederive/dry/<row>/<part>.npy` (`xf-fix`, `rf2`); their sha256 in main's
-`phase_scratch_rederive_frozen` as `build_bench_sha256` and `build_real_sha256`; the ladder's as
-`phase_scratch_rederive_ladder` `ladder_sha256`; the bench outcome's code as `phase_scratch_rederive_bench_outcome`
-`code` (`bridge_user_go` true when the user runs the bridge on another code).
+The other units' files, read through their own code: Unit 3's builders (`learn/rederive_fit.py`, imported, never
+copied): `build_record_path("bench" | "real")` (fit/build-bench.json, fit/build-real.json; per part
+`{file_sha256, audio_sha256, ...}`) and `guitar_path(row, pk)` (dry/xf-fix/, dry/fs-refit/), hashed on main through
+`phase_scratch_rederive_frozen` as `freeze` prints it (`sha256`: frozen.json's; `build_bench.sha256`,
+`build_real.sha256`; `rule`, `stop`). The ladder: `phase_scratch_rederive_ladder` `sha256`. The bench outcome:
+`phase_scratch_rederive_bench_outcome` `code` (`bridge_user_go` true when the user runs the bridge on another code).
+Each row's answers: `answers_path(row)` (public; Unit 2 reads it), hashed as `phase_scratch_rederive_answers_<row>`
+`sha256`. The null row's change (`NULL_CHANGE`): X scaled by 0.01 dB, `at_lufs`' own tolerance.
 
 The pure parts (the carry, the gates, the shard rule, the splits' keys, the design-time and tilt parts, the codes with
 S1, the forbidden paths, `null_change_refusal`) are tested in tests/test_rederive_rows.py on synthetic keys; the
@@ -65,6 +67,7 @@ import pathlib
 import time
 
 from learn import note_transcribe as NT
+from learn import rederive_fit as RF
 from learn import scratch_exact as SE
 from learn import scratch_notes as SN
 from learn import scratch_rederive as RD
@@ -101,12 +104,12 @@ BRIDGE_GO = "bridge_user_go"
 OUTCOME_CODE = "code"
 
 # The hashes on main (the field names the hash PRs write)
-LADDER_FIELD = "ladder_sha256"
-BUILDS = {"bench": ("build-bench.json", "build_bench_sha256", FIX_ROW),
-          "real": ("build-real.json", "build_real_sha256", REAL_DRY)}
+LADDER_FIELD = "sha256"                  # phase_scratch_rederive_ladder: ladder.json's sha256 (NT.require_file_hash)
+BUILDS = RF.BUILDS                       # Unit 3's: {"bench": "xf-fix", "real": "fs-refit"}
+FROZEN_FIELDS = {"bench": "build_bench", "real": "build_real"}   # in `rederive_fit.freeze_body`
 
-# The null row's change: declared by the coordinator before `null-build` runs (None: refused)
-NULL_CHANGE = None
+# The null row's change: X scaled by 0.01 dB (None would refuse `null-build`)
+NULL_CHANGE = {"kind": "gain_db", "value": 0.01}   # at_lufs' own tolerance (the orchestrator's call, 2026-11-25)
 NULL_KINDS = ("gain_db",)
 
 ARMS = {"answer": "G", "shrunk": "G_shrunk", "cp50": "G_cp50", "cp100": "G_cp100", "cp200": "G_cp200"}
@@ -258,14 +261,18 @@ def rows_dir():
 
 
 def guitar_path(row, pk):
-    """A stored dry guitar under PF/fs/rederive/dry/<row>/ (the ladder's rows, xf-fix, xf-null, rf2)."""
-    if row not in RD.LADDER_WRITES + (FIX_ROW, NULL_ROW, REAL_DRY):
+    """A stored dry guitar: the ladder's rows and xf-null under PF/fs/rederive/dry/<row>/ (this module's and the
+    core's), xf-fix and fs-refit's rf2 where Unit 3's builders wrote them (`rederive_fit.guitar_path`)."""
+    if row in BUILDS.values():
+        return RF.guitar_path(row, pk)
+    if row not in RD.LADDER_WRITES + (NULL_ROW,):
         raise ValueError(row)
     return rows_dir() / "dry" / row / f"{SE._f(pk)}.npy"
 
 
 def build_path(kind):
-    return rows_dir() / BUILDS[kind][0]
+    """Unit 3's build record (`rederive_fit.build_record_path`): fit/build-bench.json or fit/build-real.json."""
+    return RF.build_record_path(kind)
 
 
 def null_build_path():
@@ -364,8 +371,7 @@ def stage1_record():
 
 
 def ladder_record(m):
-    """ladder.json, refused unless its sha256 is main's phase_scratch_rederive_ladder `ladder_sha256` and its proofs
-    held."""
+    """ladder.json, refused unless its sha256 is main's phase_scratch_rederive_ladder `sha256` and its proofs held."""
     p = search_open(RD.ladder_path())
     if not p.exists():
         raise SystemExit("no ladder.json (run `scratch_rederive ladder` first)")
@@ -378,22 +384,59 @@ def ladder_record(m):
     return rec
 
 
+def frozen_refusal(entry, kind, sha):
+    """(Pure.) Why Unit 3's build record may not be used, or None: main's phase_scratch_rederive_frozen body (as
+    `rederive_fit.freeze` prints it) must hold its sha256 under `build_bench` or `build_real`, for that build's row."""
+    rec = (entry or {}).get(RD.PHASE_FROZEN)
+    field = FROZEN_FIELDS[kind]
+    body = rec.get(field) if isinstance(rec, dict) else None
+    if not isinstance(body, dict) or not body.get("sha256"):
+        return f"main's {RD.PHASE_FROZEN} has no {field} sha256: `rederive_fit freeze` and its hash PR first"
+    if body["sha256"] != sha:
+        return f"build-{kind}.json's sha256 {sha[:12]} is not main's {RD.PHASE_FROZEN} {field} {body['sha256'][:12]}"
+    if body.get("row") != BUILDS[kind]:
+        return f"main's {RD.PHASE_FROZEN} {field} is for {body.get('row')}, not {BUILDS[kind]}"
+    return None
+
+
+def build_refusal(rec, kind, frozen):
+    """(Pure.) Why a hashed build record may not drive a row, or None: it is the build of its row, made with main's
+    frozen rule and stop, every part names its guitar (`file_sha256`, `audio_sha256`), and for the real build the rule
+    off was X on every part."""
+    row = BUILDS[kind]
+    if rec.get("row") != row:
+        return f"build-{kind}.json is for {rec.get('row')}, not {row}"
+    rule = ((frozen or {}).get("rule") or {}).get("candidate")
+    if rec.get("rule") != rule or rec.get("stop") != (frozen or {}).get("stop"):
+        return f"build-{kind}.json was not made with main's frozen rule and stop"
+    parts = rec.get("parts") or {}
+    bad = sorted(k for k, r in parts.items() if not (r.get("file_sha256") and r.get("audio_sha256")))
+    if not parts or bad:
+        return f"build-{kind}.json names no {row} guitar for {len(bad) or 'any'} part(s)"
+    if kind == "real":
+        off = rec.get("rule_off_is_x") or {}
+        if not off.get("of") or off.get("held") != off.get("of") or off["of"] != len(parts):
+            return "build-real.json: the rule off was not X on every part"
+    return None
+
+
 def fit_build(m, kind):
-    """Unit 3's build record (`BUILDS`), refused unless its sha256 is main's phase_scratch_rederive_frozen field, its
-    proofs held and every part names its guitar."""
-    name, field, row = BUILDS[kind]
+    """Unit 3's build record (`rederive_fit.build_record_path`), refused unless main's phase_scratch_rederive_frozen
+    holds frozen.json's sha256 and this record's (`frozen_refusal`) and the record is that build's (`build_refusal`)."""
+    fp = search_open(RF.frozen_path())
+    if not fp.exists():
+        raise SystemExit("no frozen.json (`rederive_fit freeze` first)")
+    NT.require_file_hash(m, RD.PHASE_FROZEN, fp)
     p = search_open(build_path(kind))
     if not p.exists():
-        raise SystemExit(f"no {name} (Unit 3's build first)")
-    why = SE.field_refusal(m, RD.PHASE_FROZEN, field, S.file_sha(p))
+        raise SystemExit(f"no build-{kind}.json (`rederive_fit build-{kind}` first)")
+    why = frozen_refusal(m, kind, S.file_sha(p))
     if why:
         raise SystemExit(why)
     rec = json.loads(p.read_text())
-    if not rec.get("proofs_hold"):
-        raise SystemExit(f"{name}'s proofs did not hold")
-    bad = sorted(k for k, r in (rec.get("parts") or {}).items() if row not in (r.get("files") or {}))
-    if bad or not rec.get("parts"):
-        raise SystemExit(f"{name} names no {row} guitar for {len(bad)} part(s)")
+    why = build_refusal(rec, kind, m.get(RD.PHASE_FROZEN))
+    if why:
+        raise SystemExit(why)
     return rec
 
 
@@ -413,6 +456,24 @@ def source_of(row):
     return {FIX_ROW: "bench", NULL_ROW: "null", REAL_DRY: "real", REAL_ROW: "real"}.get(row, "ladder")
 
 
+def file_entry(row, pk, w):
+    """(Pure.) A stored guitar's {file_sha256, audio_sha256}: the ladder's and the null build's under `files[<row>]`,
+    Unit 3's builds' flat per part (`rederive_fit`'s format), or None."""
+    rec = w.get(source_of(row))
+    if rec is None:
+        return None
+    part = (rec.get("parts") or {}).get(pk) or {}
+    if source_of(row) in ("bench", "real"):
+        return part or None
+    return (part.get("files") or {}).get(row)
+
+
+def guitar_row(row):
+    """(Pure.) The folder a row's stored guitar sits in: fs-refit's rf2 under Unit 3's `fs-refit`, the others their
+    own."""
+    return BUILDS["real"] if row in (REAL_ROW, REAL_DRY) else row
+
+
 def guitar_sha(row, pk, w):
     """The declared sha256 (of the float32 .npy bytes) of a row's dry guitar for a part, or None when its record is not
     loaded. w: the loaded records (`b2` build 2, `xb` the exact build, `ladder`, `bench`, `null`, `real`)."""
@@ -424,8 +485,7 @@ def guitar_sha(row, pk, w):
         return rec["parts"][pk]["arms"][SE.BANK_ARM]["sha256"]
     if src == "xb":
         return rec["parts"][pk]["guitars"][LIST_ROW]["sha256"]
-    g = REAL_DRY if row == REAL_ROW else row
-    return ((rec["parts"].get(pk) or {}).get("files") or {}).get(g, {}).get("audio_sha256")
+    return (file_entry(row, pk, w) or {}).get("audio_sha256")
 
 
 def load_guitar(row, pk, w):
@@ -438,9 +498,9 @@ def load_guitar(row, pk, w):
     elif row == LIST_ROW:
         x32 = np.load(search_open(SE.dry_path(LIST_ROW, pk))).astype(np.float32)
     else:
-        g = REAL_DRY if row == REAL_ROW else row
+        g = guitar_row(row)
         path = search_open(guitar_path(g, pk))
-        if S.file_sha(path) != w[source_of(row)]["parts"][pk]["files"][g]["file_sha256"]:
+        if S.file_sha(path) != (file_entry(row, pk, w) or {}).get("file_sha256"):
             raise SystemExit(f"{pk}: {g}'s file is not the declared one")
         x32 = np.load(path).astype(np.float32)
     if not want or S.npy_sha(x32) != want:
