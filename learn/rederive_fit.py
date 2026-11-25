@@ -12,6 +12,26 @@ levels) so that the rebuild, measured by `rebuild_redo`'s own estimators in a st
     $MAIN -m learn.rederive_fit build-real           # the rf2 guitars: build 2's notes, the picked rule, the true DI
     $MAIN -m learn.rederive_fit freeze               # the rule, the stop, both builds' sha256: the ledger body, printed
 
+`converge`, `bench`, `build-bench` and `build-real` also run in shards (`run_mode`): `--shard k/n` (n <= 8, zero
+renders) takes a fixed slice of the parts by key (`shard_keys`: the j-th key goes to shard j mod n) and writes only its
+per-part files, each once; `--combine` refuses until every part's file is there, then writes the combined record. With
+neither flag one process does every part, then the same combine, so the files are byte-identical either way (no
+combined record holds a time). `bench --shard` runs its stage A, and its stage B once every part's stage A is there
+(else rerun the shard). `converge --price` also projects the later runs' wall (`price_body`).
+
+**The interface** (Unit 4 reads these; the names are fixed, `BUILD_FIELDS`, `BUILD_PART_FIELDS`, `FREEZE_FIELDS`,
+`FREEZE_SECTION_FIELDS`, `HIT_FIELDS`, pinned by a test):
+- fit/build-bench.json: plan, renders, row (xf-fix), input, rule, stop, bench_sha256, parts_n, hits,
+  identical_to_now, parts; fit/build-real.json: plan, renders, row (fs-refit), build (rf2), input, rule, stop,
+  bench_sha256, parts_n, hits, rule_off_is_x ({held, of}), identical_to_x, parts.
+- Each `parts[pkey]`: file_sha256 (the sha256 of the guitar's .npy file, `guitar_path(row, pkey)`), audio_sha256
+  (`scratch_search.npy_sha` of its float32 samples), values, pass_used, end, reached, identical_to_now (the bench build
+  only), identical_to_x.
+- The freeze body: plan, renders, rule ({candidate, domain, passes, mutes}), stop, max_passes, fit, choices, converge
+  ({sha256, fits, ends, hits}), bench ({sha256, parts, deciding_parts, lowest, ties}), build_bench ({sha256, row,
+  parts, hits}), build_real ({sha256, row, build, parts, hits, rule_off_is_x}); each hit {part (a 12-hex tag), set,
+  candidate, end, pass_used}. `freeze` prints `{"phase_scratch_rederive_frozen": {"sha256": <frozen.json's>, **body}}`.
+
 **Candidates** (`CANDIDATES`, 12, plus `today`): the comparison domain (`unfinished`: `denoise_above(synthesise_redo(V))
 [:n]`; `measured`: that after `song_bank.measure`, rounded to float32 as `in-M` is; `finished`: `compose(V)` with the
 part's finish, rounded to float32 as `in-F` is), the passes (`one` correction, or `iterated`) and the mutes (`as-now`:
@@ -458,21 +478,18 @@ class Part:
 
 
 def usable_groups(p):
-    """`oracle_gains`' usable groups (onset inside the window, a level span of MIN_SPAN_S or more)."""
+    """`oracle_gains`' usable groups (onset inside the window, a level span of MIN_SPAN_S or more). `note_rebuild`
+    has no function for the rule (it is inline in `oracle_gains` and `level_gains`), so it is restated from
+    `onset_groups` and `group_spans`; tests/test_rederive_fit.py pins it to `oracle_gains`' zeros."""
     groups = NR.onset_groups(p.notes)
     spans = NR.group_spans(p.notes, groups, p.n, p.rate)
     return [p.notes[g[0]]["on"] >= 0 and b - a >= NR.MIN_SPAN_S * p.rate for g, (a, b) in zip(groups, spans)]
 
 
 def centred(levels, ok):
-    """Levels centred on the usable groups' median (oracle_gains' rule), each within +-LEVEL_LIMIT, unusable 0 dB."""
-    import numpy as np
-
-    use = [x for x, k in zip(levels, ok) if k]
-    if not use:
-        return [0.0] * len(levels)
-    med = float(np.median(use))
-    return [float(clamp(x - med, LEVEL_LIMIT)) if k else 0.0 for x, k in zip(levels, ok)]
+    """Levels centred on the usable groups' median, each within +-LEVEL_LIMIT, unusable 0 dB: `oracle_gains`' own
+    step (`note_rebuild._span_gains`), called, not copied."""
+    return NR._span_gains(list(levels), list(ok), LEVEL_LIMIT)
 
 
 def rebuild_in(p, V, domain):
@@ -685,7 +702,117 @@ def _main_parts(m):
     return sorted(lad["parts"])
 
 
-# --- the commands --------------------------------------------------------------------------------------------------------------
+# --- shards, run modes and the record formats (pure) -----------------------------------------------------------------------
+
+SHARD_MAX = 8                            # zero renders: at most the machine's 8 cores (the orchestrator's run mode)
+LATER_FITS = {"bench in-U and in-F": 2, "build-bench": 1, "build-real": 1}   # the picked rule's fits per part
+LATER_COMPOSES = 23                      # per part: the bench's 13 rules, 4 beside guitars, 1 + 2 build guitars, and
+#                                          today's 3 derives (beside twice, build-real's rule off), one compose each
+
+# The interface other units read (Unit 4, `learn/rederive_rows.py`, is coded against these names; never renamed).
+# `file_sha256` is the sha256 of the guitar's .npy file as written; `audio_sha256` is `scratch_search.npy_sha` of its
+# samples (float32), the same for a file and the array it holds.
+BUILD_PART_FIELDS = {    # build-<which>.json's "parts"[pkey]
+    "bench": ("file_sha256", "audio_sha256", "values", "pass_used", "end", "reached", "identical_to_now",
+              "identical_to_x"),
+    "real": ("file_sha256", "audio_sha256", "values", "pass_used", "end", "reached", "identical_to_x"),
+}
+BUILD_FIELDS = {         # build-<which>.json (fit/build-bench.json, fit/build-real.json)
+    "bench": ("plan", "renders", "row", "input", "rule", "stop", "bench_sha256", "parts_n", "hits", "identical_to_now",
+              "parts"),
+    "real": ("plan", "renders", "row", "build", "input", "rule", "stop", "bench_sha256", "parts_n", "hits",
+             "rule_off_is_x", "identical_to_x", "parts"),
+}
+FREEZE_FIELDS = ("plan", "renders", "rule", "stop", "max_passes", "fit", "choices", "converge", "bench", "build_bench",
+                 "build_real")      # freeze_body; `freeze` prints {PHASE_FROZEN: {"sha256": frozen.json's, **body}}
+FREEZE_SECTION_FIELDS = {
+    "rule": ("candidate", "domain", "passes", "mutes"),           # today's rule: ("candidate", "today")
+    "converge": ("sha256", "fits", "ends", "hits"),
+    "bench": ("sha256", "parts", "deciding_parts", "lowest", "ties"),
+    "build_bench": ("sha256", "row", "parts", "hits"),
+    "build_real": ("sha256", "row", "build", "parts", "hits", "rule_off_is_x"),
+}
+HIT_FIELDS = ("part", "set", "candidate", "end", "pass_used")    # each hit in the body: "part" a part tag, not a key
+
+
+def shard_arg(s):
+    """`--shard k/n`: 0 <= k < n <= SHARD_MAX."""
+    try:
+        k, n = (int(x) for x in s.split("/"))
+    except ValueError:
+        raise argparse.ArgumentTypeError("k/n") from None
+    if not 0 <= k < n <= SHARD_MAX:
+        raise argparse.ArgumentTypeError(f"k/n with 0 <= k < n <= {SHARD_MAX}")
+    return k, n
+
+
+def shard_keys(keys, shard):
+    """(Pure.) A shard's fixed slice of the parts: the j-th key in key order goes to shard j mod n; None: every part."""
+    keys = sorted(keys)
+    if shard is None:
+        return keys
+    k, n = shard
+    return [x for j, x in enumerate(keys) if j % n == k]
+
+
+def run_mode(args, price_ok=False):
+    """(Pure.) One of "price" (converge only), "shard" (a slice's per-part files only), "combine" (refuses until
+    every part's file is there, then the combined record) or "one" (every part, then the combine: one process)."""
+    price = getattr(args, "price", None)
+    shard = getattr(args, "shard", None)
+    combine = bool(getattr(args, "combine", False))
+    if sum((price is not None, shard is not None, combine)) > 1:
+        raise SystemExit("--price, --shard and --combine are separate steps")
+    if price is not None:
+        if not price_ok:
+            raise SystemExit("--price is converge's")
+        return "price"
+    return "shard" if shard is not None else "combine" if combine else "one"
+
+
+def build_part_record(which, file_sha256, audio_sha256, values, pass_used, end, reached, identical_to_x,
+                      identical_to_now=None):
+    """(Pure.) One part's entry in build-<which>.json (BUILD_PART_FIELDS)."""
+    rec = {"file_sha256": file_sha256, "audio_sha256": audio_sha256, "values": values, "pass_used": pass_used,
+           "end": end, "reached": bool(reached)}
+    if which == "bench":
+        rec["identical_to_now"] = bool(identical_to_now)
+    elif which != "real":
+        raise ValueError(which)
+    rec["identical_to_x"] = bool(identical_to_x)
+    return rec
+
+
+def build_record(which, rule, stop, bench_sha, per):
+    """(Pure.) build-<which>.json (BUILD_FIELDS) from the per-part files ({pkey: {"record", "rule_off_is_x"?}}), in
+    key order; the hits are the parts whose fit reached the stop."""
+    keys = sorted(per)
+    parts = {k: per[k]["record"] for k in keys}
+    hits = [{"part": k, "candidate": rule, "end": parts[k]["end"], "pass_used": parts[k]["pass_used"]}
+            for k in keys if parts[k]["reached"]]
+    if which == "bench":
+        return {"plan": PLAN, "renders": 0, "row": FIX_ROW, "input": RD.DECIDING_INPUT, "rule": rule, "stop": stop,
+                "bench_sha256": bench_sha, "parts_n": len(parts), "hits": hits,
+                "identical_to_now": sum(r["identical_to_now"] for r in parts.values()), "parts": parts}
+    if which == "real":
+        return {"plan": PLAN, "renders": 0, "row": REAL_ROW, "build": RD.REAL_BUILD, "input": "the true DI (measured)",
+                "rule": rule, "stop": stop, "bench_sha256": bench_sha, "parts_n": len(parts), "hits": hits,
+                "rule_off_is_x": {"held": sum(bool(per[k].get("rule_off_is_x")) for k in keys), "of": len(parts)},
+                "identical_to_x": sum(r["identical_to_x"] for r in parts.values()), "parts": parts}
+    raise ValueError(which)
+
+
+def build_part_path(which, pk):
+    if which not in BUILDS:
+        raise ValueError(which)
+    return fit_dir() / f"build-{which}" / f"{SE._f(pk)}.json"
+
+
+def _missing(paths):
+    return [k for k, p in paths.items() if not p.exists()]
+
+
+# --- converge ------------------------------------------------------------------------------------------------------------------
 
 def _converge_part(p, log=print):
     """Every iterated candidate on one part in in-M, up to MAX_PASSES. -> (record without times, seconds by fit)."""
@@ -701,67 +828,93 @@ def _converge_part(p, log=print):
     return rec, secs
 
 
-def cmd_converge(args):
-    """converge (zero renders). With `--price N` (2 or 3; amendment 2): the first N parts by key, every iterated
-    candidate up to 64 passes, the seconds per pass per second of audio, the projected wall of the full run (at the
-    priced fits' mean passes, and at 64), price.json (written once). Without: refused until price.json exists; every
-    iterated candidate on the 47 in in-M up to 64 passes (a part already traced is kept), the stop (the largest pass
-    count among fits that repeated) and every fit that reaches it with its pass used, converge.json (written once)."""
-    m = require_fit()
-    price = getattr(args, "price", None)
-    keys = _main_parts(m)
-    if price is not None:
-        if price not in PRICE_PARTS:
-            raise SystemExit(f"--price takes {PRICE_PARTS} parts")
-        NT.never_overwrite(price_path())
-        keys = keys[:price]
-    else:
-        _load_checked(price_path(), None, "converge --price 2")
-        NT.never_overwrite(converge_path())
-    t0 = time.time()
-    recs, timing = {}, {}
-    for p in bench_parts(m, set(keys)):
-        tp = trace_path(p.key)
-        if tp.exists():
-            rec = json.loads(tp.read_text())
-            if rec["input_sha256"] != S.npy_sha(p.u) or sorted(rec["fits"]) != sorted(ITERATED):
-                raise SystemExit(f"{p.key}: its trace is not of this input")
-        else:
-            rec, timing[p.key] = _converge_part(p)
-            _save_once(tp, rec)
-        recs[p.key] = rec
-        print(f"{p.key[-40:]}: traced ({time.time() - t0:.0f} s in all)", flush=True)
-    if sorted(recs) != sorted(keys):
-        raise SystemExit("not every part was traced")
-    if price is not None:
-        if not timing:
-            raise SystemExit("the priced parts were traced before: no timing (price on parts not yet traced)")
-        out = price_body(timing, {k: recs[k]["n"] for k in recs}, _part_lengths(m), NR.SR)
-        out.update(time=time.strftime("%Y-%m-%d %H:%M:%S"))
-        sha = _save_once(price_path(), out)
-        print(f"RF PRICE: {out['priced_fits']} fits on {len(keys)} parts, {out['seconds_per_pass_per_audio_s']:.4f} s "
-              f"per pass per second of audio; projected wall of the full run {out['projected_hours_mean']:.2f} h at "
-              f"the priced mean of {out['passes_mean']:.1f} passes, {out['projected_hours_worst']:.2f} h at "
-              f"{MAX_PASSES}; price.json sha256 {sha}")
-        return
-    ends = {(k, c): recs[k]["fits"][c]["end"] for k in recs for c in ITERATED}
+def converge_record(recs, trace_shas, priced_parts):
+    """(Pure.) converge.json from every part's trace: the stop (the largest pass count among fits that repeated) and
+    every fit that reaches it with its pass used; no fit repeated: refused."""
+    ends = {(k, c): recs[k]["fits"][c]["end"] for k in sorted(recs) for c in ITERATED}
     stop, hit_fits = safety_stop({f"{k}\t{c}": e for (k, c), e in ends.items()})
     if stop is None:
-        raise SystemExit("no fit repeated within 64 passes: no stop; to the user")
+        raise SystemExit(f"no fit repeated within {MAX_PASSES} passes: no stop; to the user")
     hits = []
     for f in hit_fits:
         k, c = f.split("\t")
         t = recs[k]["fits"][c]
         hits.append({"part": k, "candidate": c, "end": t["end"], "pass_used": pass_used(t["trace"], t["end"], stop)})
-    out = {"plan": PLAN, "renders": 0, "input": RD.DECIDING_INPUT, "max_passes": MAX_PASSES, "stop": stop,
-           "fits": len(ends), "hits": hits, "ends": end_summary(ends),
-           "parts": {k: {"trace_sha256": S.file_sha(trace_path(k))} for k in sorted(recs)},
-           "price_sha256": S.file_sha(price_path()), "seconds": round(time.time() - t0, 1),
-           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    return {"plan": PLAN, "renders": 0, "input": RD.DECIDING_INPUT, "max_passes": MAX_PASSES, "stop": stop,
+            "fits": len(ends), "hits": hits, "ends": end_summary(ends),
+            "parts": {k: {"trace_sha256": trace_shas[k]} for k in sorted(recs)}, "priced_parts": priced_parts}
+
+
+def cmd_converge(args):
+    """converge (zero renders).
+    `--price N` (2 or 3; amendment 2): the first N parts by key, every iterated candidate up to 64 passes, one compose
+    timed per part; the projected wall of the full run (at the priced fits' mean passes, and at 64) and of the later
+    runs (`bench`'s in-U and in-F, `build-bench`, `build-real`) for the costliest candidate; price.json (written once).
+    The priced parts' traces are kept for the full run.
+    The rest is refused until price.json exists. No flag: every iterated candidate on the 47 in in-M up to 64 passes
+    (a part already traced is kept), then the combine. `--shard k/n`: that slice's traces only. `--combine`: refused
+    until every part is traced; the stop and every fit that reaches it, converge.json (written once)."""
+    m = require_fit()
+    mode = run_mode(args, price_ok=True)
+    keys = _main_parts(m)
+    if mode == "price":
+        n_price = args.price
+        if n_price not in PRICE_PARTS:
+            raise SystemExit(f"--price takes {PRICE_PARTS} parts")
+        NT.never_overwrite(price_path())
+        keys = keys[:n_price]
+        if any(trace_path(k).exists() for k in keys):
+            raise SystemExit("a priced part is traced already: no timing to price from")
+        timing, compose, lengths = {}, {}, {}
+        for p in bench_parts(m, set(keys)):
+            rec, timing[p.key] = _converge_part(p)
+            t0 = time.time()
+            guitar(p, rec["fits"][ITERATED[0]]["trace"][0]["values"])
+            compose[p.key] = round(time.time() - t0, 3)
+            lengths[p.key] = p.n
+            _save_once(trace_path(p.key), rec)
+        out = price_body(timing, lengths, _part_lengths(m), NR.SR, compose)
+        out.update(time=time.strftime("%Y-%m-%d %H:%M:%S"))
+        sha = _save_once(price_path(), out)
+        lat = out["later"]
+        print(f"RF PRICE: {out['priced_fits']} fits on {len(keys)} parts, {out['seconds_per_pass_per_audio_s']:.4f} s "
+              f"per pass per second of audio; projected wall of converge on one process "
+              f"{out['projected_hours_mean']:.2f} h at the priced mean of {out['passes_mean']:.1f} passes, "
+              f"{out['projected_hours_worst']:.2f} h at {MAX_PASSES}; price.json sha256 {sha}")
+        for c, r in out["by_candidate"].items():
+            print(f"  {c}: {r['seconds_per_pass_per_audio_s']:.4f} s per pass per second of audio, mean "
+                  f"{r['passes_mean']:.1f} passes")
+        print(f"  the later runs for the costliest ({lat['candidate']}): {lat['fits_per_part']} fits a part "
+              f"{lat['hours_mean']:.2f} h at its mean passes, {lat['hours_worst']:.2f} h at {MAX_PASSES}, plus "
+              f"{lat['compose_hours']:.2f} h of composes; by step at its mean passes {lat['by_step_hours_mean']}")
+        return
+    price = _load_checked(price_path(), None, "converge --price 2")      # a gate only: its times are not in the chain
+    if mode != "shard":
+        NT.never_overwrite(converge_path())
+    if mode in ("one", "shard"):
+        mine = shard_keys(keys, getattr(args, "shard", None))
+        need = _missing({k: trace_path(k) for k in mine})
+        t0 = time.time()
+        if need:
+            for p in bench_parts(m, set(need)):
+                rec, _ = _converge_part(p)
+                _save_once(trace_path(p.key), rec)
+                print(f"{p.key[-40:]}: traced ({time.time() - t0:.0f} s in all)", flush=True)
+        if mode == "shard":
+            print(f"RF CONVERGE SHARD {args.shard[0]}/{args.shard[1]}: {len(mine)} parts traced ({len(need)} new, "
+                  f"{time.time() - t0:.0f} s); `converge --combine` once every shard is done")
+            return
+    missing = _missing({k: trace_path(k) for k in keys})
+    if missing:
+        raise SystemExit(f"{len(missing)} of {len(keys)} parts are not traced yet: run every shard first")
+    recs = {k: json.loads(trace_path(k).read_text()) for k in keys}
+    if any(sorted(r["fits"]) != sorted(ITERATED) or r["input"] != RD.DECIDING_INPUT for r in recs.values()):
+        raise SystemExit("a trace is not of every iterated candidate in in-M")
+    out = converge_record(recs, {k: S.file_sha(trace_path(k)) for k in keys}, price["priced_parts"])
     sha = _save_once(converge_path(), out)
-    print(f"RF CONVERGE: {len(ends)} fits; the stop {stop} passes; {len(hits)} fits reach it; converge.json sha256 "
-          f"{sha}")
-    for h in hits:
+    print(f"RF CONVERGE: {out['fits']} fits; the stop {out['stop']} passes; {len(out['hits'])} fits reach it; "
+          f"converge.json sha256 {sha}")
+    for h in out["hits"]:
         print(f"  reaches the stop: {h['part'][-40:]} {h['candidate']} ({h['end']['kind']} at {h['end']['at']}), "
               f"pass used {h['pass_used']}")
 
@@ -771,20 +924,45 @@ def _part_lengths(m):
     return {k: json.loads(RD.part_path(k).read_text())["n"] for k in lad["parts"]}
 
 
-def price_body(timing, priced_n, all_n, rate):
-    """(Pure.) The projected wall from the priced fits: seconds per pass per second of audio over the priced fits, times
-    the 47 parts' audio, the iterated candidates and the passes (the priced fits' mean, and MAX_PASSES)."""
+def price_body(timing, priced_n, all_n, rate, compose_s=None):
+    """(Pure.) The projected walls from the priced fits, on one process. Converge: seconds per pass per second of audio
+    over the priced fits, times the 47 parts' audio, the iterated candidates and the passes (the priced fits' mean,
+    and MAX_PASSES). The later runs: for the costliest candidate (the most seconds per fit per second of audio), its
+    LATER_FITS fits a part at its own rate (its mean passes, and MAX_PASSES), and LATER_COMPOSES composes a part at
+    the priced compose rate (compose_s: {pkey: seconds of one compose})."""
     secs = sum(f["seconds"] for t in timing.values() for f in t.values())
     work = sum(f["passes"] * priced_n[k] / rate for k, t in timing.items() for f in t.values())
     passes = [f["passes"] for t in timing.values() for f in t.values()]
     rate_s = secs / work if work > 0 else math.nan
     audio = sum(all_n.values()) / rate
     mean_p = statistics.mean(passes) if passes else math.nan
+    by_c = {}
+    for c in ITERATED:
+        rows = [(k, t[c]) for k, t in timing.items() if c in t]
+        if not rows:
+            continue
+        w = sum(f["passes"] * priced_n[k] / rate for k, f in rows)
+        by_c[c] = {"seconds_per_pass_per_audio_s": sum(f["seconds"] for _, f in rows) / w if w > 0 else math.nan,
+                   "passes_mean": statistics.mean(f["passes"] for _, f in rows),
+                   "seconds_per_fit_per_audio_s": (sum(f["seconds"] for _, f in rows)
+                                                   / sum(priced_n[k] / rate for k, _ in rows))}
+    later = None
+    if by_c:
+        c = max(by_c, key=lambda x: (by_c[x]["seconds_per_fit_per_audio_s"], x))
+        r, pm = by_c[c]["seconds_per_pass_per_audio_s"], by_c[c]["passes_mean"]
+        comp = (sum(compose_s.values()) / sum(priced_n[k] / rate for k in compose_s)) if compose_s else math.nan
+        nfit = sum(LATER_FITS.values())
+        later = {"candidate": c, "fits_per_part": nfit, "composes_per_part": LATER_COMPOSES,
+                 "seconds_per_compose_per_audio_s": comp,
+                 "hours_mean": r * audio * nfit * pm / 3600, "hours_worst": r * audio * nfit * MAX_PASSES / 3600,
+                 "compose_hours": comp * audio * LATER_COMPOSES / 3600,
+                 "by_step_hours_mean": {s: round(r * audio * k * pm / 3600, 2) for s, k in LATER_FITS.items()}}
     return {"plan": PLAN, "renders": 0, "priced_parts": len(timing), "priced_fits": len(passes),
             "seconds": round(secs, 1), "seconds_per_pass_per_audio_s": rate_s, "passes_mean": mean_p,
             "passes_max": max(passes) if passes else None, "parts_all": len(all_n), "audio_s_all": audio,
             "projected_hours_mean": rate_s * audio * len(ITERATED) * mean_p / 3600,
             "projected_hours_worst": rate_s * audio * len(ITERATED) * MAX_PASSES / 3600,
+            "by_candidate": by_c, "later": later, "compose_s": dict(sorted((compose_s or {}).items())),
             "by_part": {k: {c: dict(f) for c, f in t.items()} for k, t in sorted(timing.items())}}
 
 
@@ -801,6 +979,8 @@ def end_summary(ends):
     return out
 
 
+# --- bench ---------------------------------------------------------------------------------------------------------------------
+
 def _interval_40():
     """set_rows' BKS+GOAT pool on the 40 ({pkey: value} -> {mean, lo90, hi90})."""
     from learn import scratch_notes as SN
@@ -814,7 +994,7 @@ def _interval_40():
 
 
 def _bench_part(p, traces, stop):
-    """Every rule's values on one part (from converge's traces), its finished guitar and figures. -> record."""
+    """Stage A on one part: every rule's values (from converge's traces), its finished guitar and figures."""
     import numpy as np
 
     made, out = {}, {}
@@ -836,7 +1016,7 @@ def _bench_part(p, traces, stop):
 
 
 def _beside_forms(p, rule, stop):
-    """Beside: the picked rule and today's rule handed in-U and in-F, distance to X."""
+    """Stage B on one part, beside: the picked rule and today's rule handed in-U and in-F, distance to X."""
     import numpy as np
 
     out = {}
@@ -851,60 +1031,88 @@ def _beside_forms(p, rule, stop):
     return out
 
 
-def cmd_bench(_args):
-    """bench (zero renders), once: per part (all 47) every rule's values from converge's traces under the stop, its
-    finished guitar's logmel distance to X, its errors against T and the byte-identical counts (per-part records,
-    written once); the pick on the 40 (`pick`); beside, the picked rule and today's rule in in-U and in-F. ->
-    bench.json (written once)."""
-    m = require_fit()
-    NT.never_overwrite(bench_path())
-    conv = _load_checked(converge_path(), None, "converge")
-    stop = conv["stop"]
-    t0 = time.time()
-    recs, parts = {}, {}
-    for p in bench_parts(m):
-        traces = _load_checked(trace_path(p.key), conv["parts"][p.key]["trace_sha256"], "converge")["fits"]
-        bp = bench_part_path(p.key)
-        if bp.exists():
-            rec = json.loads(bp.read_text())
-            if rec["stop"] != stop:
-                raise SystemExit(f"{p.key}: its bench record has another stop")
-        else:
-            rec = _bench_part(p, traces, stop)
-            _save_once(bp, rec)
-        recs[p.key], parts[p.key] = rec, p
-        print(f"{p.key[-40:]}: {rec['distinct_guitars']} distinct guitars; today's rule "
-              f"{rec['rules'][TODAY]['logmel_to_x']:.3f} from X ({time.time() - t0:.0f} s in all)", flush=True)
-    if sorted(recs) != sorted(conv["parts"]):
-        raise SystemExit("the bench's parts are not converge's")
-    deciding = [k for k in sorted(recs) if recs[k]["set"] in RD.DECIDING]
+def _bench_pick(conv, keys):
+    """The pick from every part's stage-A record, or None while any is missing. -> (pick, records) or None."""
+    if _missing({k: bench_part_path(k) for k in keys}):
+        return None
+    recs = {k: json.loads(bench_part_path(k).read_text()) for k in keys}
+    if any(r["stop"] != conv["stop"] for r in recs.values()):
+        raise SystemExit("a bench record has another stop")
+    deciding = [k for k in keys if recs[k]["set"] in RD.DECIDING]
     dist = {c: {k: recs[k]["rules"][c]["logmel_to_x"] for k in deciding} for c in ORDER}
     if any(v is None for d in dist.values() for v in d.values()):
         raise SystemExit("a distance on the 40 is not finite: a bug, to the user")
-    pk = pick(dist, _interval_40())
+    return pick(dist, _interval_40()), recs
+
+
+def cmd_bench(args):
+    """bench (zero renders). Stage A, per part (all 47): every rule's values from converge's traces under the stop, its
+    finished guitar's logmel distance to X, its errors against T and the byte-identical counts. The pick on the 40
+    (`pick`) once every part's stage A is there. Stage B, per part, beside: the picked rule and today's rule in in-U
+    and in-F. No flag: both stages on every part, then the combine. `--shard k/n`: that slice's stage A, then, when
+    every part's stage A is there, its stage B (else rerun the shard once every shard's stage A is done).
+    `--combine`: refused until both stages are there for every part; bench.json (written once)."""
+    m = require_fit()
+    mode = run_mode(args)
+    if mode != "shard":
+        NT.never_overwrite(bench_path())
+    conv = _load_checked(converge_path(), None, "converge")
+    stop, keys = conv["stop"], sorted(conv["parts"])
+    t0 = time.time()
+    if mode in ("one", "shard"):
+        shard = getattr(args, "shard", None)
+        mine = shard_keys(keys, shard)
+        need = _missing({k: bench_part_path(k) for k in mine})
+        if need:
+            for p in bench_parts(m, set(need)):
+                traces = _load_checked(trace_path(p.key), conv["parts"][p.key]["trace_sha256"], "converge")["fits"]
+                rec = _bench_part(p, traces, stop)
+                _save_once(bench_part_path(p.key), rec)
+                print(f"{p.key[-40:]}: stage A, {rec['distinct_guitars']} distinct guitars; today's rule "
+                      f"{rec['rules'][TODAY]['logmel_to_x']:.3f} from X ({time.time() - t0:.0f} s in all)", flush=True)
+        got = _bench_pick(conv, keys)
+        if got is None:
+            if mode == "one":
+                raise SystemExit("stage A is missing for some parts: a bug, to the user")
+            print(f"RF BENCH SHARD {shard[0]}/{shard[1]}: stage A done; the pick waits for every part's stage A: "
+                  "rerun this shard once every shard's stage A is done")
+            return
+        rule = got[0]["candidate"]
+        need = _missing({k: beside_part_path(k) for k in mine})
+        if need:
+            for p in bench_parts(m, set(need)):
+                _save_once(beside_part_path(p.key), {"plan": PLAN, "part": p.key, "rule": rule, "stop": stop,
+                                                     "forms": _beside_forms(p, rule, stop)})
+                print(f"{p.key[-40:]}: stage B ({time.time() - t0:.0f} s in all)", flush=True)
+        if mode == "shard":
+            print(f"RF BENCH SHARD {shard[0]}/{shard[1]}: stages A and B done on {len(mine)} parts; `bench --combine` "
+                  "once every shard is done")
+            return
+    got = _bench_pick(conv, keys)
+    if got is None:
+        raise SystemExit("stage A is not there for every part: run every shard first")
+    pk, recs = got
     rule = pk["candidate"]
+    missing = _missing({k: beside_part_path(k) for k in keys})
+    if missing:
+        raise SystemExit(f"stage B is not there for {len(missing)} parts: run every shard again")
     beside = {}
-    for k in sorted(recs):
-        bp = beside_part_path(k)
-        if bp.exists():
-            rec = json.loads(bp.read_text())
-            if (rec["rule"], rec["stop"]) != (rule, stop):
-                raise SystemExit(f"{k}: its beside record is of another rule or stop")
-        else:
-            rec = {"plan": PLAN, "part": k, "rule": rule, "stop": stop, "forms": _beside_forms(parts[k], rule, stop)}
-            _save_once(bp, rec)
-        beside[k] = rec["forms"]
+    for k in keys:
+        b = json.loads(beside_part_path(k).read_text())
+        if (b["rule"], b["stop"]) != (rule, stop):
+            raise SystemExit(f"{k}: its beside record is of another rule or stop")
+        beside[k] = b["forms"]
+    deciding = [k for k in keys if recs[k]["set"] in RD.DECIDING]
     out = {"plan": PLAN, "renders": 0, "input": RD.DECIDING_INPUT, "stop": stop,
            "converge_sha256": S.file_sha(converge_path()), "pick": pk, "parts_n": len(recs), "deciding_n": len(deciding),
-           "sets": {k: recs[k]["set"] for k in sorted(recs)},
-           "summary": {"the_40": bench_summary(recs, deciding), "all_47": bench_summary(recs, sorted(recs))},
+           "sets": {k: recs[k]["set"] for k in keys},
+           "summary": {"the_40": bench_summary(recs, deciding), "all_47": bench_summary(recs, keys)},
            "beside_forms": beside_summary(beside, deciding, rule),
-           "beside_sha256": {k: S.file_sha(beside_part_path(k)) for k in sorted(recs)},
+           "beside_sha256": {k: S.file_sha(beside_part_path(k)) for k in keys},
            "parts": {k: {"record_sha256": S.file_sha(bench_part_path(k)),
                          "picked_values": recs[k]["rules"][rule]["values"],
                          "picked_pass_used": recs[k]["rules"][rule]["pass_used"],
-                         "picked_sha256": recs[k]["rules"][rule]["sha256"]} for k in sorted(recs)},
-           "seconds": round(time.time() - t0, 1), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+                         "picked_sha256": recs[k]["rules"][rule]["sha256"]} for k in keys}}
     sha = _save_once(bench_path(), out)
     print(f"RF BENCH: picked {rule} (lowest {pk['lowest']}, ties {pk['ties']}); bench.json sha256 {sha}")
     for c in ORDER:
@@ -948,25 +1156,14 @@ def beside_summary(beside, deciding, rule):
     return out
 
 
-def _write_guitar(path, y32):
-    return RD._write_once(path, y32)
+# --- the builds ---------------------------------------------------------------------------------------------------------------
 
-
-def cmd_build_bench(_args):
-    """build-bench (zero renders), once: the xf-fix guitars, the picked rule handed in-M under the stop, on all 47
-    (each equal to the bench's picked values; today's rule picked: each is xf-now's guitar). dry/xf-fix/ files
-    written once; build-bench.json (written once)."""
-    m = require_fit()
-    rp = build_record_path("bench")
-    NT.never_overwrite(rp)
-    conv = _load_checked(converge_path(), None, "converge")
-    bench = _load_checked(bench_path(), None, "bench")
-    if bench["converge_sha256"] != S.file_sha(converge_path()):
-        raise SystemExit("bench.json was not made from this converge.json")
-    rule, stop = bench["pick"]["candidate"], conv["stop"]
-    t0 = time.time()
-    parts, hits = {}, []
-    for p in bench_parts(m):
+def _build_part(which, p, rule, stop, bench, bench_sha):
+    """One part's guitar and per-part file. bench: the picked rule handed in-M, equal to the bench's values and
+    sha256 (today's rule: xf-now's guitar). real: first the rule off on the true DI must be X; then the picked rule
+    handed the true DI."""
+    extra = {}
+    if which == "bench":
         f = fit(p, p.u, rule, stop)
         if RD.values_key(f["values"]) != RD.values_key(bench["parts"][p.key]["picked_values"]):
             raise SystemExit(f"{p.key}: the fit does not repeat the bench's values: a bug, to the user")
@@ -974,65 +1171,89 @@ def cmd_build_bench(_args):
         sha = S.npy_sha(y32)
         if sha != bench["parts"][p.key]["picked_sha256"] or (rule == TODAY and sha != p.now_sha):
             raise SystemExit(f"{p.key}: the guitar is not the bench's")
-        fs = _write_guitar(guitar_path(FIX_ROW, p.key), y32)
-        parts[p.key] = {"file_sha256": fs, "audio_sha256": sha, "values": f["values"], "pass_used": f["pass_used"],
-                        "end": f["end"], "reached": f["reached"], "identical_to_now": sha == p.now_sha,
-                        "identical_to_x": sha == p.x_sha}
-        if f["reached"]:
-            hits.append({"part": p.key, "candidate": rule, "end": f["end"], "pass_used": f["pass_used"]})
-        print(f"{p.key[-40:]}: xf-fix written ({time.time() - t0:.0f} s in all)", flush=True)
-    out = {"plan": PLAN, "renders": 0, "row": FIX_ROW, "input": RD.DECIDING_INPUT, "rule": rule, "stop": stop,
-           "bench_sha256": S.file_sha(bench_path()), "parts_n": len(parts), "hits": hits,
-           "identical_to_now": sum(r["identical_to_now"] for r in parts.values()), "parts": parts,
-           "seconds": round(time.time() - t0, 1), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    sha = _save_once(rp, out)
-    print(f"RF BUILD-BENCH: {len(parts)} xf-fix guitars, {len(hits)} fits reach the stop, {out['identical_to_now']} "
-          f"identical to xf-now; build-bench.json sha256 {sha}")
+        fs = RD._write_once(guitar_path(FIX_ROW, p.key), y32)
+        rec = build_part_record("bench", fs, sha, f["values"], f["pass_used"], f["end"], f["reached"],
+                                sha == p.x_sha, sha == p.now_sha)
+    else:
+        if S.npy_sha(guitar(p, fit(p, p.di, TODAY)["values"])) != p.x_sha:
+            raise SystemExit(f"{p.key}: the rule off on the true DI is not X: a bug, to the user")
+        extra = {"rule_off_is_x": True}
+        f = fit(p, p.di, rule, stop)
+        y32 = guitar(p, f["values"])
+        sha = S.npy_sha(y32)
+        fs = RD._write_once(guitar_path(REAL_ROW, p.key), y32)
+        rec = build_part_record("real", fs, sha, f["values"], f["pass_used"], f["end"], f["reached"], sha == p.x_sha)
+    _save_once(build_part_path(which, p.key), {"plan": PLAN, "part": p.key, "build": which, "rule": rule,
+                                               "stop": stop, "bench_sha256": bench_sha, **extra, "record": rec})
 
 
-def cmd_build_real(_args):
-    """build-real (zero renders), once: the rf2 guitars, build 2's notes, the picked rule handed the true DI (the
-    measured form build 2 was rebuilt from) under the bench's stop (amendment 5), on all 47. Per part first the rule
-    off: today's rule on the true DI must be X (build 2's tr-di, `rebuild_redo`'s output) byte for byte. The real fits
-    that reach the stop are listed. dry/fs-refit/ files written once; build-real.json (written once)."""
+def _cmd_build(which, args):
     m = require_fit()
-    rp = build_record_path("real")
-    NT.never_overwrite(rp)
+    mode = run_mode(args)
+    rp = build_record_path(which)
+    if mode != "shard":
+        NT.never_overwrite(rp)
     conv = _load_checked(converge_path(), None, "converge")
     bench = _load_checked(bench_path(), None, "bench")
     if bench["converge_sha256"] != S.file_sha(converge_path()):
         raise SystemExit("bench.json was not made from this converge.json")
-    rule, stop = bench["pick"]["candidate"], conv["stop"]
+    rule, stop, bench_sha = bench["pick"]["candidate"], conv["stop"], S.file_sha(bench_path())
+    keys = sorted(bench["parts"])
+    row = BUILDS[which]
     t0 = time.time()
-    parts, hits, off_ok = {}, [], 0
-    for p in bench_parts(m):
-        today = guitar(p, fit(p, p.di, TODAY)["values"])
-        if S.npy_sha(today) != p.x_sha:
-            raise SystemExit(f"{p.key}: the rule off on the true DI is not X: a bug, to the user")
-        off_ok += 1
-        f = fit(p, p.di, rule, stop)
-        y32 = guitar(p, f["values"])
-        sha = S.npy_sha(y32)
-        fs = _write_guitar(guitar_path(REAL_ROW, p.key), y32)
-        parts[p.key] = {"file_sha256": fs, "audio_sha256": sha, "values": f["values"], "pass_used": f["pass_used"],
-                        "end": f["end"], "reached": f["reached"], "identical_to_x": sha == p.x_sha}
-        if f["reached"]:
-            hits.append({"part": p.key, "candidate": rule, "end": f["end"], "pass_used": f["pass_used"]})
-        print(f"{p.key[-40:]}: rf2 written ({time.time() - t0:.0f} s in all)", flush=True)
-    out = {"plan": PLAN, "renders": 0, "row": REAL_ROW, "build": RD.REAL_BUILD, "input": "the true DI (measured)",
-           "rule": rule, "stop": stop, "bench_sha256": S.file_sha(bench_path()), "parts_n": len(parts), "hits": hits,
-           "rule_off_is_x": {"held": off_ok, "of": len(parts)},
-           "identical_to_x": sum(r["identical_to_x"] for r in parts.values()), "parts": parts,
-           "seconds": round(time.time() - t0, 1), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    if mode in ("one", "shard"):
+        shard = getattr(args, "shard", None)
+        mine = shard_keys(keys, shard)
+        need = _missing({k: build_part_path(which, k) for k in mine})
+        if need:
+            for p in bench_parts(m, set(need)):
+                _build_part(which, p, rule, stop, bench, bench_sha)
+                print(f"{p.key[-40:]}: {row} written ({time.time() - t0:.0f} s in all)", flush=True)
+        if mode == "shard":
+            print(f"RF BUILD-{which.upper()} SHARD {shard[0]}/{shard[1]}: {len(mine)} parts ({len(need)} new); "
+                  f"`build-{which} --combine` once every shard is done")
+            return
+    missing = _missing({k: build_part_path(which, k) for k in keys})
+    if missing:
+        raise SystemExit(f"{len(missing)} of {len(keys)} parts have no {row} guitar yet: run every shard first")
+    per = {}
+    for k in keys:
+        r = json.loads(build_part_path(which, k).read_text())
+        if (r["build"], r["rule"], r["stop"], r["bench_sha256"]) != (which, rule, stop, bench_sha):
+            raise SystemExit(f"{k}: its {row} file was made with another rule, stop or bench")
+        if S.file_sha(guitar_path(row, k)) != r["record"]["file_sha256"]:
+            raise SystemExit(f"{k}: its {row} guitar changed since its file")
+        if which == "real" and not r.get("rule_off_is_x"):
+            raise SystemExit(f"{k}: the rule off was not X")
+        per[k] = r
+    out = build_record(which, rule, stop, bench_sha, per)
     sha = _save_once(rp, out)
-    print(f"RF BUILD-REAL: {len(parts)} rf2 guitars; the rule off is X on {off_ok} of {len(parts)}; {len(hits)} fits "
-          f"reach the stop; build-real.json sha256 {sha}")
+    print(f"RF BUILD-{which.upper()}: {out['parts_n']} {row} guitars, {len(out['hits'])} fits reach the stop"
+          + (f", the rule off is X on {out['rule_off_is_x']['held']} of {out['parts_n']}" if which == "real" else
+             f", {out['identical_to_now']} identical to xf-now") + f"; build-{which}.json sha256 {sha}")
+
+
+def cmd_build_bench(args):
+    """build-bench (zero renders): the xf-fix guitars, the picked rule handed in-M under the stop, on all 47 (each
+    equal to the bench's picked values and sha256; today's rule picked: each is xf-now's guitar). Per part a guitar
+    under dry/xf-fix/ and a file under fit/build-bench/, each written once. No flag: every part, then the combine;
+    `--shard k/n`: that slice; `--combine`: refused until every part is there; build-bench.json (BUILD_FIELDS,
+    written once)."""
+    _cmd_build("bench", args)
+
+
+def cmd_build_real(args):
+    """build-real (zero renders): the rf2 guitars, build 2's notes, the picked rule handed the true DI (the measured
+    form build 2 was rebuilt from) under the bench's stop (amendment 5), on all 47. Per part first the rule off: today's
+    rule on the true DI must be X (build 2's tr-di, `rebuild_redo`'s output) byte for byte. The real fits that reach
+    the stop are listed. Shards and the combine as `build-bench`'s; build-real.json (BUILD_FIELDS, written once)."""
+    _cmd_build("real", args)
 
 
 def cmd_freeze(_args):
     """freeze (zero renders), once: the rule, the stop, both lists of fits that reach it and both builds' sha256
-    (`freeze_body`), frozen.json (written once); prints the ledger body for `phase_scratch_rederive_frozen` (with
-    frozen.json's sha256). It does not edit the ledger."""
+    (`freeze_body`, FREEZE_FIELDS), frozen.json (written once); prints the ledger body for
+    `phase_scratch_rederive_frozen` (with frozen.json's sha256). It does not edit the ledger."""
     require_fit()
     NT.never_overwrite(frozen_path())
     conv = _load_checked(converge_path(), None, "converge")
@@ -1051,6 +1272,7 @@ def cmd_freeze(_args):
 
 COMMANDS = {"converge": cmd_converge, "bench": cmd_bench, "build-bench": cmd_build_bench,
             "build-real": cmd_build_real, "freeze": cmd_freeze}
+SHARDED = ("converge", "bench", "build-bench", "build-real")
 
 
 def main(argv=None):
@@ -1063,9 +1285,13 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=sorted(COMMANDS))
     ap.add_argument("--price", type=int, default=None, help="converge only: price on this many parts (2 or 3)")
+    ap.add_argument("--shard", type=shard_arg, default=None, help=f"k/n (n <= {SHARD_MAX}): this slice of the parts")
+    ap.add_argument("--combine", action="store_true", help="refused until every part is there; the combined record")
     args = ap.parse_args(argv)
     if args.price is not None and args.cmd != "converge":
         ap.error("--price is converge's")
+    if (args.shard is not None or args.combine) and args.cmd not in SHARDED:
+        ap.error(f"--shard and --combine are {SHARDED}'s")
     COMMANDS[args.cmd](args)
 
 
