@@ -292,6 +292,10 @@ def start_path(row, pk):
 
 
 def answers_path(row):
+    """A row's answers file (any of `ROWS`: the bench rows and `fs-refit`), PF/fs/rederive/answers-<row>.json; its
+    sha256 is main's `phase_scratch_rederive_answers_<row>` before the score. Public: `rederive_diag` reads it."""
+    if row not in ROWS:
+        raise ValueError(f"unknown row {row!r}: one of {list(ROWS)}")
     return rows_dir() / f"answers-{row}.json"
 
 

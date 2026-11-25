@@ -211,6 +211,18 @@ def test_the_search_never_opens_anything_scored(tmp_path):
         assert not RR.is_forbidden(p), p
 
 
+def test_the_answers_path_of_every_row():
+    """Public: `rederive_diag` reads each row's answers through it."""
+    paths = {r: RR.answers_path(r) for r in RD.ROWS}
+    assert set(paths) == {"xf-now", "xf-fix", "xf-null", "xf-tuning", "xf-mutes", "xf-tilt", "xf-levels", "fs-refit"}
+    assert len(set(paths.values())) == len(paths)
+    for r, p in paths.items():
+        assert p == RD.rederive_dir() / f"answers-{r}.json" and RR.is_forbidden(p)    # never opened by a search
+    for bad in ("xn-list", "fs-notes", ""):
+        with pytest.raises(ValueError, match="unknown row"):
+            RR.answers_path(bad)
+
+
 def test_the_paths():
     assert RR.rows_dir() == RD.rederive_dir()
     for row in RD.LADDER_WRITES:
