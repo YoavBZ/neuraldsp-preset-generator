@@ -5911,6 +5911,55 @@
     },
     "next": "score --row xf-now --shard k/3, then read --stage 1 (xf_stage1 on D_now = G(xf-now) - G(xn-bank), the 40)"
    },
+   "phase_scratch_rederive_stage1": {
+    "phase": "Phase 3b's read (docs/rederive-plan.md section 8, the bench table's stage 1): xf-now scored and read; the figures are in docs/rederive-results.md; audited 2026-11-25 (independent, PASS WITH FIXES, wording applied)",
+    "result": "stage 1 goes on (D_now wholly above zero on the 40, the answer arm; no stage-1 code): xf-fix runs next, after the fit and an independent audit",
+    "label": null,
+    "passing_only": "goes on (nothing refused in xf-now or xn-bank)",
+    "report_sha256": "d2998820cde147aa72ecc7a60e0fffe686bf60fdc5fb2f2cb0bd3152186a3e86",
+    "rows_sha256": "9e90483e8f53e4c283d66f2c0eb4ae1791dc057d233231ed18fd2e20a810453f",
+    "stage1_go_sha256": "44a0f952cd55d924d2f71b31dddd0df53600da594c365b902ef1492605f83699",
+    "files": [
+     "PF/fs/rederive/report-stage1.json",
+     "PF/fs/rederive/rows-stage1.json",
+     "PF/fs/rederive/stage1-go.json"
+    ],
+    "answers_sha256": {
+     "xf-now": "e6affa217bc277a7089e4dd599a8df4fe080776d4fd382f0915d1775b0efa2db",
+     "xn-bank": "from phase_scratch_exact_answers_bank",
+     "xn-list": "from phase_scratch_exact_answers_list"
+    },
+    "reproduced": "before reading, D_list and build 2 less row (b) from the stored files equal the exact-notes read's stored rows exactly",
+    "score": {
+     "parts": 47,
+     "scoring_control_ok": 47,
+     "reruns": 0,
+     "renders": 564,
+     "shards": {
+      "0/3": {
+       "renders": 192,
+       "seconds": 475
+      },
+      "1/3": {
+       "renders": 192,
+       "seconds": 473
+      },
+      "2/3": {
+       "renders": 180,
+       "seconds": 458
+      }
+     }
+    },
+    "renders": {
+     "checks": 50,
+     "search": 12404,
+     "start_reference": 94,
+     "score": 564,
+     "all": 13112
+    },
+    "ran": "2026-11-25: score --row xf-now --shard k/3 (three render processes, setopt no_bg_nice, caffeinate -i) and one --rerun pass a shard, then read --stage 1 (zero renders), from a frozen detached worktree of main at 90edc3bd (#631)",
+    "splits": "the 40 (deciding), clean and crunch, all 47 and the panel, the shrunk arm, checkpoints 50/100/200, each of the 32 clusters of the 40 left out, one part per partner (33 parts over all 47, 30 on the 40), without the two design-time parts, passing-only, the 15 tilt parts against the 25 (labelled seen); D_list - D_now beside as the finished input's share"
+   },
    "phase_scratch_readerr_p2": {
     "declared": "2026-11-25, after Phase 1's audit (PASS, RX-untracked; phase_scratch_readerr_frozen), before anything in it runs",
     "plan": "docs/scratch-readerr-plan.md section 9; the amendment (handover plans/note-reading-phase2-amendment.md, planner Fable) passed an independent review (Opus, high), PASS WITH AMENDMENTS; its six binding amendments are built in and win where they differ; units A (the xr- row) and B (this declaration) as one PR (the orchestrator's call)",
