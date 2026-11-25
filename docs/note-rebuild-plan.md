@@ -1885,9 +1885,9 @@ By the score, on BKS+GOAT (the 40), 90% intervals; negative means build 3 is clo
 - The 21 carried parts each measured exactly 0, so their zeros are measured, not assumed.
 - On the 25 changed parts of the 40, the answer is closer on 9, farther on 14 and equal on 2.
 - Build 3's own read: its answer is level with Cen, at +0.028 [−0.080, +0.136]. Against row (c) it is +0.115
-  [+0.012, +0.218], labelled "worse" (FN-worse, provisional). Build 2's was +0.096 [+0.005, +0.187], undecided.
+  [+0.012, +0.218], labelled "worse" (FN-worse, provisional). Build 2's was +0.096 [+0.005, +0.187], undecided. The change from undecided to worse is a threshold crossing, with both arms' means within 0.016 of BIG. It is not a readable change, because build 3 less build 2 is level.
 - The curve is flat from 50 evaluations on.
 
 **Reading.** F6 moves the search's answers by less than the score can read. The shrunk arm leans slightly to build 2.
-This matches the plan's outcome "ear fixed, J0 level or unreadable": if the page hears the bend fixed, F6 stays in the
+The J0 half of the plan's outcome "Ear fixed, J0 level or unreadable" holds; the ear half is pending. If the page hears the bend fixed, F6 stays in the
 build and bend work stops for the score's sake. That call waits for build 3's ear page.
