@@ -368,3 +368,260 @@ rebuilt 94 guitars, took 344.7 s; that is an upper bound for `trace`. The other 
 - The guarded files and guarded keys on main are unchanged.
 - The user holds a results section naming the tracking figure, the best candidate with its licence, and the priced
   next step.
+
+## 9. Phase 2 amendment (2026-11-25; ledger `phase_scratch_readerr_p2`)
+
+Declared 2026-11-25, after Phase 1 ran and its independent audit passed (PASS: `RX-untracked`, hashed as
+`phase_scratch_readerr_frozen`). The amendment (the handover's `plans/note-reading-phase2-amendment.md`, planner
+Fable) passed an independent review (Opus, high): PASS WITH AMENDMENTS. Its six binding amendments are built in below
+and win where they differ from the amendment's text.
+
+- **Code:** `learn/scratch_readerr.py`. Units A (the `xr-` row) and B (this section) are this PR. Unit C (Phase
+  2a's `notes` and `score`) comes next, in the same two files; unit D (the `mt3` and `kong` model calls) waits for
+  9h's condition.
+- **Grepped first:** `XH-`, `xr-matched`, `xr-found`, `xr-filled`, `hand-plain` and `phase_scratch_readerr_p2` had no
+  hit on main. `XR-` was not used: it is a substring of track 1's `TXR-` codes.
+- **Keys to come:** `phase_scratch_readerr_xr_dry`, `phase_scratch_readerr_xr_answers_<row>` and
+  `phase_scratch_readerr_xr_outcome`. `phase_scratch_readerr_notes` stays reserved for unit C.
+
+**The order.** Phase 2a is descriptive. One hybrid row decides. Downloads come after it.
+
+### 9a. Phase 2a (unit C; declared here, built next)
+
+`notes` runs `learn/readerr_run.py` in the Basic Pitch venv, one thread:
+
+- **Inputs:** the 47 stored bench inputs (`exact/work/reread/NNN-tr-di.wav`, each checked against the stored record's
+  `input_sha256`), and for the real-DI arm the 79 Guitar-TECHS windows and the ten lists, each through
+  `real_di_source`.
+- **Reads per input:** `bp-grid` at the 144 declared points; `bp-grid` at the stored point with `lead_in_s` 1.0;
+  `bp-shift` at the four offsets of 9b.
+- **Proof, before anything is written:** `bp-grid`'s top-level events equal the stored re-read's events on 47 of 47.
+  Otherwise `RX-stop`.
+- **Outputs:** `notes/<candidate>/NNN.json` and the listing `notes.json`, each written once. The listing's sha256 goes
+  to main as `phase_scratch_readerr_notes` before `score`.
+
+`score` reads those files:
+
+- **Candidates:** the 144 grid points, the lead-in, the shift vote at k = 2, 3 and 4, and F6 on the stored re-read;
+  149 in all, with the stored re-read as the base.
+- **Per candidate and part:** the 23 note figures on the as-played list, and the rebuilt guitar's `logmel`,
+  `env_corr` and pause error against the bank guitar (the same `rebuild_redo` call as proof 4; at the stored point
+  the three must equal `build.json`'s stored values on 47 of 47).
+- **Per candidate:** each figure's paired difference against the stored re-read through `set_rows` on BKS+GOAT, with
+  BKS alone, GOAT alone and all 47 beside; a frontier table (pooled precision, recall, extras and misses by class);
+  the real-DI arm on note figures only, by P1 and P2, chords and scales, and the lists. Output: `candidates.json`.
+- **Labels:** every line carries "descriptive: no figure decided (`RX-untracked`); sign only, not on J0's scale, no
+  size ruled out". `grid_pick` is printed three times, by note error, `logmel` and `env_corr`, each as "would-pick,
+  not acted on". An edge minimum is reported and not extended. Phase 2a records no RX code.
+
+**The pause error, defined.** `build.json` does not store a pause error as one value. Phase 1's `*_pause_error` (and
+the same figure for every Phase 2 guitar) is defined from its stored mask fields: for each of J0's three frame sizes
+(1,024, 2,048 and 4,096), `figures.mask[n_fft].agree` is the share of frames on which the guitar's playing-frame mask
+(within 40 dB of its loudest frame) agrees with the bank guitar's (`note_rebuild.mask_agreement`, over the whole
+window). The pause error is the mean over the three sizes of 1 − agree; where `agree` is not stored, |`pauses_dry` −
+`pauses_true`| is used instead. The per-half pause shares `build.json` stores (`pauses[half][n_fft]`, for `xn-reread`
+and the bank guitar) are reported beside, never as the figure. `xr-build` stores both for its own guitars.
+
+### 9b. The shift vote
+
+- **Offsets:** four reads at pads of 0, 35, 71 and 106 Basic Pitch frames: 0, 8,960, 18,176 and 27,136 samples at
+  22,050 Hz, or 0, 0.4063, 0.8243 and 1.2307 s (`SHIFT_OFFSETS_S`). These are 0, a quarter, a half and three quarters
+  of Basic Pitch's 36,164-sample window hop, to the nearest frame.
+- **Anchor:** the zero-offset read. It is the stored re-read, so k = 1 must reproduce the stored events on 47 of 47 (a
+  proof).
+- **Votes:** an anchor note's votes are 1 plus the number of shifted reads holding a note paired with it (`pair_by`:
+  same pitch, onsets within 50 ms, one to one, closest first).
+- **Kept:** an anchor note with votes at or above k, for k = 2, 3 and 4, exactly as the anchor read it (onset, end,
+  amplitude, bend track).
+- **Order:** the vote runs on the runner's re-based events (`record_notes`); the voted list then goes through
+  `timed_notes` and F1 once, like any candidate.
+- **It only removes notes.** Beside, never a candidate: the notes every shifted read finds that pair with no anchor
+  note (`shift_unanchored`), counted and matched to the truth. If true recoveries are material, a symmetric rule gets
+  its own amendment.
+
+### 9c. The hybrids (`xr-` rows)
+
+Every hybrid is an oracle list, diagnostic only. Each is built from `trace.json`'s stored re-read (after timing and
+F1) and its nominal exact list.
+
+| Row | Note list | Run |
+|---|---|---|
+| `xr-matched` | The re-read notes that pair with an exact note (`note_versions.hand_pairs`). Each unpaired re-find first hands its end to its note (`note_fixes.refind_pairs`, `join_refinds`); every other unpaired note leaves | First |
+| `xr-found` | The exact notes the re-read found, as exact | Only when the code asks (XH-rest) |
+| `xr-filled` | The whole exact list plus the re-read's unpaired notes, not joined | Only when the code asks (XH-undecided) |
+| `hand-plain` | The plain drop (`note_versions.hand_notes`, nv-hand's rule) | Built beside; its dry figures reported; never searched |
+
+- **Why joined (review amendment 4).** A plain drop leaves a re-found held note with its early end, which `ring-soft`
+  then cuts (nv-hand's known fault). Joining is the faithful "this extra never happened" for a re-find.
+- **The chain rule (review amendment 4).** `refind_pairs` points a re-find at the latest same-pitch note still
+  sounding, which may itself be an unpaired re-find. A note is joined when it is unpaired and its chain root is a kept
+  note (`chain_root`); `join_refinds` already follows roots, so a chain's last end goes to its root. A re-find whose
+  root is an unpaired note leaves with it.
+- **Beside the build (review amendment 4):** the number of joins; how many of them the nominal anatomy calls
+  re-finds (409 re-finds on the nominal list); joined ends that run past the exact partner's end; and the true notes
+  dropped with timing or substitution extras (12 + 29 extras, 53 + 58 misses on the nominal list).
+
+### 9d. `xr-build` and `xr-check`
+
+**`xr-build`** (zero renders), from a frozen detached worktree of main:
+
+- **The call:** `NR.rebuild_redo("tr-di", notes, len(bank), bank, bank_guitar, ring, finish=finish, loud=None)`,
+  with the part's finish from `NT.build_todo`, as `cmd_trace` does. Four rebuilds a part (review amendment 5): the
+  re-read, the exact list, `xr-matched` and `hand-plain`.
+- **Four proofs, before anything is written:** (1) the full re-read reproduces `dry/xn-reread`'s sha256 on 47 of
+  47; (2) the exact list reproduces `dry/xn-list`'s on 47 of 47; (3) the pairing's counts equal `anatomy.json`'s
+  nominal `matched` per part (3,210 pooled); (4) CODE_FILES equal main's. A failing proof is `XH-stop`: nothing is
+  written.
+- **Outputs:** `xr/dry/<row>/<part>.npy` (each through `write_once_npy`) and `xr/build-first.json`: per part each
+  guitar's sha256, the kept, joined and removed counts, the join report, the rebuild report, `NR.figures` against
+  the bank guitar, the pause error, and the pause share per half beside the bank guitar's.
+- **Before any search,** the build file's sha256 goes to main as `phase_scratch_readerr_xr_dry`. A part whose
+  search-half pause share would make J0 refuse is listed for the orchestrator: a report, not a stop.
+- `xr-found` and `xr-filled` are built by `xr-build --set found` and `--set filled` (keys `_xr_dry_found`,
+  `_xr_dry_filled`), which refuse unless main's `phase_scratch_readerr_xr_outcome` reads the code that asks for them.
+
+**`xr-check`** (about 50 renders, the exact test's two checks), on `SN.check_parts`' two parts with `xn-reread`'s
+stored guitar: this module's start reference and `S.run_part(budget=10, step1_only=True)` must equal `xn-reread`'s
+stored first 10 evaluations (`SN.search_check_verdict`), and this module's score of `xn-reread`'s hashed answers must
+equal its stored score files (`SX.score_check_verdict`). A mismatch is `XH-stop`.
+
+### 9e. The row's commands
+
+They follow `scratch_exact`'s pattern, with their own paths under `PF/fs/readerr/xr/`:
+
+| Command | Does | Reuses unchanged |
+|---|---|---|
+| `xr-search --row R --shard k/3 [--rerun]` | The guitar (sha256 from the build file), the blanked record, the start reference, the search | `SX.require_records`, `SX.load_record_blank`, `SX.synthetic_part`, `SX.start_reference`, `S.search_row_part`, `SX.disk_guard`, `S.rerun_path` |
+| `xr-answers --row R` | Answers, refusals, coverage; sha256 to main as `phase_scratch_readerr_xr_answers_<row>` before the score | `S.with_reruns`, `S.rerun_refusal`, `SX.dry_refusal`, `SX.xn_answer_parts`, `SX.coverage` |
+| `xr-score --row R --shard k/3 [--rerun]` | Cen and the five settings through the bank guitar, held half, lag 0 | `SX.score_exact_part`, `SX.load_record`, `SX.require_targets` |
+| `xr-read` | The read and the XH code, once | `SX.row_numbers` for the stored rows, `SX.deciding_bug`, `S.nonfinite_rule`, `SX.xn_numbers`, `S.itt_per` |
+
+- **Written here,** because `scratch_exact`'s versions only know its four rows: the paths (`xr_path`), the answers
+  key, `load_xr_guitar` and `read_xr_parts`. A test holds `read_xr_parts` equal to `SX.read_xn_parts` on made-up
+  score files.
+- **The search never opens** `targets.json`, a target or score file, any answers file, `trace.json` or
+  `anatomy.json` (`xr_search_open`; an `ast` test walks every function the search reaches).
+- **The write rule widens.** Guitars go through `write_once_npy`. Paths handed to `SX.start_reference` and
+  `S.search_row_part` come only from `xr_path`, under `PF/fs/readerr/`; a search's output path must not exist
+  (`fresh_xr_path_of`), since `search_row_part` writes through `P.save`.
+- **A byte-identical guitar takes the stored record byte for byte** (`write_bytes_once`). That happens for `xr-found`
+  on the one part with no misses.
+
+### 9f. The read
+
+Per part, on the answer arm, with shrunk beside:
+
+- **E = G(`xr-matched`) − G(`xn-reread`).** Below zero means the preset lands closer without the extras.
+- **M = G(`xr-matched`) − G(`xn-list`).** Above zero means the misses and the matched notes' timing, ends and bends
+  still cost.
+- Reading proper is M − E, per part, exactly.
+
+**Rules:**
+
+- **Intervals:** `set_rows` on BKS+GOAT decides. BKS alone, GOAT alone, clean, crunch, all 47, checkpoints 50, 100
+  and 200, and leave-one-cluster-out sit beside.
+- **Labels:** E by `number_reading` (a gain) and `paired_reading`; M by `paired_reading`; all at their defaults, since
+  both are on J0's scale.
+- **Refusals, E and M alike (review amendment 1):** S1. A rerun, then Cen; intent-to-treat decides, passing-only
+  beside, `refusal-sensitive` when the codes differ. M is a deciding read, so Phase 1's amendment 3 (passing-only
+  primary, for the descriptive tracking figures only) does not apply to it. The exact test decided D_list the same
+  way (+0.321 by intent-to-treat, +0.285 passing-only beside), and stored reading proper is +0.552 by
+  intent-to-treat.
+- **Beside, never deciding:** the share −E over reading proper, by `SX.fieller_share`; and the forward test: per part
+  the change in `logmel` and in `env_corr` (the `xr-matched` guitar less `xn-reread`'s, each against the bank guitar)
+  against E, Spearman pooled and within each set, and sign agreement, no median split. A dry figure becomes Phase 2's
+  scoring figure only by a further amendment.
+- The rows are saved (`xr/rows.json`) before the code (`xr/report.json`).
+
+**Phase 2's scoring figure follows the code, declared now (review amendment 3):**
+
+- `XH-both`: note error.
+- `XH-extras`: `extra_rate` alone rewards dropping true notes. The best no-download candidate of 2a's 149 is picked
+  by `extra_rate` with `miss_rate` not decided worse (sign only), under the cross-set rule (picked on BKS and read on
+  GOAT, and the reverse).
+- `XH-rest`: no figure is frozen now. M bundles the 302 misses with the 3,205 matched notes' timing, ends and bends,
+  and `miss_rate`'s Phase 1 halves were degenerate. Its next row, `xr-found`, separates the two (`xr-found − xn-list`
+  is the misses, `xr-matched − xr-found` is matched-note error); the figure is chosen after it.
+- Otherwise note error stays "fidelity only".
+
+### 9g. The outcome table (`XH_TABLE`, the first that holds; coded and tested before any run)
+
+| Code | When | Meaning | Next step |
+|---|---|---|---|
+| `XH-stop` | A build proof or `xr-check` fails, a zero distance on a deciding setting, or a label is missing (no interval) | Nothing is read | To the orchestrator |
+| `XH-anomaly` | E reads "worse", or M reads "better" | The preset lands decidedly further without the extras, or an oracle list beats the exact list | Audited before anything is said; Phase 2b waits |
+| `XH-both` | E passes and M reads "worse" | The extras and the rest both cost; the share sits beside | Phase 2 scores by note error; Phase 2b runs; to the user |
+| `XH-extras` | E passes, M not "worse" | With M matching: the extras carry reading proper. With M undecided: the extras cost; the rest not decided | Phase 2 scores by `extra_rate` with `miss_rate` not decided worse; Phase 2b runs; to the user with the best no-download candidate by that rule as the next `xr-` row |
+| `XH-rest` | M reads "worse", E does not pass | The shown cost sits in misses and matched notes; the text says whether E fails or is undecided | No figure frozen now; Phase 2b runs; to the user with `xr-found` as the next row |
+| `XH-undecided` | Anything else | The split is not decided; undecided is not failed | Phase 2a stays descriptive; Phase 2b does not run on this; to the user with `xr-filled` or parking the track behind the rebuild bench |
+
+M reading "better" is an anomaly because an oracle list beating the exact list is implausible; under intent-to-treat
+the refused `xn-list` part also pushes M that way, since M there is just G(`xr`). E "worse" and E "passes" cannot both
+hold, and `number_reading`'s "passes" is the same rule as `paired_reading`'s "better". A test checks that every
+combination of labels ends in exactly one code.
+
+### 9h. When Phase 2b's downloads run
+
+- **After** `phase_scratch_readerr_xr_outcome` is on main with `XH-both`, `XH-extras` or `XH-rest`.
+- **Under `XH-undecided` or `XH-anomaly`,** only on the user's word.
+- **Until then** nothing is fetched, and the runner's `mt3` and `kong` stubs stay stubs.
+- **When they run:** CPU only, at most 2 threads, timed on 3 parts first, under `DOWNLOAD_RULES`, beside any renders.
+
+### 9i. Write-up wording (binding on the results text)
+
+- Say **"no figure is decided"**. Never "nothing tracks" or "reading errors do not matter".
+- **Print every pooled Spearman or split with its BKS and GOAT values beside it.** A pooled value whose sets disagree
+  in sign is marked "sets disagree".
+  - Note error is the example: −0.035 pooled, −0.15 on BKS, +0.08 on GOAT.
+  - State the set imbalance: mean reading proper 0.638 on BKS against 0.416 on GOAT.
+- **A half whose interval has under 3 degrees of freedom is printed "degenerate half: not read"**, not "undecided".
+  That covers `miss_rate`, `extra_octave-sub` and the others the audit listed. `extra_timing` has no interval at all.
+- **The intent-to-treat "worse" reads** (`reread_env_corr`, `extra_rate`) are stated as coming from the one refused
+  part: +1.442 at Cen, about +2.43 with its baseline imputed, fragile when it is left out. They are never a finding.
+  The refused part is never named.
+- **The dry figures "lean the expected way in both sets, undecided".**
+  - `reread_env_corr`: −0.34 on BKS, −0.24 on GOAT; pooled +0.216 [−0.138, +0.569].
+  - `reread_logmel`: +0.15 and +0.30; pooled +0.190 [−0.096, +0.476].
+- **The key-broken flag is broader than amendment 2 meant;** a tie-aware split gives the same code (the audit's
+  recompute).
+- **Anatomy:** 1,953 extras against 302 misses on the as-played list. Real DIs carry more unclassified extras, 0.422
+  against 0.110 per truth note.
+- **The screen reads "no screen".**
+
+### 9j. Cost, order and render slots
+
+**CPU, one process beside the renders, stated as ranges (review amendment 5).** The 0.85 s a rebuild is the original
+plan's planner figure ("0.85 s mean under load, 2.28 s worst"); no log for it was found. `trace` measured 138.8 s for
+47 parts, 2.95 s a part including the trace work: an upper bound for one rebuild.
+
+| Work | Count | Rate | One core |
+|---|---|---|---|
+| Phase 2a: Basic Pitch reads | 816 (282 bench, 534 real-DI) | 1.24 to 1.64 s a read | 17 to 22 min |
+| Phase 2a: note creation at 144 points | per input | not measured | timed on 3 parts first |
+| Phase 2a: rebuilds | 7,050 | 0.85 to 2.28 s | about 100 min to about 4.5 h; timed on 3 parts first |
+| `xr-build`: rebuilds | 188 (four a part) | 0.85 to 2.95 s | about 3 to 9 min |
+
+**Renders (from `xn-reread`'s measured logs):** `xr-check` about 50; `xr-search` about 12,472 with the slowest
+shard about 6,377 s on 3 processes; `xr-score` 564 renders (407 s for `xn-reread`); about 13,040 renders and
+1 h 53 min in all.
+
+**Order:**
+
+1. Units A and B (this declaration), the review, the merge. Zero renders.
+2. `xr-build` and its hash PR (`phase_scratch_readerr_xr_dry`).
+3. Unit C, then `notes`, its hash PR (`phase_scratch_readerr_notes`), and `score`.
+4. Once the rederive track's `xf-now` score has finished and no rederive row waits for the slots (the orchestrator's
+   call, checked with `pgrep`): `xr-check`, then `xr-search` on 3 shards, then `xr-answers`, its hash PR, and
+   `xr-score`. The 20-minute render-rate check applies.
+5. `xr-read`, an independent audit, the results PR (`phase_scratch_readerr_xr_outcome`), then the code's next step.
+
+**The check after each merge:** the test commands pass on main; `git diff --quiet` over CODE_FILES less this track's
+two own files exits 0; only `phase_scratch_readerr*` keys changed; from a frozen detached worktree, `xr-build` reports
+its four proofs on 47 of 47 before any render. Nothing merges into `scratch_readerr.py` while `xr-` commands are
+queued, or the worktree is re-cut and the proofs rerun.
+
+**The guard widens.** CODE_FILES now also holds the modules the new commands import inside them: `cc_build.py`,
+`full_controls_c1b.py`, `local_objective.py`, `knob_ceiling.py` and `analysis/aligned.py`; 25 files in all.
+
+**Privacy:** synthetic part keys in tests; the ledger holds hashes and counts only; the write-up never names the
+refused part, since its key holds file names.

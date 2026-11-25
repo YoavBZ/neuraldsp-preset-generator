@@ -12,8 +12,18 @@ bench best. "Transcriber" and "note reading", never "reader": in this repo the r
     $MAIN -m learn.scratch_readerr screen-check    # Phase 1: checkpoint 50 against the answer on every stored pair
     $MAIN -m learn.scratch_readerr freeze          # Phase 1, last: the tracking read and the frozen figure
     # the hash PR: phase_scratch_readerr_frozen (the five files' sha256), before anything in Phase 2
-    $MAIN -m learn.scratch_readerr score           # Phase 2: declared, not built (refuses)
-    $MAIN -m learn.scratch_readerr read            # Phase 2: declared, not built (refuses)
+    $MAIN -m learn.scratch_readerr score           # Phase 2a: unit C, not built here (refuses)
+    $MAIN -m learn.scratch_readerr read            # the RX read: after the xr- row (refuses)
+
+The Phase 2 amendment's `xr-` row (`phase_scratch_readerr_p2`; plan section 9):
+
+    $MAIN -m learn.scratch_readerr xr-build [--set first]   # zero renders: xr-matched, hand-plain; four proofs
+    # the hash PR: phase_scratch_readerr_xr_dry, before any search
+    $MAIN -m learn.scratch_readerr xr-check                 # about 50 renders: xn-reread's search and score again
+    $MAIN -m learn.scratch_readerr xr-search --row xr-matched --shard 0/3 [--rerun]
+    $MAIN -m learn.scratch_readerr xr-answers --row xr-matched   # -> phase_scratch_readerr_xr_answers_matched
+    $MAIN -m learn.scratch_readerr xr-score --row xr-matched --shard 0/3 [--rerun]
+    $MAIN -m learn.scratch_readerr xr-read                  # zero renders, once: E, M, XH_TABLE's code
 
 Every command refuses unless this checkout runs main's code and keys: `scratch_exact.require_exact` (its seven files,
 the `phase_scratch_exact*` keys, `scratch_search.on_main`) with the exact test's targets, four answers keys and
@@ -73,7 +83,9 @@ def _dedupe(xs):
     return tuple(out)
 
 
-LAZY_IMPORTS = ("learn/note_replay.py", "learn/pipeline_fix.py", "learn/song_bank.py")   # imported inside commands
+LAZY_IMPORTS = ("learn/note_replay.py", "learn/pipeline_fix.py", "learn/song_bank.py",   # imported inside
+                "learn/cc_build.py", "learn/full_controls_c1b.py", "learn/local_objective.py",   # commands
+                "learn/knob_ceiling.py", "analysis/aligned.py")
 CODE_FILES = _dedupe(OWN_FILES + SX.CODE_FILES + NT.CODE_FILES + TX.CODE_FILES + LAZY_IMPORTS)
 OUT_FILES = ("trace", "anatomy", "real-compare", "screen", "freeze")   # Phase 1's files, hashed in PHASE_FROZEN
 
@@ -1611,10 +1623,823 @@ def cmd_freeze(_args):
     print(f"the ledger body for {PHASE_FROZEN}: {json.dumps(body)}")
 
 
-# --- Phase 2 (declared, not built) -------------------------------------------------------------------------------------------
+# --- Phase 2 (`phase_scratch_readerr_p2`): the shift vote (pure) ----------------------------------------------------------
 
-PHASE2_STUB = ("Phase 2's commands are declared, not built: the candidates' run flow (the grid runner's note listing, "
-               "the shift vote's clustering, the downloads' manifest) comes with its own amendment and review first")
+PHASE_P2 = "phase_scratch_readerr_p2"    # the Phase 2 amendment (units A and B) with its review's six amendments
+PHASE_XR_DRY = "phase_scratch_readerr_xr_dry"          # xr-build's build file: before any xr- search
+PHASE_XR_OUTCOME = "phase_scratch_readerr_xr_outcome"  # the XH code, after an audit
+SHIFT_FRAMES = (0, 35, 71, 106)          # 0, 1/4, 1/2, 3/4 of Basic Pitch's 36,164-sample window hop, in frames
+SHIFT_OFFSETS_S = tuple(f * BP_HOP / BP_SR for f in SHIFT_FRAMES)   # 0, 0.4063, 0.8243, 1.2306 s
+SHIFT_KS = (2, 3, 4)
+
+
+def shift_vote(anchor, shifted, k):
+    """(Pure.) The shift vote (amendment section 2): an anchor note's votes are 1 plus the shifted reads holding a
+    note paired with it (`pair_by`: same pitch, onsets within 50 ms, one to one, closest first); kept with votes at or
+    above k, exactly as the anchor read it. It only removes notes. anchor: the zero-offset read (the stored re-read);
+    shifted: the other reads, each re-based (`record_notes`). -> (kept notes, votes per anchor note)."""
+    votes = [1] * len(anchor)
+    for read in shifted:
+        for i, _ in pair_by(anchor, read):
+            votes[i] += 1
+    return [dict(n) for n, v in zip(anchor, votes) if v >= k], votes
+
+
+def shift_unanchored(anchor, shifted):
+    """(Pure.) Beside, never a candidate: the notes every shifted read finds that pair with no anchor note (the first
+    shifted read's, chained through each other shifted read's unpaired notes by `pair_by`)."""
+    if not shifted:
+        return []
+    free = []
+    for read in shifted:
+        taken = {j for _, j in pair_by(anchor, read)}
+        free.append([n for j, n in enumerate(read) if j not in taken])
+    out = list(free[0])
+    for other in free[1:]:
+        out = [out[i] for i, _ in pair_by(out, other)]
+    return out
+
+
+# --- Phase 2: the hybrid note lists (pure) -----------------------------------------------------------------------------
+
+XR_ROWS = ("xr-matched", "xr-found", "xr-filled")
+XR_SHORT = {"xr-matched": "matched", "xr-found": "found", "xr-filled": "filled"}
+XR_BESIDE = ("hand-plain",)             # built and reported, never searched
+XR_SETS = {"first": ("xr-matched", "hand-plain"), "found": ("xr-found",), "filled": ("xr-filled",)}
+XR_SET_ASKED = {"found": "XH-rest", "filled": "XH-undecided"}   # each later list only when the code asks for it
+JOIN_REPORT_EXTRAS = ("timing", "octave-sub", "semitone-sub")
+JOIN_REPORT_MISSES = ("timing", "substitution")
+
+
+def chain_root(j, target, kept):
+    """(Pure.) A re-find's chain root: follow `refind_pairs`' targets from j while the note is an unpaired re-find,
+    stopping at a kept note or where the chain ends. -> the root index."""
+    seen = set()
+    while j in target and j not in kept and j not in seen:
+        seen.add(j)
+        j = target[j]
+    return j
+
+
+def xr_matched(reread, exact):
+    """(Pure.) `xr-matched` (review amendment 4): the re-read notes that pair with an exact note
+    (`note_versions.hand_pairs`), each unpaired re-find whose chain root is a kept note first handing its end to that
+    note (`note_fixes.refind_pairs`, `join_refinds`, which follows roots); every other unpaired note leaves. A note is
+    joined when it is unpaired and its chain root is kept. -> (notes, {kept, joined, removed, joins, extended})."""
+    pairs = NV.hand_pairs(reread, exact)
+    kept = {j for _, j in pairs}
+    rp = NF.refind_pairs(reread)
+    target = {j: i for i, j in rp}
+    joins = {j for j in target if j not in kept and chain_root(j, target, kept) in kept}
+    tagged = [dict(n, _k=k) for k, n in enumerate(reread)]
+    joined = NF.join_refinds(tagged, rp, joins)
+    out = [n for n in joined if n["_k"] in kept]
+    extended = [n["_k"] for n in out if n["off"] != reread[n["_k"]]["off"]]
+    for n in out:
+        del n["_k"]
+    return out, {"kept": len(kept), "joined": len(joins), "removed": len(reread) - len(kept) - len(joins),
+                 "joins": sorted(joins), "extended": sorted(extended), "pairs": pairs}
+
+
+def xr_found(reread, exact):
+    """(Pure.) `xr-found`: the exact notes the re-read found, as exact."""
+    found = {i for i, _ in NV.hand_pairs(reread, exact)}
+    return [dict(t) for i, t in enumerate(exact) if i in found]
+
+
+def xr_filled(reread, exact):
+    """(Pure.) `xr-filled`: the whole exact list plus the re-read's unpaired notes, not joined, in onset order."""
+    paired = {j for _, j in NV.hand_pairs(reread, exact)}
+    extra = [dict(e) for j, e in enumerate(reread) if j not in paired]
+    return sorted([dict(t) for t in exact] + extra, key=lambda n: (n["on"], n["pitch"]))
+
+
+def xr_lists(reread, exact):
+    """(Pure.) Every hybrid's notes and the join report. hand-plain is `note_versions.hand_notes` (the plain drop)."""
+    m, rep = xr_matched(reread, exact)
+    return {"xr-matched": m, "xr-found": xr_found(reread, exact), "xr-filled": xr_filled(reread, exact),
+            "hand-plain": NV.hand_notes(reread, exact)}, rep
+
+
+def join_report(rep, reread, exact, est_classes, truth_classes):
+    """(Pure.) Beside the build (review amendment 4): the joins; how many of them the nominal anatomy calls re-finds;
+    the joined ends that run past the exact partner's end; and the true notes dropped with timing or substitution
+    extras (the extras of those classes left out, the misses of those classes)."""
+    partner = {j: i for i, j in rep["pairs"]}
+    m, _ = xr_matched(reread, exact)
+    ends = {}
+    kept_order = sorted(partner)
+    for idx, j in enumerate(kept_order):
+        ends[j] = m[idx]["off"]
+    past = sum(1 for j in rep["extended"] if ends[j] > exact[partner[j]]["off"])
+    return {"joins": rep["joined"], "joins_anatomy_refind": sum(est_classes[j] == "re-find" for j in rep["joins"]),
+            "joined_ends_past_partner": past,
+            "extras_left_out": {c: sum(1 for j, x in enumerate(est_classes) if x == c and j not in rep["joins"])
+                                for c in JOIN_REPORT_EXTRAS},
+            "misses": {c: truth_classes.count(c) for c in JOIN_REPORT_MISSES}}
+
+
+# --- Phase 2: the read's labels, XH_TABLE, the next figure (pure) ---------------------------------------------------------
+
+XH_TABLE = (    # (code, when (the first that holds), meaning, next)
+    ("XH-stop", "a build proof or xr-check fails, a zero distance on a deciding setting, or a label is missing",
+     "nothing is read", "to the orchestrator"),
+    ("XH-anomaly", "E reads 'worse', or M reads 'better'",
+     "the preset lands decidedly further without the extras, or an oracle list beats the exact list",
+     "audited before anything is said; Phase 2b waits"),
+    ("XH-both", "E passes and M reads 'worse'", "the extras and the rest both cost; the share sits beside",
+     "Phase 2 scores by note error; Phase 2b runs; to the user"),
+    ("XH-extras", "E passes, M not 'worse'", "{extras_words}",
+     "Phase 2 scores by extra_rate with miss_rate not decided worse (sign only, the cross-set rule); Phase 2b runs; "
+     "to the user with the best no-download candidate from 2a's table by that rule as the next xr- row"),
+    ("XH-rest", "M reads 'worse', E does not pass", "the shown cost sits in misses and matched notes; E {e_words}",
+     "no figure frozen now; Phase 2b runs; to the user with xr-found as the next row, which separates the misses "
+     "(xr-found - xn-list) from matched-note error (xr-matched - xr-found); the figure is chosen after it"),
+    ("XH-undecided", "anything else", "the split is not decided; undecided is not failed",
+     "Phase 2a stays descriptive; Phase 2b does not run on this; to the user with xr-filled or parking the track "
+     "behind the rebuild bench"),
+)
+XH_CODES = tuple(c for c, *_ in XH_TABLE)
+XH_NEXT_FIGURE = {
+    "XH-both": {"figure": "note_error", "rule": "note error decides Phase 2's candidates"},
+    "XH-extras": {"figure": "extra_rate", "guard": "miss_rate",
+                  "rule": "the best no-download candidate by extra_rate, with miss_rate not decided worse (sign only), "
+                          "under the cross-set rule (picked on BKS read on GOAT, and the reverse)"},
+    "XH-rest": {"figure": None, "rule": "none frozen now (miss_rate's Phase 1 halves were degenerate, and M bundles "
+                                        "misses with matched-note error): chosen after xr-found"},
+}
+XH_FIDELITY = {"figure": "note_error", "rule": FIDELITY_ONLY}
+
+
+def xh_table_guard():
+    """Refuse unless XH_TABLE holds the six declared codes in order, and the next figures name declared figures."""
+    if XH_CODES != ("XH-stop", "XH-anomaly", "XH-both", "XH-extras", "XH-rest", "XH-undecided"):
+        raise SystemExit("XH_TABLE's codes are not the six declared, in order")
+    for v in XH_NEXT_FIGURE.values():
+        if v["figure"] is not None and v["figure"] not in FIGURES:
+            raise SystemExit(f"{v['figure']}: not a declared figure")
+
+
+def xh_labels(e_iv, m_iv):
+    """(Pure.) The read's labels, all at their defaults (on J0's scale): E by `number_reading` (a gain) and
+    `paired_reading`; M by `paired_reading`."""
+    return {"E_number": S.number_reading(e_iv), "E": (SN.paired_reading(e_iv) or {}).get("reading"),
+            "M": (SN.paired_reading(m_iv) or {}).get("reading")}
+
+
+def xh_code(labels, stop=False):
+    """(Pure.) XH_TABLE's code, the first that holds. labels: `xh_labels`'s. -> {code, when, meaning, next, figure}."""
+    en, e, mm = labels.get("E_number"), labels.get("E"), labels.get("M")
+    if stop or en is None or e is None or mm is None:
+        code = "XH-stop"
+    elif e == "worse" or mm == "better":
+        code = "XH-anomaly"
+    elif en == "passes" and mm == "worse":
+        code = "XH-both"
+    elif en == "passes":
+        code = "XH-extras"
+    elif mm == "worse":
+        code = "XH-rest"
+    else:
+        code = "XH-undecided"
+    row = next(r for r in XH_TABLE if r[0] == code)
+    words = row[2].format(
+        extras_words=("the extras carry reading proper" if mm == "matches" else
+                      "the extras cost; the rest not decided"),
+        e_words="fails" if en == "fails" else "undecided")
+    return {"code": code, "when": row[1], "meaning": words, "next": row[3],
+            "figure": XH_NEXT_FIGURE.get(code, XH_FIDELITY)}
+
+
+def xh_read(itt, passing):
+    """(Pure.) S1 for E and M alike (review amendment 1): intent-to-treat decides, passing-only beside, and
+    "refusal-sensitive" when the codes differ. itt, passing: {"E": interval, "M": interval}; passing may be None."""
+    code = xh_code(xh_labels(itt.get("E"), itt.get("M")))
+    pc = None
+    if passing is not None:
+        ok = passing.get("E") is not None and passing.get("M") is not None
+        pc = S.passing_code(lambda: xh_code(xh_labels(passing["E"], passing["M"])), ok)
+    return {"itt": code, "passing_only": pc, "label": S.refusal_label(code["code"], (pc or {}).get("code"))}
+
+
+def leave_one_cluster_out(values, cluster_of, interval_of):
+    """(Pure but for `interval_of`.) Beside: the pooled interval with each cluster left out in turn.
+    -> {cluster: interval}."""
+    out = {}
+    for c in sorted({cluster_of[k] for k in values if k in cluster_of}):
+        out[c] = interval_of({k: v for k, v in values.items() if cluster_of.get(k) != c})
+    return out
+
+
+def forward_test(e, dry, sets_of):
+    """(Pure.) The forward test, beside: per part the change in a dry figure (the xr-matched guitar less xn-reread's,
+    each against the bank guitar) against E; Spearman pooled and within each set, and sign agreement. No median
+    split. dry: {pkey: change}."""
+    ks = [k for k in e if dry.get(k) is not None and e[k] is not None]
+    out = {"parts": len(ks), "spearman": SN.spearman([(dry[k], e[k]) for k in ks]),
+           "sign_agreement": sign_agreement({k: e[k] for k in ks}, {k: dry[k] for k in ks})}
+    for s in sorted({sets_of[k] for k in ks}):
+        sub = [k for k in ks if sets_of[k] == s]
+        out[s] = SN.spearman([(dry[k], e[k]) for k in sub])
+    return out
+
+
+# --- Phase 2: paths, the widened write rule, the search's forbidden list ----------------------------------------------------
+
+XR_SEARCH_FORBIDDEN = ("targets.json", "trace.json", "anatomy.json")
+XR_SEARCH_FORBIDDEN_DIRS = ("target", "score", "score-rerun")
+
+
+def xr_dir():
+    return readerr_dir() / "xr"
+
+
+def xr_path(kind, row=None, pk=None):
+    """Every xr- path: under PF/fs/readerr/xr/, by kind. -> path (refused outside readerr)."""
+    if kind == "build":
+        p = xr_dir() / f"build-{row}.json"
+    elif kind == "check":
+        p = xr_dir() / "check" / "result.json"
+    elif kind in ("dry", "search", "start-ref", "score", "check-search", "check-score", "check-start-ref"):
+        if pk is None:
+            raise ValueError("a part's path needs its key")
+        ext = ".npy" if kind == "dry" else ".json"
+        p = xr_dir() / kind / (row or "check") / f"{pk.replace('/', '__')}{ext}"
+    elif kind == "answers":
+        if row not in XR_ROWS:
+            raise ValueError(row)
+        p = xr_dir() / f"answers-{row}.json"
+    elif kind in ("rows", "report"):
+        p = xr_dir() / f"{kind}.json"
+    else:
+        raise ValueError(kind)
+    root = pathlib.Path(readerr_dir()).resolve()
+    if root not in pathlib.Path(p).resolve().parents:
+        raise SystemExit(f"{p}: outside {root}")
+    return p
+
+
+def fresh_xr_path(kind, row=None, pk=None):
+    """An xr- path that must not exist yet: the only kind handed to a writer outside this module
+    (`scratch_search.search_row_part` writes through `P.save`)."""
+    p = xr_path(kind, row, pk)
+    if pathlib.Path(p).exists():
+        raise SystemExit(f"{p} exists: never overwritten")
+    return p
+
+
+def write_once_npy(path, x32):
+    """The guitars' write: under PF/fs/readerr/, never over a file. -> its file's sha256."""
+    import numpy as np
+
+    path = pathlib.Path(path)
+    root = pathlib.Path(readerr_dir()).resolve()
+    if root not in path.resolve().parents:
+        raise SystemExit(f"{path}: outside {root}: this track writes only there")
+    if path.exists():
+        raise SystemExit(f"{path} exists: never overwritten")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    np.save(path, x32)
+    return file_sha(path)
+
+
+def xr_is_forbidden(path):
+    """(Pure.) Whether the xr- search may not open `path`: targets.json, a target or score file, any answers file,
+    trace.json or anatomy.json."""
+    path = pathlib.PurePath(path)
+    return (path.name in XR_SEARCH_FORBIDDEN or path.name.startswith("answers")
+            or any(part in XR_SEARCH_FORBIDDEN_DIRS for part in path.parent.parts[-2:]))
+
+
+def xr_search_open(path):
+    if xr_is_forbidden(path):
+        raise SystemExit(f"{pathlib.PurePath(path).name}: the xr- search never opens it")
+    return pathlib.Path(path)
+
+
+def xr_answers_key(row):
+    if row not in XR_ROWS:
+        raise SystemExit(f"unknown row {row!r}: one of {list(XR_ROWS)}")
+    return f"{KEY_PREFIX}_xr_answers_{XR_SHORT[row]}"
+
+
+def xr_dry_key(set_name):
+    if set_name not in XR_SETS:
+        raise SystemExit(f"unknown build set {set_name!r}")
+    return PHASE_XR_DRY if set_name == "first" else f"{PHASE_XR_DRY}_{set_name}"
+
+
+def set_of_row(row):
+    return next(s for s, rows in XR_SETS.items() if row in rows)
+
+
+def require_xr_build(m, set_name, hashed=True):
+    """xr-build's file for a set: its proofs held; with `hashed`, its sha256 main's xr_dry key's."""
+    p = xr_search_open(xr_path("build", set_name))
+    if not p.exists():
+        raise SystemExit(f"no {p.name} (run `xr-build` first)")
+    if hashed:
+        why = SX.field_refusal(m, xr_dry_key(set_name), "sha256", file_sha(p))
+        if why:
+            raise SystemExit(why)
+    b = json.loads(p.read_text())
+    if not b.get("proofs_hold"):
+        raise SystemExit(f"{p.name}'s proofs did not hold: XH-stop")
+    return b
+
+
+def require_xr_check():
+    p = xr_search_open(xr_path("check"))
+    if not p.exists():
+        raise SystemExit("xr-check has not run")
+    r = json.loads(p.read_text())
+    if not r.get("passed"):
+        raise SystemExit(f"xr-check did not pass: XH-stop ({r.get('mismatches')})")
+    return r
+
+
+def load_xr_guitar(row, pk, build):
+    """A row's dry guitar for a part, float32, refused unless its sha256 is xr-build's. -> (x32, sha256)."""
+    import numpy as np
+
+    x32 = np.load(xr_search_open(xr_path("dry", row, pk))).astype(np.float32)
+    sha = build["parts"][pk]["guitars"][row]["sha256"]
+    if S.npy_sha(x32) != build["parts"][pk]["guitars"][row]["audio_sha256"]:
+        raise SystemExit(f"{pk}: {row}'s dry guitar is not the declared one")
+    return x32, sha
+
+
+def read_xr_parts(draw, ans, answers_sha, row):
+    """A row's per-part numbers from its xr- score files, step for step `scratch_exact.read_xn_parts` (which only
+    knows the four xn- rows): a scoring-control miss read from its rerun (one not yet rerun waits), then a refusal;
+    `deciding_bug` stops the read; `nonfinite_rule`; `xn_numbers`. -> (per, refused, replaced, misses)."""
+    refused = dict(ans["refused"])
+    per, replaced, ctl = {}, {}, []
+    for p in draw["parts"]:
+        k = p["pkey"]
+        if k not in ans["parts"]:
+            per[k] = None
+            continue
+        sp = xr_path("score", row, k)
+        if not sp.exists():
+            raise SystemExit(f"{row} {k}: not scored")
+        sc = json.loads(sp.read_text())
+        if not sc["scoring_control_ok"]:
+            if not S.rerun_path(sp).exists():
+                raise SystemExit(f"{row} {k}: a scoring-control miss not yet rerun: `xr-score --rerun` first")
+            again = json.loads(S.rerun_path(sp).read_text())
+            if again["scoring_control_ok"]:
+                sc = again
+        if sc["answers_sha256"] != answers_sha:
+            raise SystemExit(f"{row} {k}: scored from other answers")
+        if not sc["scoring_control_ok"]:
+            refused[k] = {"scoring_control": {"cen": sc["held"]["cen"], "stored": sc["cen_stored"]}}
+            ctl.append(k)
+            per[k] = None
+            continue
+        bug = SX.deciding_bug(sc["held"])
+        if bug:
+            raise SystemExit(f"{row} {k}: {bug} — a zero or non-finite distance on a deciding setting is a bug: "
+                             "XH-stop, the read stops, to the orchestrator")
+        held, rep = S.nonfinite_rule(sc["held"])
+        if rep:
+            replaced[k] = rep
+        per[k] = SX.xn_numbers(held)
+    return per, refused, replaced, ctl
+
+
+def xr_row_numbers(m, draw, row):
+    ans = NT.require_file_hash(m, xr_answers_key(row), xr_path("answers", row))
+    sha = file_sha(xr_path("answers", row))
+    per, refused, replaced, ctl = read_xr_parts(draw, ans, sha, row)
+    return {"per": per, "itt": S.itt_per(per, refused, SX.FIELDS), "refused": refused, "replaced": replaced,
+            "control_misses": ctl, "coverage": ans.get("coverage"), "answers_sha256": sha}
+
+
+# --- Phase 2: xr-build (zero renders) -----------------------------------------------------------------------------------------
+
+def pause_error_of(bank64, y):
+    """The rebuilt guitar's pause error against the bank guitar: 1 - agree of the playing-frame masks
+    (`note_rebuild.mask_agreement`), the mean over J0's frame sizes, as Phase 1's stored figure."""
+    mask = NR.mask_agreement(bank64, y)
+    return sum(1 - v["agree"] for v in mask.values()) / len(mask)
+
+
+def cmd_xr_build(args):
+    """xr-build (zero renders), once a set: per part, from trace.json's re-read (after timing and F1) and nominal exact
+    list, the set's hybrids (`xr_lists`), each rebuilt as `cmd_trace` rebuilds (`rebuild_redo("tr-di", ...)`, the
+    part's finish, loud None). Four proofs before anything is written: (1) the full re-read reproduces
+    dry/xn-reread's sha256 and (2) the exact list dry/xn-list's on 47 of 47, (3) the pairing's counts equal
+    anatomy.json's nominal `matched` per part, (4) CODE_FILES equal main's. The first set is xr-matched and
+    hand-plain (four rebuilds a part); xr-found and xr-filled only when main's XH code asks. -> xr/dry/<row>/,
+    xr/build-<set>.json; its sha256 into the ledger as phase_scratch_readerr_xr_dry(_<set>) before any search."""
+    set_name = getattr(args, "set", None) or "first"
+    if set_name not in XR_SETS:
+        raise SystemExit(f"unknown build set {set_name!r}")
+    m = require_readerr(PHASE_FROZEN, PHASE_P2)
+    if set_name != "first":
+        got = ((m.get(PHASE_XR_OUTCOME) or {}).get("code"))
+        if got != XR_SET_ASKED[set_name]:
+            raise SystemExit(f"{set_name} is built only when main's {PHASE_XR_OUTCOME} reads {XR_SET_ASKED[set_name]}")
+    tr = require_trace(m)
+    an = require_out("anatomy", m)
+    out_p = xr_path("build", set_name)
+    NT.never_overwrite(out_p)
+    import numpy as np
+
+    from analysis import aligned as A
+
+    from learn import knob_ceiling as K
+
+    xb = SX.require_xbuild(m)
+    b2 = SX.bank_build(m)
+    draw, _sd = SX.context()
+    by = {p["pkey"]: p for p in draw["parts"]}
+    t0 = time.time()
+    pinned = pinned_identity()
+    pair = NT.install_pair(NT.load_manifest())
+    excl, _, _, _ = NT._dev_context()
+    bank = NR.Bank(NR.load_notes_doc(), excl=excl)
+    finish_of = {key: fin for kind, key, _i, _r, _d, fin in NT.build_todo(pair, NT.ear_items_file(BUILD2))
+                 if kind == "part"}
+    ring = tr["ring_variant"]
+    lo, hi = SX._trim()
+    rows = XR_SETS[set_name]
+    built, bad = {}, {1: [], 2: [], 3: []}
+    for j, (key, r) in enumerate(sorted(tr["parts"].items())):
+        bank64 = np.asarray(NT.load_dry(BANK_ARM, key, b2), np.float64)
+
+        def rebuild(notes):
+            y, rep = NR.rebuild_redo(BANK_ARM, notes, len(bank64), bank, bank64, ring, finish=finish_of[key],
+                                     loud=None)
+            return np.asarray(y, np.float32), rep
+        g = xb["parts"][key]["guitars"]
+        if npy_bytes_sha(rebuild(r["reread"])[0]) != g["xn-reread"]["sha256"]:
+            bad[1].append(key)
+        if npy_bytes_sha(rebuild(r["nominal"])[0]) != g["xn-list"]["sha256"]:
+            bad[2].append(key)
+        lists, jrep = xr_lists(r["reread"], r["nominal"])
+        if len(jrep["pairs"]) != an["parts"][key]["nominal"]["matched"]:
+            bad[3].append(key)
+        nom = an["parts"][key]["nominal"]
+        part = {"guitars": {}, "counts": {k: jrep[k] for k in ("kept", "joined", "removed")},
+                "join_report": join_report(jrep, r["reread"], r["nominal"], nom["est_classes"], nom["truth_classes"]),
+                "notes": {row: len(lists[row]) for row in rows}}
+        for row in rows:
+            y32, rep = rebuild(lists[row])
+            if len(y32) != len(bank64) or not np.isfinite(y32).all():
+                raise SystemExit(f"part {j + 1}: a bad {row} dry guitar: nothing written")
+            y = np.asarray(y32, np.float64)
+            pauses = {h: {str(n): float(NT.judge_pause_share(y[lo:hi], 0, h, n)) for n in A.FRAME_SIZES}
+                      for h in K.R.HALVES}
+            figs = NR.figures(bank64, y)
+            part["guitars"][row] = {
+                "y32": y32, "sha256": npy_bytes_sha(y32), "audio_sha256": S.npy_sha(y32), "report": rep,
+                "figures": figs, "pause_error": pause_error_of(bank64, y), "pauses": pauses,
+                "bank_pauses": {h: {str(n): float(NT.judge_pause_share(bank64[lo:hi], 0, h, n))
+                                    for n in A.FRAME_SIZES} for h in K.R.HALVES},
+                "identical_to": next((xn for xn in ("xn-reread", "xn-list") if g[xn]["sha256"] == npy_bytes_sha(y32)),
+                                     None)}
+        built[key] = part
+        print(f"part {j + 1} of {len(tr['parts'])}: proofs {'=' if key not in bad[1] else 'DIFFERS'} "
+              f"{'=' if key not in bad[2] else 'DIFFERS'} {'=' if key not in bad[3] else 'DIFFERS'}", flush=True)
+    n = len(tr["parts"])
+    proofs = {"reread_equal": n - len(bad[1]), "list_equal": n - len(bad[2]), "pairs_equal": n - len(bad[3]),
+              "pinned": pinned, "parts": n}
+    hold = not any(bad.values()) and all(pinned.values())
+    if not hold:
+        raise SystemExit(f"XH-stop: a build proof fails ({ {k: len(v) for k, v in bad.items()} }, pinned "
+                         f"{sum(pinned.values())} of {len(pinned)}): nothing written; to the orchestrator")
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P2}", "renders": 0, "set": set_name, "rows": list(rows),
+           "trace_sha256": file_sha(out_path("trace")), "anatomy_sha256": file_sha(out_path("anatomy")),
+           "proofs": proofs, "proofs_hold": True, "parts": {}}
+    refuse_risk = []
+    for key, part in built.items():
+        for row in rows:
+            gg = part["guitars"][row]
+            path = xr_path("dry", row, key)
+            gg["file_sha256"] = write_once_npy(path, gg.pop("y32"))
+            if gg["file_sha256"] != gg["sha256"]:
+                raise SystemExit(f"{row}: the written guitar is not the one built")
+            if max(gg["pauses"][by[key]["search"]].values()) > 0.5:
+                refuse_risk.append((row, key))
+        out["parts"][key] = part
+    out["refusal_risk"] = {"report": "parts whose search-half pause share would make J0 refuse; a report, not a stop",
+                           "parts": [{"row": r_, "part": k_} for r_, k_ in refuse_risk]}
+    out["pooled"] = {"counts": {c: sum(p["counts"][c] for p in built.values()) for c in ("kept", "joined", "removed")},
+                     "join_report": {c: sum(p["join_report"][c] for p in built.values())
+                                     for c in ("joins", "joins_anatomy_refind", "joined_ends_past_partner")}}
+    out["seconds"] = round(time.time() - t0, 1)
+    out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    sha = write_once(out_p, out)
+    print(f"XH BUILD {set_name}: proofs (1) {proofs['reread_equal']}, (2) {proofs['list_equal']}, (3) "
+          f"{proofs['pairs_equal']} of {n}, (4) pinned {sum(pinned.values())} of {len(pinned)}; pooled "
+          f"{out['pooled']}; J0 refusal risk on {len(refuse_risk)}; {out['seconds']} s; sha256 {sha} (into the "
+          f"ledger as {xr_dry_key(set_name)} before any search)")
+
+
+# --- Phase 2: xr-check (renders, once) ---------------------------------------------------------------------------------------
+
+def cmd_xr_check(_args):
+    """xr-check (about 50 renders), once: on `scratch_notes.check_parts`' two parts with xn-reread's stored guitar,
+    this module's start reference and `run_part(budget=10, step1_only=True)` must equal xn-reread's stored first 10
+    evaluations (`search_check_verdict`), and this module's score of xn-reread's hashed answers must equal its stored
+    score files (`score_check_verdict`). A mismatch is XH-stop. -> xr/check/."""
+    m = require_readerr(PHASE_FROZEN, PHASE_P2, PHASE_XR_DRY, SX.answers_key("xn-reread"))
+    res_p = xr_path("check")
+    NT.never_overwrite(res_p)
+    from learn import cc_build as CB
+    from learn import full_controls_c1b as C
+    from learn import local_objective as LO
+    from learn import note_replay as R
+
+    R.no_separation_beside()
+    xb = SX.require_xbuild(m)
+    records = SX.require_records(m)
+    tg = SX.require_targets(m)
+    ans = SX.require_answers(m, "xn-reread")
+    b2 = SX.bank_build(m)
+    draw, sd = SX.context()
+    by = {p["pkey"]: p for p in draw["parts"]}
+    lists = C.mic_lists()
+    LO._wait_cap()
+    new_s, old_s, new_c, old_c, total = {}, {}, {}, {}, 0
+    for k in SN.check_parts(draw["parts"]):
+        SX.disk_guard()
+        p = by[k]
+        x32, sha = SX.load_guitar("xn-reread", p, xb, b2, sd)
+        ref_blank = SX.load_record_blank(p, records)
+        px = SX.synthetic_part(p)
+        sref, used = SX.start_reference("xn-reread", px, x32, ref_blank, CB.new_renderer,
+                                        fresh_xr_path("check-start-ref", None, k), sha)
+        rec = S.run_part(px, "xn-reread", SX.REF, x32, ref_blank, CB.new_renderer, lists, budget=SN.CHECK_BUDGET,
+                         start_ref=sref, dry_sha256=sha, step1_only=True)
+        total += rec.get("renders", 0) + used
+        write_once(fresh_xr_path("check-search", None, k), rec)
+        new_s[k], old_s[k] = rec, json.loads(SX.search_path("xn-reread", k).read_text())
+        bank32 = NT.load_dry(BANK_ARM, k, b2)
+        sc, used = SX.score_exact_part(px, ans["parts"][k], bank32, SX.load_record(k, records), 0,
+                                       tg["parts"][k]["cen_held"], CB.new_renderer)
+        total += used
+        write_once(fresh_xr_path("check-score", None, k), sc)
+        new_c[k], old_c[k] = sc, json.loads(SX.score_path("xn-reread", k).read_text())
+    vs, vc = SN.search_check_verdict(new_s, old_s), SX.score_check_verdict(new_c, old_c)
+    res = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P2}", "renders": total, "budget": SN.CHECK_BUDGET,
+           "search": vs, "score": vc, "passed": vs["passed"] and vc["passed"],
+           "mismatches": {"search": vs["mismatches"], "score": vc["mismatches"]},
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    write_once(res_p, res)
+    print(f"XH CHECK {'PASS' if res['passed'] else 'FAIL (XH-stop)'}: {total} renders; {res['mismatches']}")
+
+
+# --- Phase 2: the row (renders but answers) ------------------------------------------------------------------------------------
+
+def cmd_xr_search(args):
+    """One shard of an xr- row's searches (renders), after the build's hash and a passing xr-check: per part the
+    row's guitar (its sha256 xr-build's), the record blanked outside the search half, the start reference at lag 0,
+    then `scratch_search.search_row_part` on the exact world's part, every path from `xr_path`. A guitar
+    byte-identical to a stored xn- row's takes that row's search record byte for byte. The search opens none of
+    XR_SEARCH_FORBIDDEN (no target, score or answers file, no trace.json or anatomy.json). The disk guard before
+    every part."""
+    row = args.row
+    if row not in XR_ROWS:
+        raise SystemExit(f"{row!r}: the searched rows are {list(XR_ROWS)}")
+    set_name = set_of_row(row)
+    m = require_readerr(PHASE_FROZEN, PHASE_P2, xr_dry_key(set_name))
+    build = require_xr_build(m, set_name)
+    require_xr_check()
+    records = SX.require_records(m)
+    from learn import cc_build as CB
+    from learn import full_controls_c1b as C
+    from learn import local_objective as LO
+    from learn import note_replay as R
+
+    R.no_separation_beside()
+    draw, _sd = SX.context()
+    todo = SX.mine(draw, args.shard)
+    if getattr(args, "first", 0):
+        todo = todo[:args.first]
+    lists = C.mic_lists()
+    LO._wait_cap()
+    total, t0 = 0, time.time()
+    for p in todo:
+        pk = p["pkey"]
+        out = xr_path("search", row, pk)
+        rerun = getattr(args, "rerun", False)
+        if rerun:                                          # S1: a technical refusal, once more in a fresh process
+            if not out.exists() or not S.refused_record(json.loads(out.read_text())):
+                continue
+            out = S.rerun_path(out)
+        if out.exists():
+            continue
+        SX.disk_guard()
+        same = build["parts"][pk]["guitars"][row].get("identical_to")
+        if same:
+            src = SX.search_path(same, pk)
+            if rerun:
+                src = S.rerun_path(src)
+            if not src.exists():
+                raise SystemExit(f"{pk}: {row}'s guitar is {same}'s, and {same}'s record is not there")
+            write_bytes_once(out, src.read_bytes())
+            print(f"{row}: a guitar identical to {same}: its record taken byte for byte", flush=True)
+            continue
+        x32, _sha = load_xr_guitar(row, pk, build)
+        ref_blank = SX.load_record_blank(p, records)
+        px = SX.synthetic_part(p)
+        spath = xr_path("start-ref", row, pk)
+        if rerun:
+            spath = S.rerun_path(spath)
+        dry_sha = build["parts"][pk]["guitars"][row]["audio_sha256"]
+        sref, used = SX.start_reference(row, px, x32, ref_blank, CB.new_renderer, spath, dry_sha)
+        rec = S.search_row_part(px, row, SX.REF, x32, ref_blank, CB.new_renderer, lists, fresh_xr_path_of(out),
+                                f"{LEDGER_ID} {PHASE_P2}", start_ref=sref, dry_sha256=dry_sha)
+        total += rec.get("renders", 0) + used
+        if "refused" in rec:
+            print(f"REFUSED {rec['refused']}", flush=True)
+        print(f"{row} shard {args.shard[0]}/{args.shard[1]}: {total} renders in {time.time() - t0:.0f} s "
+              f"({total / max(1, time.time() - t0) * 3600:.0f} an hour)", flush=True)
+    print(f"XH SEARCH DONE {row} {args.shard[0]}/{args.shard[1]}: {total} renders in {time.time() - t0:.0f} s")
+
+
+def fresh_xr_path_of(path):
+    """A path already made by `xr_path` (or its rerun twin), checked again: under readerr, not there yet."""
+    path = pathlib.Path(path)
+    root = pathlib.Path(readerr_dir()).resolve()
+    if root not in path.resolve().parents:
+        raise SystemExit(f"{path}: outside {root}")
+    if path.exists():
+        raise SystemExit(f"{path} exists: never overwritten")
+    return path
+
+
+def write_bytes_once(path, data):
+    """A stored record copied byte for byte: under PF/fs/readerr/, never over a file."""
+    path = fresh_xr_path_of(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+    return file_sha(path)
+
+
+def cmd_xr_answers(args):
+    """An xr- row's answers (zero renders): every search record or its rerun (`with_reruns`), each dry guitar checked
+    against xr-build (`dry_refusal`), `xn_answer_parts`, the refusals (S1) and T1's coverage. -> xr/answers-<row>.json;
+    its sha256 into the ledger as phase_scratch_readerr_xr_answers_<row> before `xr-score`."""
+    row = args.row
+    if row not in XR_ROWS:
+        raise SystemExit(f"{row!r}: one of {list(XR_ROWS)}")
+    set_name = set_of_row(row)
+    m = require_readerr(PHASE_FROZEN, PHASE_P2, xr_dry_key(set_name))
+    build = require_xr_build(m, set_name)
+    tg = SX.require_targets(m)
+    path = xr_path("answers", row)
+    NT.never_overwrite(path)
+    draw, _sd = SX.context()
+    for p in draw["parts"]:
+        if not xr_path("search", row, p["pkey"]).exists():
+            raise SystemExit(f"a part is not searched on {row}")
+    recs, used, reruns = S.with_reruns([p["pkey"] for p in draw["parts"]], lambda k: xr_path("search", row, k))
+    why = S.rerun_refusal(reruns)
+    if why:
+        raise SystemExit(why)
+    want = {k: build["parts"][k]["guitars"][row]["audio_sha256"] for k in build["parts"]}
+    why = SX.dry_refusal(recs, want)
+    if why:
+        raise SystemExit(why)
+    parts, refused = SX.xn_answer_parts(draw, recs, lambda k: file_sha(used[k]))
+    sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}
+    cov = {k: SX.coverage([s["module"] + "/" + s["key"] for s in (recs[k].get("searched_dims") or [])],
+                          tg["parts"][k]["changed"]) for k in parts}
+    out = {"plan": PLAN, "row": row, "ref": SX.REF, "draw_sha256": S.file_sha(S.draw_path()),
+           "build_sha256": file_sha(xr_path("build", set_name)), "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+           "renders": sum(r.get("renders", 0) for r in recs.values()), "refused": refused, "reruns": reruns,
+           "refusal_report": S.refusal_report(refused, sets_of, DECIDING), "stopped": False,
+           "coverage": {"covered": sum(c["covered"] for c in cov.values()), "parts": cov}, "parts": parts}
+    sha = write_once(path, out)
+    print(f"XH ANSWERS {row}: {len(parts)} parts, {len(refused)} refused (each reads at Cen); reruns {reruns}; "
+          f"coverage {out['coverage']['covered']} of {len(cov)}; sha256 {sha} (into the ledger as "
+          f"{xr_answers_key(row)} before `xr-score`)")
+
+
+def cmd_xr_score(args):
+    """One shard of an xr- row's score (renders): Cen and the five settings of the hashed answers through the bank
+    guitar, each primed alone, judged on the held half against the record at lag 0 (`score_exact_part`); the scoring
+    control against Cen's value from `targets`. -> xr/score/<row>/<part>.json."""
+    row = args.row
+    if row not in XR_ROWS:
+        raise SystemExit(f"{row!r}: one of {list(XR_ROWS)}")
+    m = require_readerr(PHASE_FROZEN, PHASE_P2, xr_answers_key(row))
+    records = SX.require_records(m)
+    tg = SX.require_targets(m)
+    ans = NT.require_file_hash(m, xr_answers_key(row), xr_path("answers", row))
+    asha = file_sha(xr_path("answers", row))
+    b2 = SX.bank_build(m)
+    from learn import cc_build as CB
+    from learn import local_objective as LO
+    from learn import note_replay as R
+
+    R.no_separation_beside()
+    draw, _sd = SX.context()
+    LO._wait_cap()
+    total, t0 = 0, time.time()
+    for p in SX.mine(draw, args.shard):
+        pk = p["pkey"]
+        out = xr_path("score", row, pk)
+        a = ans["parts"].get(pk)
+        if getattr(args, "rerun", False):                  # S1: a scoring-control miss, once more in a fresh process
+            if a is None or not out.exists() or json.loads(out.read_text())["scoring_control_ok"]:
+                continue
+            out = S.rerun_path(out)
+        if a is None or out.exists():
+            continue
+        SX.disk_guard()
+        bank32 = NT.load_dry(BANK_ARM, pk, b2)
+        rec, used = SX.score_exact_part(SX.synthetic_part(p), a, bank32, SX.load_record(pk, records), 0,
+                                        tg["parts"][pk]["cen_held"], CB.new_renderer)
+        rec.update(row=row, answers_sha256=asha)
+        total += used
+        write_once(fresh_xr_path_of(out), rec)
+        print(f"{row}: scored {rec['distinct_renders']} settings; control "
+              f"{'ok' if rec['scoring_control_ok'] else 'MISS'}; {total} renders, {time.time() - t0:.0f} s", flush=True)
+    print(f"XH SCORE DONE {row} {args.shard[0]}/{args.shard[1]}: {total} renders in {time.time() - t0:.0f} s")
+
+
+# --- Phase 2: xr-read (zero renders, once) -------------------------------------------------------------------------------------
+
+def _rows(sd, draw, vals, keys=None):
+    r = SN.set_rows(sd, draw, {k: v for k, v in vals.items() if v is not None and math.isfinite(v)}, keys)
+    bg = (r or {}).get("bks_goat") or {}
+    return {"bks_goat": bg.get("all"), "clean": bg.get("clean"), "crunch": bg.get("crunch"),
+            "bks": {q: ((r or {}).get("bks") or {}).get(q) for q in ("mean", "lo90", "hi90")},
+            "goat": {q: ((r or {}).get("goat") or {}).get(q) for q in ("mean", "lo90", "hi90")},
+            "pool_47": (r or {}).get("deciding_pool")}
+
+
+def cmd_xr_read(_args):
+    """xr-read (zero renders), once: per part on the answer arm (shrunk beside) E = G(xr-matched) - G(xn-reread) and
+    M = G(xr-matched) - G(xn-list); reading proper M - E. S1 for both (review amendment 1): intent-to-treat decides,
+    passing-only beside, refusal-sensitive when the codes differ. set_rows on BKS+GOAT decides; BKS alone, GOAT alone,
+    clean, crunch, all 47, checkpoints 50, 100, 200 and leave-one-cluster-out beside. Beside, never deciding: the
+    share -E / reading proper (`fieller_share`) and the forward test (the change in logmel and env_corr against E).
+    The rows are saved before the code. -> xr/rows.json, xr/report.json."""
+    row = "xr-matched"
+    m = require_readerr(PHASE_FROZEN, PHASE_P2, PHASE_XR_DRY, xr_answers_key(row))
+    xh_table_guard()
+    for p_ in (xr_path("rows"), xr_path("report")):
+        NT.never_overwrite(p_)
+    check = require_xr_check()
+    build = require_xr_build(m, "first")
+    xb = SX.require_xbuild(m)
+    draw, sd = SX.context()
+    rn = {r: SX.row_numbers(m, draw, r) for r in ("xn-reread", "xn-list")}
+    rn[row] = xr_row_numbers(m, draw, row)
+    cluster_of = {p["pkey"]: p["cluster"] for p in draw["parts"] if p["set"] in DECIDING}
+    sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}
+    arms, beside = {}, {}
+    for arm, f in SX.ARMS.items():
+        d = {}
+        for treat in ("itt", "per"):
+            d[treat] = {"E": SX.paired(rn[row][treat], rn["xn-reread"][treat], f),
+                        "M": SX.paired(rn[row][treat], rn["xn-list"][treat], f)}
+        rows_ = {t: {n: _rows(sd, draw, v) for n, v in d[t].items()} for t in d}
+        arms[arm] = {"rows": rows_, "read": xh_read({n: rows_["itt"][n]["bks_goat"] for n in ("E", "M")},
+                                                    {n: rows_["per"][n]["bks_goat"] for n in ("E", "M")})}
+        if arm == "answer":
+            e, mm = d["itt"]["E"], d["itt"]["M"]
+            rp = {k: mm[k] - e[k] for k in e if k in mm}
+            beside["share_minus_E_of_reading_proper"] = SX.share(sd, draw, {k: -v for k, v in e.items()}, rp)
+            beside["checkpoints"] = {cp: {n: _rows(sd, draw, SX.paired(rn[row]["itt"], rn[o]["itt"], cp))["bks_goat"]
+                                          for n, o in (("E", "xn-reread"), ("M", "xn-list"))}
+                                     for cp in ("G_cp50", "G_cp100", "G_cp200")}
+            beside["leave_one_cluster_out"] = {
+                n: leave_one_cluster_out({k: v for k, v in vals.items() if k in cluster_of}, cluster_of,
+                                         lambda vs: _rows(sd, draw, vs)["bks_goat"])
+                for n, vals in (("E", e), ("M", mm))}
+            fwd = {}
+            for fig in ("logmel", "env_corr"):
+                ch = {k: build["parts"][k]["guitars"][row]["figures"][fig] - xb["parts"][k]["guitars"]["xn-reread"][
+                    "figures"][fig] for k in build["parts"]}
+                fwd[fig] = forward_test(e, ch, sets_of)
+            beside["forward_test"] = dict(fwd, note="a dry figure becomes Phase 2's scoring figure only by a further "
+                                                    "amendment")
+    out = {"plan": PLAN, "time": time.strftime("%Y-%m-%d %H:%M:%S"), "renders": 0, "row": row,
+           "answers_sha256": {r: rn[r]["answers_sha256"] for r in rn}, "check_renders": check.get("renders"),
+           "refusals": {r: {"refused": len(rn[r]["refused"]), "control_misses": len(rn[r]["control_misses"])}
+                        for r in rn}}
+    write_once(xr_path("rows"), dict(out, arms=arms, beside=beside))     # the rows before the code
+    main_read = arms["answer"]["read"]
+    code = main_read["itt"]
+    write_once(xr_path("report"), dict(out, arms=arms, beside=beside, xh=main_read, code=code["code"],
+                                       shrunk=arms["shrunk"]["read"]["itt"]["code"],
+                                       next=("to the user with both reads" if main_read["label"] else code["next"])))
+    r_ = arms["answer"]["rows"]["itt"]
+    print(f"E on the 40 {r_['E']['bks_goat']}; M {r_['M']['bks_goat']}")
+    print(f"XH {code['code']}: {code['meaning']}. Next: {code['next']}; label {main_read['label']}")
+
+
+# --- Phase 2a's commands (unit C; not built here) ---------------------------------------------------------------------------
+
+PHASE2_STUB = ("Phase 2a's `notes` and `score` come with unit C (the same two files), after this declaration merges; "
+               "the RX read waits for the xr- row's code")
 
 
 def cmd_score(_args):
@@ -1628,7 +2453,10 @@ def cmd_read(_args):
 
 
 COMMANDS = {"trace": cmd_trace, "anatomy": cmd_anatomy, "real-compare": cmd_real_compare,
-            "screen-check": cmd_screen_check, "freeze": cmd_freeze, "score": cmd_score, "read": cmd_read}
+            "screen-check": cmd_screen_check, "freeze": cmd_freeze, "score": cmd_score, "read": cmd_read,
+            "xr-build": cmd_xr_build, "xr-check": cmd_xr_check, "xr-search": cmd_xr_search,
+            "xr-answers": cmd_xr_answers, "xr-score": cmd_xr_score, "xr-read": cmd_xr_read}
+NEEDS_ROW = ("xr-search", "xr-answers", "xr-score")
 
 
 def main(argv=None):
@@ -1640,7 +2468,15 @@ def main(argv=None):
             sys.path.insert(0, p_)
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=sorted(COMMANDS))
+    ap.add_argument("--row", choices=XR_ROWS)
+    ap.add_argument("--set", choices=sorted(XR_SETS), default="first", help="xr-build's set")
+    ap.add_argument("--shard", type=S._shard, default=(0, 1))
+    ap.add_argument("--first", type=int, default=0, help="search only this shard's first n parts")
+    ap.add_argument("--rerun", action="store_true",
+                    help="search or score again, once, only the parts whose record refused (S1: then Cen)")
     args = ap.parse_args(argv)
+    if args.cmd in NEEDS_ROW and not args.row:
+        ap.error(f"{args.cmd} needs --row")
     COMMANDS[args.cmd](args)
 
 

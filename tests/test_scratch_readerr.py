@@ -24,6 +24,12 @@ SRC = (REPO / "learn" / "scratch_readerr.py").read_text()
 SHA = "a" * 64
 
 
+def _args(**kw):
+    base = {"shard": (0, 1), "first": 0, "rerun": False, "row": "xr-matched", "set": "first"}
+    base.update(kw)
+    return type("A", (), base)()
+
+
 def _iv(mean, lo, hi):
     return {"mean": mean, "lo90": lo, "hi90": hi}
 
@@ -48,8 +54,10 @@ def test_the_key_prefix_is_outside_every_guarded_prefix():
 def test_code_files_cover_the_module_the_runner_and_every_guarded_file():
     assert X.CODE_FILES[:2] == ("learn/scratch_readerr.py", "learn/readerr_run.py")
     assert set(SX.CODE_FILES) | set(T.CODE_FILES) | {"learn/note_tx.py", "learn/tx_run.py"} <= set(X.CODE_FILES)
-    assert {"learn/note_replay.py", "learn/pipeline_fix.py", "learn/song_bank.py"} <= set(X.CODE_FILES)
-    assert len(X.CODE_FILES) == len(set(X.CODE_FILES)) == 20
+    assert {"learn/note_replay.py", "learn/pipeline_fix.py", "learn/song_bank.py", "learn/cc_build.py",
+            "learn/full_controls_c1b.py", "learn/local_objective.py", "learn/knob_ceiling.py",
+            "analysis/aligned.py"} <= set(X.CODE_FILES)
+    assert len(X.CODE_FILES) == len(set(X.CODE_FILES)) == 25
     for f in X.CODE_FILES:
         assert (REPO / f).exists(), f
 
@@ -701,7 +709,8 @@ def test_every_file_write_goes_through_write_once():
                 f = node.func
                 name = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", None)
                 if name in writers or name == "open":
-                    allowed = fn.name == "write_once" or (fn.name == "npy_bytes_sha" and name == "save")
+                    allowed = (fn.name in ("write_once", "write_once_npy", "write_bytes_once")
+                               or (fn.name == "npy_bytes_sha" and name == "save"))
                     assert allowed, (fn.name, name)
 
 
@@ -733,19 +742,19 @@ def _main(*extra):
 def test_every_command_refuses_off_main(monkeypatch, cmd):
     monkeypatch.setattr(S, "on_main", lambda: (None, "this checkout's learn/scratch_search.py differs from main's"))
     with pytest.raises(SystemExit, match="differs from main's"):
-        X.COMMANDS[cmd](None)
+        X.COMMANDS[cmd](_args())
 
 
 @pytest.mark.parametrize("cmd", sorted(X.COMMANDS))
 def test_every_command_refuses_without_the_declaration(monkeypatch, cmd):
     monkeypatch.setattr(S, "on_main", lambda: (_main(), None))
     with pytest.raises(SystemExit, match="phase_scratch_readerr"):
-        X.COMMANDS[cmd](None)
+        X.COMMANDS[cmd](_args())
     m = _main(X.PHASE)
     del m[SX.PHASE_OUTCOME]
     monkeypatch.setattr(S, "on_main", lambda: (m, None))
     with pytest.raises(SystemExit, match="phase_scratch_exact_outcome"):
-        X.COMMANDS[cmd](None)
+        X.COMMANDS[cmd](_args())
 
 
 def _on_main_with(monkeypatch, m, pinned):
@@ -771,23 +780,30 @@ def test_the_modules_own_guard_refuses_other_code_or_keys(monkeypatch, tmp_path)
         X.require_readerr()
     monkeypatch.setattr(NRp, "ledger_entry", lambda: m)
     with pytest.raises(SystemExit, match="phase_scratch_readerr_frozen"):
-        X.cmd_score(None)                                     # Phase 2 waits for the frozen key ...
+        X.cmd_score(_args())                                     # Phase 2 waits for the frozen key ...
     _on_main_with(monkeypatch, _main(X.PHASE, X.PHASE_FROZEN), {f: True for f in X.CODE_FILES})
-    with pytest.raises(SystemExit, match="declared, not built"):
-        X.cmd_read(None)                                      # ... and then refuses: not built
+    with pytest.raises(SystemExit, match="come with unit C"):
+        X.cmd_read(_args())                                      # ... and then refuses: not built
     monkeypatch.setattr(X, "readerr_dir", lambda: tmp_path)
     for cmd in ("anatomy", "real-compare", "screen-check", "freeze"):
         with pytest.raises(SystemExit, match="trace"):
-            X.COMMANDS[cmd](None)                             # every later command waits for the trace
+            X.COMMANDS[cmd](_args())                          # every later command waits for the trace
     X.write_once(X.out_path("trace"), {"proofs_hold": False})
     with pytest.raises(SystemExit, match="RX-stop"):
-        X.cmd_anatomy(None)
+        X.cmd_anatomy(_args())
 
 
 def test_the_cli():
     with pytest.raises(SystemExit):
         X.main(["candidates"])
-    assert set(X.COMMANDS) == {"trace", "anatomy", "real-compare", "screen-check", "freeze", "score", "read"}
+    assert set(X.COMMANDS) == {"trace", "anatomy", "real-compare", "screen-check", "freeze", "score", "read",
+                               "xr-build", "xr-check", "xr-search", "xr-answers", "xr-score", "xr-read"}
+    with pytest.raises(SystemExit):
+        X.main(["xr-search"])                                    # needs --row
+    with pytest.raises(SystemExit):
+        X.main(["xr-score", "--row", "hand-plain"])               # never searched, never scored
+    with pytest.raises(SystemExit):
+        X.main(["xr-search", "--row", "xr-matched", "--shard", "0/4"])
 
 
 # --- the played trace against synthesise_redo (numpy) ----------------------------------------------------------------------
@@ -839,3 +855,331 @@ def test_the_played_trace_equals_synthesise_redos_report_on_random_lists():
         assert len(played) == rep["played"] and len(skipped) == rep["skipped"]
         assert all(p["off"] >= p["on"] for p in played)
     assert not X.trace_equals_report(dict(got, bent=got["bent"] + 1), rep)
+
+
+# --- Phase 2 (phase_scratch_readerr_p2): the shift vote -------------------------------------------------------------------
+
+def test_the_shift_offsets_are_quarters_of_basic_pitchs_window_hop():
+    assert X.SHIFT_FRAMES == (0, 35, 71, 106)
+    assert [f * 256 for f in X.SHIFT_FRAMES] == [0, 8960, 18176, 27136]
+    assert [round(o, 4) for o in X.SHIFT_OFFSETS_S] == [0.0, 0.4063, 0.8243, 1.2307]
+    hop = 36164 / 256                                          # frames in Basic Pitch's window hop
+    assert [round(q * hop) for q in (0, 0.25, 0.5, 0.75)] == list(X.SHIFT_FRAMES)
+
+
+def test_the_shift_vote_only_removes_anchor_notes_as_the_anchor_read_them():
+    anchor = [_n(1.0, 60, amp=0.7, bends=[1, 2]), _n(2.0, 62), _n(3.0, 64), _n(4.0, 65)]
+    r1 = [_n(1.02, 60), _n(2.01, 62), _n(3.0, 64)]
+    r2 = [_n(0.99, 60), _n(2.04, 62), _n(5.0, 70)]
+    r3 = [_n(1.01, 60), _n(5.01, 70)]
+    kept1, votes = X.shift_vote(anchor, [r1, r2, r3], 1)
+    assert kept1 == anchor and votes == [4, 3, 2, 1]           # k = 1 reproduces the anchor (a proof)
+    assert X.shift_vote(anchor, [r1, r2, r3], 2)[0] == anchor[:3]
+    assert X.shift_vote(anchor, [r1, r2, r3], 3)[0] == anchor[:2]
+    k4 = X.shift_vote(anchor, [r1, r2, r3], 4)[0]
+    assert k4 == [anchor[0]] and k4[0]["amp"] == 0.7 and k4[0]["bends"] == [1, 2]
+    one_to_one = X.shift_vote([_n(1.0, 60), _n(1.02, 60)], [[_n(1.01, 60)]], 2)[1]
+    assert one_to_one == [2, 1] or one_to_one == [1, 2]       # one shifted note votes for one anchor note
+    assert [n["pitch"] for n in X.shift_unanchored(anchor, [r1, r2, r3])] == []
+    assert [n["pitch"] for n in X.shift_unanchored(anchor, [[_n(5.0, 70)], r2, r3])] == [70]
+
+
+# --- Phase 2: the hybrids ------------------------------------------------------------------------------------------------
+
+def _hybrid_case():
+    exact = [_n(1.0, 60, off=1.6), _n(5.0, 67, off=5.5), _n(6.0, 69)]
+    reread = [_n(1.0, 60, off=1.5),                     # 0: paired, kept
+              _n(1.4, 60, off=1.9),                     # 1: unpaired re-find of 0 (root kept): joined
+              _n(1.7, 60, off=2.5),                     # 2: unpaired re-find of 1, chain root 0: joined
+              _n(3.0, 62, off=3.6),                     # 3: unpaired, not a re-find: leaves
+              _n(3.2, 62, off=3.9),                     # 4: re-find of 3, root unpaired: leaves
+              _n(5.01, 67, off=5.4),                    # 5: paired, kept
+              _n(5.0, 79)]                              # 6: unpaired harmonic: leaves
+    return reread, exact
+
+
+def test_xr_matched_joins_re_finds_whose_chain_root_is_kept():
+    reread, exact = _hybrid_case()
+    target = {j: i for i, j in __import__("learn.note_fixes", fromlist=["x"]).refind_pairs(reread)}
+    assert target[2] == 1 and target[1] == 0 and target[4] == 3
+    assert X.chain_root(2, target, {0, 5}) == 0 and X.chain_root(4, target, {0, 5}) == 3
+    notes, rep = X.xr_matched(reread, exact)
+    assert [(n["on"], n["pitch"]) for n in notes] == [(1.0, 60), (5.01, 67)]
+    assert notes[0]["off"] == 2.5 and notes[1]["off"] == 5.4    # the joined note takes the chain's last end
+    assert rep["kept"] == 2 and rep["joined"] == 2 and rep["removed"] == 3 and rep["joins"] == [1, 2]
+    assert rep["extended"] == [0] and reread[0]["off"] == 1.5      # the input untouched
+    lists, _ = X.xr_lists(reread, exact)
+    assert [n["pitch"] for n in lists["hand-plain"]] == [60, 67] and lists["hand-plain"][0]["off"] == 1.5
+    assert lists["xr-found"] == [exact[0], exact[1]]
+    assert [(n["on"], n["pitch"]) for n in lists["xr-filled"]] == [
+        (1.0, 60), (1.4, 60), (1.7, 60), (3.0, 62), (3.2, 62), (5.0, 67), (5.0, 79), (6.0, 69)]
+
+
+def test_the_join_report():
+    reread, exact = _hybrid_case()
+    _, rep = X.xr_matched(reread, exact)
+    est_cls = [None, "re-find", "re-find", "timing", "re-find", None, "harmonic"]
+    tru_cls = [None, None, "substitution"]
+    jr = X.join_report(rep, reread, exact, est_cls, tru_cls)
+    assert jr == {"joins": 2, "joins_anatomy_refind": 2, "joined_ends_past_partner": 1,
+                  "extras_left_out": {"timing": 1, "octave-sub": 0, "semitone-sub": 0},
+                  "misses": {"timing": 0, "substitution": 1}}
+
+
+def test_the_hybrids_on_random_lists():
+    rng = random.Random(5)
+    for _ in range(40):
+        exact = [_n(rng.uniform(0, 8), rng.randint(50, 70)) for _ in range(rng.randint(1, 20))]
+        reread = [dict(t, on=t["on"] + rng.uniform(-0.03, 0.03)) for t in exact if rng.random() < 0.8]
+        reread += [_n(rng.uniform(0, 8), rng.randint(50, 70), off=None) for _ in range(rng.randint(0, 15))]
+        notes, rep = X.xr_matched(reread, exact)
+        assert len(notes) == rep["kept"] == T.match_notes(exact, reread)["matched"]
+        assert rep["kept"] + rep["joined"] + rep["removed"] == len(reread)
+        assert all(n["off"] >= reread_n["off"] for n, reread_n in
+                   zip(notes, [reread[j] for j in sorted(j for _, j in rep["pairs"])]))
+        assert X.xr_found(reread, exact) == [t for i, t in enumerate(exact) if i in {i for i, _ in rep["pairs"]}]
+        assert len(X.xr_filled(reread, exact)) == len(exact) + len(reread) - rep["kept"]
+
+
+# --- Phase 2: XH_TABLE ----------------------------------------------------------------------------------------------------
+
+E_NUMBERS = ("passes", "fails", "undecided", None)
+PAIRED = ("better", "matches", "worse", "undecided", None)
+
+
+def _xh_reference(en, e, m, stop):
+    """XH_TABLE as written, apart from `xh_code`'s order of evaluation."""
+    if stop or None in (en, e, m):
+        return "XH-stop"
+    if e == "worse" or m == "better":
+        return "XH-anomaly"
+    if en == "passes":
+        return "XH-both" if m == "worse" else "XH-extras"
+    if m == "worse":
+        return "XH-rest"
+    return "XH-undecided"
+
+
+def test_every_pair_of_labels_ends_in_exactly_one_xh_code():
+    seen = set()
+    for en, e, m, stop in itertools.product(E_NUMBERS, PAIRED, PAIRED, (False, True)):
+        got = X.xh_code({"E_number": en, "E": e, "M": m}, stop)
+        assert got["code"] == _xh_reference(en, e, m, stop), (en, e, m, stop)
+        assert got["code"] in X.XH_CODES and got["next"] and got["meaning"] and "{" not in got["meaning"]
+        seen.add(got["code"])
+    assert seen == set(X.XH_CODES)
+    X.xh_table_guard()
+
+
+def test_the_xh_words_and_the_next_figure():
+    assert X.xh_code({"E_number": "passes", "E": "better", "M": "better"})["code"] == "XH-anomaly"   # an oracle beats
+    assert X.xh_code({"E_number": "passes", "E": "better", "M": None})["code"] == "XH-stop"         # no interval
+    und = X.xh_code({"E_number": "passes", "E": "better", "M": "undecided"})
+    assert und["code"] == "XH-extras" and und["meaning"] == "the extras cost; the rest not decided"
+    mat = X.xh_code({"E_number": "passes", "E": "better", "M": "matches"})
+    assert mat["meaning"] == "the extras carry reading proper" and mat["figure"]["figure"] == "extra_rate"
+    assert mat["figure"]["guard"] == "miss_rate" and "cross-set" in mat["figure"]["rule"]
+    rest = X.xh_code({"E_number": "fails", "E": "matches", "M": "worse"})
+    assert rest["code"] == "XH-rest" and rest["meaning"].endswith("E fails") and rest["figure"]["figure"] is None
+    assert "xr-found" in rest["next"]
+    assert X.xh_code({"E_number": "undecided", "E": "undecided", "M": "worse"})["meaning"].endswith("E undecided")
+    assert X.xh_code({"E_number": "passes", "E": "better", "M": "worse"})["figure"]["figure"] == "note_error"
+    assert X.xh_code({"E_number": "undecided", "E": "undecided", "M": "undecided"})["figure"] == X.XH_FIDELITY
+
+
+def test_the_xh_table_guard_refuses_a_changed_table(monkeypatch):
+    monkeypatch.setattr(X, "XH_CODES", tuple(reversed(X.XH_CODES)))
+    with pytest.raises(SystemExit, match="six declared"):
+        X.xh_table_guard()
+    monkeypatch.undo()
+    monkeypatch.setattr(X, "XH_NEXT_FIGURE", {"XH-both": {"figure": "set0/part01"}})
+    with pytest.raises(SystemExit, match="not a declared figure"):
+        X.xh_table_guard()
+
+
+def test_e_and_m_follow_s1_intent_to_treat_decides():
+    passes, worse, und = _iv(-0.2, -0.3, -0.12), _iv(0.2, 0.1, 0.3), _iv(0.02, -0.05, 0.09)
+    assert X.xh_labels(passes, worse) == {"E_number": "passes", "E": "better", "M": "worse"}
+    r = X.xh_read({"E": passes, "M": worse}, {"E": passes, "M": und})
+    assert r["itt"]["code"] == "XH-both" and r["passing_only"]["code"] == "XH-extras"
+    assert r["label"] == S.REFUSAL_SENSITIVE
+    same = X.xh_read({"E": passes, "M": worse}, {"E": passes, "M": worse})
+    assert same["label"] is None
+    none = X.xh_read({"E": passes, "M": worse}, {"E": None, "M": worse})
+    assert none["passing_only"]["reading"] == S.NO_PASSING_INTERVAL and none["label"] is None
+
+
+def test_leave_one_cluster_out_and_the_forward_test():
+    vals = {"a": 1.0, "b": 2.0, "c": 3.0, "d": 4.0}
+    clus = {"a": "c1", "b": "c1", "c": "c2", "d": "c3"}
+    got = X.leave_one_cluster_out(vals, clus, lambda v: sum(v.values()))
+    assert got == {"c1": 7.0, "c2": 7.0, "c3": 6.0}
+    e = {"set0/p1": -0.3, "set0/p2": -0.1, "set1/p3": 0.1, "set1/p4": 0.2, "set1/p5": 0.3}
+    dry = {"set0/p1": -1.0, "set0/p2": -0.5, "set1/p3": 0.2, "set1/p4": 0.4, "set1/p5": 0.5}
+    sets = {k: k.split("/")[0] for k in e}
+    f = X.forward_test(e, dry, sets)
+    assert f["parts"] == 5 and f["spearman"] == pytest.approx(1.0) and f["sign_agreement"] == 1.0
+    assert f["set1"] == pytest.approx(1.0) and f["set0"] is None   # under 3 parts: no rho
+
+
+# --- Phase 2: paths, writes, the search's forbidden list, read_xr_parts --------------------------------------------------
+
+def test_xr_paths_and_keys(monkeypatch, tmp_path):
+    monkeypatch.setattr(X, "readerr_dir", lambda: tmp_path / "readerr")
+    assert X.xr_path("dry", "xr-matched", "set0/part01").name == "set0__part01.npy"
+    assert X.xr_path("build", "first").name == "build-first.json"
+    assert X.xr_path("answers", "xr-matched").name == "answers-xr-matched.json"
+    with pytest.raises(ValueError):
+        X.xr_path("answers", "hand-plain")
+    with pytest.raises(ValueError):
+        X.xr_path("search", "xr-matched")
+    p = X.xr_path("search", "xr-matched", "set0/part01")
+    assert X.fresh_xr_path("search", "xr-matched", "set0/part01") == p
+    p.parent.mkdir(parents=True)
+    p.write_text("{}")
+    with pytest.raises(SystemExit, match="never overwritten"):
+        X.fresh_xr_path("search", "xr-matched", "set0/part01")
+    with pytest.raises(SystemExit, match="never overwritten"):
+        X.fresh_xr_path_of(p)
+    with pytest.raises(SystemExit, match="outside"):
+        X.fresh_xr_path_of(tmp_path / "x.json")
+    X.write_bytes_once(S.rerun_path(p), b"{}")
+    with pytest.raises(SystemExit, match="never overwritten"):
+        X.write_bytes_once(S.rerun_path(p), b"{}")
+    assert [X.xr_answers_key(r) for r in X.XR_ROWS] == ["phase_scratch_readerr_xr_answers_matched",
+                                                        "phase_scratch_readerr_xr_answers_found",
+                                                        "phase_scratch_readerr_xr_answers_filled"]
+    assert X.xr_dry_key("first") == X.PHASE_XR_DRY and X.xr_dry_key("found") == "phase_scratch_readerr_xr_dry_found"
+    for k in (X.PHASE_P2, X.PHASE_XR_DRY, X.PHASE_XR_OUTCOME, X.xr_answers_key("xr-matched")):
+        assert k.startswith(X.KEY_PREFIX) and not k.startswith(X.GUARDED_PREFIXES)
+    assert X.set_of_row("xr-found") == "found" and X.XR_SET_ASKED == {"found": "XH-rest", "filled": "XH-undecided"}
+
+
+def test_write_once_npy_writes_only_under_readerr_and_never_over_a_file(monkeypatch, tmp_path):
+    np = pytest.importorskip("numpy")
+    monkeypatch.setattr(X, "readerr_dir", lambda: tmp_path / "readerr")
+    p = X.xr_path("dry", "xr-matched", "set0/part01")
+    sha = X.write_once_npy(p, np.zeros(4, np.float32))
+    assert sha == X.file_sha(p) and np.load(p).tolist() == [0.0] * 4
+    with pytest.raises(SystemExit, match="never overwritten"):
+        X.write_once_npy(p, np.zeros(4, np.float32))
+    with pytest.raises(SystemExit, match="outside"):
+        X.write_once_npy(tmp_path / "x.npy", np.zeros(4, np.float32))
+
+
+def test_the_xr_search_opens_none_of_the_forbidden_files():
+    base = pathlib.Path("/x/fs/readerr/xr")
+    for bad in (base.parent.parent / "exact" / "targets.json", base.parent / "trace.json", base.parent / "anatomy.json",
+                base / "answers-xr-matched.json", base.parent.parent / "answers-fs-stem.json",
+                base / "score" / "xr-matched" / "k.json", base.parent.parent / "exact" / "target" / "k.json",
+                base.parent.parent / "exact" / "score" / "xn-reread" / "k.json"):
+        assert X.xr_is_forbidden(bad), bad
+        with pytest.raises(SystemExit, match="never opens"):
+            X.xr_search_open(bad)
+    for ok in (base / "build-first.json", base / "dry" / "xr-matched" / "k.npy", base / "check" / "result.json",
+               base / "search" / "xr-matched" / "k.json"):
+        assert not X.xr_is_forbidden(ok)
+
+
+def _reached(root):
+    tree = ast.parse(SRC)
+    defs = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+    seen, todo = set(), [root]
+    while todo:
+        name = todo.pop()
+        if name in seen:
+            continue
+        seen.add(name)
+        todo += [n.id for n in ast.walk(defs[name]) if isinstance(n, ast.Name) and n.id in defs]
+    return {k: defs[k] for k in seen}
+
+
+def test_the_xr_search_never_names_a_target_score_answers_trace_or_anatomy_file():
+    """Every function `cmd_xr_search` reaches in this module, found by walking the code: no call opens the targets,
+    a score or an answers file, trace.json or anatomy.json; the build, the check and the guitar go through
+    `xr_search_open`."""
+    reached = _reached("cmd_xr_search")
+    assert {"require_xr_build", "require_xr_check", "load_xr_guitar", "xr_path", "fresh_xr_path_of",
+            "write_bytes_once", "xr_search_open"} <= set(reached)
+    banned_calls = {"require_targets", "require_answers", "require_out", "require_trace", "out_path", "targets_path",
+                    "target_path", "score_path", "answers_path", "xr_row_numbers", "read_xr_parts"}
+    for name, fn in reached.items():
+        for node in ast.walk(fn):
+            if isinstance(node, ast.Call):
+                f = node.func
+                called = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", None)
+                assert called not in banned_calls, (name, called)
+                if called in ("xr_path", "fresh_xr_path") and node.args and isinstance(node.args[0], ast.Constant):
+                    assert node.args[0].value not in ("score", "answers", "rows", "report"), (name, node.args[0].value)
+    for name in ("require_xr_build", "require_xr_check", "load_xr_guitar"):
+        assert any(isinstance(n, ast.Call) and getattr(n.func, "id", None) == "xr_search_open"
+                   for n in ast.walk(reached[name])), name
+
+
+def _score_file(held, ok=True, sha="ans"):
+    return {"held": held, "scoring_control_ok": ok, "cen_stored": 1.0, "answers_sha256": sha}
+
+
+def test_read_xr_parts_equals_read_xn_parts_on_made_up_files(monkeypatch, tmp_path):
+    good = {"cen": 2.0, "answer": 1.0, "cp50": 1.5, "cp100": 1.2, "cp200": 1.0, "shrunk": 1.6}
+    files = {"set0/p1": (_score_file(good), None),
+             "set0/p2": (_score_file(good, ok=False), _score_file(dict(good, answer=0.9))),
+             "set1/p3": (_score_file(good, ok=False), _score_file(good, ok=False)),
+             "set1/p4": (_score_file(dict(good, cp100=float("inf"))), None)}
+    for k, (body, again) in files.items():
+        p = tmp_path / f"{k.replace('/', '__')}.json"
+        p.write_text(json.dumps(body))
+        if again is not None:
+            S.rerun_path(p).parent.mkdir(exist_ok=True)
+            S.rerun_path(p).write_text(json.dumps(again))
+    path_of = (lambda k: tmp_path / f"{k.replace('/', '__')}.json")   # noqa: E731
+    monkeypatch.setattr(SX, "score_path", lambda row, k: path_of(k))
+    monkeypatch.setattr(X, "xr_path", lambda kind, row=None, pk=None: path_of(pk))
+    draw = {"parts": [{"pkey": k} for k in list(files) + ["set1/p5"]]}
+    ans = {"refused": {"set1/p5": {"search": {"start": {}}}}, "parts": {k: {} for k in files}}
+    want = SX.read_xn_parts(draw, ans, "ans", "xn-reread")
+    got = X.read_xr_parts(draw, ans, "ans", "xr-matched")
+    assert got == want
+    per, refused, replaced, ctl = got
+    assert per["set1/p3"] is None and ctl == ["set1/p3"] and "set1/p4" in replaced and per["set1/p5"] is None
+    files_bug = tmp_path / "set0__p1.json"
+    files_bug.write_text(json.dumps(_score_file(dict(good, answer=0.0))))
+    with pytest.raises(SystemExit, match="XH-stop"):
+        X.read_xr_parts(draw, ans, "ans", "xr-matched")
+    with pytest.raises(SystemExit, match="other answers"):
+        X.read_xr_parts(draw, ans, "other", "xr-matched")
+
+
+@pytest.mark.parametrize("cmd", ["xr-build", "xr-check", "xr-search", "xr-answers", "xr-score", "xr-read"])
+def test_every_xr_command_waits_for_the_frozen_key_and_the_p2_declaration(monkeypatch, cmd):
+    _on_main_with(monkeypatch, _main(X.PHASE), {f: True for f in X.CODE_FILES})
+    with pytest.raises(SystemExit, match="phase_scratch_readerr_frozen"):
+        X.COMMANDS[cmd](_args())
+    _on_main_with(monkeypatch, _main(X.PHASE, X.PHASE_FROZEN), {f: True for f in X.CODE_FILES})
+    with pytest.raises(SystemExit, match="phase_scratch_readerr_p2"):
+        X.COMMANDS[cmd](_args())
+
+
+@pytest.mark.parametrize("cmd,key", [("xr-search", "phase_scratch_readerr_xr_dry"),
+                                     ("xr-answers", "phase_scratch_readerr_xr_dry"),
+                                     ("xr-check", "phase_scratch_readerr_xr_dry"),
+                                     ("xr-score", "phase_scratch_readerr_xr_answers_matched"),
+                                     ("xr-read", "phase_scratch_readerr_xr_dry")])
+def test_the_row_waits_for_its_hashes(monkeypatch, cmd, key):
+    _on_main_with(monkeypatch, _main(X.PHASE, X.PHASE_FROZEN, X.PHASE_P2), {f: True for f in X.CODE_FILES})
+    with pytest.raises(SystemExit, match=key):
+        X.COMMANDS[cmd](_args())
+
+
+def test_the_later_lists_are_built_only_when_the_code_asks(monkeypatch):
+    m = _main(X.PHASE, X.PHASE_FROZEN, X.PHASE_P2)
+    _on_main_with(monkeypatch, m, {f: True for f in X.CODE_FILES})
+    with pytest.raises(SystemExit, match="XH-rest"):
+        X.cmd_xr_build(_args(set="found"))
+    m[X.PHASE_XR_OUTCOME] = {"code": "XH-both"}
+    with pytest.raises(SystemExit, match="XH-undecided"):
+        X.cmd_xr_build(_args(set="filled"))
+    with pytest.raises(SystemExit, match="unknown build set"):
+        X.cmd_xr_build(_args(set="hand-plain"))
+    with pytest.raises(SystemExit, match="searched rows"):
+        X.cmd_xr_search(_args(row="hand-plain"))
