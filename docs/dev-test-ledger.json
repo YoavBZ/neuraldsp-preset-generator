@@ -7443,7 +7443,7 @@
     "next": "score --row xf-fix --shard k/3, then read --stage 2 (xf_read on D_now, D_fix and the gain, the 40)"
    },
    "phase_scratch_rederive_bench_outcome": {
-    "phase": "Phase 3c's read (docs/rederive-plan.md section 8, the bench table's stage 2): xf-fix scored and read; the figures are in docs/rederive-results.md; audit pending",
+    "phase": "Phase 3c's read (docs/rederive-plan.md section 8, the bench table's stage 2): xf-fix scored and read; the figures are in docs/rederive-results.md; audited 2026-11-26 (independent, PASS WITH FIXES, wording applied)",
     "code": "XF-closed",
     "stage": 2,
     "reading": "the gain (D_fix - D_now) wholly below zero and D_fix spans zero, on the 40, the answer arm: the cost is no longer shown",

@@ -9,7 +9,7 @@ Declaration: [rederive-plan.md](rederive-plan.md). Ledger `preset-ladder`: `phas
 Every number here is by the score (J0), not heard. Intervals are 90%, from `scratch_notes.set_rows` on BKS+GOAT (the
 40); all 47 parts go beside. Labels come only from `paired_reading`.
 
-## Stage 2: `xf-fix`, the frozen rule in the real-song input form (2026-11-26; audit pending): XF-closed
+## Stage 2: `xf-fix`, the frozen rule in the real-song input form (2026-11-26; audited 2026-11-26 (independent, PASS WITH FIXES, wording applied)): XF-closed
 
 **The bench code is XF-closed: the cost is no longer shown.** The frozen rule (measured domain, iterated, the mute
 veto; stop 64; `phase_scratch_rederive_frozen`) re-derives the four values from the same `in-M` input as `xf-now`.
@@ -45,9 +45,11 @@ veto; stop 64; `phase_scratch_rederive_frozen`) re-derives the four values from 
 
 - **Robustness.** Every one of the 32 cluster-left-out reads keeps XF-closed. So do the passing-only read, one part
   per partner, and the read without the two design-time parts.
-- **Where the gain sits.** It sits in the tilt parts: on those 15 it is −0.385 [−0.604, −0.165], wholly below zero,
+- **Where the gain sits (a split seen before the declaration).** It sits in the tilt parts: on those 15 it is −0.385 [−0.604, −0.165], wholly below zero,
   while the other 25 are undecided. On the point estimates it also sits mostly in clean (−0.292 against crunch's
   −0.056, which spans zero; the clean-to-crunch difference was not tested).
+  - Post hoc (audit, seen): without the two largest per-part gains (GOAT tilt parts, one of them a design-time part)
+    the gain stays below zero, −0.091 [−0.172, −0.009]. Without three it spans zero, −0.072 [−0.149, +0.005].
 - **All 47 does not decide.** On all 47 the gain spans zero (−0.094 [−0.233, +0.044]), and the 7 panel parts are wide
   (+0.064 [−0.392, +0.520]).
 - **The shrunk arm goes beside only.** Its stage-1 D_now already spans zero, so it would read XF-input there. Its gain
@@ -95,7 +97,14 @@ and the read at cd262a10.
   recovers enough of them, in the real-song input form, that the search's cost is no longer shown on the bench. It
   says nothing yet about real songs: the bridge (`fs-refit`) asks that, and it still takes every input from the
   true DI.
-- **Sharper than real songs.** The bench is sharper than real songs.
+- **Sharper than real songs.** The bench hands the rule exact notes and onsets from a known bank guitar, so it is
+  sharper than real songs.
+- **The mutes (the #633 note).** The frozen rule misses 105 of T's mutes on the 40, against today's rule's 71. Over
+  all 47 it misses 134. 111 of those are inert: X without each one is byte-identical. Of the 23 that cut, 4 are the
+  veto's own cost (summed single-mute logmel effect 0.40). The other 19 sit where the `in-M` input shows no drop at
+  all, so every rule misses them (summed effect 13.07, the largest 3.17). Those 19 are a residual of the input form,
+  not of the rule. They may be part of the small cost the 25 non-tilt parts still show (+0.068 [+0.014, +0.123]),
+  and they are what the `xf-mutes` rung would price. The bridge reads the true DI, where this limit may differ.
 - **One bank, one transcriber, one seed.** The score only.
 
 ## Stage 1: `xf-now`, today's rule in the real-song input form (2026-11-25; audited 2026-11-25 (independent, PASS WITH FIXES, wording applied))
