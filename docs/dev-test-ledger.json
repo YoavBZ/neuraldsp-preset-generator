@@ -5309,6 +5309,42 @@
     "results": "docs/scratch-search-results.md, 'The exact-notes test (rows xn-bank, xn-swap, xn-reread, xn-list): XN-both'",
     "post_hoc": "not declared: reading proper less D_list +0.231 [+0.026, +0.436] (so 'reading proper is the larger part' holds post hoc only); the split by ratios of the means (post hoc, ratios of the means, not declared, no intervals) about 42% reading proper, 25% re-derivation (about 22% without the refused part), 33% the rest; the rest (D_swap - D*) is not separated from D_list (+0.105 [-0.122, +0.332]) nor from reading proper (+0.126 [-0.093, +0.344])",
     "robustness_beside": "the audit's checks: leaving out each cluster gives XN-both every time (share 0.647 to 0.694); dropping the refused part from every row gives XN-both (share 0.63). The share moves with how close the bank search gets to the record: 0.54 on the shrunk arm, 0.64 to 0.72 across the checkpoints"
+   },
+   "phase_scratch_readerr": {
+    "declared": "2026-11-25, before anything in it runs",
+    "plan": "docs/scratch-readerr-plan.md; the plan (handover plans/note-reading-diagnosis-plan.md, planner Fable) passed an independent review (Opus, high), PASS WITH AMENDMENTS; its nine binding amendments and the orchestrator's calls O1 to O8 (technical, delegated under the user's 2026-11-23 rule) are built in and override the plan's text where they differ",
+    "user_go": "the user approved this track 2026-11-25",
+    "question": "at zero renders, what in Basic Pitch's re-read of the bank guitar costs the preset (reading proper, G(xn-reread) - G(xn-list), +0.552 [+0.421, +0.683] on the 40, phase_scratch_exact_outcome), and which open transcriber, setting or post-fix reads the bench best; then one priced next step to the user. The bench prices fidelity only (the bank guitar is the song as Basic Pitch heard it)",
+    "phase_1": "zero renders, no model run, from a frozen detached worktree of main: trace first (the exact and as-played lists; four proofs: match_notes(exact, re-read) equals build.json's reread_f, the played trace's counts equal build 2's stored tr-di report, CODE_FILES equal main's, the module's rebuild of the stored re-read reproduces dry/xn-reread's sha256; any failing: RX-stop), then anatomy, real-compare, screen-check, freeze; the five files' sha256 into phase_scratch_readerr_frozen before Phase 2",
+    "anatomy": "every exact and re-read note in exactly one class on both truths (nominal, as played): extras harmonic, re-find (extras_sorted's own first), octave-sub, semitone-sub, timing, bend-fragment, rest; misses substitution, timing, merged, clean-up, chord-member, rest, never-sounded apart (nominal only); existing constants only",
+    "family": "29 figures per part with declared orientations (27 errors; reread_env_corr and list_env_corr similarities); note error 1 - F on the as-played list the default primary",
+    "tracking_read": "reading proper per part, passing-only primary (39 parts; amendment 3), intent-to-treat beside with any disagreement stated; by_figure's Spearman and median split on the 40, all 47 beside; diff_interval(worse half, better half) labelled by paired_reading at its defaults; tracks when 'worse', rho's sign agreeing with the orientation and the split not key-broken (ties at the split: Spearman only, never frozen); frozen: the largest |rho|, ties by the family's order; none: note error, 'fidelity only'",
+    "real_compare": "the same anatomy on the 79 stored Guitar-TECHS windows and the ten lists, no model run; every real-DI input through real_di_source (note_tx.declared_input, note_truth.refuse_path): P3 never (amendment 6)",
+    "screen": "O1: a beside line only, never a pricing path; 12 stored pairs (6 exact, 6 real) on the 40, intent-to-treat; 'holds' only when every pair keeps its paired_reading label at checkpoint 50, else 'no screen' (the review: D_list and fs-both - b1 flip)",
+    "phase_2": "declared, not built (score and read refuse): the candidates' run flow, the shift vote's clustering and the downloads' load path come with their own amendment and review first. Coded now: the grid pick (the minimum by the frozen figure's pooled BKS+GOAT mean; every point whose paired difference spans zero; the one nearest the defaults by L1 in grid steps, Melodia one step, ties to the stored point), the edge extension (the axis's own step at that edge, within the parameter's range; 58 ms -> 26 ms), the cross-set read (BKS pick on GOAT and the reverse; disagreement undecided), labels at small=0, big=0 printed 'sign only', the two-sided real-DI arm (paired_reading(0, 0) on set_summary's interval, higher-is-better against tx-bp; the 'real-DI lead' beside line; the read without ghost-shaped notes beside), the runner contract's check, the clipped notes' bends trimmed to their onset",
+    "downloads": "O4 to O8: open, no further yes; MR-MT3 dropped (O5); pinned paths and sha256, offline, a pickletools scan then torch.load(weights_only=True) with an exact allowlist, missing keys refuse (O6); two Python 3.12 environments from each project's uv.lock (O7); licences to the user only if one wins (O8)",
+    "codes": [
+     "RX-stop",
+     "RX-tracks",
+     "RX-untracked",
+     "RX-transcriber",
+     "RX-setting",
+     "RX-harm",
+     "RX-reference-only",
+     "RX-undecided",
+     "RX-none"
+    ],
+    "codes_note": "Phase 1 records RX-stop, RX-tracks or RX-untracked; Phase 2's one code is the first that holds; the screen's line and 'real-DI lead' sit beside and never change it",
+    "pricing": "a winner is priced as one xr-<id> row (rebuild_redo from its notes, the exact test's records, start reference, search and score unchanged): about 13,040 renders, 1 h 53 min on 3 processes, from xn-reread's measured logs; no screen path",
+    "guard": "scratch_exact.require_exact (its seven files and phase_scratch_exact* keys; the exact test's targets, answers and outcome on main), then this module's own: CODE_FILES (17: this module, learn/readerr_run.py, scratch_exact's, note_transcribe's, note_tx.py, tx_run.py) exist and equal origin/main's, phase_scratch_readerr* keys equal main's; guarded modules imported, never patched; O2: the runner merges first, then this module with the declaration; O3: never merged while a build 3 hash PR is open",
+    "code": "learn/scratch_readerr.py; tests/test_scratch_readerr.py (the runner: learn/readerr_run.py, its own PR)",
+    "data": "PF/fs/readerr/, each file written once (write_once); the ledger holds hashes and counts only (ledger_body_refusal)",
+    "keys_to_come": [
+     "phase_scratch_readerr_frozen",
+     "phase_scratch_readerr_notes",
+     "phase_scratch_readerr_outcome"
+    ],
+    "grepped": "no readerr, scratch_readerr, phase_scratch_readerr* key, xr-, RX-, anatomy or screen-check existed in docs/, learn/, tests/ or the ledger before this declaration"
    }
   },
   {
