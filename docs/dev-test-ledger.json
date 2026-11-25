@@ -7554,6 +7554,72 @@
      "search_renders": 12182,
      "check_renders": 50
     }
+   },
+   "phase_scratch_readerr_p2b": {
+    "declared": "2026-11-26, after the xr-matched row read XH-both (phase_scratch_readerr_xr_outcome, audited), before anything in it is installed or run",
+    "plan": "docs/scratch-readerr-plan.md section 10; the amendment (handover plans/note-reading-phase2b-amendment.md, planner Fable) passed an independent review (Opus, high), PASS WITH AMENDMENTS; its eight binding amendments are built in and win where they differ; units D (readerr_run), E (scratch_readerr, with the gate) and F+G (readerr_tools and this declaration) merge as one set (the orchestrator's call)",
+    "question": "at zero renders, does an open transcriber remove most of Basic Pitch's extras on the bench without adding misses? A row is priced only for a candidate the row could decide",
+    "install": "readerr_tools tx-install: two pyenv 3.12.13 venvs under tools/readerr/ (lock A mt3-infer 0.2.0 with torch 2.7.1, 52 wheels; lock B the Riley models with torch 2.8.0, 52 wheels), pip --require-hashes --only-binary :all: --no-deps --no-cache-dir from the manifest's checked lock lines, the installed set equal to the lock; the two code archives (hf_midi_transcription 96f6797, the fork cfe28ed) checked by size, sha256 and commit header, their build files recorded, unpacked never built (import package only, one .pth file; review amendment 7); no upstream import; refused on an existing venv, a hash mismatch or free disk ending under 31 GB; free disk printed before and after",
+    "fetch": "readerr_tools tx-fetch: YourMT3+ (kept as last.ckpt), guitar-fl.pth, guitar-gaps.pth from the manifest's resolve/<commit> URLs to its pinned paths; size and sha256 the manifest's; a mismatching file moved aside, never loaded or deleted; mt3.pth never fetched (O5)",
+    "manifest_sha256": "35a998dbd342812a40db2a0e171cb2d3935f26d5d6c69ab5460c34b75ebf836b",
+    "gate": "unit E (review amendment 8), before any candidate is read, into PF/fs/readerr/tools-gate.json hashed as phase_scratch_readerr_tools: pickletools scan of every pickle member (GLOBAL and STACK_GLOBAL with memo resolution; unresolvable or unlisted globals refuse); a fixed denylist (builtins eval, exec, compile, getattr, __import__, open; os, posix, subprocess, sys, importlib, runpy, socket, shutil, pickle, marshal), the allowlist printed and audited; every torch.load through one wrapper (the pinned path only, opened by itself, weights_only=True, that file's scanned globals); missing and unexpected keys reported, a needed missing key refuses; offline, and socket connect, os.system, os.exec*, os.spawn*, os.posix_spawn*, os.popen, subprocess and _posixsubprocess refused before any upstream import; three identical runs on 4 bench parts; timed on 3 parts first at 1 and 2 threads; O9: the allowlist from a stdlib scan of the fetched files, then an audit, then a manifest v2 as a new file, MANIFEST and MANIFEST_SHA256 updated in a small PR",
+    "candidates": "ymt3 (YourMT3+ YPTF.MoE+Multi noPS; programs: pitched, every pitched programme as shipped, or guitar, the guitar programmes only), kong-fl and kong-gaps (Riley's guitar-fl, guitar-gaps; onset_threshold 0.2, 0.3, 0.4, 0.5 x frame_threshold 0.1, 0.2, 0.3, shipped 0.3 and 0.1, the grid only if the pinned post-processor takes them without a patch); each plain and as <id>+bp (ms_with_bp after the candidate's timing, from the stored re-read after F1); at most 52 lists; the 136 Phase 2a inputs (47 bench, 89 real: 79 windows and 10 lists), P3 refused; scored_list, the 23 note figures, logmel, env_corr and pause error, paired against the stored re-read through set_rows on BKS+GOAT, sign only; candidates-tx.json hashed as phase_scratch_readerr_candidates_tx; MuScriptor out",
+    "nearest_shipped": "review amendment 5: kong by the L1 distance in grid steps (0.1 an axis) from (0.3, 0.1); ymt3 every pitched programme 0, guitar programmes only 1; ties to the shipped point",
+    "constants": {
+     "source": "xr/rows.json (phase_scratch_readerr_xr_outcome rows_sha256 c7bc4b14ca7fdd4da0b0c52a554551a5e91af3c32002a4300bde1b285ca4bf35), answer arm, intent-to-treat, on the 40, read by code",
+     "E": -0.2752,
+     "E_lo90": -0.4057,
+     "E_hi90": -0.1448,
+     "h": 0.1305,
+     "M": 0.277,
+     "beside_passing_only": {
+      "E": -0.2203,
+      "E_lo90": -0.3695,
+      "E_hi90": -0.071,
+      "h": 0.1492,
+      "M": 0.2925
+     },
+     "base_counts_on_40": {
+      "extras": 1624,
+      "misses": 246
+     }
+    },
+    "rule": "per candidate on the 40: x = 1 - extras_c / extras_base, y = misses_c / misses_base - 1, g = E x + M y (below zero better). Qualifies when all hold, each read on the +bp variant (review amendment 3): 1 extra_rate 'better' against the stored re-read, sign only; 2 miss_rate not 'worse'; 3 end_error and onset_error (the matched notes' median absolute onset error after the snap) not 'worse' (review amendment 3); 4 g <= -h; 5 cross-set for data-chosen settings (the family's BKS pick, lowest g among members meeting 1 to 3, meets 1 to 4 on GOAT and the reverse; if the picks differ the one nearer the shipped settings must pass both ways; shipped settings need none); 6 no real-DI harm (on P1, P2 or the lists neither extra_rate nor miss_rate 'worse' against Basic Pitch); 7 repeats. The pick: the qualifier with the lowest g; exact ties to no download, then a licence the product can use; the priced list is its +bp variant",
+    "refusal_sensitive": "review amendment 4: everything recomputed with the passing-only E, h and M together; labelled refusal-sensitive, to the user before any row, when the set of qualifiers changes",
+    "rx_inputs": "review amendment 1: by the pick's kind, in the order RX-transcriber (the pick is a transcriber), RX-setting (the pick is a no-download candidate), RX-harm (items 1 to 5 and 7 hold for some candidate, item 6 fails), RX-undecided (none qualifies; some g < 0 with item 1), RX-none; supersedes 9f's note-error line; no priced row unless RX-transcriber or RX-setting, and then only on the user's word",
+    "row": "xr-cand only on RX-transcriber or RX-setting with the user's word: xr-build --set cand (four proofs: xn-reread's dry sha256 on 47 of 47, note files equal the listing, dry figures equal tx-score's, CODE_FILES equal main's) into phase_scratch_readerr_xr_dry_cand; xr-check rerun, about 50 renders, with the source test beside (review amendment 2); xr-search, xr-answers (phase_scratch_readerr_xr_answers_cand), xr-score unchanged; xr-read: P = G(xr-cand) - G(xn-reread) by paired_reading at its defaults (review amendment 6), L = G(xr-cand) - G(xn-list) by paired_reading, S1",
+    "codes": [
+     "XP-stop",
+     "XP-anomaly",
+     "XP-closes",
+     "XP-gain",
+     "XP-worse",
+     "XP-undecided"
+    ],
+    "codes_note": "the first that holds: XP-stop on a failed proof or xr-check, a zero distance on a deciding setting, or a missing label; XP-anomaly on L 'better'; XP-closes on P passes with L 'matches'; XP-gain on P passes (with L undecided: 'gain shown; the remaining cost not decided'); XP-worse on P 'worse'; else XP-undecided",
+    "licences": "copied by code (readerr_tools.licence_record: code, weights_data, product_status); Basic Pitch Apache-2.0, usable; ymt3 GPL-3.0 or Apache-2.0, no licence covers the weights, unresolved; kong-fl MIT claimed with no LICENSE file, sold transcriptions and a MAESTRO (CC BY-NC-SA) base, unclear, NC assumed; kong-gaps the same, GAPS's three claims disagree; soxr LGPL-2.1-or-later noted; all fine for development (O8); the user asked only on RX-transcriber",
+    "seen": [
+     "the best stored no-download candidate: g -0.068 on the 40 (-0.075 on the 47; 54% of extras removed, 26% more misses), against a needed -0.131",
+     "the shift vote at k = 4: g -0.032 on the 40 (-0.029 on the 47)",
+     "note error's would-pick: 378 extras and 620 misses, against 1,953 and 302",
+     "one stored setting cuts 53% of extras with 28% more misses and reads 'undecided' on misses",
+     "E and M of xr-matched, both arms",
+     "every Phase 2a figure in candidates.json"
+    ],
+    "cost": "CPU: torch reads not measured, timed on 3 parts first; at most 2,444 rebuilds at Phase 2a's measured 1.34 s, about 55 min (derived); one runner process, at most 2 threads, beside the renders. Disk: 1,142,573,658 B to download (weights 759,640,462, archives 4,838,161, wheels 378,095,035), two venvs about 1.6 to 1.8 GiB (an estimate), notes about 0.3 GB, a row about 0.1 GB. Renders: none before a priced row; xr-matched measured 12,082 search, 96 start-reference and 552 score renders",
+    "guard": "every Phase 2b command needs phase_scratch_readerr_xr_outcome with XH-both, XH-extras or XH-rest and this key on main; readerr_tools also its own file equal to origin/main's, and writes only under tools/readerr/, never over a file; CODE_FILES gains learn/readerr_tools.py",
+    "code": "learn/readerr_tools.py, tests/test_readerr_tools.py (unit F); learn/readerr_run.py (unit D); learn/scratch_readerr.py (unit E)",
+    "data": "tools/readerr/ (venvs, checkpoints, install and fetch records) and PF/fs/readerr/ (tools-gate.json, notes-tx.json, candidates-tx.json, select.json), each file written once; the ledger holds hashes, counts and the declared constants only",
+    "keys_to_come": [
+     "phase_scratch_readerr_tools",
+     "phase_scratch_readerr_notes_tx",
+     "phase_scratch_readerr_candidates_tx",
+     "phase_scratch_readerr_outcome",
+     "phase_scratch_readerr_xr_dry_cand",
+     "phase_scratch_readerr_xr_answers_cand",
+     "phase_scratch_readerr_xp_outcome"
+    ],
+    "grepped": "no readerr_tools, tx-install, tx-fetch, tx-notes, tx-score, ymt3, kong-fl, kong-gaps, xr-cand, XP-, tools-gate, notes-tx, candidates-tx or phase_scratch_readerr_p2b existed in docs/, learn/ or tests/ on main before this declaration"
    }
   },
   {
