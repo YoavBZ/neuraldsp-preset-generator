@@ -559,3 +559,17 @@ def test_the_build_pair_on_main_reads_both_builds_own_answers():
     rec = e["preset-ladder"]["phase_scratch_notes_pair_b2"]
     assert rec["renders"] == 0 and rec["code_provisional"] is True and rec["pair"] == "b2 less build 1"
     assert set(rec["arms"]) == {"answer", "shrunk"} and all(a["itt"]["parts"] == 47 for a in rec["arms"].values())
+
+
+def test_build_3s_answers_hash_on_main_under_its_own_key():
+    import pathlib
+
+    from learn import scratch_notes as SN
+
+    e = T.entries((pathlib.Path(__file__).resolve().parents[1] / "docs" / "dev-test-ledger.json").read_text())
+    lad = e["preset-ladder"]
+    rec = lad[SN.answers_key("b3")]
+    assert SN.answers_key("b3") == "phase_scratch_notes_answers_b3"
+    assert rec["build_name"] == "b3" and rec["build_sha256"] == lad[SN.dry_key("b3")]["sha256"]
+    assert SN.pair_answers_refusal(rec, "b3", lad[SN.dry_key("b3")]) is None
+    assert rec["sha256"] not in {lad[SN.answers_key(n)]["sha256"] for n in (None, "b2")}   # each build's own answers

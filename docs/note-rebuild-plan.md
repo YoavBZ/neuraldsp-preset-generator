@@ -1849,3 +1849,17 @@ The builds:
   hidden control (the true DI, the same for both builds) counts in both verdicts: its answer is copied into b3k's,
   and the read and `key.json` say so. Beside them it lists each b3k card with its twin's faults and notes, the inputs
   to the declared ear rule.
+
+**Phase 7 begun: build 3's search and answers (2026-11-25, the user's go; ledger `preset-ladder`
+`phase_scratch_notes_answers_b3`).** Everything ran from one frozen worktree of main at 8b51d55a; the redo guard
+passed on every command, and the D1 source test passed there (the search code is builds 1 and 2's).
+- C1: `score-check` (40 renders) and `search-check` (22) under `--build-name b3`, both passed with no mismatches.
+- `carry --from b2`: 21 of 21 candidates carried (the parts whose `tr-di` equals build 2's; C2 excluded none, as build
+  2 had no refusal or rerun), 0 start-reference mismatches, 42 renders.
+- The search of the other 26 parts: 3 shards, 0 refused (so no rerun), 6,872 renders in 4,370 s wall.
+- `answers` (zero renders): 47 parts, 0 refused, the dry-guitar check passed on every part; labelled "ear pending"
+  (build 3's page is not yet read). Its sha256 merges before `score`.
+
+**Next:** `score`, `read`, then `pair-builds --build-name b3 --against b2` under C3. Stated before it is read: the
+all-parts figure, where the 21 carried parts add an exact 0, is likely "matches / level"; the changed-parts-only pair
+(26 parts) is read beside it.

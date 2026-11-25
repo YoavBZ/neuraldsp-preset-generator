@@ -4585,6 +4585,15 @@
     "arm": "b3k, the F6b ear arm (note-rebuild phase_nr_1_redo_fix_bend_frozen b3k): build 3 with keep true; on build 3's page under guard 1 and the declared ear rule; searched only if it wins by ear (then on its changed parts, carry --from b3 for the rest)",
     "note": "2026-11-24, `build --build-name b3k --fixes <the frozen rule with keep true>` once from main at 1c7ccb32 (#604's merge, the freeze) in a frozen worktree, zero renders: tr-di and tr-plain for the 47 parts and the 8 ear items, dry guitars under dry-b3k/, work under work/build-b3k/; nothing refused (every check a report, none blocking). `ear-items --build-name b3k` ran first from the same worktree and reproduces build 2's items and replacement exactly (item_123 in item_5's slot). Guard 1: b3k's tr-di differs from build 3's on 4 of 8 ear items (item_102, item_39, item_46, item_49) and 17 of 47 parts, as exposure read them; the build files agree with exposure's sha256 everywhere"
    },
+   "phase_scratch_notes_answers_b3": {
+    "sha256": "d070e4f1f8aaf44e3791609ce3132bcf0c30af8bb90ce081c66218fbf61e5194",
+    "file": "PF/fs/notes-b3/answers.json",
+    "built": "2026-11-25 13:40:18",
+    "build_name": "b3",
+    "build_sha256": "d61e0f0c8d88081df112f8f7b69f3190f5e1dcc91757b05fab31ea6d52b0afda",
+    "code": "checks, carry, search and answers all from one frozen worktree of main at 8b51d55a (#616's merge). cmd_search's source is byte-identical to builds 1 and 2's search (12t D1's call-graph test passed in that worktree; learn/scratch_search.py unchanged since 4959128a)",
+    "about": "fs-notes on build 3 (tr-di from build-b3.json: F1 global + F6 frozen (keep false) + ring-soft, no loudness; xlnoG@-3), labelled \"ear pending\" (build 3's page not yet read; 12q R5: a label, never a gate; the FN code provisional). 12t Phase 7, approved by the user 2026-11-25. C1: score-check (40 renders) and search-check (22) under --build-name b3, both passed, no mismatches. carry --build-name b3 --from b2: 21 of 21 candidates carried (the parts whose tr-di sha256 equals build 2's; none refused or rerun in build 2, so C2 excluded none), 0 start-reference mismatches, 42 renders; the 26 parts whose tr-di differs were searched. Searched once (python -m learn.scratch_notes search --build-name b3, 3 shards, no_bg_nice, caffeinate, the disk guard before every part): 26 of 26 parts, 0 refused, 0 content labels, so no rerun; step 1 200 evaluations on every part, step 2 kept the canonical start on every part. 6,872 renders (6,820 search plus 52 start reference) in 4,370 s wall on 3 processes. The answers (zero renders, python -m learn.scratch_notes answers --build-name b3) passed the dry-guitar check against the hashed build on every part: 47 parts, 0 refused, reruns none (the file's 12,336 renders count the 21 carried records' build 2 renders too); merged before `score`"
+   },
    "phase_scratch_notes_answers": {
     "sha256": "fe7dddb543151b17c348e0e8f55aa7106559f09a7bedb8736a9162b83035fcff",
     "file": "PF/fs/notes/answers.json",
