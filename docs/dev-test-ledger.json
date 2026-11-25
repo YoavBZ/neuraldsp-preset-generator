@@ -6012,6 +6012,1370 @@
      "refusal_risk_xr_matched": 1,
      "refusal_risk_hand_plain": 3
     }
+   },
+   "phase_scratch_rederive_frozen": {
+    "sha256": "33fff2b8d31df0715d805b4a718da0a1c3b4fb1889e500fd0c7afdbd9386c6a4",
+    "plan": "docs/rederive-plan.md",
+    "renders": 0,
+    "rule": {
+     "candidate": "measured/iterated/veto",
+     "domain": "measured",
+     "passes": "iterated",
+     "mutes": "veto"
+    },
+    "stop": 64,
+    "max_passes": 64,
+    "fit": {
+     "candidates": 12,
+     "cycle": "a pass that matches (within the repeat tolerances) any earlier pass but its predecessor stops the fit; the pass used is the cycle's member with the lowest residual, a tie the earliest",
+     "cycle_match": "within the repeat tolerances",
+     "deciding_measure": "note_rebuild.logmel_distance from the candidate's finished guitar to X, in in-M, on the 40",
+     "domains": [
+      "unfinished",
+      "measured",
+      "finished"
+     ],
+     "max_passes": 64,
+     "mute_veto_s": 0.03,
+     "mutes": [
+      "as-now",
+      "veto"
+     ],
+     "passes": [
+      "one",
+      "iterated"
+     ],
+     "repeat_level_db": 0.01,
+     "repeat_tilt_db_s": 0.027,
+     "repeat_tuning_cents": 0.05,
+     "safety_stop": "converge runs every iterated candidate on the 47 bench parts in in-M up to max_passes; the stop is the largest pass count among fits that repeated; every fit reaching it is listed, its pass used the lowest-residual pass at or before the stop; the stop also applies to build-real, whose fits that reach it are listed too; the number and both lists go into the ledger with freeze",
+     "simpler": "today's rule first; then fewer passes; then the domain (unfinished, measured, finished); then mutes as now before the veto",
+     "tie": "per-part paired differences from the lowest-mean candidate through scratch_notes.set_rows' BKS+GOAT pool; an interval that spans zero is a tie",
+     "update": "each pass adds the measured difference; tuning and tilt take a secant step from the second pass on"
+    },
+    "choices": {
+     "residual": "note_rebuild.logmel_distance from the input to the rebuild in the candidate's domain (the input is the side whose playing frames count); a non-finite distance counts as the largest",
+     "mute_times": "the mutes are the input's drops (mute_times(input)), each with a time that takes the measured difference: the input's drop less the rebuild's nearest drop within 30 ms, none: unchanged; only drops that were mutes in the rebuild move, each held within 30 ms of its drop (the window that makes it the same mute; an inert mute, one that cuts nothing, would otherwise drift); the mute rule says which drops are mutes",
+     "clamps": "tuning held within +-50 cents (global_tuning_cents' range), tilt within +-12 dB/s (the rule's own clamp), each level within +-20 dB (oracle_gains' own clamp)",
+     "tilt_measure": "sustain_tilt's median before its clamp (raw_db_s); 0 when it applies to no part (under 3 isolated groups, the same for input and rebuild)",
+     "levels_centred": "after each step the levels are centred on the median of the usable groups (oracle_gains' own rule), unusable groups 0 dB, as derive's levels are",
+     "secant": "from the second pass on, value + difference / slope, the slope the fall in the difference per unit of value over the last two passes; a change under the element's repeat tolerance (its response is not measurable there), a non-finite one, or a slope not above zero: the plain step",
+     "pass_0": "pass 0 is today's rule (R); a repeat is checked against it, but it is never a cycle member nor a pass used at the stop (passes 1 to the stop)",
+     "order": "every element of pass k is measured on the rebuild of pass k-1 (one rebuild per pass); the veto's rebuilds use pass k-1's tuning, tilt and levels with the mute times of pass k",
+     "lowest_mean": "the pooled BKS+GOAT mean of set_rows on the 40; an equal mean goes to the simpler"
+    },
+    "converge": {
+     "sha256": "b813c7f37e0742939a15468054ec57800b619eb2ad1c93637be0b267d09d3580",
+     "fits": 282,
+     "ends": {
+      "unfinished/iterated/as-now": {
+       "fits": 47,
+       "repeat": 12,
+       "cycle": 19,
+       "limit": 16,
+       "repeat_at_median": 16.0,
+       "repeat_at_max": 64
+      },
+      "unfinished/iterated/veto": {
+       "fits": 47,
+       "repeat": 15,
+       "cycle": 16,
+       "limit": 16,
+       "repeat_at_median": 18,
+       "repeat_at_max": 64
+      },
+      "measured/iterated/as-now": {
+       "fits": 47,
+       "repeat": 28,
+       "cycle": 7,
+       "limit": 12,
+       "repeat_at_median": 19.5,
+       "repeat_at_max": 56
+      },
+      "measured/iterated/veto": {
+       "fits": 47,
+       "repeat": 26,
+       "cycle": 10,
+       "limit": 11,
+       "repeat_at_median": 19.0,
+       "repeat_at_max": 59
+      },
+      "finished/iterated/as-now": {
+       "fits": 47,
+       "repeat": 17,
+       "cycle": 8,
+       "limit": 22,
+       "repeat_at_median": 21,
+       "repeat_at_max": 50
+      },
+      "finished/iterated/veto": {
+       "fits": 47,
+       "repeat": 18,
+       "cycle": 12,
+       "limit": 17,
+       "repeat_at_median": 17.0,
+       "repeat_at_max": 49
+      }
+     },
+     "hits": [
+      {
+       "part": "15f28c5c4310",
+       "set": "bks",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 3
+      },
+      {
+       "part": "15f28c5c4310",
+       "set": "bks",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 5
+      },
+      {
+       "part": "4d48763bfeb0",
+       "set": "bks",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 3
+      },
+      {
+       "part": "4d48763bfeb0",
+       "set": "bks",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 3
+      },
+      {
+       "part": "4d48763bfeb0",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 64
+      },
+      {
+       "part": "4d48763bfeb0",
+       "set": "bks",
+       "candidate": "unfinished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 9
+      },
+      {
+       "part": "4d48763bfeb0",
+       "set": "bks",
+       "candidate": "unfinished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 10
+      },
+      {
+       "part": "208c36f93f98",
+       "set": "bks",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "208c36f93f98",
+       "set": "bks",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "208c36f93f98",
+       "set": "bks",
+       "candidate": "measured/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 42
+      },
+      {
+       "part": "208c36f93f98",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 42
+      },
+      {
+       "part": "208c36f93f98",
+       "set": "bks",
+       "candidate": "unfinished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 3
+      },
+      {
+       "part": "208c36f93f98",
+       "set": "bks",
+       "candidate": "unfinished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 3
+      },
+      {
+       "part": "4ea260f59ccd",
+       "set": "bks",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "4ea260f59ccd",
+       "set": "bks",
+       "candidate": "unfinished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "4ea260f59ccd",
+       "set": "bks",
+       "candidate": "unfinished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "6d2988b99278",
+       "set": "bks",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 22
+      },
+      {
+       "part": "6d2988b99278",
+       "set": "bks",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 24
+      },
+      {
+       "part": "6d2988b99278",
+       "set": "bks",
+       "candidate": "unfinished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "6d2988b99278",
+       "set": "bks",
+       "candidate": "unfinished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 3
+      },
+      {
+       "part": "ddcdb0c10557",
+       "set": "bks",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "ddcdb0c10557",
+       "set": "bks",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "ddcdb0c10557",
+       "set": "bks",
+       "candidate": "measured/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "ddcdb0c10557",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "ddcdb0c10557",
+       "set": "bks",
+       "candidate": "unfinished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "ddcdb0c10557",
+       "set": "bks",
+       "candidate": "unfinished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "c29832ab789c",
+       "set": "bks",
+       "candidate": "measured/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 33
+      },
+      {
+       "part": "a3b1b27272d3",
+       "set": "bks",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 42
+      },
+      {
+       "part": "a3b1b27272d3",
+       "set": "bks",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 43
+      },
+      {
+       "part": "a3b1b27272d3",
+       "set": "bks",
+       "candidate": "measured/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 61
+      },
+      {
+       "part": "a3b1b27272d3",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 63
+      },
+      {
+       "part": "a3b1b27272d3",
+       "set": "bks",
+       "candidate": "unfinished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 64
+      },
+      {
+       "part": "a3b1b27272d3",
+       "set": "bks",
+       "candidate": "unfinished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 64
+      },
+      {
+       "part": "9c2b0e8c6bea",
+       "set": "bks",
+       "candidate": "measured/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 58
+      },
+      {
+       "part": "9c2b0e8c6bea",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 58
+      },
+      {
+       "part": "9c2b0e8c6bea",
+       "set": "bks",
+       "candidate": "unfinished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 6
+      },
+      {
+       "part": "9c2b0e8c6bea",
+       "set": "bks",
+       "candidate": "unfinished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 6
+      },
+      {
+       "part": "60c856cd5dc4",
+       "set": "goat",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "60c856cd5dc4",
+       "set": "goat",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "60c856cd5dc4",
+       "set": "goat",
+       "candidate": "measured/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 9
+      },
+      {
+       "part": "60c856cd5dc4",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 9
+      },
+      {
+       "part": "60c856cd5dc4",
+       "set": "goat",
+       "candidate": "unfinished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 4
+      },
+      {
+       "part": "60c856cd5dc4",
+       "set": "goat",
+       "candidate": "unfinished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 4
+      },
+      {
+       "part": "b2ce529e68f9",
+       "set": "goat",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "b2ce529e68f9",
+       "set": "goat",
+       "candidate": "measured/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 4
+      },
+      {
+       "part": "5dcdee9a770a",
+       "set": "goat",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 33
+      },
+      {
+       "part": "5dcdee9a770a",
+       "set": "goat",
+       "candidate": "unfinished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 5
+      },
+      {
+       "part": "5dcdee9a770a",
+       "set": "goat",
+       "candidate": "unfinished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 5
+      },
+      {
+       "part": "bad924394dd6",
+       "set": "goat",
+       "candidate": "measured/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 10
+      },
+      {
+       "part": "bad924394dd6",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 6
+      },
+      {
+       "part": "e8d444a97729",
+       "set": "goat",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "e8d444a97729",
+       "set": "goat",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "e8d444a97729",
+       "set": "goat",
+       "candidate": "measured/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 39
+      },
+      {
+       "part": "e8d444a97729",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 64
+      },
+      {
+       "part": "e8d444a97729",
+       "set": "goat",
+       "candidate": "unfinished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 7
+      },
+      {
+       "part": "e8d444a97729",
+       "set": "goat",
+       "candidate": "unfinished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 7
+      },
+      {
+       "part": "1b445da68053",
+       "set": "goat",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "1b445da68053",
+       "set": "goat",
+       "candidate": "measured/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "1b445da68053",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "128250b8463c",
+       "set": "goat",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "ea5fc54a8160",
+       "set": "goat",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 4
+      },
+      {
+       "part": "90074e8047e2",
+       "set": "goat",
+       "candidate": "measured/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 4
+      },
+      {
+       "part": "90074e8047e2",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 16
+      },
+      {
+       "part": "90074e8047e2",
+       "set": "goat",
+       "candidate": "unfinished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "90074e8047e2",
+       "set": "goat",
+       "candidate": "unfinished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 36
+      },
+      {
+       "part": "71310cbf0d95",
+       "set": "goat",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "8ad0ce9dc271",
+       "set": "goat",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "8ad0ce9dc271",
+       "set": "goat",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "8ad0ce9dc271",
+       "set": "goat",
+       "candidate": "unfinished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "8ad0ce9dc271",
+       "set": "goat",
+       "candidate": "unfinished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "3320de84a198",
+       "set": "goat",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "122997f94dde",
+       "set": "goat",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "c1ea6ef819b3",
+       "set": "goat",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "c1ea6ef819b3",
+       "set": "goat",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "c1ea6ef819b3",
+       "set": "goat",
+       "candidate": "measured/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 37
+      },
+      {
+       "part": "c1ea6ef819b3",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 36
+      },
+      {
+       "part": "c1ea6ef819b3",
+       "set": "goat",
+       "candidate": "unfinished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "c1ea6ef819b3",
+       "set": "goat",
+       "candidate": "unfinished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "68905f2227b1",
+       "set": "panel",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "68905f2227b1",
+       "set": "panel",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "ec75ab863ae9",
+       "set": "panel",
+       "candidate": "unfinished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "ec75ab863ae9",
+       "set": "panel",
+       "candidate": "unfinished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "d9196345e158",
+       "set": "panel",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "d9196345e158",
+       "set": "panel",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "d9196345e158",
+       "set": "panel",
+       "candidate": "unfinished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "d9196345e158",
+       "set": "panel",
+       "candidate": "unfinished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "bffb48652f9c",
+       "set": "panel",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "bffb48652f9c",
+       "set": "panel",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "bffb48652f9c",
+       "set": "panel",
+       "candidate": "unfinished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 8
+      },
+      {
+       "part": "bffb48652f9c",
+       "set": "panel",
+       "candidate": "unfinished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 8
+      },
+      {
+       "part": "6139d9a042d9",
+       "set": "panel",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "6139d9a042d9",
+       "set": "panel",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "5aa2d26cf369",
+       "set": "panel",
+       "candidate": "finished/iterated/as-now",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "5aa2d26cf369",
+       "set": "panel",
+       "candidate": "finished/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      }
+     ]
+    },
+    "bench": {
+     "sha256": "467b52121574d3e9dab48c54996d67e4aa2997c69ecb2e03ee72b8f5a5549f21",
+     "parts": 47,
+     "deciding_parts": 40,
+     "lowest": "measured/iterated/veto",
+     "ties": []
+    },
+    "build_bench": {
+     "sha256": "f39a3b3e6b6da7cd26253100f32361fd1b187825ba7a78072c4a3167252d1940",
+     "row": "xf-fix",
+     "parts": 47,
+     "hits": [
+      {
+       "part": "4d48763bfeb0",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 64
+      },
+      {
+       "part": "208c36f93f98",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 42
+      },
+      {
+       "part": "ddcdb0c10557",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "a3b1b27272d3",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 63
+      },
+      {
+       "part": "9c2b0e8c6bea",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 58
+      },
+      {
+       "part": "60c856cd5dc4",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 9
+      },
+      {
+       "part": "bad924394dd6",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 6
+      },
+      {
+       "part": "e8d444a97729",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 64
+      },
+      {
+       "part": "1b445da68053",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "90074e8047e2",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 16
+      },
+      {
+       "part": "c1ea6ef819b3",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 36
+      }
+     ]
+    },
+    "build_real": {
+     "sha256": "6df1cfcb7a9c155eb32aba1f2047ea192bc52ebba8c830c54bbee2dbad89b88f",
+     "row": "fs-refit",
+     "build": "rf2",
+     "parts": 47,
+     "hits": [
+      {
+       "part": "f2030431a5bb",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "b0936e9f5d83",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 7
+      },
+      {
+       "part": "4d48763bfeb0",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "208c36f93f98",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "6d2988b99278",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "ddcdb0c10557",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "89cac0bf475c",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 3
+      },
+      {
+       "part": "7f621844a6f0",
+       "set": "bks",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "b2ce529e68f9",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "e8d444a97729",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "1b445da68053",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 5
+      },
+      {
+       "part": "1cc512e059fb",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 3
+      },
+      {
+       "part": "90074e8047e2",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "8ad0ce9dc271",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "eba1d1b5d3f9",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "4c03565e3325",
+       "set": "goat",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      },
+      {
+       "part": "bffb48652f9c",
+       "set": "panel",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 2
+      },
+      {
+       "part": "5aa2d26cf369",
+       "set": "panel",
+       "candidate": "measured/iterated/veto",
+       "end": {
+        "kind": "limit",
+        "at": 64
+       },
+       "pass_used": 1
+      }
+     ],
+     "rule_off_is_x": {
+      "held": 47,
+      "of": 47
+     }
+    }
    }
   },
   {
