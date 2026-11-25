@@ -373,6 +373,16 @@ def test_the_shards_take_fixed_slices_by_key():
         F.run_mode(_args(shard=(0, 2), combine=True))
 
 
+def test_a_trace_must_be_of_the_ladders_input():
+    want = {KEY1: "a" * 64, KEY2: "b" * 64}
+    recs = {KEY1: {"part": KEY1, "input_sha256": "a" * 64}, KEY2: {"part": KEY2, "input_sha256": "b" * 64}}
+    assert F.trace_refusal(recs, want) is None and F.trace_refusal({}, want) is None
+    for bad in ({KEY2: {"part": KEY2, "input_sha256": "c" * 64}}, {KEY2: {"part": KEY1, "input_sha256": "b" * 64}},
+                {KEY2: {"part": KEY2}}, {KEY3: {"part": KEY3, "input_sha256": "a" * 64}}):
+        why = F.trace_refusal(dict(recs, **bad), want)
+        assert "not of the ladder's in-M input" in why and KEY2 not in why and KEY3 not in why
+
+
 # --- the guards and the CLI ---------------------------------------------------------------------------------------------------
 
 MAIN = {S.PHASE: 1, S.PHASE_DRAW: {}, SE.PHASE_BANK: {}, SE.PHASE: {}, SE.PHASE_TARGETS: {}, RD.PHASE: {}}
@@ -646,6 +656,7 @@ def _fake_world(monkeypatch, root, parts):
     monkeypatch.setattr(F, "bench_parts", lambda m, keys=None: (q for q in parts if keys is None or q.key in keys))
     monkeypatch.setattr(F, "_main_parts", lambda m: sorted(q.key for q in parts))
     monkeypatch.setattr(F, "_part_lengths", lambda m: {q.key: q.n for q in parts})
+    monkeypatch.setattr(F, "ladder_inputs", lambda m: {q.key: S.npy_sha(q.u) for q in parts})
 
     def iv(vals):
         m = sum(vals.values()) / len(vals)
@@ -739,6 +750,28 @@ def test_the_five_commands_one_process_and_in_shards_byte_for_byte(monkeypatch, 
     b.pop("fit/price.json")
     assert sorted(a) == sorted(b) and len(a) >= 3 * 6 + 4
     assert [k for k in a if a[k] != b[k]] == []
+
+
+def test_converge_refuses_a_kept_trace_of_another_input(monkeypatch, tmp_path):
+    _needs()
+    parts = _made_up_parts()
+    _fake_world(monkeypatch, tmp_path, parts)
+    F.cmd_converge(_args(price=2))                                           # traces the first two parts by key
+    good = F.ladder_inputs({})
+    monkeypatch.setattr(F, "ladder_inputs", lambda m: dict(good, **{KEY1: "0" * 64}))
+    for args in (_args(), _args(shard=(0, 2))):                              # reused by a run: refused
+        with pytest.raises(SystemExit, match="not of the ladder's in-M input"):
+            F.cmd_converge(args)
+    monkeypatch.setattr(F, "ladder_inputs", lambda m: good)
+    F.cmd_converge(_args(shard=(0, 2)))
+    F.cmd_converge(_args(shard=(1, 2)))
+    monkeypatch.setattr(F, "ladder_inputs", lambda m: dict(good, **{KEY3: "0" * 64}))
+    with pytest.raises(SystemExit, match="not of the ladder's in-M input"):  # and at the combine
+        F.cmd_converge(_args(combine=True))
+    assert not F.converge_path().exists()
+    monkeypatch.setattr(F, "ladder_inputs", lambda m: good)
+    F.cmd_converge(_args(combine=True))
+    assert F.converge_path().exists()
 
 
 def test_build_real_refuses_when_the_rule_off_is_not_x(monkeypatch, tmp_path):

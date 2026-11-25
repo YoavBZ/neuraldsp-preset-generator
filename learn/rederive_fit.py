@@ -891,9 +891,13 @@ def cmd_converge(args):
     price = _load_checked(price_path(), None, "converge --price 2")      # a gate only: its times are not in the chain
     if mode != "shard":
         NT.never_overwrite(converge_path())
+    want = ladder_inputs(m)
     if mode in ("one", "shard"):
         mine = shard_keys(keys, getattr(args, "shard", None))
         need = _missing({k: trace_path(k) for k in mine})
+        why = trace_refusal({k: json.loads(trace_path(k).read_text()) for k in mine if k not in need}, want)
+        if why:                                                          # a trace kept from before: of this input
+            raise SystemExit(why)
         t0 = time.time()
         if need:
             for p in bench_parts(m, set(need)):
@@ -910,6 +914,9 @@ def cmd_converge(args):
     recs = {k: json.loads(trace_path(k).read_text()) for k in keys}
     if any(sorted(r["fits"]) != sorted(ITERATED) or r["input"] != RD.DECIDING_INPUT for r in recs.values()):
         raise SystemExit("a trace is not of every iterated candidate in in-M")
+    why = trace_refusal(recs, want)
+    if why:
+        raise SystemExit(why)
     out = converge_record(recs, {k: S.file_sha(trace_path(k)) for k in keys}, price["priced_parts"])
     sha = _save_once(converge_path(), out)
     print(f"RF CONVERGE: {out['fits']} fits; the stop {out['stop']} passes; {len(out['hits'])} fits reach it; "
@@ -917,6 +924,26 @@ def cmd_converge(args):
     for h in out["hits"]:
         print(f"  reaches the stop: {h['part'][-40:]} {h['candidate']} ({h['end']['kind']} at {h['end']['at']}), "
               f"pass used {h['pass_used']}")
+
+
+def ladder_inputs(m):
+    """Each part's in-M input sha256 as main's ladder records it (`inputs["in-M"]["input_sha256"]`, each part record
+    checked against ladder.json's, itself main's `phase_scratch_rederive_ladder`). -> {pkey: sha256}."""
+    lad = NT.require_file_hash(m, RD.PHASE_LADDER, RD.ladder_path())
+    return {k: _load_checked(RD.part_path(k), lad["parts"][k]["record_sha256"], "scratch_rederive ladder")
+            ["inputs"][RD.DECIDING_INPUT]["input_sha256"] for k in sorted(lad["parts"])}
+
+
+def trace_refusal(recs, want):
+    """(Pure.) Why traces may not be used, or None: each trace's `input_sha256` must be the ladder's in-M input for its
+    part (a trace kept from an earlier run, a shard's or the price's, is never of another input). recs: {pkey: trace};
+    want: {pkey: sha256} (`ladder_inputs`)."""
+    bad = sorted(k for k, r in recs.items() if k not in want or r.get("input_sha256") != want[k]
+                 or r.get("part") != k)
+    if bad:
+        return (f"{len(bad)} trace(s) are not of the ladder's in-M input ({', '.join(part_tag(k) for k in bad)}): "
+                "never used; to the user")
+    return None
 
 
 def _part_lengths(m):
