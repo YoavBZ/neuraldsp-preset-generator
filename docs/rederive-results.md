@@ -19,7 +19,8 @@ after the fit and an independent audit of this read.
   the exact-notes test's records, as `xn-bank` and `xn-list` did.
 - **How it compares with the finished input.** The exact-notes test handed the same rule the finished bank guitar
   and measured D_list at +0.321 [+0.180, +0.462].
-  - D_list − D_now, the finished input's share, is **+0.068 [+0.011, +0.126]**, wholly above zero but small.
+  - D_list − D_now, the finished input's share, is **+0.068 [+0.011, +0.126]**, wholly above zero; `paired_reading`
+    reads it undecided (mean under +0.10, hi90 +0.126).
   - On the point estimates, about 0.07 of the 0.32 comes from the finished form alone. Most of the cost stays in
     the real-song form (a descriptive ratio, not declared).
 - **The row itself still beats Cen.** G(`xf-now`) is −0.958 [−1.140, −0.776] and passes. G(`xn-bank`) is −1.211 and
@@ -31,7 +32,7 @@ after the fit and an independent audit of this read.
 |---|---|---|
 | **The 40 (deciding)** | **+0.253 [+0.106, +0.400]** | worse |
 | Clean 20 | +0.450 [+0.154, +0.747] | |
-| Crunch 20 | +0.055 [−0.013, +0.124] | spans zero |
+| Crunch 20 | +0.055 [−0.013, +0.124] | undecided (spans zero) |
 | All 47 | +0.195 [+0.097, +0.293] | |
 | Panel (7) | +0.080 [+0.059, +0.101] | |
 | Shrunk arm, the 40 | +0.065 [−0.010, +0.140] | undecided |
@@ -48,11 +49,13 @@ after the fit and an independent audit of this read.
 
 - **Robustness.** The cost holds when any one cluster is left out, on one part per partner, without the two
   design-time parts, and across checkpoints 50 to 200.
-- **Where it sits.** It lies mostly in clean. Crunch alone does not show it.
+- **Where it sits.** On the point estimates it sits mostly in clean (+0.450 against +0.055). Crunch is undecided: a
+  cost up to +0.124 is not ruled out, and the clean-to-crunch difference was not tested.
 - **The shrunk arm goes beside only.** Its D_now spans zero, so it would read XF-input there; the answer arm decides.
 - **The tilt split moved little.** With the finished input it was +0.220 from the tilt parts and +0.101 from the
   others; in `in-M` it is +0.192 and +0.060. The others' part fell more, so the tilt parts now carry about three
-  quarters of it.
+  quarters of it (seen; contributions to the 40's pooled mean, 0.192 of 0.253, descriptive; the 15 parts' own
+  interval is uninformative).
 - **Two design-time parts.** They are the refused sw50r part and GOAT item_69. The rule picked them from hashed files:
   the one refused `xn-list` part, and the part whose tilt the rebuild missed by the most.
 
@@ -66,6 +69,7 @@ after the fit and an independent audit of this read.
 | Shrunk arm, the 40 | +0.037 [+0.007, +0.066] |
 | Checkpoints 50 / 100 / 200, the 40 | −0.009 / +0.019 / +0.055 |
 | One part per partner; without the two design-time parts | +0.081 [+0.013, +0.149]; +0.091 [+0.028, +0.154] |
+| Passing-only (without the one refused `xn-list` part) | +0.089 [+0.027, +0.151] |
 
 ### What ran
 
@@ -83,9 +87,12 @@ score and the read at 90edc3bd.
 - **In all: 13,112 renders.**
 - **The read** (`read --stage 1`, zero renders) first reproduced D_list and build 2 less row (b) from the stored files
   exactly. It saved its rows before its code. Its go record (`stage1-go.json`, go on) is what `xf-fix`'s search reads.
+- **A note on the go record.** `stage1-go.json` names its plan as "section 7", but the outcome table it reads is in
+  section 8. The file is written once, so it stays as written.
 
 ### What it cannot show
 
 - **The bench, not real songs.** The bench rewards recovering build 2's own values. This read says the cost survives
   in the real-song input form on the bench; it says nothing yet about real songs.
+- **The bench is sharper than real songs, and no bridge has run.**
 - **One bank, one transcriber, one seed.** The score only.
