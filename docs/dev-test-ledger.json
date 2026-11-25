@@ -5805,6 +5805,60 @@
     },
     "note": "ln(x / Cen) differences, build 3 less build 2, 90% intervals; negative is build 3 closer. Means are `note_replay.summary`'s cluster- and band-weighted figures on BKS+GOAT. itt is C3's all-parts intent-to-treat figure (carried parts an exact 0); changed_only the 26 parts whose tr-di differs. With 0 refusals in either build, passing_only equals itt",
     "reading": "by the score: build 3 less build 2, answer arm +0.019 [-0.000, +0.039] on the 40, all parts (matches; level, not readable by the score: the interval inside +-SMALL 0.05), as stated before; changed parts only +0.031 [-0.001, +0.063] (matches); shrunk arm +0.033 [+0.014, +0.052] all parts (matches), changed parts only +0.052 [+0.024, +0.080] (undecided: the interval above 0, the mean just past SMALL 0.05). F6 moves the search's answers by less than the score can read; the shrunk arm leans slightly to build 2. Readings use the user's SMALL and BIG and only label; the ear page for build 3 is unread"
+   },
+   "phase_scratch_rederive_ladder": {
+    "phase": "Phase 1's first half, the ladder (docs/rederive-plan.md section 4); the diagnosis (Unit 2) hashes later under its own key",
+    "ladder_sha256": "9872cb2405b45b629e5eb6f59d5daffc60ff59dd0c09b3a8e85da6f3b107eda2",
+    "ladder_file": "PF/fs/rederive/ladder.json",
+    "average_sha256": "9aa3c3bfefc2bc5ba21394be29876b5ef5e0120ad2f55f0b890e599ec3bee9a8",
+    "bank_build_sha256": "b6640c44fc7832a1001ed9a6a9082dde9c15dbe79fade38d5aec904e2a2c2f0a",
+    "exact_build_sha256": "1ee294d2d6711eeb0748e8dae7f0eb675684494dd087f8ab2d6001be3be6e780",
+    "guitars": {
+     "rows": [
+      "xf-now",
+      "xf-tuning",
+      "xf-mutes",
+      "xf-tilt",
+      "xf-levels"
+     ],
+     "files": 235,
+     "manifest_sha256": "a4cd66aa4e2e57d68e6a389f1122d6edfc3f112f59a71f727c768742c620b6b8",
+     "manifest_rule": "sha256 of json.dumps({part key: {row: file sha256}}, sort_keys=True, separators=(',', ':')) over ladder.json's parts and its written rows",
+     "per_row_sha256": {
+      "xf-now": "a8fdf65b8d7acf9448c2149d7519437f389ed78497548ce9d3fce8411db28c0c",
+      "xf-tuning": "da80c76476e45c1401f0e223ffb9b02c4039b7b5d896082fc38c2f43cbe3b1df",
+      "xf-mutes": "aaba34578e091e389b4dd7da7eba15197c36edb7895985cb7822618eef28b3c2",
+      "xf-tilt": "adc02357322f0caa3fb53cdba95b5cb23e81502b5752f68d8107d0a6c1b73b5b",
+      "xf-levels": "4f0cf9032705a29deef21b6318a1efadcf2dd8fca0c6f50240e81c0a376a4ca6"
+     },
+     "per_row_rule": "sha256 of the row's file sha256s, sorted, joined by newlines",
+     "dir": "PF/fs/rederive/dry/<row>/"
+    },
+    "proofs": {
+     "in_f_is_x": "47 of 47",
+     "today_on_in_f_is_xn_list": "47 of 47",
+     "xf_now_is_rebuild_redo": "47 of 47"
+    },
+    "pinned": "18 of 18 equal main's",
+    "parts": 47,
+    "deciding_parts": 40,
+    "rung_rows_changed_parts_in_M": {
+     "all_47": {
+      "tuning": 47,
+      "mutes": 39,
+      "tilt": 14,
+      "levels": 47
+     },
+     "the_40": {
+      "tuning": 40,
+      "mutes": 34,
+      "tilt": 14,
+      "levels": 40
+     }
+    },
+    "renders": 0,
+    "seconds": 2262.8,
+    "ran": "2026-11-25 14:18:36 to 14:56:41, python -m learn.scratch_rederive ladder once from main at b89aabda in a frozen detached worktree; one process, nice 10, single-threaded (OMP/BLAS/vecLib at 1 thread), caffeinate -i, no_bg_nice; zero renders; build 3's score renders beside it"
    }
   },
   {
