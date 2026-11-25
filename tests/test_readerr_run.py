@@ -82,6 +82,15 @@ def test_parse_refuses_the_call(argv):
         R.parse_args(argv)
 
 
+def test_parse_refuses_a_repeated_spec():
+    s = json.dumps(_spec("mt3"))
+    for argv in (["mt3", "--spec", s, "--spec", s, "a.wav", "a.json"],
+                 ["mt3", "--spec", "null", "--spec", s, "a.wav", "a.json"],
+                 ["mt3", "--spec", s, "a.wav", "a.json", "--spec", s]):
+        with pytest.raises(SystemExit, match="once"):
+            R.parse_args(argv)
+
+
 def test_parse_refuses_the_pairs():
     for files in (("a.wav",), ("a.wav", "a.json", "b.wav"), ("a.wav", "a.wav")):
         with pytest.raises(SystemExit):
@@ -308,27 +317,34 @@ def test_main_refuses_a_missing_input(tmp_path):
 
 
 def test_thread_cap_and_offline(monkeypatch):
-    for k in R.THREAD_ENV + tuple(R.OFFLINE_ENV):
-        monkeypatch.delenv(k, raising=False)
-    R.cap_threads(2)
-    assert all(os.environ[k] == "2" for k in R.THREAD_ENV)
-    assert all(os.environ[k] == "1" for k in R.OFFLINE_ENV)
+    real, before = os.environ, dict(os.environ)
+    with monkeypatch.context() as m:
+        m.setattr(os, "environ", dict(os.environ))                     # a copy: the worker's environment untouched
+        for k in R.THREAD_ENV + tuple(R.OFFLINE_ENV):
+            os.environ.pop(k, None)
+        R.cap_threads(2)
+        assert all(os.environ[k] == "2" for k in R.THREAD_ENV)
+        assert all(os.environ[k] == "1" for k in R.OFFLINE_ENV)
+    assert os.environ is real and dict(os.environ) == before          # restored
 
 
 def test_torch_checkpoint_loads_weights_only_then_the_stub_refuses(tmp_path, monkeypatch):
     torch = pytest.importorskip("torch")
-    for k in R.THREAD_ENV + tuple(R.OFFLINE_ENV):
-        monkeypatch.delenv(k, raising=False)                          # restored after the test
-    ckpt = tmp_path / "synthetic.pth"
-    torch.save({"w": torch.zeros(3)}, str(ckpt))
-    state, versions = R.load_checkpoint(str(ckpt), 1)
-    assert list(state) == ["w"] and versions["torch"] == torch.__version__
-    src = tmp_path / "synthetic.wav"
-    _tone_wav(src, seconds=0.1)
-    for mode in R.TORCH_MODES:
-        spec = _spec(mode, model=str(ckpt), model_sha256=R.file_sha(str(ckpt)))
-        with pytest.raises(SystemExit, match="not wired"):
-            R.main(_args(mode, spec, str(src), str(tmp_path / f"{mode}.json")))
+    real, before = os.environ, dict(os.environ)
+    with monkeypatch.context() as m:
+        m.setattr(os, "environ", dict(os.environ))                     # main's thread cap lands on a copy
+        ckpt = tmp_path / "synthetic.pth"
+        torch.save({"w": torch.zeros(3)}, str(ckpt))
+        state, versions = R.load_checkpoint(str(ckpt), 1)
+        assert list(state) == ["w"] and versions["torch"] == torch.__version__
+        src = tmp_path / "synthetic.wav"
+        _tone_wav(src, seconds=0.1)
+        for mode in R.TORCH_MODES:
+            spec = _spec(mode, model=str(ckpt), model_sha256=R.file_sha(str(ckpt)))
+            with pytest.raises(SystemExit, match="not wired"):
+                R.main(_args(mode, spec, str(src), str(tmp_path / f"{mode}.json")))
+        assert all(os.environ[k] == "1" for k in R.THREAD_ENV)
+    assert os.environ is real and dict(os.environ) == before          # restored
 
 
 class _NotATensor:

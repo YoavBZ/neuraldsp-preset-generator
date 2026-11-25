@@ -140,13 +140,16 @@ def check_spec(mode, spec):
 
 def parse_args(argv):
     """(Pure.) MODE --spec JSON in out [in out ...] -> (mode, spec, [(in, out)]). Refuses an unknown mode, a missing or
-    bad spec, an odd or empty pair list, and an output named as its own input."""
+    bad spec, a repeated `--spec`, an odd or empty pair list, and an output named as its own input."""
     if not argv or argv[0] not in MODES:
         refuse(f"the first argument is the mode, one of {list(MODES)}")
-    mode, spec, rest, i = argv[0], None, [], 1
+    mode, spec, rest, i, seen = argv[0], None, [], 1, False
     while i < len(argv):
         a = argv[i]
         if a == "--spec":
+            if seen:
+                refuse("give --spec once")
+            seen = True
             if i + 1 >= len(argv):
                 refuse("--spec needs a JSON value")
             try:
