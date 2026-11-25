@@ -142,7 +142,12 @@ def test_controls_real_refuses_cleanly_until_the_refit_answers_are_hashed(monkey
     monkeypatch.setattr(D, "pinned_identity", lambda: {f: True for f in D.OWN_FILES})
     monkeypatch.setattr(NRP, "ledger_entry", lambda: main)
     monkeypatch.setattr(RD, "rederive_dir", lambda: tmp_path)
-    with pytest.raises(SystemExit, match="rederive_rows|phase_scratch_rederive_answers_refit"):
+    with pytest.raises(SystemExit, match="has no answers-fs-refit.json"):          # Unit 4 merged: no file yet
+        D.cmd_controls_real(_args())
+    assert not D.controls_real_path().exists()
+    f = tmp_path / "answers-fs-refit.json"
+    f.write_text("{}")                                         # a file, but not the hashed one
+    with pytest.raises(SystemExit, match="is not main's phase_scratch_rederive_answers_refit"):
         D.cmd_controls_real(_args())
     assert not D.controls_real_path().exists()
 

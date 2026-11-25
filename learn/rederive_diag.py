@@ -855,6 +855,15 @@ def rows_answers_path(row, absent):
     return RR.answers_path(row)
 
 
+def hashed_answers(m, key, path):
+    """A re-derivation row's answers, refused (never a crash) when the file is not in this data root, or when its
+    sha256 is not main's `key`."""
+    if not pathlib.Path(path).exists():
+        raise SystemExit(f"main holds {key} but this data root has no {pathlib.Path(path).name}: run "
+                         "`rederive_rows answers` for it first")
+    return NT.require_file_hash(m, key, path)
+
+
 def _bench_answers(m, row):
     """A bench row's hashed answers file and its path, or None while its answers are not on main."""
     if row in SE.ROWS:
@@ -865,7 +874,7 @@ def _bench_answers(m, row):
     if key not in m:
         return None
     path = rows_answers_path(row, f"main holds {key} but this checkout has no learn/rederive_rows.py: merge Unit 4")
-    return NT.require_file_hash(m, key, path), path
+    return hashed_answers(m, key, path), path
 
 
 def cmd_controls(_args):
@@ -929,7 +938,7 @@ def cmd_controls_real(_args):
     from learn import scratch_notes as SN
 
     refit_path = rows_answers_path(RD.REAL_ROW, "this checkout has no learn/rederive_rows.py: merge Unit 4 first")
-    refit = NT.require_file_hash(m, RD.answers_key(RD.REAL_ROW), refit_path)
+    refit = hashed_answers(m, RD.answers_key(RD.REAL_ROW), refit_path)
     b2 = NT.require_file_hash(m, SE.PHASE_B2_ANSWERS, SN.answers_path(SE.BUILD2))
     rb = S.require_hash(S.phase_answers(SE.STEM_ROW), S.answers_path(SE.STEM_ROW))
     draw, sd = SE.context()
