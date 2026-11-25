@@ -24,6 +24,7 @@ build, every row's search, answers and score, and the two reads.
     $MAIN -m learn.rederive_rows check-score --for real     # row (c) re-scored as the bridge scores (score_row_part)
     $MAIN -m learn.rederive_rows check-search --for real
     $MAIN -m learn.rederive_rows floor-real --shard 0/3     # beside only: row (b)'s answer through rf2
+    $MAIN -m learn.rederive_rows search --row fs-refit --carry   # once, one process: build 2's records, all or none
     $MAIN -m learn.rederive_rows search --row fs-refit ...  # then answers (-> _answers_refit), score
     $MAIN -m learn.rederive_rows read-real                  # zero renders, once: D_real, rf_code
     $MAIN -m learn.rederive_rows reproduce                  # zero renders: D_list and build 2 less row (b), stored
@@ -76,7 +77,8 @@ from learn import scratch_search as S
 LEDGER_ID = RD.LEDGER_ID                 # preset-ladder
 PLAN = "docs/rederive-plan.md section 7"
 MODULE = "learn/rederive_rows.py"
-CODE_FILES = (MODULE,) + RD.CODE_FILES   # this module, then the core's pinned files
+OWN_FILES = (MODULE,) + tuple(RF.OWN_FILES)   # this module and Unit 3's, whose paths and formats it reads
+CODE_FILES = OWN_FILES + RD.CODE_FILES   # then the core's pinned files
 NOW_ROW, FIX_ROW, NULL_ROW, REAL_ROW = RD.NOW_ROW, RD.FIX_ROW, RD.NULL_ROW, RD.REAL_ROW
 RUNG_ROWS = RD.RUNG_ROWS
 BENCH_ROWS = RD.BENCH_ROWS
@@ -170,6 +172,25 @@ def row_refusal(row, m, stage1=None):
     return None
 
 
+def floor_repeat_refusal(flags):
+    """(Pure.) Why xf-fix may not search, or None: the stored xn-list floor must have repeated on each check part.
+    flags: {pkey: xn_list_repeats or None (floors not run there)}."""
+    missing = sorted(k for k, v in flags.items() if v is None)
+    if not flags or missing:
+        return f"the floors have not run on the check parts ({len(missing) or 'none'}): `floors` first (phase 3c)"
+    bad = sorted(k for k, v in flags.items() if v is not True)
+    if bad:
+        return f"the stored xn-list floor did not repeat on {len(bad)} check part(s): a determinism break, to the user"
+    return None
+
+
+def carry_all_or_none(cands, mine, theirs):
+    """(Pure.) `scratch_notes.cmd_carry`'s rule: every candidate's recomputed start reference must have build 2's render
+    sha256, else none is carried. mine, theirs: {pkey: render_sha256 or None}. -> (carried, mismatches)."""
+    mism = SN.carry_mismatches({k: mine.get(k) for k in cands}, theirs)
+    return ([] if mism else sorted(cands)), mism
+
+
 def carry_source(row, sha, source_shas):
     """(Pure.) The row searched before `row` whose guitar is byte-identical to this one (`CARRY_FROM`'s order, the
     first that matches), or None. source_shas: {row: that row's guitar sha256 for the part, or None}."""
@@ -197,13 +218,20 @@ def null_change_refusal(change):
 def design_time_parts(list_refused, tilt_x, tilt_list, deciding_keys):
     """(Pure.) The two design-time parts, by rule from hashed files (no part key in git): every part refused in the
     exact-notes test's `xn-list` answers (the refused sw50r part), and the deciding part whose `xn-list` tilt lies
-    furthest from X's (GOAT item_69, +10.1 -> -7.1 dB/s). tilt_*: {pkey: dB/s or None (no tilt)}."""
-    out = set(list_refused)
+    furthest from X's (GOAT item_69, +10.1 -> -7.1 dB/s). tilt_*: {pkey: dB/s or None (no tilt)}.
+    The rule checks its own answer: exactly one refused part and exactly one part at the top tilt gap (above zero, no
+    tie), two parts in all; anything else refuses (the declared split names two parts)."""
+    refused = sorted(set(list_refused))
     gaps = {k: abs((tilt_x.get(k) or 0.0) - (tilt_list.get(k) or 0.0)) for k in deciding_keys}
-    if gaps:
-        top = max(gaps.values())
-        out |= {k for k, g in gaps.items() if g == top and g > 0}
-    return sorted(out)
+    top = max(gaps.values()) if gaps else 0.0
+    at_top = sorted(k for k, g in gaps.items() if g == top and g > 0)
+    if len(refused) != 1:
+        raise SystemExit(f"the design-time rule finds {len(refused)} refused xn-list part(s), not 1: to the user")
+    if len(at_top) != 1:
+        raise SystemExit(f"the design-time rule finds {len(at_top)} part(s) at the top tilt gap, not 1: to the user")
+    if refused == at_top:
+        raise SystemExit("the design-time rule's two parts are one part: to the user")
+    return sorted(refused + at_top)
 
 
 def tilt_parts(tilt_applied, deciding_keys):
@@ -322,6 +350,16 @@ def read_path(kind, name):
     return rows_dir() / f"{kind}-{name}.json"
 
 
+def repeat_path(pk):
+    """The xn-list floor's repeat flag on a check part (no distance): xf-fix's search reads it."""
+    return rows_dir() / "floor-repeat" / f"{SE._f(pk)}.json"
+
+
+def carry_path():
+    """The bridge's carry record (`search --row fs-refit --carry`), written once."""
+    return rows_dir() / "carry-real.json"
+
+
 def reproduce_path():
     return rows_dir() / "reproduce.json"
 
@@ -329,8 +367,9 @@ def reproduce_path():
 # --- the guards -------------------------------------------------------------------------------------------------------
 
 def pinned_identity():
-    """This module equal to origin/main's (git diff --quiet); the core checks its own pinned files. -> {file: same}."""
-    return {f: SE._git("diff", "--quiet", "origin/main", "--", f).returncode == 0 for f in (MODULE,)}
+    """This module and Unit 3's `rederive_fit` equal to origin/main's (git diff --quiet); the core checks its own
+    pinned files. -> {file: same}."""
+    return {f: SE._git("diff", "--quiet", "origin/main", "--", f).returncode == 0 for f in OWN_FILES}
 
 
 def require_rows(*phases):
@@ -658,6 +697,9 @@ def cmd_floors(args):
     repeat (render sha256 and both halves' distances). -> floors/<part>.json."""
     _guard_shard(args)
     m = require_rows(RD.PHASE_LADDER, RD.PHASE_FROZEN, RD.answers_key(NOW_ROW))
+    why = row_refusal(FIX_ROW, m, stage1_record())        # floors sit beside xf-fix: only after stage 1 went on
+    if why:
+        raise SystemExit(why)
     xb = SE.require_xbuild(m)
     b2 = SE.bank_build(m)
     w = bench_world(m, FIX_ROW, b2, xb)
@@ -710,6 +752,9 @@ def cmd_floors(args):
         total += renders
         rec.update(renders=renders, time=time.strftime("%Y-%m-%d %H:%M:%S"))
         P.save(out, rec)
+        if pk in repeat:                                 # the flag alone: xf-fix's search never opens floors
+            P.save(repeat_path(pk), {"plan": PLAN, "part": pk, "xn_list_repeats": rec["xn_list_repeats"],
+                                     "floor_sha256": S.file_sha(out)})
         print(f"{pk[-50:]}: floors {[(g, v['floor']) for g, v in rec['guitars'].items()]}"
               f"{'; xn-list repeats ' + str(rec['xn_list_repeats']) if pk in repeat else ''}; {total} renders",
               flush=True)
@@ -844,6 +889,15 @@ def cmd_search(args):
     require_bench_checks("bench")
     xb = SE.require_xbuild(m)
     records = SE.require_records(m)
+    if row == FIX_ROW:
+        draw0, _ = SE.context()
+        flags = {}
+        for k in SN.check_parts(draw0["parts"]):
+            fp = search_open(repeat_path(k))
+            flags[k] = json.loads(fp.read_text()).get("xn_list_repeats") if fp.exists() else None
+        why = floor_repeat_refusal(flags)
+        if why:
+            raise SystemExit(why)
     b2 = SE.bank_build(m)
     w = bench_world(m, row, b2, xb)
     from learn import cc_build as CB
@@ -904,12 +958,72 @@ def cmd_search(args):
           f"{time.time() - t0:.0f} s")
 
 
+def _carry_real(m, w, draw, sd):
+    """`search --row fs-refit --carry` (2 renders a candidate), once, in one process before the bridge's search, as
+    `scratch_notes.cmd_carry`: the candidates are the parts whose rf2 guitar is build 2's tr-di byte for byte and whose
+    build 2 record is for it, not refused and not rerun (`carry_candidates`); every candidate's start reference is
+    recomputed first (`scratch_notes.start_reference`, into this row's start-ref/, which the search then reuses); only
+    if every one has build 2's render sha256 are their records copied byte for byte, else none is (`carry_all_or_none`).
+    -> carry-real.json (never overwritten)."""
+    from learn import cc_build as CB
+    from learn import local_objective as LO
+    from learn import pipeline_fix as P
+
+    NT.never_overwrite(carry_path())
+    by = {p["pkey"]: p for p in draw["parts"]}
+    old_recs, reran = {}, set()
+    for pk in by:
+        op = SN.record_path("search", pk, REAL_FROM)
+        if op.exists():
+            old_recs[pk] = json.loads(search_open(op).read_text())
+        if S.rerun_path(op).exists():
+            reran.add(pk)
+    new_parts = {pk: {"arms": {SN.DRY: {"sha256": guitar_sha(REAL_ROW, pk, w)}}} for pk in by}
+    cands, skipped = SN.carry_candidates(new_parts, {pk: w["b2"]["parts"][pk] for pk in by}, old_recs, reran)
+    for pk in cands:
+        NT.never_overwrite(search_path(REAL_ROW, pk))
+    LO._wait_cap()
+    mine, theirs, renders = {}, {}, 0
+    for pk in cands:
+        SE.disk_guard()
+        p, sha = by[pk], guitar_sha(REAL_ROW, pk, w)
+        _, used = SN.start_reference(p, load_guitar(REAL_ROW, pk, w), S.load_ref_blank(sd, p, REAL_REF),
+                                     CB.new_renderer, start_path(REAL_ROW, pk), sha)
+        renders += used
+        mine[pk] = json.loads(start_path(REAL_ROW, pk).read_text()).get("render_sha256")
+        op = SN.record_path("start-ref", pk, REAL_FROM)
+        theirs[pk] = json.loads(search_open(op).read_text()).get("render_sha256") if op.exists() else None
+    carried, mism = carry_all_or_none(cands, mine, theirs)
+    for pk in carried:
+        dst = search_path(REAL_ROW, pk)
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes(search_open(SN.record_path("search", pk, REAL_FROM)).read_bytes())
+    P.save(carry_path(), {"plan": PLAN, "row": REAL_ROW, "from": REAL_FROM, "renders": renders,
+                          "build_real_sha256": S.file_sha(build_path("real")), "candidates": cands, "mismatches": mism,
+                          "carried": carried, "not_carried": skipped,
+                          "records_sha256": {pk: S.file_sha(search_path(REAL_ROW, pk)) for pk in carried},
+                          "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    note = (f"none carried: {len(mism)} start-reference mismatch(es) ({mism}); every part is searched" if mism else
+            f"{len(carried)} of {len(cands)} candidates carried")
+    print(f"RD CARRY {REAL_FROM} -> {REAL_ROW}: {note}; {renders} renders")
+
+
+def carry_record(rb_sha):
+    """The bridge's carry record, refused unless it ran (`--carry`) on this build-real.json."""
+    p = search_open(carry_path())
+    if not p.exists():
+        raise SystemExit("the bridge's carry has not run: `search --row fs-refit --carry` first (one process)")
+    rec = json.loads(p.read_text())
+    if rec.get("build_real_sha256") != rb_sha:
+        raise SystemExit("carry-real.json was made from another build-real.json")
+    return rec
+
+
 def _search_real(args):
-    """One shard of the bridge's searches (renders), as fs-notes' search with its own keys and folders: per part the
-    rf2 guitar (its sha256 Unit 3's build-real's), `scratch_notes.start_reference`, then `search_row_part` against
-    `xlnoG@-3` blanked outside the search half. An rf2 guitar byte-identical to build 2's tr-di takes build 2's record
-    byte for byte (`scratch_notes.carry_candidates`: not refused, not rerun) once its start reference, recomputed here,
-    has build 2's render sha256; a mismatch stops (a bug, to the user)."""
+    """One shard of the bridge's searches (renders), as fs-notes' search with its own keys and folders. First, once,
+    `--carry` (`_carry_real`, all or none). Then per part the rf2 guitar (its sha256 Unit 3's build-real's),
+    `scratch_notes.start_reference` (the carry's, when it made one), `search_row_part` against `xlnoG@-3` blanked
+    outside the search half; a carried part's record is already there and is skipped."""
     m = require_rows(*REAL_PHASES)
     why = row_refusal(REAL_ROW, m)
     if why:
@@ -925,13 +1039,18 @@ def _search_real(args):
 
     R.no_separation_beside()
     draw, sd = SE.context()
+    if getattr(args, "carry", False):
+        if tuple(args.shard) != (0, 1):
+            raise SystemExit("--carry runs once, in one process (no --shard)")
+        return _carry_real(m, w, draw, sd)
+    cr = carry_record(S.file_sha(build_path("real")))
     todo = SE.mine(draw, args.shard)
     if getattr(args, "first", 0):
         todo = todo[:args.first]
     lists = C.mic_lists()
     LO._wait_cap()
     rerun = getattr(args, "rerun", False)
-    total, carried, t0 = 0, 0, time.time()
+    total, t0 = 0, time.time()
     for p in todo:
         pk = p["pkey"]
         out = search_path(REAL_ROW, pk)
@@ -948,34 +1067,16 @@ def _search_real(args):
         spath = start_path(REAL_ROW, pk)
         if rerun:
             spath = S.rerun_path(spath)
-        old_p = SN.record_path("search", pk, REAL_FROM)
-        old = {pk: json.loads(search_open(old_p).read_text())} if old_p.exists() and not rerun else {}
-        reran = {pk} if S.rerun_path(old_p).exists() else set()
-        cands, _why = SN.carry_candidates({pk: {"arms": {SN.DRY: {"sha256": sha}}}},
-                                          {pk: b2["parts"][pk]}, old, reran)
         sref, used = SN.start_reference(p, x32, ref_blank, CB.new_renderer, spath, sha)
-        total += used
-        if cands:
-            mine_ref = json.loads(spath.read_text()).get("render_sha256")
-            op = SN.record_path("start-ref", pk, REAL_FROM)
-            theirs = json.loads(search_open(op).read_text()).get("render_sha256") if op.exists() else None
-            if SN.carry_mismatches({pk: mine_ref}, {pk: theirs}):
-                raise SystemExit(f"{pk}: rf2 is build 2's tr-di but the start reference does not repeat: a bug, "
-                                 "to the user")
-            out.parent.mkdir(parents=True, exist_ok=True)
-            out.write_bytes(search_open(old_p).read_bytes())
-            carried += 1
-            print(f"{pk[-50:]}: rf2 is build 2's tr-di: its record taken byte for byte", flush=True)
-            continue
         rec = S.search_row_part(p, REAL_DRY, REAL_REF, x32, ref_blank, CB.new_renderer, lists, out,
                                 f"{LEDGER_ID} {RD.PHASE}", start_ref=sref, dry_sha256=sha)
-        total += rec.get("renders", 0)
+        total += rec.get("renders", 0) + used
         if "refused" in rec:
             print(f"{pk[-50:]}: REFUSED {rec['refused']}", flush=True)
         print(f"{REAL_ROW} shard {args.shard[0]}/{args.shard[1]}: {total} renders in {time.time() - t0:.0f} s",
               flush=True)
-    print(f"RD SEARCH DONE {REAL_ROW} {args.shard[0]}/{args.shard[1]}: {total} renders, {carried} carried, in "
-          f"{time.time() - t0:.0f} s")
+    print(f"RD SEARCH DONE {REAL_ROW} {args.shard[0]}/{args.shard[1]}: {total} renders ({len(cr['carried'])} carried "
+          f"by --carry) in {time.time() - t0:.0f} s")
 
 
 def cmd_answers(args):
@@ -1223,7 +1324,10 @@ def splits(sd, draw, vals, groups, full=True):
     means = [x["mean"] for x in out["cluster_left_out"] if x and x.get("mean") is not None]
     out["cluster_left_out_range"] = [min(means), max(means)] if means else None
     keep_opp = set(groups["one_per_partner"])
-    out["one_per_partner"] = {"parts": len(keep_opp & set(vals)), "iv": the_40(sd, draw, vals, keep_opp)}
+    n_all, n_40 = len(keep_opp & set(vals)), len(keep_opp & set(vals) & set(groups["deciding"]))
+    out["one_per_partner"] = {"parts_all_47": n_all, "parts_on_the_40": n_40, "iv": the_40(sd, draw, vals, keep_opp),
+                              "label": f"one part per partner: {n_all} parts over all 47, {n_40} of them on the 40 "
+                                       "(the interval is the 40's pool on those)"}
     keep = set(vals) - set(groups["design_time"])
     out["without_design_time"] = {"parts_left_out": len(groups["design_time"]), "iv": the_40(sd, draw, vals, keep)}
     tilt, rest = set(groups["tilt"]), set(groups["rest"])
@@ -1490,6 +1594,8 @@ def main(argv=None):
     ap.add_argument("--rerun", action="store_true",
                     help="search or score again, once, only the parts whose record refused (S1: then Cen)")
     ap.add_argument("--stage", choices=("1", "2", "rungs"), default="1", help="read: the bench read's stage")
+    ap.add_argument("--carry", action="store_true",
+                    help="search --row fs-refit: build 2's records carried, all or none, once before the search")
     ap.add_argument("--for", dest="side", choices=("bench", "real"), default="bench",
                     help="check-score, check-search: the bench's path or the bridge's")
     args = ap.parse_args(argv)

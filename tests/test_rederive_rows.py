@@ -33,7 +33,8 @@ BELOW, SPANS, ABOVE = _iv(-0.3, -0.5, -0.1), _iv(0.05, -0.1, 0.2), _iv(0.3, 0.1,
 
 
 def _args(**kw):
-    base = {"row": RR.NOW_ROW, "shard": (0, 1), "first": 0, "rerun": False, "stage": "1", "side": "bench"}
+    base = {"row": RR.NOW_ROW, "shard": (0, 1), "first": 0, "rerun": False, "stage": "1", "side": "bench",
+            "carry": False}
     return type("A", (), dict(base, **kw))()
 
 
@@ -126,7 +127,16 @@ def test_the_design_time_parts_by_rule():
     tx = {"bks__a|x": None, "bks__b|y": 3.0, "goat__c|z": 10.0, "goat__d|w": 1.0}
     tl = {"bks__a|x": None, "bks__b|y": 2.0, "goat__c|z": -7.0, "goat__d|w": None}
     assert RR.design_time_parts(["bks__a|x"], tx, tl, dec) == ["bks__a|x", "goat__c|z"]
-    assert RR.design_time_parts([], {}, {}, dec) == []                # no tilt anywhere: no tilt part
+    for refused in ([], ["bks__a|x", "bks__b|y"]):                    # exactly one refused part
+        with pytest.raises(SystemExit, match=f"finds {len(refused)} refused"):
+            RR.design_time_parts(refused, tx, tl, dec)
+    with pytest.raises(SystemExit, match="finds 0 part"):             # no tilt anywhere: no top part
+        RR.design_time_parts(["bks__a|x"], {}, {}, dec)
+    tie = dict(tx, **{"goat__d|w": 18.0})                             # 17 and 17: a tie at the top
+    with pytest.raises(SystemExit, match="finds 2 part"):
+        RR.design_time_parts(["bks__a|x"], tie, dict(tl, **{"goat__d|w": 1.0}), dec)
+    with pytest.raises(SystemExit, match="are one part"):
+        RR.design_time_parts(["goat__c|z"], tx, tl, dec)
     assert RR.tilt_parts({"bks__b|y": True, "goat__c|z": True, "panel__e|v": True}, dec) == ["bks__b|y", "goat__c|z"]
     assert RR.contributions({"a": 1.0, "b": 2.0}, {"a"}) == {"a": 1.0, "b": 0.0}
 
@@ -173,7 +183,11 @@ def test_the_splits_read_the_declared_part_sets(monkeypatch):
     assert s["the_40"]["mean"] == pytest.approx(19 / 5) and s["parts"] == 5
     assert [c["mean"] for c in s["cluster_left_out"]] == pytest.approx([3.0, 2.5, 2.0])
     assert s["cluster_left_out_range"] == pytest.approx([2.0, 3.0])
-    assert s["one_per_partner"] == {"parts": 2, "iv": _iv(2.0, 1.9, 2.1)}
+    opp = s["one_per_partner"]
+    assert (opp["parts_all_47"], opp["parts_on_the_40"], opp["iv"]) == (2, 2, _iv(2.0, 1.9, 2.1))
+    assert opp["label"].startswith("one part per partner: 2 parts over all 47, 2 of them on the 40")
+    s2 = RR.splits(None, None, vals, dict(groups, one_per_partner=["a", "p"]))
+    assert (s2["one_per_partner"]["parts_all_47"], s2["one_per_partner"]["parts_on_the_40"]) == (2, 1)
     assert s["without_design_time"]["iv"]["mean"] == pytest.approx(15 / 4)      # d (and only d) left out
     t = s["tilt_15_vs_25"]
     assert t["label"] == RR.SEEN_LABEL and t["tilt"]["mean"] == 1.5 and t["rest"]["mean"] == 3.5
@@ -238,6 +252,15 @@ def test_unit_3s_files_are_read_through_its_own_code():
     assert {"RF.guitar_path", "RF.build_record_path", "RF.frozen_path"} <= calls
 
 
+def test_unit_3s_file_is_pinned(monkeypatch):
+    assert RR.OWN_FILES == ("learn/rederive_rows.py", "learn/rederive_fit.py")
+    assert RR.OWN_FILES == ("learn/rederive_rows.py",) + RF.OWN_FILES
+    assert RR.CODE_FILES[:2] == RR.OWN_FILES and set(RD.CODE_FILES) < set(RR.CODE_FILES)
+    asked = []
+    monkeypatch.setattr(SE, "_git", lambda *a: (asked.append(a[-1]), type("R", (), {"returncode": 0})())[1])
+    assert RR.pinned_identity() == {f: True for f in RR.OWN_FILES} and asked == list(RR.OWN_FILES)
+
+
 def test_the_paths_follow_stubs_of_unit_3s(monkeypatch, tmp_path):
     monkeypatch.setattr(RF, "guitar_path", lambda row, pk: tmp_path / "g" / row / pk)
     monkeypatch.setattr(RF, "build_record_path", lambda which: tmp_path / f"b-{which}.json")
@@ -248,6 +271,19 @@ def test_the_paths_follow_stubs_of_unit_3s(monkeypatch, tmp_path):
 
 FROZEN = {"sha256": "f" * 64, "rule": {"candidate": "c03"}, "stop": 9,
           "build_bench": {"sha256": "b" * 64, "row": "xf-fix"}, "build_real": {"sha256": "r" * 64, "row": "fs-refit"}}
+
+
+def test_xf_fix_waits_for_the_xn_list_floor_to_repeat():
+    assert RR.floor_repeat_refusal({"a": True, "b": True}) is None
+    assert "have not run" in RR.floor_repeat_refusal({}) and "have not run" in RR.floor_repeat_refusal({"a": None})
+    assert "did not repeat on 1" in RR.floor_repeat_refusal({"a": True, "b": False})
+
+
+def test_the_bridge_carry_is_all_or_none():
+    assert RR.carry_all_or_none(["a", "b"], {"a": "x", "b": "y"}, {"a": "x", "b": "y"}) == (["a", "b"], [])
+    assert RR.carry_all_or_none(["a", "b"], {"a": "x", "b": "y"}, {"a": "x", "b": "z"}) == ([], ["b"])
+    assert RR.carry_all_or_none(["a"], {"a": None}, {"a": None}) == ([], ["a"])     # a missing sha is a mismatch
+    assert RR.carry_all_or_none([], {}, {}) == ([], [])
 
 
 def test_the_frozen_key_as_freeze_prints_it():
@@ -422,6 +458,9 @@ def test_every_command_refuses_with_other_code(monkeypatch, cmd, kw):
     monkeypatch.setattr(RD, "pinned_identity", lambda: {f: True for f in RD.CODE_FILES})
     monkeypatch.setattr(RR, "pinned_identity", lambda: {RR.MODULE: False})
     with pytest.raises(SystemExit, match="rederive_rows.py.*differ from main's"):
+        RR.COMMANDS[cmd](_args(**kw))
+    monkeypatch.setattr(RR, "pinned_identity", lambda: {RR.MODULE: True, "learn/rederive_fit.py": False})
+    with pytest.raises(SystemExit, match="rederive_fit.py.*differ from main's"):
         RR.COMMANDS[cmd](_args(**kw))
     monkeypatch.setattr(RR, "pinned_identity", lambda: {RR.MODULE: True})
     monkeypatch.setattr(NT, "redo_on_main", lambda: ({}, "this checkout's note_rebuild.py differs from main's"))
@@ -600,7 +639,9 @@ def test_the_null_guitar_and_its_recomputation():
     assert S.npy_sha(RR.null_guitar(x, {"kind": "gain_db", "value": 0.01})) == S.npy_sha(y)   # deterministic
 
 
-def test_the_real_row_carries_build_2s_record_once_its_start_reference_repeats(monkeypatch, tmp_path):
+def _real_world(monkeypatch, tmp_path, rf, mismatch=()):
+    """The bridge in the fake world: Unit 3's build-real in its own format at stubs of `rederive_fit`'s paths, build
+    2's records and start references (those in `mismatch` with another render sha256)."""
     np = pytest.importorskip("numpy")
     from learn import pipeline_fix as P
 
@@ -611,7 +652,7 @@ def test_the_real_row_carries_build_2s_record_once_its_start_reference_repeats(m
     monkeypatch.setattr(RF, "guitar_path", lambda row, pk: fit / "dry" / row / f"{SE._f(pk)}.npy")
     monkeypatch.setattr(RF, "build_record_path", lambda which: fit / f"build-{which}.json")
     monkeypatch.setattr(RF, "frozen_path", lambda: fit / "frozen.json")
-    rf = {K1: w["X"][K1], K2: w["X"][K2] * 0.25}                     # part 1's rf2 is build 2's tr-di
+    rf = {k: f(w["X"][k]) for k, f in rf.items()}
     rb = {"plan": "p", "renders": 0, "row": "fs-refit", "build": "rf2", "rule": "c03", "stop": 9, "parts": {},
           "rule_off_is_x": {"held": 2, "of": 2}, "hits": []}
     for k, y in rf.items():
@@ -619,35 +660,90 @@ def test_the_real_row_carries_build_2s_record_once_its_start_reference_repeats(m
         p.parent.mkdir(parents=True, exist_ok=True)
         np.save(p, y)
         rb["parts"][k] = {"file_sha256": S.file_sha(p), "audio_sha256": S.npy_sha(y), "values": {}, "pass_used": 2,
-                          "end": "repeat", "reached": False, "identical_to_x": k == K1}
+                          "end": "repeat", "reached": False, "identical_to_x": S.npy_sha(y) == w["xs"][k]}
         P.save(SN.record_path("search", k, "b2"), {"part": k, "dry": "tr-di", "dry_sha256": w["xs"][k]})
-        P.save(SN.record_path("start-ref", k, "b2"), {"render_sha256": "r-" + k})
+        P.save(SN.record_path("start-ref", k, "b2"), {"render_sha256": ("other-" if k in mismatch else "r-") + k})
     P.save(RF.build_record_path("real"), rb)
     P.save(RF.frozen_path(), {"rule": {"candidate": "c03"}})
     w["m"][RD.PHASE_FROZEN] = dict(FROZEN, sha256=S.file_sha(RF.frozen_path()),
                                    build_real={"sha256": S.file_sha(RF.build_record_path("real")), "row": "fs-refit"})
     w["m"][RD.PHASE_BENCH_OUTCOME] = {"code": "XF-closed"}
     monkeypatch.setattr(S, "load_ref_blank", lambda sd, p, ref: np.zeros(8))
-    sref = []
+    w["sref"] = []
 
     def start_ref(p, x32, ref_blank, new_renderer, path, dry_sha):
-        sref.append(p["pkey"])
+        if path.exists():                                             # as scratch_notes.start_reference: reused
+            return json.loads(path.read_text())["value"], 0
+        w["sref"].append(p["pkey"])
         P.save(path, {"dry_sha256": dry_sha, "value": 0.5, "render_sha256": "r-" + p["pkey"]})
         return 0.5, 2
     monkeypatch.setattr(SN, "start_reference", start_ref)
-    RR.cmd_search(_args(row="fs-refit"))
-    assert RR.search_path("fs-refit", K1).read_bytes() == SN.record_path("search", K1, "b2").read_bytes()
-    assert [c["part"] for c in w["calls"]["search"]] == [K2] and sref == [K1, K2]
-    c = w["calls"]["search"][0]
-    assert c["lag"] == 7 and c["dry"] == "rf2" and c["ref"] == "xlnoG" and c["dry_sha256"] == S.npy_sha(rf[K2])
-    bad = [p for p in w["opened"] if SE.is_forbidden(p) or RR.is_forbidden(p)]
-    assert not bad
-    for k in (K1, K2):                                                # a start reference that does not repeat stops
-        RR.search_path("fs-refit", k).unlink()
-        RR.start_path("fs-refit", k).unlink()
-    P.save(SN.record_path("start-ref", K1, "b2"), {"render_sha256": "other"})
-    with pytest.raises(SystemExit, match="does not repeat"):
+    w["rf"] = rf
+    return w
+
+
+def test_the_bridge_carries_build_2s_records_before_its_search(monkeypatch, tmp_path, capsys):
+    w = _real_world(monkeypatch, tmp_path, {K1: lambda x: x, K2: lambda x: x * 0.25})   # part 1's rf2 is tr-di
+    with pytest.raises(SystemExit, match="carry has not run"):
         RR.cmd_search(_args(row="fs-refit"))
+    with pytest.raises(SystemExit, match="runs once, in one process"):
+        RR.cmd_search(_args(row="fs-refit", carry=True, shard=(0, 3)))
+    RR.cmd_search(_args(row="fs-refit", carry=True))
+    cr = json.loads(RR.carry_path().read_text())
+    assert cr["candidates"] == cr["carried"] == [K1] and cr["mismatches"] == [] and cr["renders"] == 2
+    assert RR.search_path("fs-refit", K1).read_bytes() == SN.record_path("search", K1, "b2").read_bytes()
+    assert not w["calls"]["search"] and w["sref"] == [K1]             # the carry renders start references only
+    with pytest.raises(SystemExit, match="never overwritten"):
+        RR.cmd_search(_args(row="fs-refit", carry=True))
+    RR.cmd_search(_args(row="fs-refit"))
+    assert [c["part"] for c in w["calls"]["search"]] == [K2] and w["sref"] == [K1, K2]
+    c = w["calls"]["search"][0]
+    assert c["lag"] == 7 and c["dry"] == "rf2" and c["ref"] == "xlnoG" and c["dry_sha256"] == S.npy_sha(w["rf"][K2])
+    assert not [p for p in w["opened"] if SE.is_forbidden(p) or RR.is_forbidden(p)]
+    assert "1 of 1 candidates carried" in capsys.readouterr().out
+
+
+def test_one_start_reference_mismatch_carries_none(monkeypatch, tmp_path, capsys):
+    w = _real_world(monkeypatch, tmp_path, {K1: lambda x: x, K2: lambda x: x}, mismatch=(K2,))
+    RR.cmd_search(_args(row="fs-refit", carry=True))
+    cr = json.loads(RR.carry_path().read_text())
+    assert cr["candidates"] == [K1, K2] and cr["carried"] == [] and cr["mismatches"] == [K2]
+    assert not RR.search_path("fs-refit", K1).exists() and not RR.search_path("fs-refit", K2).exists()
+    assert "none carried: 1 start-reference mismatch" in capsys.readouterr().out
+    RR.cmd_search(_args(row="fs-refit"))                              # every part searched, start references reused
+    assert [c["part"] for c in w["calls"]["search"]] == [K1, K2] and w["sref"] == [K1, K2]
+
+
+def test_the_floors_and_xf_fix_wait_for_stage_1_and_the_repeat(monkeypatch, tmp_path):
+    from learn import pipeline_fix as P
+
+    w = _bench_world(monkeypatch, tmp_path)
+    w["m"][RD.answers_key("xf-now")] = {"sha256": "aa"}
+    monkeypatch.setattr(SN, "check_parts", lambda parts: [K1, K2])
+    for cmd in (RR.cmd_floors, lambda a: RR.cmd_search(_args(row="xf-fix"))):
+        with pytest.raises(SystemExit, match="only after stage 1"):
+            cmd(_args())
+    P.save(RR.stage1_path(), {"code": "XF-input", "go_on": False, "answers_now_sha256": "aa"})
+    for cmd in (RR.cmd_floors, lambda a: RR.cmd_search(_args(row="xf-fix"))):
+        with pytest.raises(SystemExit, match="read XF-input"):
+            cmd(_args())
+    RR.stage1_path().unlink()
+    P.save(RR.stage1_path(), {"code": None, "go_on": False, "label": "refusal-sensitive", "answers_now_sha256": "aa"})
+    with pytest.raises(SystemExit, match="refusal-sensitive"):
+        RR.cmd_floors(_args())
+    RR.stage1_path().unlink()
+    P.save(RR.stage1_path(), {"code": None, "go_on": True, "answers_now_sha256": "aa"})
+    with pytest.raises(SystemExit, match="floors have not run"):
+        RR.cmd_search(_args(row="xf-fix"))
+    P.save(RR.repeat_path(K1), {"xn_list_repeats": True})
+    P.save(RR.repeat_path(K2), {"xn_list_repeats": False})
+    with pytest.raises(SystemExit, match="did not repeat on 1"):
+        RR.cmd_search(_args(row="xf-fix"))
+    RR.repeat_path(K2).unlink()
+    P.save(RR.repeat_path(K2), {"xn_list_repeats": True})
+    with pytest.raises(SystemExit, match="no frozen.json"):          # past both gates: Unit 3's build next
+        RR.cmd_search(_args(row="xf-fix"))
+    assert not RR.is_forbidden(RR.repeat_path(K1)) and RR.is_forbidden(RR.floor_path("floors", K1))
 
 
 def test_the_bridge_waits_for_the_bench(monkeypatch, tmp_path):
