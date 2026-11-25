@@ -7481,6 +7481,19 @@
      "base_check_parts": 47,
      "rebuilds": 6284
     }
+   },
+   "phase_scratch_readerr_xr_outcome": {
+    "code": "XH-both",
+    "rows_sha256": "c7bc4b14ca7fdd4da0b0c52a554551a5e91af3c32002a4300bde1b285ca4bf35",
+    "report_sha256": "bc7995cd4dfcf5d2ca4c0287b0173cbbba79d0edcd52eee2f79f5b1a7d7d9fee",
+    "counts": {
+     "parts": 47,
+     "answered": 46,
+     "refused": 1,
+     "score_renders": 552,
+     "search_renders": 12182,
+     "check_renders": 50
+    }
    }
   },
   {
