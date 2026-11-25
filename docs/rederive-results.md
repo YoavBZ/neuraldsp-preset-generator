@@ -8,7 +8,7 @@ Declaration: [rederive-plan.md](rederive-plan.md). Ledger `preset-ladder`: `phas
 Every number here is by the score (J0), not heard. Intervals are 90%, from `scratch_notes.set_rows` on BKS+GOAT (the
 40); all 47 parts go beside. Labels come only from `paired_reading`.
 
-## Stage 1: `xf-now`, today's rule in the real-song input form (2026-11-25; audit pending)
+## Stage 1: `xf-now`, today's rule in the real-song input form (2026-11-25; audited 2026-11-25 (independent, PASS WITH FIXES, wording applied))
 
 **Stage 1 goes on: today's rule's cost is shown in the real-song input form.** D_now = G(`xf-now`) − G(`xn-bank`)
 is **+0.253 [+0.106, +0.400]** on the 40, wholly above zero. So under the declared table `xf-fix` runs next (stage 2),

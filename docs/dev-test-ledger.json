@@ -5912,7 +5912,7 @@
     "next": "score --row xf-now --shard k/3, then read --stage 1 (xf_stage1 on D_now = G(xf-now) - G(xn-bank), the 40)"
    },
    "phase_scratch_rederive_stage1": {
-    "phase": "Phase 3b's read (docs/rederive-plan.md section 8, the bench table's stage 1): xf-now scored and read; the figures are in docs/rederive-results.md; audit pending",
+    "phase": "Phase 3b's read (docs/rederive-plan.md section 8, the bench table's stage 1): xf-now scored and read; the figures are in docs/rederive-results.md; audited 2026-11-25 (independent, PASS WITH FIXES, wording applied)",
     "result": "stage 1 goes on (D_now wholly above zero on the 40, the answer arm; no stage-1 code): xf-fix runs next, after the fit and an independent audit",
     "label": null,
     "passing_only": "goes on (nothing refused in xf-now or xn-bank)",
