@@ -48,7 +48,19 @@ def test_the_key_prefix_is_outside_every_guarded_prefix():
 def test_code_files_cover_the_module_the_runner_and_every_guarded_file():
     assert X.CODE_FILES[:2] == ("learn/scratch_readerr.py", "learn/readerr_run.py")
     assert set(SX.CODE_FILES) | set(T.CODE_FILES) | {"learn/note_tx.py", "learn/tx_run.py"} <= set(X.CODE_FILES)
-    assert len(X.CODE_FILES) == len(set(X.CODE_FILES))
+    assert {"learn/note_replay.py", "learn/pipeline_fix.py", "learn/song_bank.py"} <= set(X.CODE_FILES)
+    assert len(X.CODE_FILES) == len(set(X.CODE_FILES)) == 20
+    for f in X.CODE_FILES:
+        assert (REPO / f).exists(), f
+
+
+def test_real_compare_refuses_before_writing_unless_every_window_reproduces():
+    tree = ast.parse(SRC)
+    fn = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "cmd_real_compare")
+    seg = ast.get_source_segment(SRC, fn)
+    assert 'if repro != len(report["windows"]):' in seg
+    assert seg.index('if repro != len(report["windows"]):') < seg.index("write_once(")
+    assert "track1_tx_bp_extras" in seg
 
 
 def test_the_table_guard_refuses_a_changed_table(monkeypatch):
@@ -197,6 +209,33 @@ def test_one_constructed_case_per_miss_class():
     assert an["truth_classes"] == ["substitution", "timing", "merged", "clean-up", None, "chord-member", "rest",
                                    X.NEVER_SOUNDED]
     assert an["misses"][X.NEVER_SOUNDED] == 1 and X.partition_holds(an)
+    assert all(h == [c] for h, c in zip(an["truth_classes_all"], an["truth_classes"]) if c is not None)
+    assert an["miss_overlap"]["more_than_one"] == 0
+
+
+def test_clean_up_comes_straight_after_never_sounded_and_every_holding_class_is_kept():
+    assert X.MISS_ORDER[:2] == (X.NEVER_SOUNDED, "clean-up")
+    truth = [_n(1.0, 60), _n(1.0, 64), _n(3.0, 67)]
+    est = [_n(1.0, 61), _n(1.0, 64)]                    # an unpaired 61: a substitution for the 60 ...
+    lost = [dict(_n(1.0, 60), why="over_six"), dict(_n(3.01, 67), why="over_six")]   # ... and the clean-up lost it
+    an = X.anatomy(truth, est, lost=lost, skipped={2})
+    assert an["truth_classes"] == ["clean-up", None, X.NEVER_SOUNDED]
+    assert an["truth_classes_all"][0] == ["clean-up", "substitution", "chord-member"]
+    assert an["truth_classes_all"][2] == [X.NEVER_SOUNDED, "clean-up"]
+    ov = an["miss_overlap"]
+    assert ov["holds"]["clean-up"] == 2 and ov["holds"]["substitution"] == 1 and ov["more_than_one"] == 2
+    assert ov["pairs"] == {"clean-up+chord-member": 1, "clean-up+substitution": 1, "never-sounded+clean-up": 1,
+                           "substitution+chord-member": 1}
+    assert X.partition_holds(an)
+
+
+def test_an_extras_octave_sub_is_only_below_a_misss_substitution_both_ways():
+    truth = [_n(1.0, 60)]
+    assert X.anatomy(truth, [_n(1.02, 72)])["est_classes"] == ["harmonic"]     # an octave above: harmonic first
+    assert X.anatomy(truth, [_n(0.98, 72)])["est_classes"] == ["harmonic"]
+    assert X.anatomy(truth, [_n(1.02, 48)])["est_classes"] == ["octave-sub"]   # an octave below
+    for p in (48, 72, 59, 61):
+        assert X.anatomy(truth, [_n(1.0, p)])["truth_classes"] == ["substitution"], p
 
 
 def test_the_partition_holds_on_random_lists():
@@ -246,8 +285,15 @@ def test_frame_figures_and_the_dry_six():
     assert X.frame_figures([], [], 1.0) == {"frame_error": None, "uncovered_time": None, "false_time": None}
     mask = {"1024": {"pauses_dry": 0.3, "pauses_true": 0.1}, "2048": {"pauses_dry": 0.2, "pauses_true": 0.2}}
     dry = X.dry_figures({"xn-reread": {"figures": {"env_corr": 0.9, "logmel": 7.0, "mask": mask}}})
-    assert dry["reread_pause_excess"] == pytest.approx(0.1) and dry["list_env_corr"] is None
-    assert set(dry) == {f for f in X.FIGURES if f.startswith(("reread_", "list_"))}
+    assert dry["reread_pause_error"] == pytest.approx(0.1) and dry["list_env_corr"] is None   # no agree: |excess|
+    neg = {"1024": {"pauses_dry": 0.1, "pauses_true": 0.3}}
+    assert X.pause_error({"mask": neg}) == pytest.approx(0.2) and X.pause_excess({"mask": neg}) == pytest.approx(-0.2)
+    agree = {"1024": dict(mask["1024"], agree=0.9), "2048": dict(mask["2048"], agree=0.7)}
+    assert X.pause_error({"mask": agree}) == pytest.approx(0.2)        # the disagreement, when stored
+    assert set(dry) == set(X.DRY_FIGURES) == {f for f in X.FIGURES if f.startswith(("reread_", "list_"))}
+    beside = X.dry_beside({"xn-reread": {"figures": {"mask": neg}}})
+    assert beside == {"reread_pause_excess_signed": pytest.approx(-0.2), "list_pause_excess_signed": None}
+    assert not set(beside) & set(X.FIGURES)
 
 
 def test_without_ghosts_drops_the_ghost_shaped_notes_and_their_pairs():
@@ -284,7 +330,7 @@ def test_a_similarity_reads_its_lower_half_as_the_worse_and_rho_must_agree():
     cost = {k: 0.1 * i for i, k in enumerate(ks)}
     sim = {k: -float(i) for i, k in enumerate(ks)}          # a similarity falling as the cost rises
     r = X.tracking_read(cost, sim, "similarity", _mean_interval(cost))
-    assert r["worse_half"] == r["difference"] and False or r["label"]["reading"] == "worse"
+    assert sorted(r["worse_half"]) == sorted(ks[5:]) and r["label"]["reading"] == "worse"
     assert r["spearman"] < 0 and r["rho_agrees"] and r["tracks"]
     wrong = X.tracking_read(cost, sim, "error", _mean_interval(cost))     # read as an error: the better half
     assert not wrong["tracks"] and not wrong["rho_agrees"]
@@ -308,6 +354,13 @@ def test_the_freeze_takes_the_largest_rho_then_the_family_order():
     assert got["figure"] == "miss_rate" and got["code"] == "RX-tracks" and got["how"] == "tracks"
     none = X.freeze_rule({"miss_rate": {"tracks": False, "spearman": 0.9}})
     assert none == {"figure": "note_error", "orientation": "error", "how": X.FIDELITY_ONLY, "code": "RX-untracked"}
+
+
+def test_the_list_figures_are_controls_never_frozen():
+    assert X.CONTROL_FIGURES == ("list_env_corr", "list_logmel", "list_pause_error")
+    reads = {"list_logmel": {"tracks": True, "spearman": 0.9}, "miss_rate": {"tracks": True, "spearman": 0.3}}
+    assert X.freeze_rule(reads)["figure"] == "miss_rate"
+    assert X.freeze_rule({"list_env_corr": {"tracks": True, "spearman": -0.9}})["code"] == "RX-untracked"
 
 
 def test_the_passing_only_read_and_intent_to_treat_disagreement_is_stated():
@@ -363,6 +416,32 @@ def test_the_edge_extends_by_the_axis_step_within_the_parameters_range():
     assert {(b["axis"], b["side"]) for b in blocked["blocked"]} == {("onset_threshold", "high"),
                                                                      ("minimum_note_length", "low")}
     assert blocked["extend"] == []
+    top = X.edge_extensions(dict(X.STORED_POINT, minimum_note_length=10000.0),
+                            dict(X.GRID_AXES, minimum_note_length=(9000.0, 10000.0)))
+    assert top["blocked"][0]["axis"] == "minimum_note_length"          # the window bounds the length from above
+
+
+def test_the_edge_extension_repeats_until_the_minimum_leaves_the_edge_or_the_range_blocks_it():
+    seen = []
+
+    def lowest_length(axes):                           # the figure falls with the length all the way down
+        seen.append(tuple(axes["minimum_note_length"]))
+        return dict(X.STORED_POINT, minimum_note_length=min(axes["minimum_note_length"]))
+    got = X.edge_rounds(X.GRID_AXES, lowest_length)
+    assert seen == [(58.0, 90.0, 127.7), (26.0, 58.0, 90.0, 127.7)]   # 26 then -6: blocked by one frame
+    assert got["minimum"]["minimum_note_length"] == 26.0 and len(got["rounds"]) == 2
+    assert got["rounds"][-1]["blocked"][0]["value"] == -6.0
+
+    def left_at(target):
+        def f(axes):
+            vals = sorted(axes["onset_threshold"])
+            return dict(X.STORED_POINT, onset_threshold=max(v for v in vals if v <= target),
+                        minimum_note_length=90.0)
+        return f
+    up = X.edge_rounds(X.GRID_AXES, left_at(0.95))          # 0.8 -> 0.9 -> 0.9 is the edge -> 1.0 blocked
+    assert up["axes"]["onset_threshold"][-1] == 0.9 and up["rounds"][-1]["blocked"][0]["axis"] == "onset_threshold"
+    inside = X.edge_rounds(X.GRID_AXES, left_at(0.55))      # the minimum is not on an edge: one round
+    assert len(inside["rounds"]) == 1 and inside["axes"] == {a: tuple(v) for a, v in X.GRID_AXES.items()}
 
 
 def test_sign_labels_cannot_read_matches():
@@ -385,12 +464,22 @@ def test_the_cross_set_read_decides_only_when_both_ways_agree():
     assert X.cross_set(b, u)["label"] == "undecided" and not X.cross_set(b, u)["sign_disagreement"]
 
 
-def test_the_real_di_labeller_turns_higher_is_better():
-    r = X.real_di_label(_iv(0.02, 0.01, 0.03), "note_error")
-    assert r["field"] == "f" and r["label"] == "better" and r["words"] == X.SIGN_ONLY and r["note"] is None
-    assert X.real_di_label(_iv(-0.02, -0.03, -0.01), "extra_rate") == {
-        "field": "precision", "label": "worse", "words": X.SIGN_ONLY, "note": None}
-    assert X.real_di_label(_iv(0.0, -0.1, 0.1), "frame_error")["note"]
+def test_the_real_di_arm_reads_the_frozen_figure_per_window():
+    rows = [{"group": "P1", "key": f"w{i}", "cluster": f"file{i // 2}", "figures": {"frame_error": 0.5, "note_error": 0.4}}
+            for i in range(6)] + [{"group": "lists", "key": "l0", "cluster": "l0", "figures": {"frame_error": 0.1}}]
+    cand = {f"w{i}": {"frame_error": 0.5 - 0.1 - 0.01 * i, "note_error": 0.5} for i in range(6)}
+    iv = X.real_di_interval(rows, cand, "frame_error", "P1")
+    assert iv["clusters"] == 3 and iv["mean"] == pytest.approx(-0.125) and iv["hi90"] < 0   # file means, t interval
+    r = X.real_di_label(iv, "frame_error")
+    assert r == {"figure": "frame_error", "label": "better", "words": X.SIGN_ONLY, "note": None}
+    dry = X.real_di_interval(rows, cand, "reread_logmel", "P1")              # no real-DI version: note error
+    assert dry["mean"] == pytest.approx(0.1)
+    rd = X.real_di_label(dry, "reread_logmel")
+    assert rd["figure"] == "note_error" and rd["note"] and rd["label"] in ("worse", "undecided")
+    assert X.real_di_interval(rows, cand, "frame_error", "lists")["clusters"] == 0   # the list has no candidate value
+    assert X.real_di_label(_iv(0.02, 0.01, 0.03), "list_env_corr")["figure"] == "note_error"
+    assert {X.real_di_figure(f) for f in X.DRY_FIGURES} == {"note_error"}
+    assert all(X.real_di_figure(f) == f for f in X.NOTE_FIGURES)
     assert X.real_di_lead({"P1": "better", "P2": "better", "lists": "better"}, "undecided")
     assert not X.real_di_lead({"P1": "better", "P2": "better", "lists": "better"}, "better")
     assert not X.real_di_lead({"P1": "better", "P2": "undecided", "lists": "better"}, "worse")
@@ -475,14 +564,52 @@ def test_the_runner_record_check():
     assert "pad" in X.runner_refusal(dict(rec2, shifts=[{"offset_s": 0.5, "events": []}]), "bp-shift", sh2, "b" * 64)
 
 
-def test_a_clipped_notes_bends_are_trimmed_to_its_onset():
-    f = X.FRAME_S
-    clipped = {"on": 0.0, "off": 10 * f, "pitch": 60, "amp": 0.5, "bends": list(range(14))}   # 4 frames before 0
-    inside = {"on": 1.0, "off": 1.0 + 10 * f, "pitch": 62, "amp": 0.5, "bends": list(range(14))}
-    short = {"on": 0.0, "off": 10 * f, "pitch": 64, "amp": 0.5, "bends": [1, 2]}
-    got = X.runner_notes([clipped, inside, short])
-    assert got[0]["bends"] == list(range(4, 14)) and got[1]["bends"] == list(range(14)) and got[2]["bends"] == [1, 2]
-    assert clipped["bends"] == list(range(14))                # the record itself untouched
+def _bp_time(i):
+    """Basic Pitch's model_frames_to_time, written out apart from the module: 22,050 Hz, hop 256, 172-frame
+    windows, each shifting the clock back by (256 / 22050) x (172 - 43844 / 256) + 0.0018 s."""
+    return i * 256 / 22050 - ((256 / 22050) * (172 - 43844 / 256) + 0.0018) * (i // 172)
+
+
+def _padded_event(start, end, pitch, shift):
+    """An event Basic Pitch read on a padded input (frames start to end), re-based and clipped as #617 does."""
+    on, off = _bp_time(start) - shift, _bp_time(end) - shift
+    return {"on": round(max(on, 0.0), 4), "off": round(off, 4), "pitch": pitch, "amp": 0.5,
+            "bends": list(range(end - start))}
+
+
+def test_a_clipped_notes_bends_are_trimmed_to_its_onset_on_basic_pitchs_clock():
+    assert [X.bp_frame_time(i) for i in (0, 171, 172, 400)] == [_bp_time(i) for i in (0, 171, 172, 400)]
+    # a 1-s lead-in; a note read from frame 50 (0.58 s) to frame 250 (2.89 s): longer than 1 s after the pad,
+    # crossing Basic Pitch's 172-frame window
+    ev = _padded_event(50, 250, 60, 1.0)
+    keep = [i for i in range(50, 250) if _bp_time(i) >= 1.0]
+    assert ev["on"] == 0.0 and ev["off"] - ev["on"] > 1.0
+    got = X.runner_notes([ev], 1.0)[0]
+    assert got["bends"] == list(range(keep[0] - 50, 200)) and len(got["bends"]) == len(keep)
+    assert keep[0] == 87 and got["bends"][0] == 37 and ev["bends"] == list(range(200))   # the record untouched
+    inside = _padded_event(120, 300, 62, 1.0)                              # starts after the pad: untouched
+    assert inside["on"] > 0 and X.runner_notes([inside], 1.0)[0]["bends"] == list(range(180))
+    at_zero = dict(_padded_event(0, 60, 64, 0.0))                          # no pad: never trimmed, even at 0
+    assert X.runner_notes([at_zero], 0.0)[0]["bends"] == list(range(60))
+
+
+def test_every_read_of_a_record_is_trimmed_by_its_own_pad():
+    base = dict(T.BP_SETTINGS)
+    sh = X.make_spec("bp-shift", "/m.onnx", SHA, settings=base, offsets_s=[0.0, 0.5], lead_in_s=1.0)
+    rec = _rec("bp-shift", sh, events=[_padded_event(50, 250, 60, 1.0)],
+               shifts=[{"offset_s": 0.0, "pad_samples": 48000, "events": [_padded_event(50, 250, 60, 1.0)]},
+                       {"offset_s": 0.5, "pad_samples": 72000, "events": [_padded_event(50, 250, 60, 1.5)]}])
+    got = X.record_notes(rec)
+    k0 = sum(1 for i in range(50, 250) if _bp_time(i) < 1.0)
+    k1 = sum(1 for i in range(50, 250) if _bp_time(i) < 1.5)
+    assert [len(s["notes"][0]["bends"]) for s in got["shifts"]] == [200 - k0, 200 - k1] and k1 > k0
+    assert got["events"] == got["shifts"][0]["notes"]
+    g = X.make_spec("bp-grid", "/m.onnx", SHA, settings=base, grid={"onset_threshold": [0.5]})
+    grec = _rec("bp-grid", g, events=[_padded_event(0, 60, 64, 0.0)],
+                grid=[{"settings": base, "events": [_padded_event(0, 60, 64, 0.0)]}])
+    assert X.record_notes(grec)["grid"][0]["notes"][0]["bends"] == list(range(60))   # no lead-in: no trim
+    with pytest.raises(SystemExit, match="not a Basic Pitch record"):
+        X.record_notes(_rec("mt3", X.make_spec("mt3", "/m.pth", SHA)))
 
 
 def test_the_download_rules_follow_the_orchestrators_calls():

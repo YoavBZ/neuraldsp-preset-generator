@@ -46,6 +46,7 @@ from learn import note_rebuild as NR
 from learn import note_transcribe as NT
 from learn import note_truth as NTR
 from learn import note_tx as TX
+from learn import note_versions as NV
 from learn import scratch_exact as SX
 from learn import scratch_notes as SN
 from learn import scratch_search as S
@@ -72,7 +73,8 @@ def _dedupe(xs):
     return tuple(out)
 
 
-CODE_FILES = _dedupe(OWN_FILES + SX.CODE_FILES + NT.CODE_FILES + TX.CODE_FILES)
+LAZY_IMPORTS = ("learn/note_replay.py", "learn/pipeline_fix.py", "learn/song_bank.py")   # imported inside commands
+CODE_FILES = _dedupe(OWN_FILES + SX.CODE_FILES + NT.CODE_FILES + TX.CODE_FILES + LAZY_IMPORTS)
 OUT_FILES = ("trace", "anatomy", "real-compare", "screen", "freeze")   # Phase 1's files, hashed in PHASE_FROZEN
 
 # --- the anatomy's constants: existing ones only ----------------------------------------------------------------------
@@ -85,8 +87,9 @@ BEND_SPAN = NR.BEND_MAX_SEMITONES        # 3: a bend fragment sits 1 to 3 semito
 FRAME_S = NR.BEND_FRAME_S                # 11.6 ms: Basic Pitch's frames, the frame figures' grid
 EXTRA_CLASSES = ("harmonic", "re-find", "octave-sub", "semitone-sub", "timing", "bend-fragment", "rest")
 EXTRAS_SORTED = ("harmonic", "re-find", "other")   # `note_tx.extras_sorted`'s three, first (like for like)
-MISS_CLASSES = ("substitution", "timing", "merged", "clean-up", "chord-member", "rest")
+MISS_CLASSES = ("clean-up", "substitution", "timing", "merged", "chord-member", "rest")   # after never-sounded
 NEVER_SOUNDED = "never-sounded"          # an exact note the trace says never sounds: on the nominal list, apart
+MISS_ORDER = (NEVER_SOUNDED,) + MISS_CLASSES   # the primary order: never-sounded, then clean-up, then the rest
 SIZE_BUCKETS = ("1", "2", "3+")
 
 # --- the declared figure family, in order, with each figure's orientation ---------------------------------------------
@@ -105,12 +108,15 @@ FAMILY = (
 ) + tuple((f"extra_{c}", "error") for c in EXTRA_CLASSES) + tuple((f"miss_{c}", "error") for c in MISS_CLASSES) + (
     ("reread_env_corr", "similarity"),   # build.json's stored dry-domain figures against the bank guitar
     ("reread_logmel", "error"),
-    ("reread_pause_excess", "error"),
+    ("reread_pause_error", "error"),   # the mask disagreement (1 - agree), else |excess|
     ("list_env_corr", "similarity"),
     ("list_logmel", "error"),
-    ("list_pause_excess", "error"),
+    ("list_pause_error", "error"),
 )
 FIGURES = tuple(f for f, _ in FAMILY)
+DRY_FIGURES = tuple(f for f in FIGURES if f.startswith(("reread_", "list_")))   # no real-DI version
+NOTE_FIGURES = tuple(f for f in FIGURES if f not in DRY_FIGURES)
+CONTROL_FIGURES = tuple(f for f in FIGURES if f.startswith("list_"))   # xn-list's guitar: controls, never frozen
 ORIENTATION = dict(FAMILY)
 DEFAULT_FIGURE = "note_error"
 FIDELITY_ONLY = "fidelity only"
@@ -123,10 +129,10 @@ GRID_AXES = {"onset_threshold": (0.3, 0.4, 0.5, 0.6, 0.7, 0.8), "frame_threshold
              "minimum_note_length": (58.0, 90.0, 127.7), "melodia_trick": (True, False)}
 CONTINUOUS_AXES = ("onset_threshold", "frame_threshold", "minimum_note_length")
 AXIS_RANGE = {"onset_threshold": (0.0, 1.0, "open"), "frame_threshold": (0.0, 1.0, "open"),
-              "minimum_note_length": (1000.0 * FRAME_S, math.inf, "closed")}   # one Basic Pitch frame at least
+              "minimum_note_length": (1000.0 * FRAME_S, 1000.0 * NTR.WINDOW_S, "closed")}   # one Basic Pitch frame
+                                         # at least; at most the window (a longer minimum keeps no note)
 STORED_POINT = {a: NT.BP_SETTINGS[a] for a in GRID_AXES}   # the frozen defaults: 0.5, 0.3, 58 ms, Melodia on
-REAL_DI_FIELD = {"note_error": "f", "miss_rate": "recall", "extra_rate": "precision", "end_error": "end_accuracy"}
-REAL_DI_FALLBACK = "f"                   # a frozen figure set_summary does not carry: note F, said beside
+REAL_DI_FALLBACK = "note_error"         # a dry-domain frozen figure has no real-DI version: note F (1 - F) instead
 KINDS = ("setting", "transcriber", "reference")   # no download / downloaded and open / MuScriptor (never ships)
 TIE_ORDER = ("setting", "transcriber")   # ties between kinds: no download first, then a licence the product can use
 DOWNLOAD_RULES = (   # amendment 7 with the orchestrator's calls O4 to O8 on U4's manifest
@@ -320,7 +326,9 @@ def extra_class(e, truth, missed):
     above one), "re-find" (its pitch); then "other" split: "octave-sub" (a missed truth note 12 semitones away, onsets
     within 50 ms), "semitone-sub" (1 semitone), "timing" (a missed truth note of its pitch, onsets 50 to 150 ms apart),
     "bend-fragment" (1 to 3 semitones from a bent truth note sounding then, its curve read against the truth list),
-    "rest". missed: the truth notes no re-read note pairs."""
+    "rest". missed: the truth notes no re-read note pairs. An extra's "octave-sub" can only be an octave below: an
+    octave above a missed truth note with onsets within 50 ms always sounds against it, so it reads "harmonic" first.
+    (A miss's "substitution" counts both directions.)"""
     snd = sounding_at(truth, e["on"])
     if any(e["pitch"] - t["pitch"] in GHOST_INTERVALS for t in snd):
         return "harmonic"
@@ -338,27 +346,47 @@ def extra_class(e, truth, missed):
     return "rest"
 
 
-def miss_class(t, k, est, unpaired_est, lost, group_of, paired_truth, skipped=()):
-    """(Pure.) One missed truth note's class, the first that holds: "never-sounded" (the trace's skipped notes, the
-    nominal list only); "substitution" (an unpaired re-read note 1 or 12 semitones away, onsets within 50 ms);
-    "timing" (an unpaired re-read note of its pitch, onsets 50 to 150 ms apart); "merged" (a re-read note of its pitch
-    began more than 50 ms before it and still sounds at its onset: held through it); "clean-up" (a note the clean-up
-    dropped, of its pitch, onsets within 50 ms: six at once or out of range); "chord-member" (its onset group holds 2
-    or more notes and another of them pairs); "rest"."""
+def miss_holds(t, k, est, unpaired_est, lost, group_of, paired_truth, skipped=()):
+    """(Pure.) Every miss class that holds for one missed truth note, in MISS_ORDER: "never-sounded" (the trace's
+    skipped notes, the nominal list only); "clean-up" (a note the clean-up dropped, of its pitch, onsets within 50 ms:
+    six at once or out of range); "substitution" (an unpaired re-read note 1 or 12 semitones away, either direction,
+    onsets within 50 ms); "timing" (an unpaired re-read note of its pitch, onsets 50 to 150 ms apart); "merged" (a
+    re-read note of its pitch began more than 50 ms before it and still sounds at its onset: held through it);
+    "chord-member" (its onset group holds 2 or more notes and another of them pairs). -> [classes] ("rest" when
+    none holds)."""
+    out = []
     if k in skipped:
-        return NEVER_SOUNDED
-    if any(abs(e["on"] - t["on"]) <= ONSET_S and abs(e["pitch"] - t["pitch"]) in (1, 12) for e in unpaired_est):
-        return "substitution"
-    if any(e["pitch"] == t["pitch"] and ONSET_S < abs(e["on"] - t["on"]) <= TIMING_S for e in unpaired_est):
-        return "timing"
-    if any(e["pitch"] == t["pitch"] and e["on"] < t["on"] - ONSET_S and e["off"] > t["on"] for e in est):
-        return "merged"
+        out.append(NEVER_SOUNDED)
     if any(x["pitch"] == t["pitch"] and abs(x["on"] - t["on"]) <= ONSET_S for x in lost):
-        return "clean-up"
+        out.append("clean-up")
+    if any(abs(e["on"] - t["on"]) <= ONSET_S and abs(e["pitch"] - t["pitch"]) in (1, 12) for e in unpaired_est):
+        out.append("substitution")
+    if any(e["pitch"] == t["pitch"] and ONSET_S < abs(e["on"] - t["on"]) <= TIMING_S for e in unpaired_est):
+        out.append("timing")
+    if any(e["pitch"] == t["pitch"] and e["on"] < t["on"] - ONSET_S and e["off"] > t["on"] for e in est):
+        out.append("merged")
     g = group_of[k]
     if len(g) >= 2 and any(q != k and q in paired_truth for q in g):
-        return "chord-member"
-    return "rest"
+        out.append("chord-member")
+    return out or ["rest"]
+
+
+def miss_class(t, k, est, unpaired_est, lost, group_of, paired_truth, skipped=()):
+    """(Pure.) One missed truth note's primary class: the first of `miss_holds` in MISS_ORDER (never-sounded, then
+    clean-up, then the rest)."""
+    return miss_holds(t, k, est, unpaired_est, lost, group_of, paired_truth, skipped)[0]
+
+
+def miss_overlap(holds):
+    """(Pure.) Beside the primary class: per class, the misses where it holds at all, and per pair of classes, the
+    misses where both hold. holds: [[classes]] for the missed notes."""
+    per = {c: sum(c in h for h in holds) for c in MISS_ORDER}
+    pairs = {}
+    for h in holds:
+        for i, a in enumerate(h):
+            for b in h[i + 1:]:
+                pairs[f"{a}+{b}"] = pairs.get(f"{a}+{b}", 0) + 1
+    return {"holds": per, "pairs": dict(sorted(pairs.items())), "more_than_one": sum(len(h) > 1 for h in holds)}
 
 
 def _stats(xs):
@@ -411,11 +439,12 @@ def anatomy(truth, est, presnap=None, lost=(), skipped=()):
     tgroups = NR.onset_groups(truth)
     group_of = {k: g for g in tgroups for k in g}
     est_cls = [None if j in pe else extra_class(est[j], truth, missed) for j in range(len(est))]
-    tru_cls = [None if i in pt else miss_class(truth[i], i, est, unpaired_est, lost, group_of, pt, skipped)
+    tru_all = [None if i in pt else miss_holds(truth[i], i, est, unpaired_est, lost, group_of, pt, skipped)
                for i in range(len(truth))]
+    tru_cls = [None if h is None else h[0] for h in tru_all]
     sorted3 = TX.extras_sorted(truth, est, pe)
     ex = {c: est_cls.count(c) for c in EXTRA_CLASSES}
-    mi = {c: tru_cls.count(c) for c in MISS_CLASSES + (NEVER_SOUNDED,)}
+    mi = {c: tru_cls.count(c) for c in MISS_ORDER}
     on_after = [1000 * (est[j]["on"] - truth[i]["on"]) for i, j in pairs]
     on_before = ([1000 * (presnap[j]["on"] - truth[i]["on"]) for i, j in pairs]
                  if presnap is not None and len(presnap) == len(est) else None)
@@ -433,7 +462,8 @@ def anatomy(truth, est, presnap=None, lost=(), skipped=()):
     rest = [i for i in range(len(truth)) if i not in set(gh)]
     m, nt, ne = len(pairs), len(truth), len(est)
     return {"truth": nt, "est": ne, "matched": m, "extras": ex, "extras_sorted": sorted3, "misses": mi,
-            "est_classes": est_cls, "truth_classes": tru_cls,
+            "est_classes": est_cls, "truth_classes": tru_cls, "truth_classes_all": tru_all,
+            "miss_overlap": miss_overlap([h for h in tru_all if h is not None]),
             "precision": m / ne if ne else None, "recall": m / nt if nt else None,
             "f": 2 * m / (nt + ne) if nt + ne else None,
             "onset_ms_after_snap": _stats(on_after), "onset_ms_before_snap": _stats(on_before or []),
@@ -493,6 +523,18 @@ def pause_excess(fig):
     return sum(d) / len(d) if d else None
 
 
+def pause_error(fig):
+    """(Pure.) The pause figure (an error): the playing-frame mask's disagreement with the bank guitar's, 1 - agree,
+    the mean over J0's frame sizes, where `mask_agreement` stored it; else |pause excess|. The signed excess goes
+    beside."""
+    mask = (fig or {}).get("mask") or {}
+    d = [1 - v["agree"] for v in mask.values() if v.get("agree") is not None]
+    if d:
+        return sum(d) / len(d)
+    e = pause_excess(fig)
+    return None if e is None else abs(e)
+
+
 def dry_figures(guitars):
     """(Pure.) The stored dry-domain figures of both guitars against the bank guitar, from build.json's part record."""
     out = {}
@@ -500,8 +542,14 @@ def dry_figures(guitars):
         fig = ((guitars or {}).get(g) or {}).get("figures") or {}
         out[f"{name}_env_corr"] = fig.get("env_corr")
         out[f"{name}_logmel"] = fig.get("logmel")
-        out[f"{name}_pause_excess"] = pause_excess(fig)
+        out[f"{name}_pause_error"] = pause_error(fig)
     return out
+
+
+def dry_beside(guitars):
+    """(Pure.) Beside the family, never in it: each guitar's signed pause excess."""
+    return {f"{name}_pause_excess_signed": pause_excess((((guitars or {}).get(g) or {}).get("figures")))
+            for g, name in (("xn-reread", "reread"), ("xn-list", "list"))}
 
 
 def note_figures(an, truth, est, length_s):
@@ -567,8 +615,9 @@ def tracking_read(cost, values, orientation, interval_of):
 
 def freeze_rule(reads):
     """(Pure.) The frozen figure: of the figures that track, the one with the largest |rho| (ties: FAMILY's order);
-    none tracks: note error, labelled "fidelity only". -> {figure, orientation, how, code}."""
-    cand = [f for f in FIGURES if (reads.get(f) or {}).get("tracks")]
+    the `list_*` figures (xn-list's guitar) are controls, read and reported but never frozen; none tracks: note error,
+    labelled "fidelity only". -> {figure, orientation, how, code}."""
+    cand = [f for f in FIGURES if (reads.get(f) or {}).get("tracks") and f not in CONTROL_FIGURES]
     if not cand:
         return {"figure": DEFAULT_FIGURE, "orientation": ORIENTATION[DEFAULT_FIGURE], "how": FIDELITY_ONLY,
                 "code": "RX-untracked"}
@@ -660,6 +709,23 @@ def edge_extensions(point, axes=None):
     return {"extend": ext, "blocked": blocked}
 
 
+def edge_rounds(axes, minimum_of):
+    """(Pure but for `minimum_of`.) The edge rule repeated: `minimum_of(axes)` (the grid's minimum once every point
+    on `axes` is read) is extended by `edge_extensions`, the new values joined to their axes, and read again, until
+    the minimum leaves the edge or the parameter's range blocks every extension it asks for. No round cap: the ranges
+    bound it. -> {axes, minimum, rounds: [{minimum, extend, blocked}]}."""
+    axes = {a: tuple(v) for a, v in axes.items()}
+    rounds = []
+    while True:
+        mn = minimum_of(axes)
+        e = edge_extensions(mn, axes)
+        rounds.append({"minimum": mn, **e})
+        if not e["extend"]:
+            return {"axes": axes, "minimum": mn, "rounds": rounds}
+        for x in e["extend"]:
+            axes[x["axis"]] = tuple(sorted(set(axes[x["axis"]]) | {x["value"]}))
+
+
 def sign_label(iv, orientation="error"):
     """(Pure.) `paired_reading(small=0, big=0)` on a candidate's paired difference against the stored re-read, turned
     so "better" is the candidate's: sign only. "matches" cannot occur; "level" needs a zero-width interval."""
@@ -681,15 +747,35 @@ def cross_set(iv_goat_from_bks, iv_bks_from_goat, orientation="error"):
             "words": SIGN_ONLY}
 
 
+def real_di_figure(figure):
+    """(Pure.) The figure the real-DI arm reads: the frozen figure itself (`note_figures` per window), or note error
+    (1 - note F) for the six dry-domain figures, which have no real-DI version."""
+    return figure if figure in NOTE_FIGURES else REAL_DI_FALLBACK
+
+
+def real_di_interval(rows, cand, figure, group):
+    """(Pure.) The real-DI arm's interval (amendment 5; the named exception to `set_rows`): per window of `group`
+    ("P1", "P2", "lists"), the candidate's frozen figure less Basic Pitch's (`rows`: real-compare's windows, each with
+    its `note_figures` and its file `cluster`; cand: {window key: the candidate's `note_figures`}), then
+    `note_versions.set_numbers`, `note_tx.set_summary`'s file-clustered mean and 90% t interval."""
+    fig = real_di_figure(figure)
+    d = []
+    for r in rows:
+        c = (cand.get(r["key"]) or {}).get(fig)
+        b = (r.get("figures") or {}).get(fig)
+        if r["group"] == group and c is not None and b is not None:
+            d.append((r["cluster"], {"d": c - b}))
+    return NV.set_numbers(d, "d")
+
+
 def real_di_label(iv, figure):
-    """(Pure.) The real-DI arm's labeller (amendment 5): `paired_reading(0, 0)` on `note_tx.set_summary`'s
-    file-clustered interval (the named exception to `set_rows`) of the field the frozen figure maps to, whose
-    orientation against tx-bp is higher-is-better; turned so the label is the candidate's. Never `clear_above` or
-    `decided_worse`. -> {field, label, words}."""
-    field = REAL_DI_FIELD.get(figure, REAL_DI_FALLBACK)
-    r = sign_label(iv, "similarity")
-    return {"field": field, "label": (r or {}).get("reading"), "words": SIGN_ONLY,
-            "note": None if figure in REAL_DI_FIELD else f"{figure} is not a set_summary field: note F read instead"}
+    """(Pure.) The real-DI arm's labeller: `paired_reading(0, 0)` on `real_di_interval`'s interval, the candidate
+    less tx-bp on the frozen figure (or note error for a dry-domain one), turned by that figure's orientation so
+    "better" is the candidate's. Never `clear_above` or `decided_worse`. -> {figure, label, words, note}."""
+    fig = real_di_figure(figure)
+    r = sign_label(iv, ORIENTATION[fig])
+    return {"figure": fig, "label": (r or {}).get("reading"), "words": SIGN_ONLY,
+            "note": None if fig == figure else f"{figure} has no real-DI version: note F (as note error) read instead"}
 
 
 def real_di_lead(labels, bench_label):
@@ -937,18 +1023,68 @@ def runner_refusal(rec, mode, spec, input_sha):
     return None
 
 
-def runner_notes(events, frame=FRAME_S):
-    """(Pure.) A runner record's events as notes (`note_transcribe.notes_from_events`), with a clipped note's bends
-    trimmed to its onset. The runner clips an onset below 0 to 0 and keeps the bend track as read (#617), so that
-    track starts before `on`; Basic Pitch's track holds one value a frame over the note, so a note at exactly 0 whose
-    track is longer than round((off - on) / frame) frames loses its leading extra frames. Every other note is
-    unchanged."""
+# Basic Pitch's own time map (basic_pitch.note_creation.model_frames_to_time and its constants), in pure Python
+BP_SR, BP_HOP = 22050, 256               # AUDIO_SAMPLE_RATE, FFT_HOP
+BP_ANNOT_N_FRAMES = (BP_SR // BP_HOP) * 2   # ANNOTATIONS_FPS x AUDIO_WINDOW_LENGTH: 172
+BP_AUDIO_N_SAMPLES = BP_SR * 2 - BP_HOP  # AUDIO_N_SAMPLES: 43,844
+BP_WINDOW_OFFSET = (BP_HOP / BP_SR) * (BP_ANNOT_N_FRAMES - BP_AUDIO_N_SAMPLES / BP_HOP) + 0.0018   # its magic number
+
+
+def bp_frame_time(i):
+    """(Pure.) `model_frames_to_time` for frame i: i x hop / sr, less the window offset once per 172-frame window."""
+    return i * BP_HOP / BP_SR - BP_WINDOW_OFFSET * (i // BP_ANNOT_N_FRAMES)
+
+
+def bp_frame_at(t):
+    """(Pure.) The frame whose time is nearest `t` seconds (Basic Pitch's note times are frame times; the records
+    round them to 0.1 ms)."""
+    i0 = max(0, int(t * BP_SR / BP_HOP) - 2)
+    i = i0
+    while bp_frame_time(i + 1) <= t:
+        i += 1
+    return i if abs(bp_frame_time(i) - t) <= abs(bp_frame_time(i + 1) - t) else i + 1
+
+
+def clipped_trim(n, shift_s):
+    """(Pure.) How many leading bend frames of one re-based event lie before the input's own 0. Only a note the runner
+    actually clipped (a padded read, `shift_s` > 0, and its onset at exactly 0) is touched. Its bend track is
+    contours[start:end] on the padded read (one value a frame); the end frame is found from its note-off through Basic
+    Pitch's own time map, the start frame is the end less the track's length, and the frames whose time falls before
+    the pad are dropped."""
+    b = n.get("bends") or []
+    if shift_s <= 0 or n["on"] != 0.0 or not b:
+        return 0
+    end = bp_frame_at(n["off"] + shift_s)
+    start = end - len(b)
+    return sum(1 for i in range(start, end) if bp_frame_time(i) < shift_s)
+
+
+def runner_notes(events, shift_s):
+    """(Pure.) A Basic Pitch runner record's events as notes (`note_transcribe.notes_from_events`) with a clipped
+    note's bends trimmed to its onset (#617: the runner clips an onset below 0 to 0 and keeps the bend track as read).
+    shift_s: the pad the runner re-based by, in seconds asked (`lead_in_s`, plus the shift's `offset_s`; the whole-
+    sample pad is within half a sample of it). An unpadded read is returned unchanged."""
     out = []
     for n in NT.notes_from_events(events):
-        b = n["bends"]
-        extra = len(b) - int(round((n["off"] - n["on"]) / frame)) if n["on"] == 0.0 else 0
-        out.append(dict(n, bends=b[extra:]) if extra > 0 else n)
+        k = clipped_trim(n, shift_s)
+        out.append(dict(n, bends=n["bends"][k:]) if k else n)
     return out
+
+
+def record_notes(rec):
+    """(Pure.) Every read of a Basic Pitch runner record as notes, each re-based read trimmed by its own pad:
+    {"events": ..., "grid": [...]} for bp-grid (the lead-in), {"events": ..., "shifts": [...]} for bp-shift (the
+    lead-in plus each offset)."""
+    lead = float(rec["spec"].get("lead_in_s") or 0.0)
+    if rec["mode"] == "bp-grid":
+        return {"events": runner_notes(rec["events"], lead),
+                "grid": [{"settings": g["settings"], "notes": runner_notes(g["events"], lead)} for g in rec["grid"]]}
+    if rec["mode"] == "bp-shift":
+        shifts = [{"offset_s": s["offset_s"], "notes": runner_notes(s["events"], lead + s["offset_s"])}
+                  for s in rec["shifts"]]
+        zero = next((s["notes"] for s in shifts if s["offset_s"] == 0), [])
+        return {"events": zero, "shifts": shifts}
+    raise SystemExit(f"{rec['mode']}: not a Basic Pitch record (no bend tracks to trim)")
 
 
 def runner_env(base, downloaded):
@@ -1236,15 +1372,15 @@ def part_anatomy(row, guitars):
     nom = anatomy(row["nominal"], est, row["presnap"], row["lost"], set(row["skipped"]))
     pla = anatomy(row["played"], est, row["presnap"], row["lost"])
     figs = dict(note_figures(pla, row["played"], est, L), **dry_figures(guitars))
-    figs["note_error_nominal"] = None if nom["f"] is None else 1 - nom["f"]      # beside, not in the family
-    return {"nominal": nom, "played": pla, "figures": figs,
+    beside = dict(dry_beside(guitars), note_error_nominal=None if nom["f"] is None else 1 - nom["f"])
+    return {"nominal": nom, "played": pla, "figures": figs, "beside": beside,
             "partition_holds": partition_holds(nom) and partition_holds(pla)}
 
 
 def pooled_counts(ans):
     """(Pure.) Class counts summed over windows."""
     out = {"truth": 0, "est": 0, "matched": 0, "extras": {c: 0 for c in EXTRA_CLASSES},
-           "extras_sorted": {c: 0 for c in EXTRAS_SORTED}, "misses": {c: 0 for c in MISS_CLASSES + (NEVER_SOUNDED,)}}
+           "extras_sorted": {c: 0 for c in EXTRAS_SORTED}, "misses": {c: 0 for c in MISS_ORDER}}
     for a in ans:
         for k in ("truth", "est", "matched"):
             out[k] += a[k]
@@ -1281,8 +1417,10 @@ def cmd_anatomy(_args):
 def cmd_real_compare(_args):
     """Phase 1 (zero renders, no model run), once, after `trace`: the same anatomy on the stored Guitar-TECHS windows
     (the truth report's note files, by their recorded sha256, against the hashed truth listing; every window through
-    `real_di_source`: P3 never) and the ten lists (the install gate's stored events against the known notes); per
-    window the truth report's stored counts and track 1's stored `tx-bp` extras reproduced beside. -> real-compare.json."""
+    `real_di_source`: P3 never) and the ten lists (the install gate's stored events against the known notes). The
+    truth report's stored counts (matched, ref, est) must reproduce on every window (79 of 79), else nothing is
+    written; track 1's stored `tx-bp` extras are compared per window as a named report (`track1_tx_bp_extras`), never
+    a refusal. Each window carries its file as its cluster (the real-DI arm's interval). -> real-compare.json."""
     require_readerr()
     require_trace()
     path = out_path("real-compare")
@@ -1316,7 +1454,8 @@ def cmd_real_compare(_args):
         same = (mt["matched"], mt["ref"], mt["est"]) == (w["matched"], w["ref"], w["est"])
         repro += same
         tx_same += stored_tx.get(w["key"]) == an["extras_sorted"]
-        rows.append({"group": w["player"], "kind": w["kind"], "key": w["key"], "anatomy": an,
+        rows.append({"group": w["player"], "kind": w["kind"], "key": w["key"],
+                     "cluster": f"{win['player']}|{win['kind']}|{win['name']}", "anatomy": an,
                      "figures": note_figures(an, truth, est, L), "reproduces_truth_report": same,
                      "partition_holds": partition_holds(an)})
     excl, _, _, _ = NT._dev_context()
@@ -1329,8 +1468,11 @@ def cmd_real_compare(_args):
         est, trep = NT.timed_notes({"events": known[nm], "pre_s": 0.0}, di)
         L, off_s = len(di) / NR.SR, trep["window_offset_ms"] / 1000.0
         an = anatomy(truth, est, presnap_notes(known[nm], 0.0, off_s, L), lost_on_timeline(known[nm], 0.0, off_s, L))
-        rows.append({"group": "lists", "kind": None, "key": nm, "anatomy": an,
+        rows.append({"group": "lists", "kind": None, "key": nm, "cluster": nm, "anatomy": an,
                      "figures": note_figures(an, truth, est, L), "partition_holds": partition_holds(an)})
+    if repro != len(report["windows"]):
+        raise SystemExit(f"the truth report's counts reproduce on {repro} of {len(report['windows'])} windows: "
+                         "nothing written; to the orchestrator")
     bad = [r["key"] for r in rows if not r["partition_holds"]]
     if bad:
         raise SystemExit(f"the partition does not hold on {len(bad)} window(s): a bug, nothing written")
@@ -1341,7 +1483,9 @@ def cmd_real_compare(_args):
            "pooled": {g: pooled_counts([r["anatomy"] for r in rows if r["group"] == g]) for g in groups},
            "pooled_real": pooled_counts([r["anatomy"] for r in rows if r["group"] in ("P1", "P2")]),
            "reproduces_truth_report": repro, "truth_windows": len(report["windows"]),
-           "reproduces_tx_extras": tx_same, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+           "track1_tx_bp_extras": {"report": "track 1's stored tx-bp extras against this anatomy's three, per "
+                                             "window; a report, never a refusal", "equal": tx_same,
+                                   "windows": len(report["windows"])}, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     sha = write_once(path, out)
     print(f"RX REAL-COMPARE: {len(report['windows'])} truth windows (counts reproduced on {repro}, track 1's extras on "
           f"{tx_same}), {len(NT.KNOWN_NOTES)} lists; real extras {out['pooled_real']['extras_sorted']}; sha256 {sha}")

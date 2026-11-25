@@ -97,22 +97,27 @@ existing constants are used: the 50-ms onset, `VETO_INTERVALS`, `CHORD_S`, `note
      onset to its end);
    - **re-find:** that note's own pitch.
 2. Then "other" is split, the first that holds:
-   - **octave-sub:** a missed truth note 12 semitones away, onsets within 50 ms;
+   - **octave-sub:** a missed truth note 12 semitones away, onsets within 50 ms. In practice this is only an
+     octave below: an octave above a missed note with onsets within 50 ms always sounds against it, so it reads
+     "harmonic" first;
    - **semitone-sub:** the same, 1 semitone away;
    - **timing:** a missed truth note of its pitch, onsets 50 to 150 ms apart;
    - **bend-fragment:** 1 to 3 semitones from a bent truth note sounding then (its `bend_curve` read against the
      truth list);
    - **rest.**
 
-**Misses** (a missed truth note) take the first class that holds:
+**Misses** (a missed truth note) take the first class that holds, in this order:
 
 - **never-sounded:** the trace skipped it. Nominal list only; counted apart.
-- **substitution:** an unpaired re-read note 1 or 12 semitones away, onsets within 50 ms.
+- **clean-up:** a note the clean-up dropped (six at once, out of range), of its pitch, onsets within 50 ms.
+- **substitution:** an unpaired re-read note 1 or 12 semitones away, above or below, onsets within 50 ms.
 - **timing:** an unpaired re-read note of its pitch, onsets 50 to 150 ms apart.
 - **merged:** a re-read note of its pitch began more than 50 ms before it and still sounds at its onset.
-- **clean-up:** a dropped note of its pitch, onsets within 50 ms.
 - **chord-member:** its onset group holds 2 or more notes, and another member pairs.
 - **rest.**
+
+Beside each miss's primary class, every class that holds is recorded (`truth_classes_all`), with overlap counts:
+per class, the misses where it holds at all, and per pair of classes, the misses where both hold (`miss_overlap`).
 
 **Matched notes:** the onset error before and after the snap, the offset error against each truth, and the ends
 (`end_match`). Bends: `note_fixes.bend_error` and `bent_but_cleared`.
@@ -134,10 +139,11 @@ when higher. A "similarity" is worse when lower.
 | attack miss rate; extra attack rate | error |
 | frame error (11.6-ms frames, (frame, pitch) cells); octave-folded note error; uncovered and false sounding time | error |
 | each extra class (7) and each miss class (6), per exact note | error |
-| `build.json`'s stored dry-domain figures, `xn-reread` and `xn-list` against the bank guitar: `logmel`; pause excess (the pause share less the bank guitar's, the mean over J0's frame sizes) | error |
+| `build.json`'s stored dry-domain figures, `xn-reread` and `xn-list` against the bank guitar: `logmel`; the pause error (the playing-frame mask's disagreement with the bank guitar's, 1 − agree, the mean over J0's frame sizes where stored, else the pause share's excess as an absolute value) | error |
 | the same two guitars' `env_corr` | similarity |
 
-The nominal list's note error is reported beside; it is not in the family. With 29 figures on about 40 parts, about
+Reported beside, not in the family: the nominal list's note error, and each guitar's signed pause excess. The three
+`list_*` figures (`xn-list`'s guitar) are controls: read and reported, never frozen. With 29 figures on about 40 parts, about
 one false "worse" is expected by chance. Every figure is reported, and the forward test is the first priced row.
 
 ### 3d. `real-compare`
@@ -148,8 +154,10 @@ The same anatomy runs, with no model run, on two sets:
   the hashed truth listing.
 - **The ten lists:** the install gate's stored events against the known notes.
 
-Beside each window, two stored results must reproduce: the truth report's own counts, and track 1's stored `tx-bp`
-extras. The stored real-DI headline to set the bench beside is 945 extras: 38% harmonic, 16% re-finds, 47% other.
+The truth report's own counts (matched, ref, est) must reproduce on every window, 79 of 79; otherwise nothing is
+written and the result goes to the orchestrator. Track 1's stored `tx-bp` extras are compared per window as a named
+report (`track1_tx_bp_extras`), never a refusal. Each window keeps its file as its cluster, for the real-DI arm's
+interval. The stored real-DI headline to set the bench beside is 945 extras: 38% harmonic, 16% re-finds, 47% other.
 
 **P3 has a mechanism (amendment 6).** Every real-DI input goes through `real_di_source`. That calls
 `note_tx.declared_input`, which runs `note_truth.refuse_path` on the window's files. Only consistent P1 and P2 truth
@@ -181,7 +189,8 @@ Intent-to-treat is reported beside, and any disagreement is stated.
 
 1. `scratch_notes.by_figure` gives Spearman and the median split.
 2. The worse half is the upper half for an error, the lower half for a similarity.
-3. Each half gets its interval from `set_rows`' BKS+GOAT pool.
+3. Each half gets its interval from `set_rows`' BKS+GOAT pool. In the all-47 read beside, the split runs over all
+   47 parts, but each half's interval pools only its BKS+GOAT members.
 4. `diff_interval(worse, better)` is labelled by `paired_reading` at its defaults, which is on J0's scale.
 
 **A figure tracks** when three things hold:
@@ -192,7 +201,8 @@ Intent-to-treat is reported beside, and any disagreement is stated.
   BKS low and GOAT high, a set confound. A figure whose split puts equal values on both sides is read by Spearman
   only and never frozen.
 
-**The frozen figure** is the tracking figure with the largest |rho|; ties go by the family's order (`RX-tracks`). If
+**The frozen figure** is the tracking figure with the largest |rho|, the `list_*` controls left out; ties go by the
+family's order (`RX-tracks`). If
 no figure tracks, note error stays, labelled "fidelity only" (`RX-untracked`).
 
 The five files' sha256, counts, the code, the figure and the screen's line go into the ledger as
@@ -225,7 +235,11 @@ MR-MT3 is dropped (O5): the file `mt3-infer` loads is the original MT3 checkpoin
 - `bp-shift`'s offsets with their whole-sample pads, and the top-level events.
 
 When the runner clips an onset to 0, the note keeps its full bend track. `runner_notes` therefore trims that track
-to the note's onset.
+to the note's onset, and only for notes actually clipped: a read on a padded input (a lead-in or a shift, the pad in
+seconds asked) whose onset sits at exactly 0. The track is one value per Basic Pitch frame over the note. The end frame
+is found from the note-off through Basic Pitch's own time map (`model_frames_to_time`, with its window offset once
+per 172-frame window), and the start frame is the end frame less the track's length. The frames before the pad are
+dropped. `record_notes` applies this to every read of a record, each by its own pad.
 
 **The pick, no bars (amendment 4):**
 
@@ -235,7 +249,11 @@ to the note's onset.
   one step. Ties go to the stored point, then the better mean.
 - **An edge minimum** extends that axis by the axis's own step at that edge, bounded only by the parameter's own
   range. The stored 58 ms is the lower edge, so the stored point itself extends to 26 ms. Thresholds stay inside
-  (0, 1), and the minimum length stays at one Basic Pitch frame (11.6 ms) or more.
+  (0, 1). The minimum length stays between one Basic Pitch frame (11.6 ms) and the window (10.25 s; a longer
+  minimum keeps no note).
+- **The extension repeats** (`edge_rounds`): the new points are read, the minimum is taken again, and the rule runs
+  again, until the minimum leaves the edge or the parameter's range blocks the extension. There is no round cap; the
+  ranges bound it.
 
 **The labels.** The grid winner's in-sample label is worded "selected from 144". Its code comes from the cross-set
 read: picked on BKS and read on GOAT, and the reverse. Both must agree; a sign disagreement means `RX-undecided`.
@@ -246,10 +264,13 @@ Every label at `small=0, big=0` is printed as "sign only, not on J0's scale, no 
 
 **The real-DI arm is two-sided (amendment 5).**
 
-- **The labeller:** `paired_reading(0, 0)` on `note_tx.set_summary`'s file-clustered interval. This is the named
-  exception to `set_rows`. The figure is the frozen figure's field (note error to F, miss rate to recall, extra rate
-  to precision, end error to end accuracy; otherwise note F, said beside). That field is higher-is-better against
-  `tx-bp`, and the label is turned so it reads as the candidate's. Never `clear_above` or `decided_worse`.
+- **The figure:** the frozen figure itself, per window, from `note_figures`, which `real-compare` already computes
+  for Basic Pitch. Only the six dry-domain figures have no real-DI version; for those the arm reads note F (as note
+  error) and says so.
+- **The interval and labeller:** per window, the candidate's figure less Basic Pitch's (`tx-bp`), then
+  `note_versions.set_numbers`, `note_tx.set_summary`'s file-clustered mean and 90% t interval (`real_di_interval`).
+  This is the named exception to `set_rows`. The label is `paired_reading(0, 0)`, turned by the figure's
+  orientation so it reads as the candidate's. Never `clear_above` or `decided_worse`.
 - **The beside line "real-DI lead":** better on P1, P2 and the lists by the frozen figure, and not better on the
   bench.
 - **Beside each candidate:** a read on the exact list with its ghost-shaped notes (and the re-read notes they pair
@@ -309,7 +330,8 @@ the `phase_scratch_exact*` keys, and requires the exact test's targets, four ans
 this module's own guard runs:
 
 - CODE_FILES must exist here and on origin/main and equal origin/main's: this module, `learn/readerr_run.py`,
-  `scratch_exact.CODE_FILES`, `note_transcribe.CODE_FILES`, `note_tx.py` and `tx_run.py`; 17 files.
+  `scratch_exact.CODE_FILES`, `note_transcribe.CODE_FILES`, `note_tx.py`, `tx_run.py`, and the three modules the
+  commands import inside them (`note_replay.py`, `pipeline_fix.py`, `song_bank.py`); 20 files.
 - The `phase_scratch_readerr*` keys must equal main's.
 - Phase 2 checks each Phase 1 file's sha256 against `phase_scratch_readerr_frozen`.
 
