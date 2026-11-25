@@ -5808,7 +5808,7 @@
    },
    "phase_scratch_rederive_ladder": {
     "phase": "Phase 1's first half, the ladder (docs/rederive-plan.md section 4); the diagnosis (Unit 2) hashes later under its own key",
-    "ladder_sha256": "9872cb2405b45b629e5eb6f59d5daffc60ff59dd0c09b3a8e85da6f3b107eda2",
+    "sha256": "9872cb2405b45b629e5eb6f59d5daffc60ff59dd0c09b3a8e85da6f3b107eda2",
     "ladder_file": "PF/fs/rederive/ladder.json",
     "average_sha256": "9aa3c3bfefc2bc5ba21394be29876b5ef5e0120ad2f55f0b890e599ec3bee9a8",
     "bank_build_sha256": "b6640c44fc7832a1001ed9a6a9082dde9c15dbe79fade38d5aec904e2a2c2f0a",
