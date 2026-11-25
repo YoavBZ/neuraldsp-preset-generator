@@ -3,7 +3,7 @@
 Results of `docs/scratch-readerr-plan.md`. Every number here is by the score (J0), on the exact-notes test's bench,
 unless said otherwise. The bench is sharper than real songs, so sizes carry over to real songs only as a direction.
 
-## The `xr-matched` row: XH-both (2026-11-26; ledger `phase_scratch_readerr_xr_outcome`; audit pending)
+## The `xr-matched` row: XH-both (2026-11-26; ledger `phase_scratch_readerr_xr_outcome`; audited 2026-11-26 (independent, PASS WITH FIXES, wording applied))
 
 **The question.** Do Basic Pitch's extra notes cost the preset within a part, at the exact test's scale?
 
