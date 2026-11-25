@@ -737,16 +737,19 @@ and writes `PF/fs/readerr/tools-gate.json`, hashed as `phase_scratch_readerr_too
    `_posixsubprocess` (review amendment 7). A test covers each.
 6. **Repeatable.** Three runs on 4 bench parts give identical events, two in one process and one fresh. A candidate
    that does not repeat is reported and cannot be priced.
-7. **Timed on 3 parts first** (`--first 3`), at 1 and at 2 threads. The projection for all 133 inputs is printed
+7. **Timed on 3 parts first** (`--first 3`), at 1 and at 2 threads. The projection for all 136 inputs is printed
    before the full run.
+8. **The allowlist's source (O9).** Each file's allowlist comes from a standard-library scan of the fetched
+   checkpoints, then an audit, then a manifest v2 written as a new file (U4's is never edited); a small PR then updates
+   `readerr_tools.MANIFEST` and `MANIFEST_SHA256` to it.
 
 **`tx-notes`** then runs every input through `readerr_run.py`. `tx-notes --combine` writes `notes-tx.json`; its sha256
 goes to main as `phase_scratch_readerr_notes_tx` before `tx-score`.
 
 ### 10b. The candidates
 
-- **Inputs:** Phase 2a's 133. The 47 bench inputs are each checked against their stored `input_sha256`; the 79
-  Guitar-TECHS windows and the lists go through `real_di_source`, where P3 refuses. Each tool resamples with its own
+- **Inputs:** Phase 2a's 136: 47 bench inputs and 89 real ones. The bench inputs are each checked against their
+  stored `input_sha256`; the 79 Guitar-TECHS windows and the 10 lists go through `real_di_source`, where P3 refuses. Each tool resamples with its own
   loader, with versions recorded.
 
 | Id | Transcriber | Own settings, from one inference | Output |
@@ -824,7 +827,6 @@ use. The priced list is the pick's `+bp` variant.
 - **The refusal-sensitive check (review amendment 4).** Everything is recomputed together from the passing-only
   values: E −0.2203 [−0.3695, −0.0710], h 0.1492, M +0.2925. If the set of qualifiers changes (not only the pick),
   the read is labelled `refusal-sensitive` and goes to the user before any row.
-- Each candidate's predicted odds of a decided row, if its half-width matches E's.
 - End error, the attack rates and the dry figures per candidate.
 - **The shrunk arm's caveat.** E is not shown there (−0.007 [−0.122, +0.109]), so the predicted gain is for the full
   answer only.
@@ -909,7 +911,7 @@ row.
 
 | Work | Count | Rate | Core time |
 |---|---|---|---|
-| Torch reads | 133 inputs × 3 checkpoints | Not measured on this CPU | Timed on 3 parts first |
+| Torch reads | 136 inputs × 3 checkpoints | Not measured on this CPU | Timed on 3 parts first |
 | Rebuilds | At most 52 lists × 47 parts = 2,444 | 1.34 s, measured | About 55 min (derived) |
 
 One runner process at a time, at most 2 threads, beside the render rows. The 20-minute render-rate check applies.
