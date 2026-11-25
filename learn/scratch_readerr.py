@@ -920,13 +920,14 @@ RECORD_KEYS = ("mode", "versions", "model_sha256", "threads", "spec", "input_sha
 EVENT_KEYS = ("on", "off", "pitch", "amp", "bends")
 RUNNER_MODES = ("bp-grid", "bp-shift", "mt3", "kong")
 SPEC_COMMON = ("model", "model_sha256", "threads", "lead_in_s")
-SPEC_MODE = {"bp-grid": ("settings", "grid"), "bp-shift": ("settings", "offsets_s"), "mt3": ("options", "grid"),
-             "kong": ("options", "grid")}
+SPEC_MODE = {"bp-grid": ("settings", "grid"), "bp-shift": ("settings", "offsets_s"),
+             "mt3": ("options", "grid", "allow_globals"), "kong": ("options", "grid", "allow_globals")}
 TORCH_MODES = ("mt3", "kong")
 TORCH_AXES = {"mt3": ("programs",), "kong": ("onset_threshold", "frame_threshold")}   # Phase 2b's D-E contract
 SPEC_REQUIRED = {"bp-grid": ("model", "model_sha256", "settings", "grid"),
                  "bp-shift": ("model", "model_sha256", "settings", "offsets_s"),
-                 "mt3": ("model", "model_sha256"), "kong": ("model", "model_sha256")}
+                 "mt3": ("model", "model_sha256", "options", "allow_globals"),
+                 "kong": ("model", "model_sha256", "options", "allow_globals")}   # #641: the checkpoint's pickle globals
 MAX_THREADS = 2
 BP_SETTING_KEYS = tuple(NT.BP_SETTINGS)  # bp_run.SETTING_KEYS: the runner's `settings` holds exactly these
 
@@ -962,6 +963,12 @@ def make_spec(mode, model, model_sha256, threads=1, lead_in_s=None, **kw):
     if mode in TORCH_MODES and "options" in spec and (not isinstance(spec["options"], dict)
                                                       or set(spec["options"]) - set(axes)):
         raise SystemExit(f"{mode}: options must be an object over {list(axes)}")
+    if "allow_globals" in spec:
+        a = spec["allow_globals"]
+        if not isinstance(a, list) or not a or not all(isinstance(n, str) and "." in n.strip(".") for n in a):
+            raise SystemExit("allow_globals must be a non-empty list of 'module.name' strings")
+        if len(set(a)) != len(a):
+            raise SystemExit("allow_globals repeats a name")
     if "offsets_s" in spec:
         offs = spec["offsets_s"]
         if not isinstance(offs, list) or any(o < 0 for o in offs) or len(set(offs)) != len(offs):
@@ -3228,11 +3235,28 @@ def tx_distance(fam, opts):
     return d
 
 
-def tx_spec(fam, model, model_sha256, threads=TX_THREADS):
-    """(Pure.) A family's one read: its shipped options and the declared grid from one inference."""
+def tx_spec(fam, model, model_sha256, allow_globals, threads=TX_THREADS):
+    """(Pure.) A family's one read: its shipped options, the declared grid from one inference, and the checkpoint's
+    pickle globals (#641: the runner's guarded load allows exactly these)."""
     f = TX_FAMILIES[fam]
     return make_spec(f["mode"], model, model_sha256, threads=threads, options=dict(f["shipped"]),
-                     grid={a: list(v) for a, v in f["axes"].items()})
+                     grid={a: list(v) for a, v in f["axes"].items()}, allow_globals=list(allow_globals))
+
+
+TX_MANIFEST_ITEM = {"ymt3": "yourmt3-moe-nops", "kong-fl": "guitar-fl", "kong-gaps": "guitar-gaps"}
+ALLOW_FIELD = "pickle_globals"           # the manifest item's list of "module.name" globals (see tx_allow_globals)
+
+
+def tx_allow_globals(man, fam):
+    """(Pure.) A checkpoint's pickle globals from the manifest (`readerr_tools.load_manifest()`): its item's
+    `pickle_globals`, a list of "module.name". Refused when the manifest lists none: the allowlist is never guessed."""
+    items = [i for i in (man or {}).get("items") or [] if i.get("id") == TX_MANIFEST_ITEM[fam]]
+    if len(items) != 1:
+        raise SystemExit(f"the manifest holds {len(items)} items for {fam}")
+    g = items[0].get(ALLOW_FIELD)
+    if not isinstance(g, list) or not g:
+        raise SystemExit(f"the manifest lists no {ALLOW_FIELD} for {fam}: the guarded load's allowlist has no source")
+    return list(g)
 
 
 def family_of(cid):
@@ -3554,7 +3578,8 @@ def repeat_holds(runs):
 
 
 def runner_report(rec):
-    """(Pure.) What the runner reports beyond the contract (unit D's pickle scan, guarded load, key report)."""
+    """(Pure.) What the runner reports beyond the contract: #641's `scan`, `load_report` and `guards`, and anything
+    else it adds (never refused as unknown)."""
     return {k: v for k, v in rec.items() if k not in RECORD_KEYS + ("grid",)}
 
 
@@ -3588,7 +3613,8 @@ def cmd_tx_gate(args):
         if not ck.exists():
             raise SystemExit(f"{fam}: no checkpoint at its pinned path (tx-fetch first)")
         sha = file_sha(ck)
-        spec = tx_spec(fam, ck, sha)
+        allow = tx_allow_globals(man, fam)
+        spec = tx_spec(fam, ck, sha, allow)
         rep_jobs = [(i, bench[i][1]) for i in ids[:GATE_REPEAT_PARTS]]
         with tempfile.TemporaryDirectory(prefix=f"readerr-gate-{fam}-") as work:
             one = run_tx(fam, spec, [(f"{t}-a", w) for t, w in rep_jobs] + [(f"{t}-b", w) for t, w in rep_jobs], work)
@@ -3598,13 +3624,16 @@ def cmd_tx_gate(args):
             timing = {}
             for th in (1, 2):
                 t0 = time.time()
-                recs = run_tx(fam, tx_spec(fam, ck, sha, threads=th), [(f"{i}-t{th}", bench[i][1]) for i in
+                recs = run_tx(fam, tx_spec(fam, ck, sha, allow, threads=th), [(f"{i}-t{th}", bench[i][1]) for i in
                                                                         ids[:GATE_TIMING_PARTS]], work, threads=th)
                 wall = time.time() - t0
                 timing[str(th)] = {"wall_s": round(wall, 1), "per_input_s": round(wall / GATE_TIMING_PARTS, 2),
                                    "runner_seconds": [r["seconds"] for r in recs.values()],
                                    "projection_s": round(wall / GATE_TIMING_PARTS * n_inputs, 0)}
-        out["families"][fam] = {"checkpoint_sha256": sha, "lock": TX_FAMILIES[fam]["lock"], "spec_options":
+        first = fresh[f"{ids[0]}-f"]
+        out["families"][fam] = {"checkpoint_sha256": sha, "allow_globals": allow,
+                                "scan": first.get("scan"), "load_report": first.get("load_report"),
+                                "guards": first.get("guards"), "lock": TX_FAMILIES[fam]["lock"], "spec_options":
                                 spec["options"], "grid": spec["grid"], "repeats": repeat_holds(runs),
                                 "timing": timing, "inputs": n_inputs,
                                 "runner_report": runner_report(fresh[f"{ids[0]}-f"]),
@@ -3674,7 +3703,8 @@ def cmd_tx_notes(args):
         recs = {}
         for fam in TX_FAMILIES:
             ck = checkpoint_for(fam, gate)
-            recs[fam] = run_tx(fam, tx_spec(fam, ck, gate["families"][fam]["checkpoint_sha256"]),
+            recs[fam] = run_tx(fam, tx_spec(fam, ck, gate["families"][fam]["checkpoint_sha256"],
+                                            gate["families"][fam]["allow_globals"]),
                                [(i, wav_of[i]) for i in todo], work)
         for i in todo:
             staging = tx_staging(i)

@@ -22,6 +22,7 @@ from learn import scratch_search as S
 REPO = pathlib.Path(__file__).resolve().parents[1]
 SRC = (REPO / "learn" / "scratch_readerr.py").read_text()
 SHA = "a" * 64
+ALLOW = ["collections.OrderedDict", "torch._utils._rebuild_tensor_v2"]   # a made-up allowlist
 
 
 def _args(**kw):
@@ -542,14 +543,15 @@ def test_make_spec_refuses_what_the_runner_refuses():
         with pytest.raises(SystemExit, match=msg):
             X.make_spec("bp-shift", "/m.onnx", SHA, **kw)
     with pytest.raises(SystemExit, match="threads"):
-        X.make_spec("mt3", "/m.pth", SHA, threads=3)
+        X.make_spec("mt3", "/m.pth", SHA, threads=3, options={"programs": "pitched"}, allow_globals=ALLOW)
     with pytest.raises(SystemExit, match="sha256"):
-        X.make_spec("kong", "/m.pth", "nope")
+        X.make_spec("kong", "/m.pth", "nope", options={}, allow_globals=ALLOW)
     with pytest.raises(SystemExit, match="grid must be"):
         X.make_spec("bp-grid", "/m.onnx", SHA, settings=base, grid={"maximum_frequency": [1]})
-    assert X.make_spec("mt3", "/m.pth", SHA, options={"programs": "guitar"})["options"] == {"programs": "guitar"}
+    assert X.make_spec("mt3", "/m.pth", SHA, options={"programs": "guitar"}, allow_globals=ALLOW)["options"] == \
+        {"programs": "guitar"}
     with pytest.raises(SystemExit, match="options must be an object over"):
-        X.make_spec("mt3", "/m.pth", SHA, options={"a": 1})
+        X.make_spec("mt3", "/m.pth", SHA, options={"a": 1}, allow_globals=ALLOW)
 
 
 def test_the_runner_record_check():
@@ -621,7 +623,7 @@ def test_every_read_of_a_record_is_trimmed_by_its_own_pad():
                 grid=[{"settings": base, "events": [_padded_event(0, 60, 64, 0.0)]}])
     assert X.record_notes(grec)["grid"][0]["notes"][0]["bends"] == list(range(60))   # no lead-in: no trim
     with pytest.raises(SystemExit, match="not a Basic Pitch record"):
-        X.record_notes(_rec("mt3", X.make_spec("mt3", "/m.pth", SHA)))
+        X.record_notes(_rec("mt3", X.make_spec("mt3", "/m.pth", SHA, options={}, allow_globals=ALLOW)))
 
 
 def test_the_download_rules_follow_the_orchestrators_calls():
@@ -1491,18 +1493,18 @@ def test_the_transcriber_candidates_and_their_declared_grids():
 
 
 def test_the_torch_specs_and_records_follow_the_d_e_contract():
-    s = X.tx_spec("kong-gaps", "/k.pth", SHA)
+    s = X.tx_spec("kong-gaps", "/k.pth", SHA, ALLOW)
     assert s["options"] == {"onset_threshold": 0.3, "frame_threshold": 0.1} and s["threads"] == 1
     pts = X.torch_points(s)
     assert len(pts) == 12 and pts[0] == {"onset_threshold": 0.2, "frame_threshold": 0.1}
     with pytest.raises(SystemExit, match="grid must be"):
-        X.make_spec("kong", "/k.pth", SHA, options={}, grid={"programs": ["pitched"]})
+        X.make_spec("kong", "/k.pth", SHA, options={}, grid={"programs": ["pitched"]}, allow_globals=ALLOW)
     rec = _rec("kong", s, grid=[{"options": p, "events": [_ev()]} for p in reversed(pts)])
     assert X.runner_refusal(rec, "kong", s, "b" * 64) is None          # the order of a torch grid is not fixed
     assert "grid is not" in X.runner_refusal(dict(rec, grid=rec["grid"][1:]), "kong", s, "b" * 64)
     bad = dict(rec, grid=[dict(g, events=[]) if g["options"] == s["options"] else g for g in rec["grid"]])
     assert "top-level" in X.runner_refusal(bad, "kong", s, "b" * 64)
-    y = X.tx_spec("ymt3", "/y.ckpt", SHA)
+    y = X.tx_spec("ymt3", "/y.ckpt", SHA, ALLOW)
     got = X.tx_candidates_from("ymt3", _rec("mt3", y, grid=[{"options": {"programs": p}, "events": [_ev()]}
                                                            for p in ("pitched", "guitar")]))
     assert sorted(got) == ["ymt3-guitar", "ymt3-pitched"]
@@ -1701,7 +1703,7 @@ def test_labels_real_harm_and_counts_by_set():
 
 
 def test_the_gate_repeat_and_its_report():
-    s = X.tx_spec("ymt3", "/y.ckpt", SHA)
+    s = X.tx_spec("ymt3", "/y.ckpt", SHA, ALLOW)
     r = _rec("mt3", s, grid=[{"options": {"programs": "pitched"}, "events": [_ev()]}], scan={"globals": ["x"]})
     assert X.runner_report(r) == {"scan": {"globals": ["x"]}}
     assert X.repeat_holds([{"a": r}, {"a": dict(r)}, {"a": r}])
@@ -1845,3 +1847,29 @@ def test_the_xr_row_code_is_what_ran_beside_the_check_rerun():
     allowed = {"cmd_xr_search", "require_xr_check", "xr_path"}
     assert set(a) == set(b)
     assert {f for f in a if a[f] != b[f]} <= allowed
+
+
+def test_the_allowlist_comes_from_the_manifest_and_rides_in_every_torch_spec():
+    man = {"items": [{"id": "yourmt3-moe-nops", "pickle_globals": ALLOW}, {"id": "guitar-fl"}]}
+    assert X.tx_allow_globals(man, "ymt3") == ALLOW
+    with pytest.raises(SystemExit, match="lists no pickle_globals for kong-fl"):
+        X.tx_allow_globals(man, "kong-fl")
+    with pytest.raises(SystemExit, match="0 items for kong-gaps"):
+        X.tx_allow_globals(man, "kong-gaps")
+    s = X.tx_spec("ymt3", "/y.ckpt", SHA, ALLOW)
+    assert s["allow_globals"] == ALLOW
+    for bad, msg in (([], "non-empty"), (["os"], "module.name"), (ALLOW + ALLOW[:1], "repeats")):
+        with pytest.raises(SystemExit, match=msg):
+            X.make_spec("mt3", "/y.ckpt", SHA, options={"programs": "pitched"}, allow_globals=bad)
+    with pytest.raises(SystemExit, match="lacks"):
+        X.make_spec("kong", "/k.pth", SHA, options={})                  # #641: allow_globals is required
+
+
+def test_the_runners_new_fields_are_recorded_never_refused():
+    s = X.tx_spec("ymt3", "/y.ckpt", SHA, ALLOW)
+    rec = _rec("mt3", s, grid=[{"options": {"programs": p}, "events": [_ev()]} for p in ("pitched", "guitar")],
+               scan={"globals": ALLOW}, load_report=[{"module": "m", "missing": [], "unexpected": []}],
+               guards={"socket": "refused"})
+    assert X.runner_refusal(rec, "mt3", s, "b" * 64) is None
+    rep = X.runner_report(rec)
+    assert set(rep) == {"scan", "load_report", "guards"} and rep["guards"] == {"socket": "refused"}
