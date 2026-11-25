@@ -917,13 +917,16 @@ def sign_agreement(a, b):
 # --- the runner contract (pure; `learn/readerr_run.py`, PR #617) ------------------------------------------------------------
 
 RECORD_KEYS = ("mode", "versions", "model_sha256", "threads", "spec", "input_sha256", "seconds", "events")
+TORCH_RECORD_KEYS = ("scan", "load_report", "guards")   # #641: every torch record also carries these
 EVENT_KEYS = ("on", "off", "pitch", "amp", "bends")
 RUNNER_MODES = ("bp-grid", "bp-shift", "mt3", "kong")
 SPEC_COMMON = ("model", "model_sha256", "threads", "lead_in_s")
 SPEC_MODE = {"bp-grid": ("settings", "grid"), "bp-shift": ("settings", "offsets_s"),
              "mt3": ("options", "grid", "allow_globals"), "kong": ("options", "grid", "allow_globals")}
 TORCH_MODES = ("mt3", "kong")
-TORCH_AXES = {"mt3": ("programs",), "kong": ("onset_threshold", "frame_threshold")}   # Phase 2b's D-E contract
+TORCH_DECLARED = {"mt3": {"programs": ("pitched", "guitar")},   # Phase 2b's D-E contract: the axes and their values
+                  "kong": {"onset_threshold": (0.2, 0.3, 0.4, 0.5), "frame_threshold": (0.1, 0.2, 0.3)}}
+TORCH_AXES = {m: tuple(v) for m, v in TORCH_DECLARED.items()}
 SPEC_REQUIRED = {"bp-grid": ("model", "model_sha256", "settings", "grid"),
                  "bp-shift": ("model", "model_sha256", "settings", "offsets_s"),
                  "mt3": ("model", "model_sha256", "options", "allow_globals"),
@@ -960,9 +963,17 @@ def make_spec(mode, model, model_sha256, threads=1, lead_in_s=None, **kw):
                            or any(not isinstance(v, list) or not v for v in spec["grid"].values())):
         raise SystemExit(f"grid must be a non-empty {{axis: [values]}} over {list(axes)}, each axis non-empty "
                          "(the runner refuses an empty grid)")
-    if mode in TORCH_MODES and "options" in spec and (not isinstance(spec["options"], dict)
-                                                      or set(spec["options"]) - set(axes)):
-        raise SystemExit(f"{mode}: options must be an object over {list(axes)}")
+    if mode in TORCH_MODES:
+        dec = TORCH_DECLARED[mode]
+        o = spec.get("options")
+        if not isinstance(o, dict) or set(o) != set(axes):
+            raise SystemExit(f"{mode}: options must hold exactly {list(axes)}")
+        bad = sorted(a for a, v in o.items() if v not in dec[a])
+        bad += sorted(a for a, vs in (spec.get("grid") or {}).items() for v in vs if v not in dec[a])
+        if bad:
+            raise SystemExit(f"{mode}: values outside the declared ones on {sorted(set(bad))}")
+        if any(len(set(vs)) != len(vs) for vs in (spec.get("grid") or {}).values()):
+            raise SystemExit(f"{mode}: a grid axis repeats a value")
     if "allow_globals" in spec:
         a = spec["allow_globals"]
         if not isinstance(a, list) or not a or not all(isinstance(n, str) and "." in n.strip(".") for n in a):
@@ -1066,6 +1077,10 @@ def runner_refusal(rec, mode, spec, input_sha):
         zero = next((s for s in got if s["offset_s"] == 0), None)
         if rec["events"] != (zero["events"] if zero is not None else []):
             return "bp-shift's top-level events are not the zero offset's read"
+    if mode in TORCH_MODES:
+        miss = [k for k in TORCH_RECORD_KEYS if k not in rec]
+        if miss:
+            return f"{mode}'s record lacks {miss} (#641: the scan, the load report and the guards)"
     if mode in TORCH_MODES and "grid" in spec:
         got = rec.get("grid")
         if not isinstance(got, list):
@@ -3188,13 +3203,10 @@ CHECK_ROW = {"xr-cand": "xr-cand"}       # amendment 2: xr-check reruns before a
 BP_SUFFIX = "+bp"                        # loudness and bends borrowed from the paired Basic Pitch note
 TX_THREADS = 1                           # every torch read at one thread; the gate times 1 and 2
 TX_FAMILIES = {   # amendment 5: the declared grids and the shipped settings (the distance's zero)
-    "ymt3": {"lock": "A", "mode": "mt3", "axes": {"programs": ("pitched", "guitar")},
-             "shipped": {"programs": "pitched"}},
-    "kong-fl": {"lock": "B", "mode": "kong",
-                "axes": {"onset_threshold": (0.2, 0.3, 0.4, 0.5), "frame_threshold": (0.1, 0.2, 0.3)},
+    "ymt3": {"lock": "A", "mode": "mt3", "axes": TORCH_DECLARED["mt3"], "shipped": {"programs": "pitched"}},
+    "kong-fl": {"lock": "B", "mode": "kong", "axes": TORCH_DECLARED["kong"],
                 "shipped": {"onset_threshold": 0.3, "frame_threshold": 0.1}},
-    "kong-gaps": {"lock": "B", "mode": "kong",
-                  "axes": {"onset_threshold": (0.2, 0.3, 0.4, 0.5), "frame_threshold": (0.1, 0.2, 0.3)},
+    "kong-gaps": {"lock": "B", "mode": "kong", "axes": TORCH_DECLARED["kong"],
                   "shipped": {"onset_threshold": 0.3, "frame_threshold": 0.1}},
 }
 BP_LICENCE = {"code": "Apache-2.0", "weights_data": "in the wheel", "product_status": "usable"}
@@ -3243,17 +3255,38 @@ def tx_spec(fam, model, model_sha256, allow_globals, threads=TX_THREADS):
                      grid={a: list(v) for a, v in f["axes"].items()}, allow_globals=list(allow_globals))
 
 
-TX_MANIFEST_ITEM = {"ymt3": "yourmt3-moe-nops", "kong-fl": "guitar-fl", "kong-gaps": "guitar-gaps"}
+def tx_manifest_item(fam):
+    """The manifest item id of a family's checkpoint: unit F's `readerr_tools.CANDIDATES`, never a second copy."""
+    from learn import readerr_tools as RT
+
+    return RT.CANDIDATES[fam]
+
+
+def manifest_item_of(man, fam):
+    """(Pure but for the id.) The family's checkpoint item in the manifest, refused unless exactly one."""
+    items = [i for i in (man or {}).get("items") or [] if i.get("id") == tx_manifest_item(fam)]
+    if len(items) != 1:
+        raise SystemExit(f"the manifest holds {len(items)} items for {fam}")
+    return items[0]
+
+
+def gate_checkpoint_refusal(item, path):
+    """E1, before any run: the checkpoint at its pinned path, its size and sha256 the manifest item's
+    (`checkpoint_refusal`; the spec's own model_sha256 check against the file would be circular)."""
+    path = pathlib.Path(path)
+    if not path.exists():
+        return "no checkpoint at its pinned path (tx-fetch first)"
+    if item.get("size_bytes") is None or path.stat().st_size != item["size_bytes"]:
+        return f"the checkpoint's size {path.stat().st_size} is not the manifest's {item.get('size_bytes')}"
+    return checkpoint_refusal({"path": item.get("pinned_path") or str(path), "sha256": item.get("sha256")},
+                              file_sha(path))
 ALLOW_FIELD = "pickle_globals"           # the manifest item's list of "module.name" globals (see tx_allow_globals)
 
 
 def tx_allow_globals(man, fam):
     """(Pure.) A checkpoint's pickle globals from the manifest (`readerr_tools.load_manifest()`): its item's
     `pickle_globals`, a list of "module.name". Refused when the manifest lists none: the allowlist is never guessed."""
-    items = [i for i in (man or {}).get("items") or [] if i.get("id") == TX_MANIFEST_ITEM[fam]]
-    if len(items) != 1:
-        raise SystemExit(f"the manifest holds {len(items)} items for {fam}")
-    g = items[0].get(ALLOW_FIELD)
+    g = manifest_item_of(man, fam).get(ALLOW_FIELD)
     if not isinstance(g, list) or not g:
         raise SystemExit(f"the manifest lists no {ALLOW_FIELD} for {fam}: the guarded load's allowlist has no source")
     return list(g)
@@ -3373,7 +3406,7 @@ def select_rule(cands, base, consts):
         rows[cid] = dict(it, item4=i4, item5=not c["real_worse"], item6=bool(c["repeats"]),
                          decided_better=i123 and i4 and bool(c["repeats"]),
                          qualifies=i123 and i4 and not c["real_worse"] and bool(c["repeats"]),
-                         harm=i123 and i4 and c["real_worse"],
+                         harm=i123 and i4 and c["real_worse"] and bool(c["repeats"]),
                          better_by_mean=it["g"] is not None and it["g"] < 0 and it["extra_rate"])
     qual = sorted(cid for cid, r in rows.items() if r["qualifies"])
 
@@ -3608,12 +3641,16 @@ def cmd_tx_gate(args):
     ids = sorted(bench)
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE_P2B}", "renders": 0, "families": {},
            "manifest_keys": sorted(man) if isinstance(man, dict) else None}
+    allows, cks = {}, {}
+    for fam in TX_FAMILIES:                  # E1 and E3: every checkpoint and allowlist, before any runner call
+        cks[fam] = pathlib.Path(RT.checkpoint_path(fam))
+        why = gate_checkpoint_refusal(manifest_item_of(man, fam), cks[fam])
+        if why:
+            raise SystemExit(f"{fam}: {why}")
+        allows[fam] = tx_allow_globals(man, fam)
     for fam in TX_FAMILIES:
-        ck = pathlib.Path(RT.checkpoint_path(fam))
-        if not ck.exists():
-            raise SystemExit(f"{fam}: no checkpoint at its pinned path (tx-fetch first)")
+        ck, allow = cks[fam], allows[fam]
         sha = file_sha(ck)
-        allow = tx_allow_globals(man, fam)
         spec = tx_spec(fam, ck, sha, allow)
         rep_jobs = [(i, bench[i][1]) for i in ids[:GATE_REPEAT_PARTS]]
         with tempfile.TemporaryDirectory(prefix=f"readerr-gate-{fam}-") as work:
@@ -4203,6 +4240,9 @@ def cmd_xr_read_cand(_args):
         NT.never_overwrite(p_)
     require_xr_check(row)
     cid = require_cand_outcome(m)
+    why = SX.field_refusal(m, PHASE_OUTCOME, "select_sha256", file_sha(tx_path("select")))
+    if why:
+        raise SystemExit(why)
     sel = json.loads(tx_path("select").read_text())
     draw, sd = SX.context()
     rn = {r: SX.row_numbers(m, draw, r) for r in ("xn-reread", "xn-list")}

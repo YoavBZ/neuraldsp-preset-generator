@@ -23,6 +23,8 @@ REPO = pathlib.Path(__file__).resolve().parents[1]
 SRC = (REPO / "learn" / "scratch_readerr.py").read_text()
 SHA = "a" * 64
 ALLOW = ["collections.OrderedDict", "torch._utils._rebuild_tensor_v2"]   # a made-up allowlist
+KONG_OPTS = {"onset_threshold": 0.3, "frame_threshold": 0.1}
+TORCH_REPORT = {"scan": {"globals": ALLOW}, "load_report": [], "guards": {"socket": "refused"}}
 
 
 def _args(**kw):
@@ -545,13 +547,20 @@ def test_make_spec_refuses_what_the_runner_refuses():
     with pytest.raises(SystemExit, match="threads"):
         X.make_spec("mt3", "/m.pth", SHA, threads=3, options={"programs": "pitched"}, allow_globals=ALLOW)
     with pytest.raises(SystemExit, match="sha256"):
-        X.make_spec("kong", "/m.pth", "nope", options={}, allow_globals=ALLOW)
+        X.make_spec("kong", "/m.pth", "nope", options=KONG_OPTS, allow_globals=ALLOW)
     with pytest.raises(SystemExit, match="grid must be"):
         X.make_spec("bp-grid", "/m.onnx", SHA, settings=base, grid={"maximum_frequency": [1]})
     assert X.make_spec("mt3", "/m.pth", SHA, options={"programs": "guitar"}, allow_globals=ALLOW)["options"] == \
         {"programs": "guitar"}
-    with pytest.raises(SystemExit, match="options must be an object over"):
-        X.make_spec("mt3", "/m.pth", SHA, options={"a": 1}, allow_globals=ALLOW)
+    for opts, msg in (({"a": 1}, "options must hold exactly"), ({}, "options must hold exactly"),
+                      ({"onset_threshold": 0.3}, "options must hold exactly"),
+                      ({"onset_threshold": 0.3, "frame_threshold": 0.15}, "outside the declared")):
+        with pytest.raises(SystemExit, match=msg):
+            X.make_spec("kong", "/m.pth", SHA, options=opts, allow_globals=ALLOW)
+    with pytest.raises(SystemExit, match="outside the declared"):
+        X.make_spec("mt3", "/m.pth", SHA, options={"programs": "drums"}, allow_globals=ALLOW)
+    with pytest.raises(SystemExit, match="outside the declared"):
+        X.make_spec("kong", "/m.pth", SHA, options=KONG_OPTS, grid={"onset_threshold": [0.9]}, allow_globals=ALLOW)
 
 
 def test_the_runner_record_check():
@@ -623,7 +632,8 @@ def test_every_read_of_a_record_is_trimmed_by_its_own_pad():
                 grid=[{"settings": base, "events": [_padded_event(0, 60, 64, 0.0)]}])
     assert X.record_notes(grec)["grid"][0]["notes"][0]["bends"] == list(range(60))   # no lead-in: no trim
     with pytest.raises(SystemExit, match="not a Basic Pitch record"):
-        X.record_notes(_rec("mt3", X.make_spec("mt3", "/m.pth", SHA, options={}, allow_globals=ALLOW)))
+        X.record_notes(_rec("mt3", X.make_spec("mt3", "/m.pth", SHA, options={"programs": "pitched"},
+                                               allow_globals=ALLOW)))
 
 
 def test_the_download_rules_follow_the_orchestrators_calls():
@@ -1498,14 +1508,17 @@ def test_the_torch_specs_and_records_follow_the_d_e_contract():
     pts = X.torch_points(s)
     assert len(pts) == 12 and pts[0] == {"onset_threshold": 0.2, "frame_threshold": 0.1}
     with pytest.raises(SystemExit, match="grid must be"):
-        X.make_spec("kong", "/k.pth", SHA, options={}, grid={"programs": ["pitched"]}, allow_globals=ALLOW)
-    rec = _rec("kong", s, grid=[{"options": p, "events": [_ev()]} for p in reversed(pts)])
+        X.make_spec("kong", "/k.pth", SHA, options=KONG_OPTS, grid={"programs": ["pitched"]}, allow_globals=ALLOW)
+    rec = _rec("kong", s, grid=[{"options": p, "events": [_ev()]} for p in reversed(pts)], **TORCH_REPORT)
+    assert "lacks ['scan', 'load_report', 'guards']" in X.runner_refusal(
+        {k: v for k, v in rec.items() if k not in TORCH_REPORT}, "kong", s, "b" * 64)          # E4
     assert X.runner_refusal(rec, "kong", s, "b" * 64) is None          # the order of a torch grid is not fixed
     assert "grid is not" in X.runner_refusal(dict(rec, grid=rec["grid"][1:]), "kong", s, "b" * 64)
     bad = dict(rec, grid=[dict(g, events=[]) if g["options"] == s["options"] else g for g in rec["grid"]])
     assert "top-level" in X.runner_refusal(bad, "kong", s, "b" * 64)
     y = X.tx_spec("ymt3", "/y.ckpt", SHA, ALLOW)
-    got = X.tx_candidates_from("ymt3", _rec("mt3", y, grid=[{"options": {"programs": p}, "events": [_ev()]}
+    got = X.tx_candidates_from("ymt3", _rec("mt3", y, **TORCH_REPORT, grid=[{"options": {"programs": p},
+                                                                             "events": [_ev()]}
                                                            for p in ("pitched", "guitar")]))
     assert sorted(got) == ["ymt3-guitar", "ymt3-pitched"]
 
@@ -1763,13 +1776,17 @@ def test_the_cand_row_waits_for_its_outcome_and_its_own_check(monkeypatch):
 
 
 class _FakeTools:
-    """Unit F's interface, stubbed: load_manifest, venv_python, checkpoint_path, licence_record."""
+    """Unit F's interface, stubbed: load_manifest, venv_python, checkpoint_path, licence_record, CANDIDATES."""
 
-    def __init__(self, root):
+    CANDIDATES = {"ymt3": "yourmt3-moe-nops", "kong-fl": "guitar-fl", "kong-gaps": "guitar-gaps"}
+
+    def __init__(self, root, items=None):
         self.root = pathlib.Path(root)
+        self.items = items if items is not None else [
+            {"id": i, "size_bytes": 4, "sha256": "0" * 64, "pickle_globals": ALLOW} for i in self.CANDIDATES.values()]
 
     def load_manifest(self):
-        return {"files": []}
+        return {"items": self.items}
 
     def venv_python(self, lock):
         return self.root / f"venv-{lock}" / "bin" / "python"
@@ -1783,14 +1800,18 @@ class _FakeTools:
                 "product_status": "unresolved" if cand_id == "ymt3" else "unclear"}
 
 
-def test_the_gate_refuses_without_a_pinned_checkpoint(monkeypatch, tmp_path):
+def _stub_tools(monkeypatch, fake):
     import sys
 
-    fake = _FakeTools(tmp_path)
-    monkeypatch.setitem(sys.modules, "learn.readerr_tools", fake)
     import learn
 
+    monkeypatch.setitem(sys.modules, "learn.readerr_tools", fake)
     monkeypatch.setattr(learn, "readerr_tools", fake, raising=False)
+
+
+def test_the_gate_refuses_without_a_pinned_checkpoint(monkeypatch, tmp_path):
+    fake = _FakeTools(tmp_path)
+    _stub_tools(monkeypatch, fake)
     monkeypatch.setattr(X, "readerr_dir", lambda: tmp_path / "readerr")
     monkeypatch.setattr(X, "require_readerr", lambda *a: {})
     monkeypatch.setattr(X, "require_trace", lambda m=None: {"parts": {}})
@@ -1802,6 +1823,25 @@ def test_the_gate_refuses_without_a_pinned_checkpoint(monkeypatch, tmp_path):
     with pytest.raises(SystemExit, match="ymt3: no checkpoint at its pinned path"):
         X.cmd_tx_gate(_args())
     assert not X.tx_path("gate").exists()
+    for f in fake.CANDIDATES:                                        # E1: size and sha256 against the manifest's
+        (tmp_path / f"{f}.ckpt").write_bytes(b"abcd")
+    with pytest.raises(SystemExit, match="ymt3: the checkpoint's sha256"):
+        X.cmd_tx_gate(_args())
+    sha = X.file_sha(tmp_path / "ymt3.ckpt")
+    for it in fake.items:
+        it["sha256"] = sha
+    fake.items[1]["size_bytes"] = 5
+    with pytest.raises(SystemExit, match="kong-fl: the checkpoint's size 4 is not the manifest's 5"):
+        X.cmd_tx_gate(_args())
+    fake.items[1]["size_bytes"] = 4
+    del fake.items[2]["pickle_globals"]
+    with pytest.raises(SystemExit, match="lists no pickle_globals for kong-gaps"):
+        X.cmd_tx_gate(_args())                                     # E3: every allowlist before any runner call
+    calls = []
+    monkeypatch.setattr(X, "run_tx", lambda *a, **k: calls.append(a) or {})
+    with pytest.raises(SystemExit):
+        X.cmd_tx_gate(_args())
+    assert calls == []
 
 
 def test_the_licence_fields_ride_with_every_candidate():
@@ -1849,7 +1889,9 @@ def test_the_xr_row_code_is_what_ran_beside_the_check_rerun():
     assert {f for f in a if a[f] != b[f]} <= allowed
 
 
-def test_the_allowlist_comes_from_the_manifest_and_rides_in_every_torch_spec():
+def test_the_allowlist_comes_from_the_manifest_and_rides_in_every_torch_spec(monkeypatch, tmp_path):
+    _stub_tools(monkeypatch, _FakeTools(tmp_path))
+    assert X.tx_manifest_item("kong-gaps") == "guitar-gaps"           # F's CANDIDATES, never a second copy
     man = {"items": [{"id": "yourmt3-moe-nops", "pickle_globals": ALLOW}, {"id": "guitar-fl"}]}
     assert X.tx_allow_globals(man, "ymt3") == ALLOW
     with pytest.raises(SystemExit, match="lists no pickle_globals for kong-fl"):
@@ -1862,7 +1904,7 @@ def test_the_allowlist_comes_from_the_manifest_and_rides_in_every_torch_spec():
         with pytest.raises(SystemExit, match=msg):
             X.make_spec("mt3", "/y.ckpt", SHA, options={"programs": "pitched"}, allow_globals=bad)
     with pytest.raises(SystemExit, match="lacks"):
-        X.make_spec("kong", "/k.pth", SHA, options={})                  # #641: allow_globals is required
+        X.make_spec("kong", "/k.pth", SHA, options=KONG_OPTS)          # #641: allow_globals is required
 
 
 def test_the_runners_new_fields_are_recorded_never_refused():
@@ -1870,6 +1912,39 @@ def test_the_runners_new_fields_are_recorded_never_refused():
     rec = _rec("mt3", s, grid=[{"options": {"programs": p}, "events": [_ev()]} for p in ("pitched", "guitar")],
                scan={"globals": ALLOW}, load_report=[{"module": "m", "missing": [], "unexpected": []}],
                guards={"socket": "refused"})
+    assert X.TORCH_RECORD_KEYS == ("scan", "load_report", "guards")
     assert X.runner_refusal(rec, "mt3", s, "b" * 64) is None
     rep = X.runner_report(rec)
     assert set(rep) == {"scan", "load_report", "guards"} and rep["guards"] == {"socket": "refused"}
+
+
+def test_harm_needs_the_repeat_too():
+    """E2: RX-harm is items 1 to 4 and the repeat holding, with the real-DI harm."""
+    no_repeat = X.select_rule({"c": _cand(real_worse=True, repeats=False)}, BASE_C, CONSTS)["rows"]["c"]
+    assert not no_repeat["harm"]
+    assert X.select_rule({"c": _cand(real_worse=True)}, BASE_C, CONSTS)["rows"]["c"]["harm"]
+
+
+def test_the_gate_checkpoint_check():
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as d:
+        f = pathlib.Path(d) / "w.ckpt"
+        assert "no checkpoint" in X.gate_checkpoint_refusal({"size_bytes": 4, "sha256": SHA}, f)
+        f.write_bytes(b"abcd")
+        assert "size 4 is not the manifest's 3" in X.gate_checkpoint_refusal({"size_bytes": 3, "sha256": SHA}, f)
+        assert "sha256" in X.gate_checkpoint_refusal({"size_bytes": 4, "sha256": SHA}, f)
+        assert X.gate_checkpoint_refusal({"size_bytes": 4, "sha256": X.file_sha(f), "pinned_path": str(f)}, f) is None
+        assert "pins no path and sha256" in X.gate_checkpoint_refusal({"size_bytes": 4}, f)
+
+
+def test_xr_read_cand_checks_select_against_mains_outcome(monkeypatch, tmp_path):
+    m = _main(X.PHASE, X.PHASE_FROZEN, X.PHASE_P2, X.PHASE_P2B, X.xr_dry_key("cand"), X.xr_answers_key("xr-cand"),
+              X.xr_answers_key("xr-matched"))
+    m[X.PHASE_OUTCOME] = {"code": "RX-setting", "candidate": "shift-k3", "select_sha256": "0" * 64}
+    _on_main_with(monkeypatch, m, {f: True for f in X.CODE_FILES})
+    monkeypatch.setattr(X, "readerr_dir", lambda: tmp_path)
+    monkeypatch.setattr(X, "require_xr_check", lambda row=None: {"passed": True})
+    X.write_once(X.tx_path("select"), {"rule": {"rows": {}}})
+    with pytest.raises(SystemExit, match="select_sha256"):
+        X.cmd_xr_read(_args(row="xr-cand"))
