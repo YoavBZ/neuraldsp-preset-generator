@@ -7442,6 +7442,66 @@
     },
     "next": "score --row xf-fix --shard k/3, then read --stage 2 (xf_read on D_now, D_fix and the gain, the 40)"
    },
+   "phase_scratch_rederive_bench_outcome": {
+    "phase": "Phase 3c's read (docs/rederive-plan.md section 8, the bench table's stage 2): xf-fix scored and read; the figures are in docs/rederive-results.md; audit pending",
+    "code": "XF-closed",
+    "stage": 2,
+    "reading": "the gain (D_fix - D_now) wholly below zero and D_fix spans zero, on the 40, the answer arm: the cost is no longer shown",
+    "next": "the bridge (fs-refit) runs: rederive_rows gates it on this key's code (XF-closed or XF-part)",
+    "label": null,
+    "passing_only": "XF-closed (nothing refused in xf-now, xf-fix or xn-bank)",
+    "shrunk_arm": "XF-input (beside only; its stage-1 D_now spans zero)",
+    "leave_one_cluster_out": {
+     "reads": 32,
+     "XF-closed": 32
+    },
+    "report_sha256": "c20432886a3f79020614aaf63c7775f255e8d48983616e19f0e43abf69c43263",
+    "rows_sha256": "72a127c276ec528ce392b274bb0663b2fa21e6767aa27d0879904f766314bd69",
+    "files": [
+     "PF/fs/rederive/report-stage2.json",
+     "PF/fs/rederive/rows-stage2.json"
+    ],
+    "answers_sha256": {
+     "xf-fix": "630a3b61489b73b3a643318de1c8450af2f0a38e6b43627856460d95962ac32a",
+     "xf-now": "e6affa217bc277a7089e4dd599a8df4fe080776d4fd382f0915d1775b0efa2db"
+    },
+    "reproduced": "before reading, D_list and build 2 less row (b) from the stored files equal the exact-notes read's stored rows exactly",
+    "score": {
+     "parts": 47,
+     "scoring_control_ok": 47,
+     "reruns": 0,
+     "renders": 564,
+     "shards": {
+      "0/3": {
+       "renders": 192,
+       "seconds": 431
+      },
+      "1/3": {
+       "renders": 192,
+       "seconds": 430
+      },
+      "2/3": {
+       "renders": 180,
+       "seconds": 416
+      }
+     }
+    },
+    "floors": {
+     "label": "beside only; they gate nothing",
+     "renders": 462,
+     "parts": 47,
+     "xn_list_repeat": "2 of 2"
+    },
+    "renders": {
+     "floors": 462,
+     "search": 12377,
+     "start_reference": 94,
+     "score": 564,
+     "stage_2": 13497,
+     "bench_both_stages": 26609
+    },
+    "ran": "2026-11-26: score --row xf-fix --shard k/3 (three render processes, setopt no_bg_nice, caffeinate -i) and one --rerun pass a shard, then read --stage 2 (zero renders), from a frozen detached worktree of main at cd262a10 (#637)"
+   },
    "phase_scratch_readerr_xr_answers_matched": {
     "sha256": "43ce984ed3dd21878cb5d37f48446353ef0834c543e62d0edae030eef1784476",
     "counts": {
