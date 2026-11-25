@@ -7388,6 +7388,24 @@
      "check_renders": 50,
      "coverage": 46
     }
+   },
+   "phase_scratch_readerr_notes": {
+    "sha256": "4fe8886a35473b082cb1fb75ec675016f6c267d64f6231d19d62d33f81e974af",
+    "counts": {
+     "inputs": 136,
+     "bench": 47,
+     "real": 89,
+     "candidates": 149,
+     "runner_candidates": 148,
+     "bench_grid_top_equal": 47,
+     "bench_grid_stored_point_equal": 47,
+     "bench_anchor_equal": 47,
+     "bench_k1_equal": 47,
+     "real_grid_top_equal": 89,
+     "real_anchor_equal": 89,
+     "unanchored_bench": 107,
+     "unanchored_real": 58
+    }
    }
   },
   {
