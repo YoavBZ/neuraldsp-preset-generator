@@ -32,7 +32,10 @@ def _args(**kw):
 # --- names, imports, guarded files ----------------------------------------------------------------------------------------
 
 def test_names_and_constants():
-    assert D.CODE_FILES[0] == "learn/rederive_diag.py" and D.CODE_FILES[1:] == RD.CODE_FILES
+    assert D.OWN_FILES == ("learn/rederive_diag.py", "analysis/aligned.py", "learn/knob_ceiling.py",
+                           "learn/full_space.py", "learn/pipeline_fix.py")
+    assert D.CODE_FILES[:5] == D.OWN_FILES and set(RD.CODE_FILES) <= set(D.CODE_FILES)
+    assert len(set(D.CODE_FILES)) == len(D.CODE_FILES) and all((REPO / f).exists() for f in D.CODE_FILES)
     assert D.DIAG_ROWS == ("xn-list", "xf-now") and D.GUITARS == ("x", "xn-list", "xf-now")
     assert D.VALUES_OF == {"x": None, "xn-list": "in-F", "xf-now": "in-M"}
     assert D.DECLARED == {"d_list": _iv(0.321, 0.180, 0.462), "d_list_passing_only": _iv(0.285, 0.173, 0.396)}
@@ -136,7 +139,7 @@ def test_controls_real_refuses_cleanly_until_the_refit_answers_are_hashed(monkey
         D.cmd_controls_real(_args())
     main[RD.answers_key(RD.REAL_ROW)] = {}                     # the key, but no hashed file behind it
     monkeypatch.setattr(RD, "pinned_identity", lambda: {f: True for f in RD.CODE_FILES})
-    monkeypatch.setattr(D, "pinned_identity", lambda: {f: True for f in D.CODE_FILES[:1]})
+    monkeypatch.setattr(D, "pinned_identity", lambda: {f: True for f in D.OWN_FILES})
     monkeypatch.setattr(NRP, "ledger_entry", lambda: main)
     monkeypatch.setattr(RD, "rederive_dir", lambda: tmp_path)
     with pytest.raises(SystemExit, match="rederive_rows|phase_scratch_rederive_answers_refit"):
@@ -359,7 +362,7 @@ def test_controls_refuses_a_hashed_bench_row_without_unit_4(monkeypatch, tmp_pat
     _, main = _controls_world(monkeypatch, tmp_path)
     main[RD.answers_key("xf-now")] = {}
     monkeypatch.setitem(sys.modules, "learn.rederive_rows", None)       # not importable
-    with pytest.raises(SystemExit, match="rederive_rows.answers_path"):
+    with pytest.raises(SystemExit, match="no learn/rederive_rows.py: merge Unit 4"):
         D.cmd_controls(_args())
 
 
@@ -758,3 +761,64 @@ def test_changed_parts_compare_each_form_with_its_own_todays_rule():
     assert all(v["changed"] == v["ladder_reported"] for v in f["in-M"].values())      # in-M is unaffected
     assert "own today's-rule cell" in got["note"] and "not affected" in got["note"]
     assert D.changed_parts(recs, ["bks__k1"])["forms"]["in-M"]["mutes"]["changed"] == 0
+
+
+def test_the_own_guard_pins_the_four_figure_modules(monkeypatch):
+    calls = []
+
+    class Done:
+        def __init__(self, rc):
+            self.returncode = rc
+    monkeypatch.setattr(SE, "_git", lambda *a: calls.append(a[-1]) or Done(1 if a[-1] == "learn/full_space.py" else 0))
+    got = D.pinned_identity()
+    assert calls == list(D.OWN_FILES) and got["learn/full_space.py"] is False and sum(got.values()) == 4
+    monkeypatch.setattr(RD, "require_rederive", lambda *a: {})
+    with pytest.raises(SystemExit, match="full_space.py.*differ from main's"):
+        D.require_diag()
+
+
+def test_only_the_missing_module_reads_merge_unit_4(monkeypatch, tmp_path):
+    """A missing rederive_rows refuses with the absent message; an error inside an existing one raises as it is."""
+    import importlib.util
+    import sys
+    import types
+
+    monkeypatch.setitem(sys.modules, "learn.rederive_rows", None)            # absent: find_spec gives None
+    with pytest.raises(SystemExit, match="^absent$"):
+        D.rows_answers_path("xf-now", "absent")
+    real_find = importlib.util.find_spec
+    monkeypatch.setattr(importlib.util, "find_spec",
+                        lambda name, *a: object() if name == "learn.rederive_rows" else real_find(name, *a))
+    broken = types.ModuleType("learn.rederive_rows")
+
+    def answers_path(row):
+        raise AttributeError("a real fault inside Unit 4")
+    broken.answers_path = answers_path
+    monkeypatch.setitem(sys.modules, "learn.rederive_rows", broken)
+    with pytest.raises(AttributeError, match="a real fault inside Unit 4"):
+        D.rows_answers_path("xf-now", "absent")
+    monkeypatch.setitem(sys.modules, "learn.rederive_rows", types.ModuleType("learn.rederive_rows"))
+    with pytest.raises(SystemExit, match="no answers_path"):
+        D.rows_answers_path("xf-now", "absent")
+    ok = types.ModuleType("learn.rederive_rows")
+    ok.answers_path = lambda row: tmp_path / f"answers-{row}.json"
+    monkeypatch.setitem(sys.modules, "learn.rederive_rows", ok)
+    assert D.rows_answers_path("fs-refit", "absent") == tmp_path / "answers-fs-refit.json"
+
+
+def test_an_import_error_inside_rederive_rows_is_not_hidden(monkeypatch, tmp_path):
+    """The module exists but fails on import: its own error raises, not the merge-Unit-4 refusal."""
+    import importlib
+    import importlib.util
+
+    real_find, real_import = importlib.util.find_spec, importlib.import_module
+    monkeypatch.setattr(importlib.util, "find_spec",
+                        lambda name, *a: object() if name == "learn.rederive_rows" else real_find(name, *a))
+
+    def imp(name, *a):
+        if name == "learn.rederive_rows":
+            raise ImportError("numpy missing inside Unit 4")
+        return real_import(name, *a)
+    monkeypatch.setattr(importlib, "import_module", imp)
+    with pytest.raises(ImportError, match="inside Unit 4"):
+        D.rows_answers_path("fs-refit", "absent")

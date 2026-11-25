@@ -55,7 +55,9 @@ from learn import scratch_search as S
 
 PLAN = RD.PLAN
 LEDGER_ID = RD.LEDGER_ID
-CODE_FILES = ("learn/rederive_diag.py",) + RD.CODE_FILES
+OWN_FILES = ("learn/rederive_diag.py", "analysis/aligned.py", "learn/knob_ceiling.py", "learn/full_space.py",
+             "learn/pipeline_fix.py")   # this module and the four that shape its figures and groups (its own guard)
+CODE_FILES = OWN_FILES + tuple(f for f in RD.CODE_FILES if f not in OWN_FILES)
 X_NAME = "x"                             # the bank guitar X (T composed), the reference of every figure
 DIAG_ROWS = ("xn-list", RD.NOW_ROW)      # the two re-derived guitars traced against X
 GUITARS = (X_NAME,) + DIAG_ROWS
@@ -80,8 +82,8 @@ DESCRIPTIVE = "descriptive: Spearman with the per-part D_list on the 40 (intent-
 # --- the guards and the paths ---------------------------------------------------------------------------------------------
 
 def pinned_identity():
-    """This module equal to origin/main's (git diff --quiet); scratch_rederive's own files are its guard's."""
-    return {f: SE._git("diff", "--quiet", "origin/main", "--", f).returncode == 0 for f in CODE_FILES[:1]}
+    """OWN_FILES each equal to origin/main's (git diff --quiet); scratch_rederive's own files are its guard's."""
+    return {f: SE._git("diff", "--quiet", "origin/main", "--", f).returncode == 0 for f in OWN_FILES}
 
 
 def require_diag(*phases):
@@ -839,6 +841,20 @@ def group_rows(sd, draw, per):
     return out
 
 
+def rows_answers_path(row, absent):
+    """`rederive_rows.answers_path(row)` (Unit 4). Refuses with `absent` only when the module does not exist in this
+    checkout (`importlib.util.find_spec`); any error inside it raises as it is, never hidden behind that message."""
+    import importlib
+    import importlib.util
+
+    if importlib.util.find_spec("learn.rederive_rows") is None:
+        raise SystemExit(absent)
+    RR = importlib.import_module("learn.rederive_rows")
+    if not callable(getattr(RR, "answers_path", None)):
+        raise SystemExit("learn/rederive_rows.py has no answers_path(row): the units' interface differs, to the user")
+    return RR.answers_path(row)
+
+
 def _bench_answers(m, row):
     """A bench row's hashed answers file and its path, or None while its answers are not on main."""
     if row in SE.ROWS:
@@ -848,11 +864,7 @@ def _bench_answers(m, row):
     key = RD.answers_key(row)
     if key not in m:
         return None
-    try:
-        from learn import rederive_rows as RR
-        path = RR.answers_path(row)
-    except (ImportError, AttributeError):
-        raise SystemExit(f"main holds {key} but this checkout has no rederive_rows.answers_path: merge Unit 4")
+    path = rows_answers_path(row, f"main holds {key} but this checkout has no learn/rederive_rows.py: merge Unit 4")
     return NT.require_file_hash(m, key, path), path
 
 
@@ -916,11 +928,7 @@ def cmd_controls_real(_args):
     from learn import pipeline_fix as P
     from learn import scratch_notes as SN
 
-    try:
-        from learn import rederive_rows as RR
-        refit_path = RR.answers_path(RD.REAL_ROW)
-    except (ImportError, AttributeError):
-        raise SystemExit("this checkout has no rederive_rows.answers_path: merge Unit 4 first")
+    refit_path = rows_answers_path(RD.REAL_ROW, "this checkout has no learn/rederive_rows.py: merge Unit 4 first")
     refit = NT.require_file_hash(m, RD.answers_key(RD.REAL_ROW), refit_path)
     b2 = NT.require_file_hash(m, SE.PHASE_B2_ANSWERS, SN.answers_path(SE.BUILD2))
     rb = S.require_hash(S.phase_answers(SE.STEM_ROW), S.answers_path(SE.STEM_ROW))
