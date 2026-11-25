@@ -1863,3 +1863,31 @@ passed on every command, and the D1 source test passed there (the search code is
 **Next:** `score`, `read`, then `pair-builds --build-name b3 --against b2` under C3. Stated before it is read: the
 all-parts figure, where the 21 carried parts add an exact 0, is likely "matches / level"; the changed-parts-only pair
 (26 parts) is read beside it.
+
+**Phase 7 read: build 3 scored, read and paired with build 2 (2026-11-25; ledger `preset-ladder`
+`phase_scratch_notes_read_b3`, `phase_scratch_notes_pair_b3`).** It ran from a frozen worktree of main at cc6dc144
+(#620's merge). `score` ran on 3 shards: 940 renders in 732 s wall, the scoring control ok on 47 of 47, no rerun.
+`read` and `pair-builds --against b2` used zero renders. Build 3's ear verdict is pending, so every code below is
+provisional.
+
+By the score, on BKS+GOAT (the 40), 90% intervals; negative means build 3 is closer:
+
+| Build 3 less build 2 | Answer arm | Shrunk arm |
+|---|---|---|
+| All parts, C3's intent-to-treat (47; carried parts 0) | +0.019 [−0.000, +0.039], matches, level not readable | +0.033 [+0.014, +0.052], matches |
+| Clean | +0.017 [−0.018, +0.052] | +0.033 [−0.003, +0.070] |
+| Crunch | +0.022 [−0.011, +0.054] | +0.032 [+0.010, +0.054] |
+| Changed parts only (26; 25 of the 40) | +0.031 [−0.001, +0.063], matches | +0.052 [+0.024, +0.080], undecided |
+| Clean, changed only | +0.033 [−0.158, +0.223] | +0.063 [−0.022, +0.148] |
+| Crunch, changed only | +0.032 [−0.019, +0.083] | +0.046 [+0.015, +0.078] |
+
+- The all-parts read is "matches / level", as stated before it was read.
+- The 21 carried parts each measured exactly 0, so their zeros are measured, not assumed.
+- On the 25 changed parts of the 40, the answer is closer on 9, farther on 14 and equal on 2.
+- Build 3's own read: its answer is level with Cen, at +0.028 [−0.080, +0.136]. Against row (c) it is +0.115
+  [+0.012, +0.218], labelled "worse" (FN-worse, provisional). Build 2's was +0.096 [+0.005, +0.187], undecided.
+- The curve is flat from 50 evaluations on.
+
+**Reading.** F6 moves the search's answers by less than the score can read. The shrunk arm leans slightly to build 2.
+This matches the plan's outcome "ear fixed, J0 level or unreadable": if the page hears the bend fixed, F6 stays in the
+build and bend work stops for the score's sake. That call waits for build 3's ear page.
