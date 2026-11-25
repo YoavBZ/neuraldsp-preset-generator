@@ -31,7 +31,7 @@ search, read against row (c)'s blurred DI on BKS and the panel. Its renders wait
 [section 15](#15-the-exact-notes-test-rows-xn-bank-xn-swap-xn-reread-xn-list-2026-11-24-ledger-phase_scratch_exact)
 (ledger `phase_scratch_exact`, with the review's amendments and the user's Go 1): on build 2's bank guitars, where
 replay is exact, what share of the dry-guitar mismatch cost comes from note reading. BKS+GOAT decides, all 47 beside.
-It touches no shared code. Ran 2026-11-25: `XN-both`, the share D*/D_swap 0.672 [0.568, 0.773]; not yet audited
+It touches no shared code. Ran 2026-11-25: `XN-both`, the share D*/D_swap 0.672 [0.568, 0.773]; audited, PASS WITH FIXES
 ([results](scratch-search-results.md#the-exact-notes-test-rows-xn-bank-xn-swap-xn-reread-xn-list-xn-both)).
 
 **The user's rule.** No action rests on a gap under 0.05. "Passes" means decided better with the mean at −0.10 or

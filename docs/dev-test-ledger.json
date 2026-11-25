@@ -5248,7 +5248,7 @@
    },
    "phase_scratch_exact_outcome": {
     "code": "XN-both (answer arm, on the 40); shrunk XN-both; passing-only XN-both; no refusal-sensitive label",
-    "audit": "pending: the independent audit is the next step; nothing goes to the user before it",
+    "audit": "independent audit 2026-11-25, PASS WITH FIXES (every number, the code XN-both, the share and the hashes recomputed and matched), wording fixes A-D applied",
     "report_sha256": "9817d49723ca4d21405175342844e7bd1e4c0d6d9b236f8fbac4c261a484642e",
     "report_file": "PF/fs/exact/report.json",
     "rows_sha256": "4ea94d556e1266c10d1d8eba6bfa0bc123a57bb4e8a2b9748ad7ff679eed82dd",
@@ -5283,7 +5283,7 @@
       "share_D_star_of_D_swap": "0.539 [0.355, 0.748] (bounded)"
      }
     },
-    "reading": "both cost: on build 2's own rebuilt guitars (the replay exact by construction), note reading plus re-derivation make about two thirds of the whole real-DI mismatch cost (share 0.672 [0.568, 0.773]); the rest, about a third, is shown too: the replay itself (the real guitar's sound against the recorded notes'). Within D*, reading proper (+0.552) is the larger part and re-derivation (+0.321) is shown too; roughly 42% / 25% / 33% of D_swap on this scale. The realism check beside G1: xn-swap keeps about none of xn-bank's gain, as real build 2 keeps about none of row (b)'s",
+    "reading": "both cost: on build 2's own rebuilt guitars (the replay exact by construction), a second note reading plus re-derivation make about two thirds of the whole real-DI mismatch cost (share 0.672 [0.568, 0.773]), and both parts are shown (reading proper +0.552, re-derivation +0.321). The rest, about a third, is what the real DI costs beyond a second reading and re-derivation; the plan reads it as the replay, but it also holds any gap between the original reading's errors and the re-read's, articulation and the input level. The realism check beside G1: xn-swap keeps -0.073 [-0.248, +0.073] of xn-bank's gain, and real build 2 keeps none shown of row (b)'s (-0.034, interval -0.44 to +0.31); neither is shown to keep the gain; the real interval is wide",
     "renders": {
      "phase_a": 804,
      "stage_1_search": 24900,
@@ -5295,9 +5295,11 @@
     },
     "refusals": "one xn-list part refused (a technical start refusal, then its rerun in a fresh process refused again): a BKS clean part, so in the deciding 40, read at Cen under S1. On that part the guitar rebuilt from the exact notes goes quiet over most of the search half, so J0 cannot read it (pause share about 0.85 against J0's 0.5) - a fall-back to the starting preset that a product would also make. Read at Cen it costs xn-list that part's whole gain (+1.535 in D_list). The passing-only read and the refused part's audit are beside (beside.json); D_swap, D* and D_swap - D* do not use xn-list, so the passing-only code is the same and no refusal-sensitive label applies. Nothing else refused; scoring control 47 of 47 on every row (46 on xn-list), no non-finite score",
     "beside": "D* against the re-read F: Spearman -0.45, lower-F half +1.027, upper +0.644 (the F understates recall slightly); D* against the part's real gap: Spearman -0.12; checkpoints: D* +0.474 / +0.678 / +0.799 and D_swap +0.735 / +0.947 / +1.172 at 50 / 100 / 200; one part per partner (33): D* +0.779, D_swap - D* +0.491; parts at +0.10 or worse than Cen: xn-bank 0, xn-list 2, xn-reread 11, xn-swap 19 of 47; T1's coverage held on every answered part",
-    "cant_say": "the sizes are the exact world's (xn-bank -1.21 against row (b)'s -0.26 on real records), so every D is larger than a real-song figure and only the share is on one scale, not bridged to real songs; D_swap - D* bundles the guitar's own sound, articulation and the input level the search must find; one bank, one transcriber, one seed, the score only, never heard. No route change: Go 4 is the user's, after the audit",
+    "cant_say": "the sizes are the exact world's (xn-bank -1.21 against row (b)'s -0.26 on real records), so every D is larger than a real-song figure; only the share is on one scale, and even it is not bridged to real songs, and it moves with how close the bank search gets to the record; D_swap - D* bundles the guitar's own sound, any gap between the original reading's errors and the re-read's, articulation and the input level the search must find; one bank, one transcriber, one seed, the score only, never heard. No route change: Go 4 is the user's",
     "wording_note": "target settings are described in words only from here on (the plan keeps them under PF/): the item_69 entry in phase_scratch_exact_phase_a_review gives two target settings as numbers, to be read as 'the target's noise gate on, with low input gain'",
-    "results": "docs/scratch-search-results.md, 'The exact-notes test (rows xn-bank, xn-swap, xn-reread, xn-list): XN-both'"
+    "results": "docs/scratch-search-results.md, 'The exact-notes test (rows xn-bank, xn-swap, xn-reread, xn-list): XN-both'",
+    "post_hoc": "not declared: reading proper less D_list +0.231 [+0.026, +0.436] (so 'reading proper is the larger part' holds post hoc only); the split by ratios of the means (post hoc, ratios of the means, not declared, no intervals) about 42% reading proper, 25% re-derivation (about 22% without the refused part), 33% the rest; the rest (D_swap - D*) is not separated from D_list (+0.105 [-0.122, +0.332]) nor from reading proper (+0.126 [-0.093, +0.344])",
+    "robustness_beside": "the audit's checks: leaving out each cluster gives XN-both every time (share 0.647 to 0.694); dropping the refused part from every row gives XN-both (share 0.63). The share moves with how close the bank search gets to the record: 0.54 on the shrunk arm, 0.64 to 0.72 across the checkpoints"
    }
   },
   {
