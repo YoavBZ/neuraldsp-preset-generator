@@ -278,6 +278,27 @@ def design_parts(draw_parts, list_refused):
     return {DESIGN_PARTS[0]: sw[0], DESIGN_PARTS[1]: goat[0]}
 
 
+CHANGED_NOTE = ("the ladder's `changed_from_today` compares every form's chain cell with the in-M xf-now guitar "
+                "(`identical_to_now`), so in in-F and in-U it counts every part for every rung and means nothing; "
+                "here each form's chain cell is compared, by its sha256, with that form's own today's-rule cell "
+                "(value cell RRRR). The in-M counts, the proofs and the stored guitars are not affected")
+
+
+def changed_parts(lrecs, keys):
+    """(Pure.) Per input form and chain cell: the parts whose chain-cell guitar differs (sha256) from the same form's
+    today's-rule guitar (value cell RRRR), beside the ladder's own count (against in-M's xf-now in every form).
+    lrecs: {pkey: the ladder's part record}. -> {form: {element: {changed, ladder_reported}}, note}."""
+    out = {}
+    for u in RD.INPUTS:
+        out[u] = {}
+        for e in RD.CHAIN_CELLS:
+            mine = sum(lrecs[k]["inputs"][u]["chain"][e]["sha256"] != lrecs[k]["inputs"][u]["value"][RD.TODAY]["sha256"]
+                       for k in keys)
+            theirs = sum(not lrecs[k]["inputs"][u]["chain"][e]["identical_to_now"] for k in keys)
+            out[u][e] = {"changed": mine, "ladder_reported": theirs, "parts": len(keys)}
+    return {"forms": out, "note": CHANGED_NOTE}
+
+
 def summarise(recs, keys, rows=DIAG_ROWS):
     """(Pure.) Over `keys`: per traced row, each figure's mean and median, the parts with a J0 dry-run refusal per half
     (row and X), the traced parts and the byte-identical counts."""
@@ -718,6 +739,7 @@ def cmd_run(_args):
            "deciding_parts": len(deciding),
            "summary": {"the_40": summarise(recs, deciding), "all_47": summarise(recs, keys)},
            "spearman": {row: spearman_table(figs[row], dl["per_part"], deciding) for row in DIAG_ROWS},
+           "changed_parts": {"the_40": changed_parts(lrecs, deciding), "all_47": changed_parts(lrecs, keys)},
            "design_parts": {lab: design_section(lab, recs[k], lrecs[k], dl["per_part"].get(k))
                             for lab, k in dsg.items()},
            "parts": {k: S.file_sha(run_part_path(k)) for k in keys},
@@ -725,6 +747,10 @@ def cmd_run(_args):
     NT.never_overwrite(run_path())
     P.save(run_path(), out)
     print(f"RDX TRACE: traced audio byte-identical and its stored hash on {out['trace_proofs']} of {len(keys)} parts")
+    ch = out["changed_parts"]["all_47"]["forms"]
+    print(f"RDX CHANGED PARTS (all 47; each form's chain cell against its own today's-rule cell, the ladder's count "
+          f"beside): { {u: {e: (v['changed'], v['ladder_reported']) for e, v in ch[u].items()} for u in ch} }; "
+          f"{CHANGED_NOTE}")
     for row in DIAG_ROWS:
         s = out["summary"]["the_40"][row]["figures"]
         sp = out["spearman"][row]["figures"]

@@ -727,3 +727,34 @@ def test_one_part_diagnosis_on_a_made_up_part(monkeypatch, tmp_path):
     rec2, ok2 = D.part_diagnosis("bks__k1", {"set": "bks"}, lrec, X32, notes, n, bank, "ring-soft", _half, None,
                                  dict(want, **{"xf-now": "0" * 64}))
     assert not ok2 and not rec2["proofs"]["xf-now"]["stored_sha256_equal"] and rec2["proofs"]["xf-now"]["identical"]
+
+
+def _ladder_rec(today, chain, now):
+    """A made-up ladder part record: per form its today's-rule sha256 and its chain cells' sha256; `identical_to_now`
+    as the merged ladder writes it (against in-M's xf-now in every form)."""
+    return {"inputs": {u: {"value": {RD.TODAY: {"sha256": today[u]}},
+                           "chain": {e: {"sha256": chain[u][e], "identical_to_now": chain[u][e] == now}
+                                     for e in RD.CHAIN_CELLS}} for u in RD.INPUTS}}
+
+
+def test_changed_parts_compare_each_form_with_its_own_todays_rule():
+    recs = {}
+    for i in range(3):
+        today = {u: f"{u}-today-{i}" for u in RD.INPUTS}
+        now = today["in-M"]
+        chain = {u: {e: today[u] for e in RD.CHAIN_CELLS} for u in RD.INPUTS}   # no rung changes the guitar ...
+        chain["in-F"]["tilt"] = f"in-F-tilt-{i}"                              # ... but tilt in in-F on every part
+        if i == 0:
+            chain["in-M"]["mutes"] = "in-M-mutes-0"                          # and mutes in in-M on one part
+            chain["in-U"]["levels"] = "in-U-levels-0"
+        recs[f"bks__k{i}"] = _ladder_rec(today, chain, now)
+    got = D.changed_parts(recs, sorted(recs))
+    f = got["forms"]
+    assert f["in-F"]["tilt"] == {"changed": 3, "ladder_reported": 3, "parts": 3}
+    assert f["in-F"]["tuning"]["changed"] == 0 and f["in-F"]["tuning"]["ladder_reported"] == 3   # the fault, shown
+    assert f["in-U"]["levels"]["changed"] == 1 and f["in-U"]["mutes"] == {"changed": 0, "ladder_reported": 3,
+                                                                           "parts": 3}
+    assert {e: v["changed"] for e, v in f["in-M"].items()} == {"tuning": 0, "mutes": 1, "tilt": 0, "levels": 0}
+    assert all(v["changed"] == v["ladder_reported"] for v in f["in-M"].values())      # in-M is unaffected
+    assert "own today's-rule cell" in got["note"] and "not affected" in got["note"]
+    assert D.changed_parts(recs, ["bks__k1"])["forms"]["in-M"]["mutes"]["changed"] == 0
