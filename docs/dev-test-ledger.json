@@ -5345,6 +5345,101 @@
      "phase_scratch_readerr_outcome"
     ],
     "grepped": "no readerr, scratch_readerr, phase_scratch_readerr* key, xr-, RX-, anatomy or screen-check existed in docs/, learn/, tests/ or the ledger before this declaration"
+   },
+   "phase_scratch_rederive": {
+    "declared": "2026-11-25, before anything in it runs",
+    "plan": "docs/rederive-plan.md; the plan (handover plans/rederive-bench-plan-v2.md, sha256 0921b398b11cd9ceefa1c1684222a81e2538221e254814b9d0f91ac1ea8722f6, the planner's v2 after an independent review with 11 amendments, all folded in) passed an independent re-review, PASS WITH AMENDMENTS; the re-review's amendments 1 to 5 are binding and override the plan's text where they differ",
+    "user_go": "the user's Go 4 of the exact-notes test (2026-11-25): improve the rebuild on the exact bench",
+    "question": "on the exact bench, can the rebuild's re-derivation (the global tuning, the mute times, the one sustain tilt and the per-onset-group levels that rebuild_redo takes from the DI it is handed) return X's own values when handed a bank guitar in the form real songs present, so that its cost is no longer shown on the 40; then, does the same rule move build 2's real-song row toward row (b) (-0.264 on the 40; build 2 +0.009)",
+    "scope": "the bridge still takes the four values and the onset snap from the true DI, so RF-closer does not license the song-only path; the later step (hand the rule what a song gives: the part's record on the bench, the xlnoG stem on real songs) is not in this plan; coverage gap: neither the bench nor the bridge searches time effects, spring or doubler, and step 2 runs only C1b's stages A and B",
+    "elements": "tuning, mutes, tilt, levels, in rebuild_redo's order; onsets, lengths, bends and strings come from the exact list; the finish and -22.9 LUFS are functions of the synthesised audio",
+    "core": "derive returns the four values in rebuild_redo's order; compose is rebuild_redo's tail (the synthesis with given values, the hiss removal, the finish, ASSUMED_LUFS); both call only note_rebuild's existing functions; compose(derive(.)) is rebuild_redo byte for byte (tested on a made-up bank, loudness off and on)",
+    "inputs": {
+     "in-F": "compose(T) with the part's finish, as float32: the bank guitar X itself, what xn-list was rebuilt from (beside)",
+     "in-M": "song_bank.measure(denoise_above(synthesise_redo(T))[:n]) (amendment 4), as float64; di_section's own float32 rounding not applied: the form build_todo hands the rule on real songs (decides; the re-review's section 2, settled before the declaration)",
+     "in-U": "denoise_above(synthesise_redo(T))[:n] scaled to the true DI's RMS: fully unfinished (beside)"
+    },
+    "ladder": "zero renders, once: per part and input form T, R (today's rule), the 16 value cells (each element T's or R's) and the 4 chain cells (one element true, the others re-derived from the input, the later ones after it; the chain cell of an element is its rung row's guitar); three proofs on 47 of 47 before a part writes anything: in-F is X byte for byte, today's rule on in-F is xn-list byte for byte, xf-now (today's rule on in-M) is rebuild_redo's own output byte for byte; it stores only the in-M guitars of xf-now and the four rung rows (PF/fs/rederive/dry/<row>/, each written once); every other cell is reported (sha256, identical to X and to xf-now, logmel distance and envelope correlation to X), not stored; beside, today's rule's value errors against T (mutes matched within 30 ms, MUTE_FADE_S) and each rung row's changed parts in in-M",
+    "diagnosis": "zero renders (learn/rederive_diag.py): xn-list and xf-now against X per part and per note, traced through a recording Bank proxy and a wrapped note_end, the traced audio byte-identical; per control group how far each row's answer sits from the target (only group names and aggregates leave PF); Spearman with D_list, descriptive",
+    "fit": {
+     "principle": "choose the four values so that the rebuild, measured by the same estimator in a stated domain, matches the input",
+     "candidates": "12 plus today's rule: domain (unfinished, measured, finished) x passes (one, iterated) x mutes (as now, the veto: a detected drop kept only if the rebuild has no mute of its own within 30 ms)",
+     "update": "each pass adds the measured difference; tuning and tilt take a secant step from the second pass on",
+     "repeats": "against the previous pass: tuning moved under 0.05 cents (half of Bank.note's 0.1-cent rounding), the mute list identical, every level moved under 0.01 dB (at_lufs' tolerance), tilt moved under 0.027 dB/s (0.01 dB over the estimator's 0.375-s span)",
+     "cycles": "a pass that matches any earlier pass other than its predecessor, within the repeat tolerances (amendment 5), stops the fit; the pass used is the cycle's member with the lowest residual, a tie the earliest",
+     "safety_stop": "priced first on 2 or 3 parts with the projected wall reported, then one niced process (amendment 2); converge runs every iterated candidate on the 47 bench parts in in-M up to 64 passes; the stop is the largest pass count among fits that repeated; every fit reaching it is listed, its pass used the lowest-residual pass at or before the stop; the stop also applies to build-real, whose fits that reach it are listed too (amendment 5); the number and both lists go into the ledger with freeze",
+     "deciding_measure": "note_rebuild.logmel_distance from the candidate's finished guitar to X, in in-M, on the 40",
+     "tie": "per-part paired differences from the lowest-mean candidate through set_rows' BKS+GOAT pool; an interval spanning zero is a tie",
+     "simpler": "today's rule first; then fewer passes; then the domain (unfinished, measured, finished); then mutes as now before the veto",
+     "beside": "the four values' errors against T, byte-identical counts on all 47, the picked rule and today's in in-U and in-F",
+     "code": "scratch_rederive.FIT holds the constants; learn/rederive_fit.py codes the rules"
+    },
+    "rows": {
+     "xf-now": "today's rule handed in-M (stage 1)",
+     "xf-fix": "the frozen rule handed in-M (stage 2, only if stage 1 goes on)",
+     "xf-tuning, xf-mutes, xf-tilt, xf-levels": "the chain cells in in-M, changed parts only, only if the code asks",
+     "xf-null": "X with a negligible change, only if the code asks (guitars near X)",
+     "fs-refit": "the bridge: rf2, build 2's notes, the frozen rule, the true DI; scratch_notes' shared steps unchanged with its own keys"
+    },
+    "search_and_score": "bench rows as scratch_exact's (search_row_part unchanged, the exact-notes test's records, start reference and score, lag 0); a guitar byte-identical to a searched one takes that record byte for byte; the score and search checks rerun before the first bench row and must reproduce row (c) exactly; answers hashed on main before any score",
+    "tables": {
+     "bench": "D_now = G(xf-now) - G(xn-bank); D_fix = G(xf-fix) - G(xn-bank); gain = D_fix - D_now, paired per part; D_list - D_now beside as the finished input's share. Read in two stages (amendment 1). Stage 1 (xf-now only): XF-anomaly (D_now wholly below zero), XF-input (D_now spans zero; reports D_now's hi90, the cost it rules out; xf-fix does not run, to the user), go on (D_now wholly above zero), XF-other. Stage 2 (after xf-fix): XF-anomaly (D_fix wholly below zero), XF-worse (gain wholly above zero), XF-closed (gain wholly below, D_fix spans zero: the bridge runs), XF-part (gain wholly below, D_fix wholly above zero: the bridge runs), XF-undecided (gain spans zero), XF-other",
+     "real": "D_real = G(fs-refit) - G(build 2), paired per part: RF-anomaly (G(fs-refit) - G(row (b)) wholly below zero), RF-closer (D_real wholly below zero), RF-worse (wholly above), RF-undecided (spans zero; 'level, not readable by the score' inside +-0.05), RF-other",
+     "codes_bench": [
+      "XF-anomaly",
+      "XF-input",
+      "XF-worse",
+      "XF-closed",
+      "XF-part",
+      "XF-undecided",
+      "XF-other"
+     ],
+     "codes_real": [
+      "RF-anomaly",
+      "RF-closer",
+      "RF-worse",
+      "RF-undecided",
+      "RF-other"
+     ],
+     "note": "the answer arm, on the 40, the first that holds within a stage; coded (xf_stage1, xf_stage2, xf_read, rf_code) and tested before any run: every interval case, malformed ones included, ends in exactly one code"
+    },
+    "reads": "intervals from scratch_notes.set_rows on BKS+GOAT, all 47 beside; labels only from paired_reading and number_reading; S1 for refusals (refusal-sensitive when the two codes differ); splits: the 40 (deciding), clean 20 and crunch 20, all 47 and the panel, the shrunk arm, checkpoints 50, 100, 200, each cluster left out, one part per partner (33), without the two design-time parts, the 15 tilt parts against the 25 (labelled seen); the bridge also against rows (b) and (c); the real floor beside only, gating nothing",
+    "phases": "0 this declaration -> 1 ladder, diagnose (zero renders; phase_scratch_rederive_ladder) -> 2 converge (priced first), bench, freeze, build-bench, build-real (zero renders; phase_scratch_rederive_frozen) -> 3a score and search checks (62 renders) -> 3b xf-now (about 13,200; phase_scratch_rederive_answers_now before the score; stage-1 read; XF-input stops, to the user) -> 3c floors beside (474) then xf-fix (about 13,200; _answers_fix; stage-2 read; phase_scratch_rederive_bench_outcome) -> 3d rung or null rows only if the code asks -> 4 the bridge fs-refit (62 + 94 + about 12,435 + 940; _answers_refit; phase_scratch_rederive_outcome) -> 5 adoption, the user's go",
+    "renders": "whole path about 40,500 renders, about 6 h; if xf-now reads XF-input about 13,300, about 1.9 h; build 2's real score ran on 2 shards, 480 and 460 renders in 1,074 s and 1,045 s (amendment 3)",
+    "guards": "every command refuses unless this checkout runs main's code (scratch_rederive.py, scratch_exact.py and its six pinned files, note_transcribe.CODE_FILES, song_bank.py, di_robustness.py) and keys (phase_scratch_rederive*, phase_scratch_exact*; scratch_search.on_main; note_transcribe.redo_on_main), and main holds phase_fs, phase_fs_draw, phase_scratch_notes_dry_b2, phase_scratch_exact, phase_scratch_exact_targets and this key. Per PR, against its own base: git diff --quiet $(git merge-base origin/main HEAD) HEAD over note_transcribe.CODE_FILES, scratch_exact.py, scratch_search.py, scratch_notes.py and note_rebuild.py exits 0, and the guarded keys and the phase_scratch_exact* keys are equal at the base and HEAD; build 3's hash PRs merge first. The prefix sits outside every guarded prefix. Adoption into rebuild_redo is the only guarded change and is not in these runs",
+    "code": "learn/scratch_rederive.py (edits none of note_transcribe.CODE_FILES, scratch_exact.py or its pinned files); tests/test_scratch_rederive.py; later units learn/rederive_diag.py, learn/rederive_fit.py, learn/rederive_rows.py",
+    "data": "PF/fs/rederive/, each file written once; the ledger holds hashes and counts only; results in docs/rederive-results.md",
+    "keys_to_come": [
+     "phase_scratch_rederive_ladder",
+     "phase_scratch_rederive_frozen",
+     "phase_scratch_rederive_answers_now",
+     "phase_scratch_rederive_answers_fix",
+     "phase_scratch_rederive_answers_null",
+     "phase_scratch_rederive_answers_tuning",
+     "phase_scratch_rederive_answers_mutes",
+     "phase_scratch_rederive_answers_tilt",
+     "phase_scratch_rederive_answers_levels",
+     "phase_scratch_rederive_answers_refit",
+     "phase_scratch_rederive_bench_outcome",
+     "phase_scratch_rederive_outcome"
+    ],
+    "grepped": "no phase_scratch_rederive* key, row name (xf-now, xf-fix, xf-null, xf-tuning, xf-mutes, xf-tilt, xf-levels, fs-refit), code (XF-*, RF-*), build label rf2, input name (in-F, in-M, in-U) or module name (scratch_rederive, rederive_diag, rederive_fit, rederive_rows) existed in docs/, learn/, tests/ or the ledger before this declaration; none is scratch_readerr's",
+    "seen": {
+     "label": "seen before the declaration (the planner's, the first review's and the re-review's exploratory zero-render probes, and stored results)",
+     "identity": "47 of 47: T from the true DI rebuilds X byte for byte; the values from X rebuild xn-list byte for byte; the first review confirmed it through rebuild_redo itself",
+     "d_list": "+0.321 [+0.180, +0.462] on the 40; passing-only +0.285 [+0.173, +0.396]; one part per partner +0.261 [+0.149, +0.372] (33); without the two design-time parts +0.247 [+0.153, +0.342]; three parts carry about 40% of the summed D_list; paired half-widths about +-0.13",
+     "tilt_split": "15 of the 40 parts get a sustain tilt (3 BKS, 12 GOAT): subset means +0.530 [-1.334, +2.394] on the 15, +0.155 [+0.054, +0.256] on the 25 (plain means 0.646, 0.160); as contributions to the 40's mean +0.220 [+0.074, +0.366] and +0.101 [+0.045, +0.156] (reproduced by the re-review)",
+     "design_time_parts": "the refused sw50r part: mutes 2 -> 6, true mutes back lift envelope correlation with X 0.376 -> 0.989; GOAT item_69: tilt +10.1 -> -7.1 dB/s, its finished X decays 13 dB over the tilt span where the plain synthesis decays 7 dB",
+     "value_errors_in_F": "on the 40: mutes 271 true, 311 re-derived, 67 extra, 75 missed; tuning median 1.1 c (max 5.8); levels median 1.7 dB per group; raw tilt up to 612 dB/s before the clamp, 4 of the 15 true tilts clamped",
+     "by_input_form": "today's rule on the 40 (mean logmel distance to X; tilt error on tilt parts; level error median; extra mutes; missed mutes; tuning error median): in-F 3.69, 5.0 dB/s, 1.66 dB, 67, 75, 1.1 c; in-M 2.24, 4.0, 1.54, 48, 75, 1.1; in-U 1.54, 1.9, 1.19, 34, 75, 1.1; sw50r part 26.2 -> 6.3 -> 1.95, item_69 9.8 -> 8.9 -> 3.65 (the first review's four-part probe agrees); the re-review's in-M: sw50r 6.277, item_69 8.883, item_69 without the hiss removal 9.536",
+     "tracking": "best Spearman with D_list on the 40 +0.46 to +0.49 (1 - envelope correlation, |tilt change|, mute changes per group); tuning +0.25, level error +0.28",
+     "screens": "checkpoints: D_list +0.086 [+0.013, +0.158] at 50 and +0.189 [+0.084, +0.294] at 100, per-part Spearman with the final 0.45 and 0.59; floors: within-part order on 107 of 117 pairs, within-row Spearman with D 0.35 to 0.53; common first trials: rank agreement 0.98, 0.92, 0.84, per-part Spearman with D -0.28 to -0.41, common prefix a median 13, 6, 4 trials; dry-domain distance Spearman +0.42 to +0.60",
+     "real": "build 2 less row (b): 0.290 on the 15 tilt parts against 0.270 on the 25 (plain means; reproduced by the first review); audited Spearman of D* with the real gap -0.12; build 2's real floor +0.557, +0.822 above the true DI",
+     "prototype": "a self-consistent rule on the two worst parts, untuned: envelope correlation with X 0.376 -> 0.9985 (sw50r part) and 0.824 -> 0.986 (item_69), neither byte-identical; the plain correction step closed item_69's tilt error by about 10% a pass",
+     "rungs": "changed parts in the finished-input probe: tilt 13, mutes 41, levels 47, tuning 47",
+     "machine": "the planner's 47-part probe about 10.5 CPU minutes on one core beside the search; load average 27 to 29 on 8 cores during the second probe, render servers near 60% CPU"
+    },
+    "cant_show": "the bench rewards recovering build 2's own values, artefacts included; the bridge still reads every input from the true DI; in-M is a stand-in judged from the code; the fit may not repeat (every such fit listed); one bank, one transcriber, one seed, the score only"
    }
   },
   {
