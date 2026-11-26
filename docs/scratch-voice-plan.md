@@ -161,8 +161,10 @@ It is coded as `scratch_voice.spend_refusal` and `require_spend`. The gate is ne
 | File | Writer | Holds |
 |---|---|---|
 | `build.json` | Unit B | `proofs` (`rule_off_is_tr_di`, `trace_is_tr_di_report`, `all_pass_is_vc_fin`, `vc_fin_is_avg`, each held of 47), `proofs_hold`; per part `guitars` (each built guitar's and `avg+mild`'s `file_sha256`, `audio_sha256`), `gain_db` (`vc-own`'s), `unclaimed` (`unclaimed_groups`), `cover` (`cover_figures`), `ends` (counts by kind); `scratch_readerr.py`'s blob sha and `played_trace`'s source sha256 |
+| `build-parts/<part>.json` | Unit B | one part's build record, written by `build --shard`; `--combine` folds them into `build.json` |
 | `dry/<guitar>/<part>.npy` | Unit B | the four `vc-*` guitars, float32 |
 | `floors/<part>.json` | Unit C | `guitars`: per rendered guitar only (never the stored true DI or `tr-di`) `held`, `audio_sha256`, `dry_sha256` (the build's `audio_sha256`), `refused` (a reason or none), `reran`, `carried_from`. A `held` that is missing, non-finite or not positive without `refused` stops the read |
+| `floors-first/<part>.json` | Unit C | the first-pass record of any part with a refusal, in the same shape as `floors/`. The read never reads it. The main pass skips the part; `--rerun` reruns its refused guitars once and writes the part's one `floors/` record |
 | `repeat/<part>.json` | Unit C | on the two check parts, `tr-di` and the true DI against their stored floors; `holds` |
 | `rows.json`, `report.json` | the read | the terms, the code, the figures beside (a figure that cannot be formed reads "not computable"); part keys appear only as 12-hex tags, refusals included |
 

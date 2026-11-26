@@ -504,3 +504,202 @@ def test_the_dry_files():
     assert VF.dry_file("vc-own", "a/b") == V.dry_path("vc-own", "a/b")
     nr = pytest.importorskip("learn.note_replay")
     assert VF.dry_file("avg+mild", "a/b") == nr.blur_path("avg+mild", "a/b")
+
+
+# --- the review's additions: the real world behind patched renders, crashes, the wait, the disk in the repeat -------
+
+def _real(monkeypatch, tmp_path, n=1000, lo=10, hi=900):
+    """A RealWorld on a made-up context: the section, the record, the answer and every render patched (numpy only)."""
+    np = pytest.importorskip("numpy")
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import local_objective as LO
+    from learn import note_replay as R
+    from learn import note_transcribe as NT
+    from learn import pipeline_fix as P
+
+    parts = [{"pkey": "bks/k0|u0", "set": "bks", "unit": "u0", "amp": "a", "lag": 3, "held": "B"},
+             {"pkey": "goat/k1|u1", "set": "goat", "unit": "u1", "amp": "a", "lag": 0, "held": "A"}]
+    pk = parts[0]["pkey"]
+    rng = np.random.default_rng(0)
+    di32 = rng.standard_normal(n).astype(np.float32)
+    tr32 = rng.standard_normal(n).astype(np.float32)
+    clean = rng.standard_normal(n)
+    monkeypatch.setattr(R, "di_section", lambda prt: di32)
+    monkeypatch.setattr(SE, "_trim", lambda: (lo, hi))
+    monkeypatch.setattr(P, "real_amp_track", lambda sd, track, start: clean)
+    monkeypatch.setattr(LO, "tdict", lambda a: {"x": a})
+    monkeypatch.setattr(NT, "load_dry", lambda arm, key, b2: tr32)
+    monkeypatch.setattr(R, "blur_path", lambda dry, k: tmp_path / "blur" / f"{SE._f(k)}.npy")
+    guitars = {}
+    for g in VF.ORDER:
+        x = (rng.standard_normal(n) * 0.1).astype(np.float32)
+        path = VF.dry_file(g, pk)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        np.save(path, x)
+        guitars[g] = {"file_sha256": S.file_sha(path), "audio_sha256": S.npy_sha(x)}
+    sd = type("SD", (), {"units": {(p["set"], p["unit"], p["amp"]): {"prt": {"sd": "s", "track": "t", "start_s": 1.0}}
+                                   for p in parts}})()
+    ctx = {"draw": {"parts": parts}, "sd": sd, "b2": {}, "stored": {}, "shas": {},
+           "answers": {"parts": {pk: {"select": "sel", "answer": "ans"}}},
+           "build": {"parts": {pk: {"guitars": guitars}}}}
+    calls = {"render": [], "judge": []}
+    out = {"y": None}
+
+    def fresh(make, x, sel, xp, xk):
+        calls["render"].append((make, x, sel, xp, xk))
+        return np.arange(n, dtype=np.float64) * 1e-3 if out["y"] is None else out["y"]
+
+    def judge(ref, y, di, lag, half):
+        calls["judge"].append((ref, y, di, lag, half))
+        return 0.5
+
+    monkeypatch.setattr(AM, "fresh_render", fresh)
+    monkeypatch.setattr(R, "half_distance", judge)
+    return np, VF.RealWorld(ctx), pk, calls, out, (di32, tr32, clean, CB, AM)
+
+
+def test_the_real_render_calls_exactly_as_the_real_floor_does(monkeypatch, world):
+    np, w, pk, calls, out, (di32, tr32, clean, CB, AM) = _real(monkeypatch, world)
+    held, sha, finite = w.render(pk, "vc-own")
+    (make, x, sel, xp, xk), = calls["render"]
+    assert make is CB.new_renderer and sel == "sel" and xp == xk == {"x": "ans"}
+    assert np.array_equal(x, np.load(V.dry_path("vc-own", pk))) and x.dtype == np.float32
+    (ref, y, di, lag, half), = calls["judge"]
+    assert ref is clean and lag == 3 and half == "B"
+    assert np.array_equal(y, (np.arange(1000) * 1e-3)[10:900]) and np.array_equal(di, di32.astype(np.float64)[10:900])
+    assert (held, finite) == (0.5, True) and sha == AM.audio_sha((np.arange(1000) * 1e-3)[10:900])
+    w.render(pk, "true")
+    w.render(pk, "tr-di")
+    assert calls["render"][1][1] is di32 and calls["render"][2][1] is tr32      # the stored guitars as stored
+    assert w.dry_shas(pk)["true"] == S.npy_sha(di32) and w.dry_shas(pk)["tr-di"] == S.npy_sha(tr32)
+    assert w.dry_shas(pk)["avg+mild"] == w.ctx["build"]["parts"][pk]["guitars"]["avg+mild"]["audio_sha256"]
+    out["y"] = np.full(1000, np.nan)
+    held, sha, finite = w.render(pk, "avg+mild")
+    assert held == math.inf and finite is False and len(calls["judge"]) == 3   # no judge on a non-finite render
+    assert sha == AM.audio_sha(np.zeros(890))
+    assert VF.render_floor(held, sha, finite, "d")["refused"] == VF.REASONS["nonfinite_render"]
+
+
+def test_the_real_load_refuses_another_file_other_samples_or_length(monkeypatch, world):
+    np, w, pk, calls, out, _ = _real(monkeypatch, world)
+    ent = w.ctx["build"]["parts"][pk]["guitars"]
+    good = dict(ent["vc-fin"])
+    ent["vc-fin"] = dict(good, file_sha256="0" * 64)
+    with pytest.raises(SystemExit, match="file is not build.json's") as e:
+        w.render(pk, "vc-fin")
+    assert pk not in str(e.value)
+    ent["vc-fin"] = dict(good, audio_sha256="0" * 64)
+    with pytest.raises(SystemExit, match="samples are not build.json's"):
+        w.render(pk, "vc-fin")
+    short = np.zeros(999, np.float32)
+    np.save(V.dry_path("vc-cut", pk), short)
+    ent["vc-cut"] = {"file_sha256": S.file_sha(V.dry_path("vc-cut", pk)), "audio_sha256": S.npy_sha(short)}
+    with pytest.raises(SystemExit, match="section's length"):
+        w.render(pk, "vc-cut")
+    V.dry_path("vc-own", pk).unlink()
+    with pytest.raises(SystemExit, match="file is not build.json's"):
+        w.render(pk, "vc-own")
+    assert calls["render"] == []                          # every refusal before the render
+
+
+class Crash(Fake):
+    def __init__(self, parts, at, **kw):
+        super().__init__(parts, **kw)
+        self.at = at
+
+    def render(self, pk, g):
+        if (pk, g) == self.at:
+            self.at = None
+            self.calls.append((pk, g))
+            raise RuntimeError("the plugin server died")
+        return super().render(pk, g)
+
+
+def test_a_render_exception_mid_part_writes_nothing_and_a_restart_renders_it_again(world):
+    parts = _parts(6)
+    k = VF.mine(parts, (1, 3))[0]["pkey"]
+    VF.run_floor(_args(shard=(0, 3)), Fake(parts))
+    w = Crash(parts, (k, "vc-own"))
+    with pytest.raises(RuntimeError):
+        VF.run_floor(_args(shard=(1, 3)), w)
+    assert not V.floor_path(k).exists() and not VF.first_path(k).exists() and not list(world.rglob("*.tmp"))
+    w.calls.clear()
+    VF.run_floor(_args(shard=(1, 3)), w)
+    assert [g for kk, g in w.calls if kk == k] == list(VF.ORDER)
+    assert _rec(k)["renders"] == 10 and VF.refused_guitars(_rec(k)) == []
+
+
+class Later(Fake):
+    """The repeat records appear after `polls` sleeps (shard 0 working meanwhile)."""
+
+    def __init__(self, parts, polls, **kw):
+        super().__init__(parts, **kw)
+        self.polls, self.slept = polls, 0
+
+    def sleep(self, s):
+        super().sleep(s)
+        self.slept += 1
+        if self.slept == self.polls:
+            VF.run_repeat(Fake(self.parts))
+
+
+def test_the_wait_goes_from_pending_to_holds_after_a_few_polls(world):
+    parts = _parts(6)
+    w = Later(parts, 3)
+    VF.run_floor(_args(shard=(2, 3)), w)
+    assert w.slept == 3 and w.t == 3 * VF.REPEAT_POLL_S and w.caps == 1
+    assert {g for _, g in w.calls} == set(VF.ORDER)
+    assert all(V.floor_path(p["pkey"]).exists() for p in VF.mine(parts, (2, 3)))
+
+
+class Draining(Fake):
+    def __init__(self, parts, frees, **kw):
+        super().__init__(parts, **kw)
+        self.frees = list(frees)
+
+    def free_gb(self):
+        return self.frees.pop(0)
+
+
+def test_the_disk_guard_fires_inside_the_repeat_check(world):
+    parts = _parts(6)
+    ck = V.check_parts(parts)
+    w = Draining(parts, [31.05])
+    with pytest.raises(SystemExit, match="DISK GUARD"):
+        VF.run_repeat(w)
+    assert w.calls == [] and not (world / "repeat").exists()
+    w = Draining(parts, [100.0, 31.05])                   # room for the first check part only
+    with pytest.raises(SystemExit, match="DISK GUARD"):
+        VF.run_floor(_args(shard=(0, 3)), w)
+    assert w.calls == [(ck[0], g) for g in VF.STORED]
+    assert V.repeat_path(ck[0]).exists() and not V.repeat_path(ck[1]).exists() and not (world / "floors").exists()
+
+
+def test_a_rerun_refuses_a_first_pass_on_other_inputs(world):
+    parts = _parts(6)
+    k = parts[4]["pkey"]
+    w = Fake(parts, refuse={(k, "vc-cut"): 1})
+    _shard_all(w)
+    for f in VF.SHA_FIELDS:
+        w2 = Fake(parts)
+        w2.shas = dict(w.shas, **{f: "9" * 64})
+        with pytest.raises(SystemExit, match=f"another {f} file") as e:
+            VF.rerun_part(w2, k)
+        assert k not in str(e.value) and w2.calls == [] and not V.floor_path(k).exists()
+    VF.rerun_part(Fake(parts), k)
+    assert _rec(k)["guitars"]["vc-cut"]["reran"] is True
+
+
+def test_write_once_leaves_no_temp_file_when_the_write_fails(world, monkeypatch):
+    def boom(*a, **kw):
+        raise OSError("disk full")
+    monkeypatch.setattr(VF.os, "link", boom)
+    with pytest.raises(OSError):
+        VF.write_once(world / "z" / "a.json", {"x": 1})
+    assert not (world / "z" / "a.json").exists() and not list(world.rglob("*.tmp"))
+    monkeypatch.undo()
+    monkeypatch.setattr(pathlib.Path, "write_text", lambda self, t: (_ for _ in ()).throw(OSError("disk full")))
+    with pytest.raises(OSError):
+        VF.write_once(world / "z" / "b.json", {"x": 1})
+    assert not list(world.rglob("*.tmp")) and not (world / "z" / "b.json").exists()

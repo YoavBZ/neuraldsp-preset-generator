@@ -32,7 +32,8 @@ as the judge's DI, only a silent render can refuse). A part with any refused gui
 `floors-first/<part>.json`, never to `floors/`; `--rerun` reruns only those guitars, once, in its own fresh process,
 and writes the part's one `floors/<part>.json` (the passing guitars taken from the first pass byte for byte, the rerun
 ones `reran: true`, still refused with their reason if they refuse again). So the read never sees a record with a
-pending rerun. Reasons are fixed strings (`REASONS`) with no part key or path: the read copies them into report.json.
+pending rerun. A rerun refuses unless the first pass ran on the same build.json, answers and stored floors (their
+sha256). Reasons are fixed strings (`REASONS`) with no part key or path: the read copies them into report.json.
 
 **Records** are written once (`write_once`: an exclusive link, never a replace). They and the logs carry 12-hex tags
 (`scratch_voice.tag`), never part keys; the files sit under `PF/fs/voice/` (`floors/`, `floors-first/`, `repeat/`).
@@ -74,6 +75,7 @@ REASONS = {                              # S1's reasons: fixed strings, never a 
     "nonfinite_distance": "the held distance is not finite",
     "nonpositive_distance": "the held distance is not positive",
 }
+SHA_FIELDS = ("build", "answers", "floors")   # the hashed inputs every record names (`<field>_sha256`)
 FIELDS = ("held", "audio_sha256", "dry_sha256", "refused", "reran", "carried_from")   # a guitar's floor record
 
 
@@ -210,8 +212,9 @@ def write_once(path, obj, label="a record"):
         raise SystemExit(f"{label} ({path.parent.name}/): exists, never overwritten")
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    tmp.write_text(json.dumps(obj, indent=1, allow_nan=False) + "\n")
+    text = json.dumps(obj, indent=1, allow_nan=False) + "\n"     # refuses NaN and inf before any file is made
     try:
+        tmp.write_text(text)
         os.link(tmp, path)
     except FileExistsError:
         raise SystemExit(f"{label} ({path.parent.name}/): exists, never overwritten") from None
@@ -280,8 +283,7 @@ def require_repeat(w):
 
 def part_record(w, pk, guitars, renders, extra=None):
     return {"plan": PLAN, "tag": V.tag(pk), "guitars": guitars, "renders": renders, **(extra or {}),
-            "build_sha256": w.shas["build"], "answers_sha256": w.shas["answers"], "floors_sha256": w.shas["floors"],
-            "time": w.now()}
+            **{f"{f}_sha256": w.shas[f] for f in SHA_FIELDS}, "time": w.now()}
 
 
 def floor_part(w, pk):
@@ -305,6 +307,9 @@ def rerun_part(w, pk):
     if out.exists():
         raise SystemExit(f"{V.tag(pk)}: a floor record exists, never overwritten")
     rec = json.loads(first.read_text())
+    moved = [f for f in SHA_FIELDS if rec.get(f"{f}_sha256") != w.shas[f]]
+    if moved:
+        raise SystemExit(f"{V.tag(pk)}: the first pass ran on another {', '.join(moved)} file: no rerun, to the user")
     bad = refused_guitars(rec)
     if not bad:
         raise SystemExit(f"{V.tag(pk)}: its first-pass record holds no refusal")
@@ -472,6 +477,8 @@ class RealWorld:
         x32 = np.load(path).astype(np.float32)
         if S.npy_sha(x32) != ent["audio_sha256"]:
             raise SystemExit(f"{V.tag(pk)}: {g}'s samples are not build.json's")
+        if x32.ndim != 1 or len(x32) != len(c["di32"]):
+            raise SystemExit(f"{V.tag(pk)}: {g} is not the section's length")
         return x32
 
     def render(self, pk, g):
