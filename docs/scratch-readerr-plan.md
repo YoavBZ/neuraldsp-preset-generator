@@ -1005,6 +1005,11 @@ No transcriber candidate's figure exists yet.
     interpreter's record holds the pinned sha256 and version.
   - `tx-move-old` moves the old pyenv-built install aside, never deleting it: the two venvs (venv-b's `.pth` file
     first), their records and lock files, and the two unpacked code folders. It writes a record of what moved where.
+- **Manifest v3 (2026-11-26, the orchestrator's call).** mt3-infer 0.2.0's bundled YourMT3 T5 decoder fails under
+  transformers 4.57.5 (`cache_position` is None), so lock A is re-resolved at transformers 4.45.1, the version
+  YourMT3's own Space pins, with tokenizers 0.20.3. Every other package is held at its version, and no unreleased
+  code is used. v3 is v2 with only lock A changed, checked by script; `MANIFEST` points to it. `tx-move-old --lock A`
+  moves one venv's files aside alone.
 - **Provenance: `guitar-gaps`.** The pinned `guitar-gaps.pth` is a 5,000-iteration checkpoint (`iteration: 5000`
   inside), not the paper's 12,200-iteration file. It is the file `hf_midi_transcription` ships, so the test uses it
   as shipped.

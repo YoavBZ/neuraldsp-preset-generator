@@ -1,12 +1,13 @@
 """The note-reading diagnosis's Phase 2b install and fetch (`docs/scratch-readerr-plan.md` section 10; ledger
 `preset-ladder` `phase_scratch_readerr_p2b`; the amendment's unit F).
 
-    $MAIN -m learn.readerr_tools tx-move-old                   # once: the old pyenv-built install moved aside
+    $MAIN -m learn.readerr_tools tx-move-old [--lock A|B]      # an old install moved aside (both locks, or one)
     $MAIN -m learn.readerr_tools tx-python                     # first: the pinned standalone CPython 3.12.16
     $MAIN -m learn.readerr_tools tx-install [--lock A|B]       # the two venvs, from the manifest's locks
     $MAIN -m learn.readerr_tools tx-fetch [--cand ymt3|kong-fl|kong-gaps]   # the three pinned checkpoints
 
-**The manifest** is U4's hand-back as v2 (`MANIFEST`: v1 plus each checkpoint's scanned `pickle_globals`, O9),
+**The manifest** is U4's hand-back as v3 (`MANIFEST`: v1 plus each checkpoint's scanned `pickle_globals`, O9, then
+lock A re-resolved at transformers 4.45.1 with tokenizers 0.20.3, YourMT3's own Space pin),
 read only when its sha256 is `MANIFEST_SHA256`. Every URL, size, sha256, lock line and pinned path comes from it;
 nothing is resolved here.
 
@@ -58,8 +59,8 @@ import urllib.request
 
 HOME = pathlib.Path(os.path.expanduser("~/ndsp-presets"))
 ROOT = HOME / "tools" / "readerr"
-MANIFEST = HOME / "handover" / "2026-11-26" / "readerr-download-manifest-v2.json"   # O9: v1 + the audited scan
-MANIFEST_SHA256 = "94a84fc9f4e5eb47f7ef6783fa2663d2e1cc120514d0e0f4ef9053e9782c65b1"
+MANIFEST = HOME / "handover" / "2026-11-26" / "readerr-download-manifest-v3.json"   # v2 + lock A at transformers 4.45.1
+MANIFEST_SHA256 = "37752c5b8835b81f571d4d25101f1ddf56e025423d33bab4c681070c9533cb8e"
 PBS_TAG = "20261124"                     # astral-sh/python-build-standalone's release (tag commit 48d61fcd), MPL-2.0
 PBS_ASSET = "cpython-3.12.16+20261124-aarch64-apple-darwin-install_only.tar.gz"
 PBS_URL = ("https://github.com/astral-sh/python-build-standalone/releases/download/20261124/"
@@ -593,26 +594,33 @@ def links_outside(folder):
     return sorted(bad)
 
 
-def old_targets(man, root=None):
-    """(Pure but for `exists`.) What `tx-move-old` moves, in order: venv-b's `.pth` file first (so it is inactive
-    wherever venv-b goes), the two venvs, their install records and lock files, and the two unpacked code folders.
-    -> [paths that exist]."""
+def old_targets(man, root=None, locks=None):
+    """(Pure but for `exists`.) What `tx-move-old` moves for `locks` (default both), in order: venv-b's `.pth` file
+    first (so it is inactive wherever venv-b goes), each venv, its install record and lock file, and for lock B the
+    two unpacked code folders. -> [paths that exist]."""
     r = pathlib.Path(root or ROOT)
-    cands = sorted((r / LOCKS["B"]["venv"] / "lib").glob(f"python*/site-packages/{PTH_NAME}"))
-    for lock in LOCKS:
+    locks = list(locks or LOCKS)
+    for lock in locks:
+        if lock not in LOCKS:
+            refuse(f"no lock {lock!r} (A or B)")
+    cands = []
+    if "B" in locks:
+        cands += sorted((r / LOCKS["B"]["venv"] / "lib").glob(f"python*/site-packages/{PTH_NAME}"))
+    for lock in (x for x in LOCKS if x in locks):
         cands += [r / LOCKS[lock]["venv"], r / f"install-{lock}.json", r / f"lock-{lock}.txt"]
-    for i in LOCKS["B"]["archives"]:
+    for i in (LOCKS["B"]["archives"] if "B" in locks else ()):
         a = manifest_item(man, i)
         cands.append(pathlib.Path(a["pinned_path"]).parent / f"{a['id']}-{a['commit'].split()[0]}")
     return [under_root(c, root) for c in cands if c.exists() or c.is_symlink()]
 
 
-def cmd_tx_move_old(_args):
-    """Move aside, never delete, the old pyenv-built install (`old_targets`), each with `move_aside`'s timestamp;
-    refused when nothing matches. -> move-old-<time>.json, what moved where."""
+def cmd_tx_move_old(args):
+    """Move aside, never delete, an old install (`old_targets`; `--lock A|B` for one venv's files alone, else both),
+    each with `move_aside`'s timestamp; refused when nothing matches. -> move-old-<time>.json, what moved where."""
     require_main()
     man = load_manifest()
-    todo = old_targets(man)
+    lock = getattr(args, "lock", None)
+    todo = old_targets(man, locks=[lock] if lock else None)
     if not todo:
         refuse("nothing of the old install is there to move aside")
     moved = []
@@ -625,7 +633,8 @@ def cmd_tx_move_old(_args):
             q = move_aside(p)
         moved.append({"from": str(p), "to": str(q)})
     rec = {"plan": "docs/scratch-readerr-plan.md section 10j", "ledger": f"{LEDGER_ID} {PHASE}",
-           "made": time.strftime("%Y-%m-%d %H:%M:%S"), "moved": moved, "deleted": []}
+           "made": time.strftime("%Y-%m-%d %H:%M:%S"), "locks": [lock] if lock else sorted(LOCKS), "moved": moved,
+           "deleted": []}
     out = write_once_json(ROOT / f"move-old-{stamp()}.json", rec)
     print(f"MOVED ASIDE {len(moved)} items; record {out} sha256 {file_sha(out)}")
 
@@ -751,7 +760,8 @@ def main(argv=None):
 
     ap = argparse.ArgumentParser(prog="readerr_tools", description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
-    m = sub.add_parser("tx-move-old", help="move the old pyenv-built venvs, records and unpacked code aside")
+    m = sub.add_parser("tx-move-old", help="move an old install's venv, records and unpacked code aside")
+    m.add_argument("--lock", choices=sorted(LOCKS))
     m.set_defaults(func=cmd_tx_move_old)
     t = sub.add_parser("tx-python", help="the pinned standalone CPython 3.12 the venvs are made from")
     t.set_defaults(func=cmd_tx_python)
