@@ -35,7 +35,8 @@ When row (b)'s answer is rendered through the rebuilt guitar `tr-di` instead of 
    - Most of the weight is after a mute.
 3. **S is an upper bound.** Real audio inside our windows closes at most S. S is not "the bank's sound":
    - at one preset, it also carries any static tone difference a search would absorb;
-   - the control (188 renders) or the user's waiver still gates any spend.
+   - the control (188 renders) or the user's waiver still gates any spend;
+   - the unclaimed-attack share shows no link to S (Spearman −0.05), but it covers only one of the note errors the gate can't see (extra attacks); wrong pitches, bends, articulation and level shaping stay inside S.
 4. **N is a lower bound for note activity.** N and K also carry `song_bank.measure`'s EQ re-fit to each guitar's own audio, which is not priced.
 5. **F costs at real sound.** It is worse on clean (+0.268 [+0.174, +0.363]) and undecided on crunch (+0.076 [+0.046, +0.106]).
 6. **E1 against E2 is loose.** The safe line: the level curve is not where S lives, by the score.
@@ -84,7 +85,7 @@ Readings come from `paired_reading`. Unmarked S, N, F and T cells read worse, an
 - **E1 and E2.** The level curve is not where S lives, by the score (caveat 6).
   - E1 = ln(d_tr-di / d_vc-env), the level curve: +0.028 [+0.020, +0.037], matches.
   - E2 = ln(d_vc-env / d_vc-own), the rest: +0.472 [+0.371, +0.574], worse.
-  - `vc-env`'s gain was floored or clamped on a median 0.15% of frames.
+  - `vc-env`'s gain was clamped at ±20 dB on a median 0.15% of frames, and held at 0 dB under `tr-di`'s 40-dB floor on a median 5.7%.
 - **The `avg+mild` floor** (row (c)'s dry guitar at row (b)'s answer): +0.410 [+0.322, +0.498] against the true DI and −0.412 [−0.494, −0.329] against `tr-di`.
 - **The unclaimed-attack share** (our onset groups with no true-DI rise of 3 dB within ±20 ms). It does not follow S:
   - median 7.8% on the 40;
@@ -133,7 +134,7 @@ Readings come from `paired_reading`. Unmarked S, N, F and T cells read worse, an
 
 ## What it cannot show
 
-- **No search gain.** Floors don't order like search results, so fixing either side's gap here predicts no gain from a search.
+- **No search gain.** Floors don't order like search results: a floor says nothing about the gain a search would get from fixing either side.
 - **Timbre against note identity.** S can't separate these inside sounding spans. It is everything inside our windows, including note errors the gate can't see.
 - **Only the true-DI world.** Other presets, the ear and product conditions are not covered. Notes, onsets and the judge's DI all come from the true DI.
 - **One preset.**

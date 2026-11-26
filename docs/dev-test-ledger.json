@@ -8835,7 +8835,7 @@
    "phase_scratch_voice_outcome": {
     "phase": "Phase 4's read (docs/scratch-voice-plan.md, XV_TABLE): the terms S, N, K, F on one passing set at the real floor; the figures are in docs/scratch-voice-results.md; audited 2026-11-26 (independent, Opus), CONFIRMED WITH CAVEATS",
     "code": "XV-both",
-    "reading": "S and N both read worse on the 40 (paired_reading): real audio inside our note windows closes a heard-size part (at most S), and our note activity costs one too (at least N); by the score (J0), at one preset",
+    "reading": "S and N both read worse on the 40 (paired_reading): real audio inside our note windows closes a part heard-size by the score (at most S), and our note activity costs one too (at least N); by the score (J0), at one preset",
     "next": "by the table: both tracks, N's uncovered frames by cause to their tracks as named targets; before any synthesis, DI-restoration or search-row spend, the unclaimed-groups control (188 renders, its own declaration phase_scratch_voice_control) or the user's waiver; the next step is the user's route call",
     "label": null,
     "cut_sensitive": "no: N+K +0.148 [+0.079, +0.218] reads worse too; the code with N+K in N's place is XV-both",
@@ -8856,7 +8856,7 @@
      "bks_16": "S +0.465 [+0.277, +0.653], N +0.194 [+0.058, +0.331], K +0.011, F +0.143 [+0.049, +0.237], T +0.814",
      "goat_24": "S +0.537 [+0.438, +0.635], N +0.076 [+0.033, +0.119] undecided, K +0.015, F +0.201 [+0.123, +0.280], T +0.829",
      "n_plus_k": "+0.148 [+0.079, +0.218] worse",
-     "e1_e2": "E1 (the level curve) +0.028 [+0.020, +0.037] matches; E2 (the rest) +0.472 [+0.371, +0.574] worse; vc-env's gain floored or clamped on a median 0.15% of frames",
+     "e1_e2": "E1 (the level curve) +0.028 [+0.020, +0.037] matches; E2 (the rest) +0.472 [+0.371, +0.574] worse; vc-env's gain clamped at ±20 dB on a median 0.15% of frames; held at 0 dB under tr-di's 40-dB floor on a median 5.7%",
      "avg_mild": "the avg+mild floor at row (b)'s answer +0.410 [+0.322, +0.498] against the true DI, -0.412 [-0.494, -0.329] against tr-di",
      "shares": "Fieller S/T 0.61 [0.53, 0.68], N/T 0.16 [0.08, 0.26], F/T 0.21 [0.15, 0.27]",
      "cluster_left_out": "32 reads, every reading kept: S +0.454 to +0.515, N +0.115 to +0.150 (lowest lower end +0.045), K +0.012 to +0.014, F +0.156 to +0.182, T +0.780 to +0.841",
@@ -8871,7 +8871,7 @@
     "caveats": [
      "N 'worse' is fragile: without its two largest parts (both BKS) N is undecided (+0.098 [+0.044, +0.151]); it is undecided on GOAT and on clean; it is concentrated in a few high-uncovered BKS crunch parts",
      "the cause split under both orders: synthesis rules 66-99%, note reading 1-34%; these are shares of uncovered-frame weight, not of N's distance; most of it is after a mute",
-     "S is an upper bound: real audio inside our windows closes at most S; it is not 'the bank's sound'; at one preset it also carries static tone a search would absorb; the control (188 renders) or the user's waiver still gates any spend",
+     "S is an upper bound: real audio inside our windows closes at most S; it is not 'the bank's sound'; at one preset it also carries static tone a search would absorb; the control (188 renders) or the user's waiver still gates any spend; the unclaimed-attack share shows no link to S (Spearman −0.05), but it covers only one of the note errors the gate can't see (extra attacks); wrong pitches, bends, articulation and level shaping stay inside S.",
      "N is a lower bound for note activity; N and K also carry song_bank.measure's EQ re-fit, which is unpriced",
      "F costs at real sound: worse on clean, undecided on crunch",
      "E1 against E2 is loose; the safe line: the level curve is not where S lives, by the score",
