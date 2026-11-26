@@ -10,9 +10,11 @@ Declaration: [rederive-plan.md](rederive-plan.md). Ledger `preset-ladder`: `phas
 Every number here is by the score (J0), not heard. Intervals are 90%, from `scratch_notes.set_rows` on BKS+GOAT (the
 40); all 47 parts go beside. Labels come only from `paired_reading`.
 
-## The bridge: `fs-refit` on real songs (2026-11-26; audit pending): RF-worse
+## The bridge: `fs-refit` on real songs (2026-11-26; audited 2026-11-26 (independent, PASS WITH FIXES, wording applied)): RF-worse
 
-**The real-song code is RF-worse: the bench does not carry.** The bridge rebuilds each part from build 2's notes with
+**The real-song code is RF-worse, by the score: the bench gain does not carry.** On real songs the rule shows no
+gain; it reads a cost of +0.027 that the score's labels call matching (a cost above +0.054 is ruled out), and that
+rests on one part. The bridge rebuilds each part from build 2's notes with
 the frozen rule handed the true DI (`rf2`) and searches as build 2 did.
 - **D_real** = G(`fs-refit`) − G(build 2), paired per part, is **+0.027 [+0.001, +0.054]** on the 40. It is wholly
   above zero, so by the declared table the rule is not adopted.
@@ -31,6 +33,8 @@ the frozen rule handed the true DI (`rf2`) and searches as build 2 did.
 - **What it does not show.** On the bench the frozen rule closed today's cost (XF-closed). On real songs, with every
   input still from the true DI, it does not move build 2's row toward row (b). It may move it slightly away, by a
   cost too small and too fragile to read as more than that.
+
+**Next:** not adopted (declared). What follows, the song-only step or another lever, is the user's call.
 
 ### D_real on the declared splits
 
@@ -58,6 +62,11 @@ the frozen rule handed the true DI (`rf2`) and searches as build 2 did.
   - Without the largest one D_real spans zero (+0.018 [−0.004, +0.040]). Without the three largest it is −0.001
     [−0.020, +0.017].
   - By contribution all of it sits in the 15 tilt parts (seen).
+    - Post hoc (audit): on real songs the refit's tilt sits at its +12 dB/s clamp on 10 of the 15 tilt parts (4 of
+      15 on the bench); those 10 hold +0.89 of the +1.08 summed D_real.
+  - Post hoc (audit, seen): the largest part is the GOAT design-time tilt part, the same part that gave the bench's
+    largest gain (−2.14; see stage 2's audit note). The bench gain and the real cost both lean on it. Per part, the
+    bench gain and D_real are unrelated (Spearman −0.05).
 - **The fits that reached the 64-pass stop carry none of it.**
   - 18 of the 47 real fits reached the stop, 16 of them on the 40. On those parts D_real is −0.007 [−0.023, +0.010];
     on the others +0.053 [+0.003, +0.103].

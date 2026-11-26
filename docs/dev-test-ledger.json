@@ -7575,7 +7575,7 @@
     "next": "score --row fs-refit --shard k/3, then read-real (rf_code on D_real = G(fs-refit) - G(build 2) and G(fs-refit) - G(row (b)), the 40)"
    },
    "phase_scratch_rederive_outcome": {
-    "phase": "Phase 4's read (docs/rederive-plan.md section 8, the real-song table): fs-refit scored and read; the figures are in docs/rederive-results.md; audit pending",
+    "phase": "Phase 4's read (docs/rederive-plan.md section 8, the real-song table): fs-refit scored and read; the figures are in docs/rederive-results.md; audited 2026-11-26 (independent, PASS WITH FIXES, wording applied)",
     "code": "RF-worse",
     "reading": "D_real (G(fs-refit) - G(build 2)) wholly above zero on the 40, the answer arm: the bench does not carry; not adopted",
     "next": "not adopted; audit; to the user",
