@@ -8831,6 +8831,75 @@
       "recomputed_equals_stored": true
      }
     }
+   },
+   "phase_scratch_voice_outcome": {
+    "phase": "Phase 4's read (docs/scratch-voice-plan.md, XV_TABLE): the terms S, N, K, F on one passing set at the real floor; the figures are in docs/scratch-voice-results.md; audited 2026-11-26 (independent, Opus), CONFIRMED WITH CAVEATS",
+    "code": "XV-both",
+    "reading": "S and N both read worse on the 40 (paired_reading): real audio inside our note windows closes a heard-size part (at most S), and our note activity costs one too (at least N); by the score (J0), at one preset",
+    "next": "by the table: both tracks, N's uncovered frames by cause to their tracks as named targets; before any synthesis, DI-restoration or search-row spend, the unclaimed-groups control (188 renders, its own declaration phase_scratch_voice_control) or the user's waiver; the next step is the user's route call",
+    "label": null,
+    "cut_sensitive": "no: N+K +0.148 [+0.079, +0.218] reads worse too; the code with N+K in N's place is XV-both",
+    "refusal_sensitive": "no: 0 refusals (the passing set is all 40, all 47 beside)",
+    "cause_order_sensitive": "no, by the declared rule: the synthesis rules lead N's cause split under both orders",
+    "terms_the_40": {
+     "S": "+0.501 [+0.399, +0.603] worse",
+     "N": "+0.135 [+0.064, +0.206] worse",
+     "K": "+0.013 [+0.008, +0.019] matches",
+     "F": "+0.172 [+0.114, +0.231] worse",
+     "T": "+0.822 [+0.714, +0.930] worse",
+     "sum": "S + N + K + F = T per part (largest gap 4.4e-16) and on the 40's mean (2.2e-16)"
+    },
+    "beside": {
+     "all_47": "S +0.429 [+0.351, +0.508], N +0.128 [+0.049, +0.206], K +0.012 [+0.007, +0.017], F +0.183 [+0.096, +0.269], T +0.752 [+0.598, +0.906]",
+     "clean_20": "S +0.671 [+0.451, +0.891], N +0.079 [-0.045, +0.203] undecided, K +0.016, F +0.268 [+0.174, +0.363], T +1.034",
+     "crunch_20": "S +0.331 [+0.269, +0.393], N +0.192 [+0.081, +0.303], K +0.010, F +0.076 [+0.046, +0.106] undecided, T +0.609",
+     "bks_16": "S +0.465 [+0.277, +0.653], N +0.194 [+0.058, +0.331], K +0.011, F +0.143 [+0.049, +0.237], T +0.814",
+     "goat_24": "S +0.537 [+0.438, +0.635], N +0.076 [+0.033, +0.119] undecided, K +0.015, F +0.201 [+0.123, +0.280], T +0.829",
+     "n_plus_k": "+0.148 [+0.079, +0.218] worse",
+     "e1_e2": "E1 (the level curve) +0.028 [+0.020, +0.037] matches; E2 (the rest) +0.472 [+0.371, +0.574] worse; vc-env's gain floored or clamped on a median 0.15% of frames",
+     "avg_mild": "the avg+mild floor at row (b)'s answer +0.410 [+0.322, +0.498] against the true DI, -0.412 [-0.494, -0.329] against tr-di",
+     "shares": "Fieller S/T 0.61 [0.53, 0.68], N/T 0.16 [0.08, 0.26], F/T 0.21 [0.15, 0.27]",
+     "cluster_left_out": "32 reads, every reading kept: S +0.454 to +0.515, N +0.115 to +0.150 (lowest lower end +0.045), K +0.012 to +0.014, F +0.156 to +0.182, T +0.780 to +0.841",
+     "largest_three": "S a3b1b27272d3, 8ae994594bad, b2ce529e68f9 (without them +0.442 worse); N 4ea260f59ccd, f2030431a5bb, ddcdb0c10557, all BKS (without them +0.084 [+0.031, +0.136] undecided); K 8ad0ce9dc271, 3320de84a198, c29832ab789c; F b2ce529e68f9, 1cc512e059fb, 89cac0bf475c (without them +0.131 worse); T b2ce529e68f9, c1ea6ef819b3, 8ae994594bad (without them +0.774 worse)",
+     "unclaimed": "median share 7.8% on the 40; S above the median +0.574 [+0.362, +0.786], at or below +0.446 [+0.357, +0.535]; Spearman with S -0.05 (40 parts); beside, not decided",
+     "uncovered": "median uncovered share 2.3% on the 40; Spearman of N with it +0.81; N above the uncovered median +0.293 [+0.141, +0.446], at or below +0.008 [-0.003, +0.019]",
+     "causes": "N's uncovered-frame weight pooled over the 40: declared order synthesis rules 66% (after a mute 60%, after a release 4%, skipped 2%), note reading 34% (late onset 34%, no note nearby 0%); swapped order synthesis rules 99% (after a mute 92%), note reading 1%; no distance limit as declared; shares of uncovered-frame weight, not of N's distance",
+     "ends": "the trace on all 47: 1,693 releases, 1,279 re-plucks, 535 mutes, 0 sample ends",
+     "length_term_part": "89b6da562e67 (the largest length term, GOAT, zero-filled) does not matter: without it no interval end on the 40 moves by more than 0.003",
+     "zero_fill": "on the 40, the 24 zero-filled parts are all GOAT and the 16 with real continuation all BKS; plain means zero-filled against real continuation S +0.537 / +0.465, N +0.076 / +0.194, F +0.201 / +0.143, T +0.829 / +0.814 (Mann-Whitney p 0.31, 0.24, 0.28, 0.97)"
+    },
+    "caveats": [
+     "N 'worse' is fragile: without its two largest parts (both BKS) N is undecided (+0.098 [+0.044, +0.151]); it is undecided on GOAT and on clean; it is concentrated in a few high-uncovered BKS crunch parts",
+     "the cause split under both orders: synthesis rules 66-99%, note reading 1-34%; these are shares of uncovered-frame weight, not of N's distance; most of it is after a mute",
+     "S is an upper bound: real audio inside our windows closes at most S; it is not 'the bank's sound'; at one preset it also carries static tone a search would absorb; the control (188 renders) or the user's waiver still gates any spend",
+     "N is a lower bound for note activity; N and K also carry song_bank.measure's EQ re-fit, which is unpriced",
+     "F costs at real sound: worse on clean, undecided on crunch",
+     "E1 against E2 is loose; the safe line: the level curve is not where S lives, by the score",
+     "by the score (J0) at one preset; nothing here is by ear",
+     "floors don't predict search gain: no product or search claim",
+     "zero-fill can't be told apart from the set: zero-fill is GOAT and the panel, real continuation is BKS"
+    ],
+    "report_sha256": "484906dfd30115ec4f6e529944b9747a8a2b64f7407f39ffd508e01592550255",
+    "rows_sha256": "e428cfafb897d5c99e9176818f0647234eab6fb54db88a09e1c856aa1a51e362",
+    "files": [
+     "PF/fs/voice/report.json",
+     "PF/fs/voice/rows.json"
+    ],
+    "build": {
+     "used": "52fea1ed4d805e509cd63640443a73640b9fc58bcf1cabe82b8e56ebc924d8bf (phase_scratch_voice_dry, the rebuild after #655; four proofs 47 of 47)",
+     "superseded": "55c9e3161fdc143ff85218d76a7d2728e08cda61ad91fae5c9b36f5f5de35154 (the hard-cut fault on the 31 zero-filled parts, fixed by #655; no floor was written against it)"
+    },
+    "renders": {
+     "floors": 470,
+     "repeat": 8,
+     "all": 478,
+     "read": 0
+    },
+    "repeat_check": "exact: on both check parts tr-di and the true DI repeat their stored floors, distance and render sha256",
+    "refusals": 0,
+    "checks": "proofs, repeat, T reproduced from the stored files (per part exactly; on the 40 equal to the stored read, +0.822 [+0.714, +0.930]) and the sum: all hold",
+    "audit": "audited 2026-11-26 (independent, Opus): CONFIRMED WITH CAVEATS; every term recomputed from the floor records and the stored floors equals report.json exactly; the code rebuilt by hand, XV-both",
+    "ran": "2026-11-26: learn.voice_floors floor and the repeat check (478 renders, floor records written 13:14 to 13:20), then python -m learn.scratch_voice read once, 13:20 to 13:22, zero renders, from a detached worktree of origin/main at 1747d24d"
    }
   },
   {
