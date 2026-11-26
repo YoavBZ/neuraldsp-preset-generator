@@ -8115,6 +8115,335 @@
      "note": "three shards in parallel (--shard k/3), each running ymt3, kong-fl, kong-gaps in turn at the code's TX_THREADS 1; family runner seconds are the sum of the per-input runner times over all 136 inputs"
     },
     "ran": "2026-11-26 09:42-09:59, tx-notes --shard k/3 for k 0, 1, 2 in parallel, then tx-notes --combine, from a frozen detached worktree of main at 4fb7dc95 (#649), niced under caffeinate; no input failed; zero renders"
+   },
+   "phase_scratch_readerr_candidates_tx": {
+    "sha256": "17b3512074d4597ca6638f9d825acc33dd4e0cb75b6c0bcf5823056e4dd7e3c7",
+    "counts": {
+     "bench_parts": 47,
+     "real_inputs": 89,
+     "lists": 52,
+     "candidates_plain": 26,
+     "rebuilds": 2063,
+     "renders": 0,
+     "base_by_set": {
+      "deciding": {
+       "extras": 1624,
+       "misses": 246,
+       "parts": 40
+      },
+      "bks": {
+       "extras": 843,
+       "misses": 162,
+       "parts": 16
+      },
+      "goat": {
+       "extras": 781,
+       "misses": 84,
+       "parts": 24
+      }
+     }
+    },
+    "checks": "the combine's two RX-stops passed: the base's rebuilt figures equal build.json's on 47 of 47, and the Phase 2a counts recomputed from their hashed notes give candidates.json's bench frontier exactly",
+    "on_the_40": {
+     "kong-fl-o0.2-f0.1": {
+      "extras": 241,
+      "misses": 367
+     },
+     "kong-fl-o0.2-f0.1+bp": {
+      "extras": 241,
+      "misses": 367
+     },
+     "kong-fl-o0.2-f0.2": {
+      "extras": 243,
+      "misses": 348
+     },
+     "kong-fl-o0.2-f0.2+bp": {
+      "extras": 243,
+      "misses": 348
+     },
+     "kong-fl-o0.2-f0.3": {
+      "extras": 245,
+      "misses": 344
+     },
+     "kong-fl-o0.2-f0.3+bp": {
+      "extras": 245,
+      "misses": 344
+     },
+     "kong-fl-o0.3-f0.1": {
+      "extras": 176,
+      "misses": 410
+     },
+     "kong-fl-o0.3-f0.1+bp": {
+      "extras": 176,
+      "misses": 410
+     },
+     "kong-fl-o0.3-f0.2": {
+      "extras": 178,
+      "misses": 393
+     },
+     "kong-fl-o0.3-f0.2+bp": {
+      "extras": 178,
+      "misses": 393
+     },
+     "kong-fl-o0.3-f0.3": {
+      "extras": 178,
+      "misses": 390
+     },
+     "kong-fl-o0.3-f0.3+bp": {
+      "extras": 178,
+      "misses": 390
+     },
+     "kong-fl-o0.4-f0.1": {
+      "extras": 128,
+      "misses": 479
+     },
+     "kong-fl-o0.4-f0.1+bp": {
+      "extras": 128,
+      "misses": 479
+     },
+     "kong-fl-o0.4-f0.2": {
+      "extras": 129,
+      "misses": 466
+     },
+     "kong-fl-o0.4-f0.2+bp": {
+      "extras": 129,
+      "misses": 466
+     },
+     "kong-fl-o0.4-f0.3": {
+      "extras": 129,
+      "misses": 463
+     },
+     "kong-fl-o0.4-f0.3+bp": {
+      "extras": 129,
+      "misses": 463
+     },
+     "kong-fl-o0.5-f0.1": {
+      "extras": 86,
+      "misses": 575
+     },
+     "kong-fl-o0.5-f0.1+bp": {
+      "extras": 86,
+      "misses": 575
+     },
+     "kong-fl-o0.5-f0.2": {
+      "extras": 86,
+      "misses": 566
+     },
+     "kong-fl-o0.5-f0.2+bp": {
+      "extras": 86,
+      "misses": 566
+     },
+     "kong-fl-o0.5-f0.3": {
+      "extras": 86,
+      "misses": 564
+     },
+     "kong-fl-o0.5-f0.3+bp": {
+      "extras": 86,
+      "misses": 564
+     },
+     "kong-gaps-o0.2-f0.1": {
+      "extras": 183,
+      "misses": 576
+     },
+     "kong-gaps-o0.2-f0.1+bp": {
+      "extras": 183,
+      "misses": 576
+     },
+     "kong-gaps-o0.2-f0.2": {
+      "extras": 184,
+      "misses": 565
+     },
+     "kong-gaps-o0.2-f0.2+bp": {
+      "extras": 184,
+      "misses": 565
+     },
+     "kong-gaps-o0.2-f0.3": {
+      "extras": 184,
+      "misses": 563
+     },
+     "kong-gaps-o0.2-f0.3+bp": {
+      "extras": 184,
+      "misses": 563
+     },
+     "kong-gaps-o0.3-f0.1": {
+      "extras": 133,
+      "misses": 626
+     },
+     "kong-gaps-o0.3-f0.1+bp": {
+      "extras": 133,
+      "misses": 626
+     },
+     "kong-gaps-o0.3-f0.2": {
+      "extras": 133,
+      "misses": 617
+     },
+     "kong-gaps-o0.3-f0.2+bp": {
+      "extras": 133,
+      "misses": 617
+     },
+     "kong-gaps-o0.3-f0.3": {
+      "extras": 133,
+      "misses": 616
+     },
+     "kong-gaps-o0.3-f0.3+bp": {
+      "extras": 133,
+      "misses": 616
+     },
+     "kong-gaps-o0.4-f0.1": {
+      "extras": 103,
+      "misses": 700
+     },
+     "kong-gaps-o0.4-f0.1+bp": {
+      "extras": 103,
+      "misses": 700
+     },
+     "kong-gaps-o0.4-f0.2": {
+      "extras": 103,
+      "misses": 697
+     },
+     "kong-gaps-o0.4-f0.2+bp": {
+      "extras": 103,
+      "misses": 697
+     },
+     "kong-gaps-o0.4-f0.3": {
+      "extras": 103,
+      "misses": 696
+     },
+     "kong-gaps-o0.4-f0.3+bp": {
+      "extras": 103,
+      "misses": 696
+     },
+     "kong-gaps-o0.5-f0.1": {
+      "extras": 83,
+      "misses": 786
+     },
+     "kong-gaps-o0.5-f0.1+bp": {
+      "extras": 83,
+      "misses": 786
+     },
+     "kong-gaps-o0.5-f0.2": {
+      "extras": 83,
+      "misses": 783
+     },
+     "kong-gaps-o0.5-f0.2+bp": {
+      "extras": 83,
+      "misses": 783
+     },
+     "kong-gaps-o0.5-f0.3": {
+      "extras": 83,
+      "misses": 782
+     },
+     "kong-gaps-o0.5-f0.3+bp": {
+      "extras": 83,
+      "misses": 782
+     },
+     "ymt3-guitar": {
+      "extras": 250,
+      "misses": 899
+     },
+     "ymt3-guitar+bp": {
+      "extras": 250,
+      "misses": 899
+     },
+     "ymt3-pitched": {
+      "extras": 286,
+      "misses": 784
+     },
+     "ymt3-pitched+bp": {
+      "extras": 286,
+      "misses": 784
+     }
+    },
+    "licence": {
+     "kong-fl": {
+      "code": "hf_midi_transcription: MIT claimed (README 'License: MIT', pyproject classifier); NO LICENSE file in the repo (GitHub licence: none); piano_transcription_inference: MIT claimed by setup.py classifier; NO LICENSE file in the fork at either commit. Upstream qiuqiangkong/piano_transcription_inference has an MIT LICENSE (copyright 2026, added after the fork)",
+      "weights_data": "weights: MIT tag on the model card (no LICENSE file in the repo); training data: Unclear for product, NC assumed. The paper (arXiv 2402.15258, section 2.2) trains on 4 h of commercially sold Francois Leduc transcriptions (francoisleduconlinelibrary.com) aligned to commercial recordings from YouTube; no data licence is stated, the aligned MIDI is 'available from the authors on request', and a freely licensed guitar set is called future work. The guitar model is fine-tuned from the authors' piano model re-trained on MAESTRO, which is CC BY-NC-SA 4.0 (magenta.withgoogle.com/datasets/maestro).",
+      "product_status": "unclear for product, NC assumed (user's call, only if it wins)"
+     },
+     "kong-gaps": {
+      "code": "hf_midi_transcription: MIT claimed (README 'License: MIT', pyproject classifier); NO LICENSE file in the repo (GitHub licence: none); piano_transcription_inference: MIT claimed by setup.py classifier; NO LICENSE file in the fork at either commit. Upstream qiuqiangkong/piano_transcription_inference has an MIT LICENSE (copyright 2026, added after the fork)",
+      "weights_data": "weights: MIT tag on the model card (no LICENSE file); unclear for product, NC assumed; training data: GAPS: three primary claims disagree. Zenodo record 10.5281/zenodo.17152440 (API metadata): cc-by-nc-sa-4.0. GAPS project page (aim-qmul.github.io/GAPS): 'may be used only for non-commercial research purposes', signed per-user agreement, no redistribution. HF dataset xavriley/GAPS card: mit. Also fine-tuned from the MAESTRO-trained piano model (CC BY-NC-SA 4.0).",
+      "product_status": "unclear for product, NC assumed (user's call, only if it wins)"
+     },
+     "ymt3": {
+      "code": "two claims: GPL-3.0 (upstream code repo) and Apache-2.0 (HF Space card; mt3-infer's vendored copy)",
+      "weights_data": "No licence file speaks to the weights specifically; both claims are about code. Training-data licences not audited. Development use fine either way (amendment 7); product question only if it wins.",
+      "product_status": "unresolved"
+     }
+    },
+    "candidate_family": {
+     "kong-fl-o0.2-f0.1": "kong-fl",
+     "kong-fl-o0.2-f0.1+bp": "kong-fl",
+     "kong-fl-o0.2-f0.2": "kong-fl",
+     "kong-fl-o0.2-f0.2+bp": "kong-fl",
+     "kong-fl-o0.2-f0.3": "kong-fl",
+     "kong-fl-o0.2-f0.3+bp": "kong-fl",
+     "kong-fl-o0.3-f0.1": "kong-fl",
+     "kong-fl-o0.3-f0.1+bp": "kong-fl",
+     "kong-fl-o0.3-f0.2": "kong-fl",
+     "kong-fl-o0.3-f0.2+bp": "kong-fl",
+     "kong-fl-o0.3-f0.3": "kong-fl",
+     "kong-fl-o0.3-f0.3+bp": "kong-fl",
+     "kong-fl-o0.4-f0.1": "kong-fl",
+     "kong-fl-o0.4-f0.1+bp": "kong-fl",
+     "kong-fl-o0.4-f0.2": "kong-fl",
+     "kong-fl-o0.4-f0.2+bp": "kong-fl",
+     "kong-fl-o0.4-f0.3": "kong-fl",
+     "kong-fl-o0.4-f0.3+bp": "kong-fl",
+     "kong-fl-o0.5-f0.1": "kong-fl",
+     "kong-fl-o0.5-f0.1+bp": "kong-fl",
+     "kong-fl-o0.5-f0.2": "kong-fl",
+     "kong-fl-o0.5-f0.2+bp": "kong-fl",
+     "kong-fl-o0.5-f0.3": "kong-fl",
+     "kong-fl-o0.5-f0.3+bp": "kong-fl",
+     "kong-gaps-o0.2-f0.1": "kong-gaps",
+     "kong-gaps-o0.2-f0.1+bp": "kong-gaps",
+     "kong-gaps-o0.2-f0.2": "kong-gaps",
+     "kong-gaps-o0.2-f0.2+bp": "kong-gaps",
+     "kong-gaps-o0.2-f0.3": "kong-gaps",
+     "kong-gaps-o0.2-f0.3+bp": "kong-gaps",
+     "kong-gaps-o0.3-f0.1": "kong-gaps",
+     "kong-gaps-o0.3-f0.1+bp": "kong-gaps",
+     "kong-gaps-o0.3-f0.2": "kong-gaps",
+     "kong-gaps-o0.3-f0.2+bp": "kong-gaps",
+     "kong-gaps-o0.3-f0.3": "kong-gaps",
+     "kong-gaps-o0.3-f0.3+bp": "kong-gaps",
+     "kong-gaps-o0.4-f0.1": "kong-gaps",
+     "kong-gaps-o0.4-f0.1+bp": "kong-gaps",
+     "kong-gaps-o0.4-f0.2": "kong-gaps",
+     "kong-gaps-o0.4-f0.2+bp": "kong-gaps",
+     "kong-gaps-o0.4-f0.3": "kong-gaps",
+     "kong-gaps-o0.4-f0.3+bp": "kong-gaps",
+     "kong-gaps-o0.5-f0.1": "kong-gaps",
+     "kong-gaps-o0.5-f0.1+bp": "kong-gaps",
+     "kong-gaps-o0.5-f0.2": "kong-gaps",
+     "kong-gaps-o0.5-f0.2+bp": "kong-gaps",
+     "kong-gaps-o0.5-f0.3": "kong-gaps",
+     "kong-gaps-o0.5-f0.3+bp": "kong-gaps",
+     "ymt3-guitar": "ymt3",
+     "ymt3-guitar+bp": "ymt3",
+     "ymt3-pitched": "ymt3",
+     "ymt3-pitched+bp": "ymt3"
+    },
+    "wall_s": {
+     "shards": {
+      "0/3": {
+       "inputs": 46,
+       "seconds": 1003.3
+      },
+      "1/3": {
+       "inputs": 45,
+       "seconds": 1026.1
+      },
+      "2/3": {
+       "inputs": 45,
+       "seconds": 937.2
+      }
+     },
+     "note": "three shards in parallel (--shard k/3), zero renders; the combine about 2 min"
+    },
+    "words": "descriptive: no figure decided (RX-untracked); sign only, not on J0's scale, no size ruled out",
+    "ran": "2026-11-26 10:23-10:43, tx-score --shard k/3 for k 0, 1, 2 in parallel, then tx-score --combine, from a frozen detached worktree of main at 6914fbe5 (#652), niced under caffeinate; no input failed; zero renders"
    }
   },
   {
