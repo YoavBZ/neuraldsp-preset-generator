@@ -7,7 +7,7 @@ floors). This test splits T into four terms along a declared chain of guitars (`
 
     tr-di  ->  vc-own  ->  vc-cut  ->  vc-fin  ->  true
 
-| Guitar | What it is (every `vc-*` is built from the raw section, `pretrain_set.section_audio`, through the part's own finish `p.finish`, then -22.9 LUFS: the orchestrator's call on amendment 1) |
+| Guitar | What it is (`vc-own`, `vc-cut` and `vc-fin` are built from the raw section, `pretrain_set.section_audio`, through the part's own finish `p.finish`, then -22.9 LUFS: the orchestrator's call on amendment 1; `vc-env` comes from `tr-di`) |
 |---|---|
 | `vc-own` | the raw section gated by our played notes (`WINDOWS`), then the finish |
 | `vc-cut` | the raw section with the worst-case notch at every one of our onset groups (`NOTCH`), then the finish |
@@ -25,7 +25,11 @@ floors). This test splits T into four terms along a declared chain of guitars (`
 T = S + N + K + F exactly, per part, on one passing part set (amendment 3). Beside: N+K = ln(d_vc-own / d_vc-fin)
 (the code is marked `cut-sensitive` when it changes with N+K in N's place), E1 = ln(d_tr-di / d_vc-env), E2 =
 ln(d_vc-env / d_vc-own), the `avg+mild` floor, Fieller's share S/T, the per-part unclaimed-attack share with S above
-and below its median and its Spearman (amendment 2), and N's uncovered frames by cause (amendment 7).
+and below its median and its Spearman (amendment 2), and N's uncovered frames by cause (amendment 7), with the
+cause order swapped beside (`cause-order-sensitive` when the larger route group changes).
+
+A limit: `song_bank.measure` re-fits its EQ to each guitar's own audio, so the gated and notched guitars get their
+own re-fit, and N and K also carry the finish's re-fit, not only the gate and the cuts.
 
     $MAIN -m learn.scratch_voice read      # zero renders, once: the terms, XV_TABLE's code, the figures beside
 
@@ -176,7 +180,11 @@ ROUTE = {"synthesis rules": SYNTH_CAUSES, "note reading": READ_CAUSES}
 CAUSE_RULE = ("each uncovered piece of a playing held-half frame, at its midpoint, takes the first that holds: "
               "'skipped' (inside a skipped note's [on - 2 ms, max(on, off)]); 'late-onset' (one of our windows opens "
               "within 50 ms after it); 'after-<kind>' (the last window before it ended within 600 ms, by that "
-              "window's end kind); 'no-note' (anything else); beside, the same with 'after-<kind>' at any distance")
+              "window's end kind); 'no-note' (anything else); beside, the same with 'after-<kind>' at any distance, "
+              "and the same with the order swapped ('after-<kind>' within 600 ms before 'late-onset'); when the "
+              "swapped order names a different larger route group, the route is marked cause-order-sensitive")
+CAUSE_ORDER_SENSITIVE = "cause-order-sensitive"
+NOT_COMPUTABLE = "not computable"        # a figure beside whose interval or rank correlation cannot be formed
 UNCLAIMED = {"groups": "note_rebuild.onset_groups of build 2's notes after its fixes (the whole section)",
              "at": "each group's first onset", "rise": "note_rebuild.rise_curve of the true DI (2-ms frames, 1-ms hop)",
              "window_s": NR.SNAP_S, "min_rise_db": NR.REFINE_MIN_RISE_DB,
@@ -271,7 +279,12 @@ def route_text(route):
         return "N's cause split not available"
     sh = route["shares"]
     parts = [f"{g} {sh[g]:.0%} ({', '.join(ROUTE[g])})" for g in sorted(sh, key=lambda g: (-sh[g], g))]
-    return "; ".join(parts)
+    text = "; ".join(parts)
+    sw = route.get("swapped_shares")
+    if route.get("order_label") and sw:
+        text += (f" ({CAUSE_ORDER_SENSITIVE}: with the order swapped, "
+                 + "; ".join(f"{g} {sw[g]:.0%}" for g in sorted(sw, key=lambda g: (-sw[g], g))) + ")")
+    return text
 
 
 def xv_code(ivs, checks, route=None):
@@ -430,17 +443,21 @@ def uncovered_pieces(lo, hi, merged, starts):
     return out
 
 
-def cause_of(mid, left, right, skipped, near=True, rate=SR):
+def cause_of(mid, left, right, skipped, near=True, rate=SR, swapped=False):
     """(Pure.) The cause of an uncovered piece at sample `mid` (CAUSE_RULE). left, right: the union pieces before and
-    after ([a, b, kind] or None)."""
+    after ([a, b, kind] or None). The declared order decides: skipped, late onset, after an end, no note nearby;
+    `swapped` (beside, the review's fix 1) checks after an end before late onset."""
     if any(a <= mid <= b for a, b in skipped):
         return "skipped"
-    if right is not None and right[0] - mid <= LATE_S * rate:
-        return "late-onset"
-    if left is not None and (not near or mid - left[1] <= NEAR_S * rate):
-        if left[2] not in END_KINDS:
-            raise ValueError(f"unknown end kind {left[2]!r}")
-        return f"after-{left[2]}"
+    late = right is not None and right[0] - mid <= LATE_S * rate
+    after = left is not None and (not near or mid - left[1] <= NEAR_S * rate)
+    if after and left[2] not in END_KINDS:
+        raise ValueError(f"unknown end kind {left[2]!r}")
+    for step in (("after", "late") if swapped else ("late", "after")):
+        if step == "late" and late:
+            return "late-onset"
+        if step == "after" and after:
+            return f"after-{left[2]}"
     return "no-note"
 
 
@@ -461,7 +478,7 @@ def cover_figures(levels_db, windows, skipped, held, frame=COVER["frame"], hop=C
     frames = held_frames(levels_db, held, frame, hop, rate)
     merged = union(windows)
     starts = [m[0] for m in merged]
-    by, by_any = {c: 0.0 for c in CAUSES}, {c: 0.0 for c in CAUSES}
+    by, by_any, by_sw = ({c: 0.0 for c in CAUSES} for _ in range(3))
     w_sum, whole = 0.0, 0
     for i in frames:
         lo, hi = i * hop, i * hop + frame
@@ -475,9 +492,11 @@ def cover_figures(levels_db, windows, skipped, held, frame=COVER["frame"], hop=C
             right = merged[ri] if ri is not None else None
             by[cause_of(mid, left, right, skipped, True, rate)] += (b - a) / frame
             by_any[cause_of(mid, left, right, skipped, False, rate)] += (b - a) / frame
+            by_sw[cause_of(mid, left, right, skipped, True, rate, swapped=True)] += (b - a) / frame
     n = len(frames)
     return {"frames": n, "uncovered_weight": w_sum, "uncovered_share": w_sum / n if n else None,
-            "whole_frame_share": whole / n if n else None, "by_cause": by, "by_cause_any_distance": by_any}
+            "whole_frame_share": whole / n if n else None, "by_cause": by, "by_cause_any_distance": by_any,
+            "by_cause_swapped": by_sw}
 
 
 def unclaimed_groups(onsets, rise, hop, rate=SR, window=NR.SNAP_S, min_rise=NR.REFINE_MIN_RISE_DB):
@@ -490,6 +509,21 @@ def unclaimed_groups(onsets, rise, hop, rate=SR, window=NR.SNAP_S, min_rise=NR.R
         flags.append(hi <= lo or float(max(rise[lo:hi])) < min_rise)
     n = len(flags)
     return {"groups": n, "unclaimed": sum(flags), "share": sum(flags) / n if n else None, "flags": flags}
+
+
+def leading(shares):
+    """(Pure.) The route group with the larger share (ties by name), or None."""
+    return min(shares, key=lambda g: (-shares[g], g)) if shares else None
+
+
+def route_order(route, swapped):
+    """(Pure.) The deciding route with the swapped order's split beside (the review's fix 1): `cause-order-sensitive`
+    when the two name a different larger group, no threshold; both orders' shares kept. -> route dict."""
+    out = dict(route or {}, swapped_shares=(swapped or {}).get("shares"), order_label=None)
+    a, b = leading((route or {}).get("shares")), leading((swapped or {}).get("shares"))
+    if a is not None and b is not None and a != b:
+        out["order_label"] = CAUSE_ORDER_SENSITIVE
+    return out
 
 
 def route_split(cover_by_part, keys, field="by_cause"):
@@ -582,7 +616,8 @@ def spend_refusal(entry, kind):
         return "XV-notes: no synthesis spend"
     if code not in SPEND_CODES:
         return f"{code}: no spend on this test's account; to the user"
-    if isinstance((entry or {}).get(PHASE_CONTROL_OUTCOME), dict):
+    ctl = (entry or {}).get(PHASE_CONTROL_OUTCOME)
+    if isinstance(ctl, dict) and ctl.get("code"):          # the control's audited outcome carries its code
         return None
     w = (entry or {}).get(PHASE_WAIVER)
     if isinstance(w, dict) and w.get("user_words") and w.get("date"):
@@ -708,15 +743,30 @@ def close3(iv, seen):
 
 
 def floors_of(stored, floor_recs):
-    """(Pure.) Per part {guitar: held} from the stored real floors (true, tr-di) and Unit C's records (a refused
-    render's floor is None). -> ({pkey: {guitar: held or None}}, {pkey: {guitar: reason}})."""
+    """Per part {guitar: held} from the stored real floors (true, tr-di) and Unit C's records. A refused render's
+    floor is None with its reason; a stored floor that is not finite and positive is None with an explicit reason.
+    Refuses (SystemExit) a Unit C record that sets any guitar but the rendered ones (never the stored true or tr-di),
+    or whose floor is missing, non-finite or not positive without a `refused` flag: a malformed record is never read
+    as a refusal. -> ({pkey: {guitar: held or None}}, {pkey: {guitar: reason}})."""
     out, why = {}, {}
     for k, st in stored.items():
-        d = {TRUE: (st.get(TRUE) or {}).get("held"), BANK: (st.get(BANK) or {}).get("held")}
+        d = {}
+        for g in STORED:
+            h = (st.get(g) or {}).get("held")
+            d[g] = h if finite_pos(h) else None
+            if d[g] is None:
+                why.setdefault(k, {})[g] = f"the stored {g} floor is not finite and positive ({h!r})"
         for g, r in ((floor_recs.get(k) or {}).get("guitars") or {}).items():
-            d[g] = None if r.get("refused") else r.get("held")
+            if g not in RENDERED:
+                raise SystemExit(f"part {tag(k)}: a floor record sets {g!r}, not one of the rendered guitars")
             if r.get("refused"):
+                d[g] = None
                 why.setdefault(k, {})[g] = r["refused"]
+            elif finite_pos(r.get("held")):
+                d[g] = r["held"]
+            else:
+                raise SystemExit(f"part {tag(k)}: {g}'s floor {r.get('held')!r} is not finite and positive and is "
+                                 "not marked refused: a malformed floor record, to the user")
         out[k] = d
     return out, why
 
@@ -747,7 +797,7 @@ def read_body(vals, refused, gaps, iv_fn, deciding, clusters, share, cover, chec
     share}; cover: {pkey: cover_figures}. -> dict."""
     dec = sorted(k for k in deciding if k not in refused)
     ivs = {t: iv_fn(v, None) for t, v in vals.items()}
-    route = route_split(cover, dec)
+    route = route_order(route_split(cover, dec), route_split(cover, dec, "by_cause_swapped"))
     code = xv_read({t: ivs.get(t) for t in READ_TERMS}, checks, ivs.get("N+K"), route)
     itt = itt_terms(vals, refused)
     itt_ivs = {t: iv_fn(v, None) for t, v in itt.items()}
@@ -764,10 +814,13 @@ def read_body(vals, refused, gaps, iv_fn, deciding, clusters, share, cover, chec
                   "without": iv_fn(vals[t], set(dec) - set(top))}
     above, below, med = median_split(share, dec)
     ks = [k for k in dec if share.get(k) is not None and vals["S"].get(k) is not None]
+    def sub(keys_):
+        iv = iv_fn(vals["S"], set(keys_)) if keys_ else None
+        return iv if iv_ok(iv) else NOT_COMPUTABLE
+    rho = spearman([share[k] for k in ks], [vals["S"][k] for k in ks])
     unclaimed = {"median_share": med, "above": len(above), "at_or_below": len(below),
-                 "S_above": iv_fn(vals["S"], set(above)) if above else None,
-                 "S_at_or_below": iv_fn(vals["S"], set(below)) if below else None,
-                 "spearman_with_S": spearman([share[k] for k in ks], [vals["S"][k] for k in ks]),
+                 "S_above": sub(above), "S_at_or_below": sub(below),
+                 "spearman_with_S": NOT_COMPUTABLE if rho is None else rho, "spearman_parts": len(ks),
                  "label": "beside, not decided (amendment 2)"}
     return {"passing_parts_on_the_40": len(dec), "refused": sorted(tag(k) for k in refused), "terms": ivs,
             "readings": {t: reading(ivs.get(t)) for t in ivs}, "code": code["code"], "xv": code,
@@ -778,6 +831,7 @@ def read_body(vals, refused, gaps, iv_fn, deciding, clusters, share, cover, chec
                                                                              if g is not None), default=None),
             "cluster_left_out": left, "cluster_left_out_range": rng, "largest_three": big, "unclaimed": unclaimed,
             "route": route, "route_any_distance": route_split(cover, dec, "by_cause_any_distance"),
+            "route_swapped": route_split(cover, dec, "by_cause_swapped"), "route_label": route.get("order_label"),
             "share_S_of_T": share_fn(vals["S"], vals["T"]) if share_fn else None}
 
 
@@ -868,7 +922,8 @@ def cmd_read(_args):
     common = {"plan": PLAN, "time": time.strftime("%Y-%m-%d %H:%M:%S"), "renders": 0, "checks": checks,
               "t_reproduced": tr, "build_sha256": S.file_sha(build_path()),
               "refused_why": {tag(k): v for k, v in refused_why.items()},
-              "refusal_report": S.refusal_report(refused, sets_of, DECIDING),
+              "refusal_report": S.refusal_report({tag(k): refused_why.get(k) or {"floor": refused[k]} for k in refused},
+                                                 {tag(k): v for k, v in sets_of.items()}, DECIDING),
               "floors_sha256": {tag(k): S.file_sha(floor_path(k)) for k in keys}}
     rows = dict(common, rows={"terms": body["terms"], "beside": beside, "per_part": {
         t: {tag(k): v for k, v in vs.items()} for t, vs in vals.items()}})

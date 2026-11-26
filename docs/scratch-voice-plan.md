@@ -1,6 +1,6 @@
 # Pricing the sound gap at the real floor (`phase_scratch_voice`)
 
-Declared 2026-11-26, on the user's route call "price the sound gap first". The planner's plan passed an independent review (Opus, high) with eight binding amendments, which win where they differ from the plan. The orchestrator's call on amendment 1: every `vc-*` guitar is built from the raw section through the part's own finish, so all of them share `tr-di`'s finish chain. Ledger `preset-ladder` `phase_scratch_voice`, then `phase_scratch_voice_dry` and `phase_scratch_voice_outcome`. Code: `learn/scratch_voice.py`, with `learn/voice_build.py` (Unit B) and `learn/voice_floors.py` (Unit C) to follow. Not run.
+Declared 2026-11-26, on the user's route call "price the sound gap first". The planner's plan passed an independent review (Opus, high) with eight binding amendments, which win where they differ from the plan. The orchestrator's call on amendment 1: `vc-own`, `vc-cut` and `vc-fin` are built from the raw section through the part's own finish, so all three share `tr-di`'s finish chain; `vc-env` (beside) comes from `tr-di`. The declaration PR's own review (PASS WITH FIXES) added the swapped cause order beside, tagged refusal reports, and a stop on malformed floor records. Ledger `preset-ladder` `phase_scratch_voice`, then `phase_scratch_voice_dry` and `phase_scratch_voice_outcome`. Code: `learn/scratch_voice.py`, with `learn/voice_build.py` (Unit B) and `learn/voice_floors.py` (Unit C) to follow. Not run.
 
 ## Goal
 
@@ -74,7 +74,7 @@ T = S + N + K + F exactly, per part, held to 1e-12.
 
 **One part set** (amendment 3). A part refused in any of the six floors (true DI, `tr-di`, `vc-fin`, `vc-cut`, `vc-own`, `vc-env`) drops from all of them. `set_rows`' pooled mean is linear, so the sum holds on the 40's mean too. `avg+mild` is read beside, on its own.
 
-**Refusals (S1).** The judge's DI is the true DI, so only a silent render can refuse. A refusal reruns once and is reported with `refusal_report`. The read is passing-only. The `itt_values` read, with a refused part at 0.0, sits beside the codes only, not the sums. The code is marked `refusal-sensitive` when the two codes differ.
+**Refusals (S1).** The judge's DI is the true DI, so only a silent render can refuse. A refusal reruns once and is reported with `refusal_report`, on 12-hex tags, its kinds taken from each refused floor's own reason. A stored true-DI or `tr-di` floor that is not finite and positive drops its part with an explicit reason. The read is passing-only. The `itt_values` read, with a refused part at 0.0, sits beside the codes only, not the sums. The code is marked `refusal-sensitive` when the two codes differ.
 
 **What a floor can conclude:** where the rendered distance comes from, at a preset that is good for the true DI.
 
@@ -82,7 +82,8 @@ T = S + N + K + F exactly, per part, held to 1e-12.
 - the search gain from fixing either side (bench floors did not order like the D's);
 - timbre against note identity inside sounding spans;
 - other presets, the ear, or product conditions (notes, onsets and the judge's DI all come from the true DI);
-- with one preset, S also carries any static tone difference that a search would absorb.
+- with one preset, S also carries any static tone difference that a search would absorb;
+- `song_bank.measure` re-fits its EQ to each guitar's own audio, so `vc-own` and `vc-cut` each get their own re-fit, and N and K also carry the finish's re-fit, not only the gate and the cuts.
 
 ## Outcome table
 
@@ -103,7 +104,7 @@ F reading better is possible, so it is not an anomaly (amendment 4).
 ## The spend gate (amendment 2)
 
 Under XV-sound or XV-both, no learned synthesis, DI restoration or search-row spend runs on this test's account until main holds one of these:
-- `phase_scratch_voice_control_outcome`: a declared control that drops the unclaimed onset groups from both `tr-di` and `vc-own`. It costs 47 parts × 2 guitars × 2 renders = 188 renders and needs its own declaration, `phase_scratch_voice_control`.
+- `phase_scratch_voice_control_outcome`: a declared control that drops the unclaimed onset groups from both `tr-di` and `vc-own`. It costs 47 parts × 2 guitars × 2 renders = 188 renders and needs its own declaration, `phase_scratch_voice_control`. The outcome opens the gate only when it carries its `code`.
 - `phase_scratch_voice_waiver`: the user's waiver, in the user's words and with the date.
 
 It is coded as `scratch_voice.spend_refusal` and `require_spend`. The gate is necessary, not sufficient: the search row (about 13,100–13,500 renders, about 2 hours, measured on `xf-now`) still needs its own declaration and the user's go. Under XV-notes there is no synthesis spend at all.
@@ -120,6 +121,8 @@ It is coded as `scratch_voice.spend_refusal` and `require_spend`. The gate is ne
   4. *no note nearby*: anything else.
 
   Beside, the same split is given with no distance limit on rule 3. The figures are pooled over the 40's passing parts. Route groups: **synthesis rules** (skipped, the end kinds) and **note reading** (late onset, no note nearby). Each group is named to its own track with its share, the larger first. The count of sample ends is reported.
+
+  The declared order leans toward note reading: the last 50 ms of every gap before one of our onsets is booked as a late onset with no other evidence, so a 60-ms gap after a release goes wholly to late onset. The declared order stays the deciding split. Beside it, the same split is given with rules 2 and 3 swapped (after an end within 600 ms before late onset). When the two orders name a different larger group, the route is marked `cause-order-sensitive` and names both groups with their shares under both orders. There is no threshold and no dB-rise rule (the review's fix 1, `route_order`).
 - **Splits:** clean, crunch and all 47; each cluster of the 40 left out; the three largest parts' contributions (12-hex tags) and the 40 without them; the `avg+mild` floor against the true DI and against `tr-di`.
 
 **The uncovered figure's definition** (amendment 8, `scratch_voice.COVER`):
@@ -159,9 +162,9 @@ It is coded as `scratch_voice.spend_refusal` and `require_spend`. The gate is ne
 |---|---|---|
 | `build.json` | Unit B | `proofs` (`rule_off_is_tr_di`, `trace_is_tr_di_report`, `all_pass_is_vc_fin`, `vc_fin_is_avg`, each held of 47), `proofs_hold`; per part `guitars` (each built guitar's and `avg+mild`'s `file_sha256`, `audio_sha256`), `gain_db` (`vc-own`'s), `unclaimed` (`unclaimed_groups`), `cover` (`cover_figures`), `ends` (counts by kind); `scratch_readerr.py`'s blob sha and `played_trace`'s source sha256 |
 | `dry/<guitar>/<part>.npy` | Unit B | the four `vc-*` guitars, float32 |
-| `floors/<part>.json` | Unit C | `guitars`: per rendered guitar `held`, `audio_sha256`, `dry_sha256` (the build's `audio_sha256`), `refused` (a reason or none), `reran`, `carried_from` |
+| `floors/<part>.json` | Unit C | `guitars`: per rendered guitar only (never the stored true DI or `tr-di`) `held`, `audio_sha256`, `dry_sha256` (the build's `audio_sha256`), `refused` (a reason or none), `reran`, `carried_from`. A `held` that is missing, non-finite or not positive without `refused` stops the read |
 | `repeat/<part>.json` | Unit C | on the two check parts, `tr-di` and the true DI against their stored floors; `holds` |
-| `rows.json`, `report.json` | the read | the terms, the code, the figures beside; part keys appear only as 12-hex tags |
+| `rows.json`, `report.json` | the read | the terms, the code, the figures beside (a figure that cannot be formed reads "not computable"); part keys appear only as 12-hex tags, refusals included |
 
 ## Guards
 

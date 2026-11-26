@@ -348,6 +348,18 @@ def test_each_cause():
         V.cause_of(150, [0, 100, None], None, [], rate=r)
 
 
+def test_the_swapped_cause_order():
+    r = 1000
+    left, right = [0, 100, "release"], [160, 300, "repluck"]          # a 60-ms gap after a release
+    for mid in (120, 140):                                               # both within 50 ms of the next window
+        assert V.cause_of(mid, left, right, [], rate=r) == "late-onset"
+        assert V.cause_of(mid, left, right, [], rate=r, swapped=True) == "after-release"
+    far = [2000, 2100, "mute"]
+    assert V.cause_of(1960, left, far, [], rate=r, swapped=True) == "late-onset"     # the end is 1.86 s away
+    assert V.cause_of(500, left, far, [(400, 600)], rate=r, swapped=True) == "skipped"
+    assert V.cause_of(1940, left, far, [], rate=r, swapped=True) == "no-note"
+
+
 def test_the_held_frames():
     rate, frame, hop = 100, 10, 5                   # 0.1-s frames at a 0.05-s hop
     levels = [-10.0] * 260
@@ -379,6 +391,14 @@ def test_cover_figures_on_made_up_windows():
     assert abs(sum(by.values()) - f["uncovered_weight"]) < 1e-12
     assert abs(f["by_cause_any_distance"]["after-release"] - 6.0 - 8.0) < 1e-12
     assert f["uncovered_share"] == 20.5 / 45
+    assert f["by_cause_swapped"] == by                            # here no piece is both late and after an end
+    # a 60-ms gap after a release: the declared order books it to late onset, the swapped order to the release
+    g = V.cover_figures(levels, [(125, 300, "release"), (306, 575, "mute")], [], "A", frame, hop, rate)
+    assert abs(g["uncovered_weight"] - 0.5 - 0.6) < 1e-12        # 1.20-1.25 s and 3.00-3.06 s
+    assert abs(g["by_cause"]["late-onset"] - 1.1) < 1e-12 and g["by_cause"]["after-release"] == 0.0
+    sw = g["by_cause_swapped"]
+    assert abs(sw["late-onset"] - 0.5) < 1e-12 and abs(sw["after-release"] - 0.6) < 1e-12   # 1.20-1.25 s has no end
+    assert abs(sum(sw.values()) - g["uncovered_weight"]) < 1e-12
 
 
 def test_unclaimed_groups():
@@ -393,6 +413,20 @@ def test_unclaimed_groups():
     assert V.unclaimed_groups([5.0], rise, hop)["flags"] == [True]                      # past the curve's end
 
 
+def test_the_unclaimed_rule_at_exactly_20_ms():
+    hop, rate = 48, 48000
+    for at, t in ((1000, 1.02), (1000, 0.98)):     # the rise exactly 20 ms after, then before, the onset
+        rise = [0.0] * 3000
+        rise[at] = 3.0                              # exactly 3 dB: claimed (the rule is "under 3 dB")
+        lo = max(0, int((t - 0.02) * rate) // hop)
+        hi = int((t + 0.02) * rate) // hop + 1
+        assert lo <= at < hi, (t, lo, hi)
+        assert V.unclaimed_groups([t], rise, hop, rate)["flags"] == [False]
+    rise = [0.0] * 3000
+    rise[1022] = 9.0                                # 22 ms after: outside the window
+    assert V.unclaimed_groups([1.0], rise, hop, rate)["flags"] == [True]
+
+
 def test_the_route_split():
     cover = {"a": {"by_cause": {"after-release": 3.0, "late-onset": 1.0}},
              "b": {"by_cause": {"no-note": 1.0, "skipped": 1.0}}, "c": {"by_cause": {"no-note": 100.0}}}
@@ -401,6 +435,22 @@ def test_the_route_split():
     assert abs(sum(r["cause_shares"].values()) - 1) < 1e-12
     assert V.route_split({}, ["a"])["shares"] is None
     assert "note reading 33%" in V.route_text(r) and V.route_text(r).startswith("synthesis rules 67%")
+
+
+def test_the_route_is_marked_cause_order_sensitive_when_the_leader_changes():
+    a = {"shares": {"synthesis rules": 0.4, "note reading": 0.6}}
+    b = {"shares": {"synthesis rules": 0.7, "note reading": 0.3}}
+    r = V.route_order(a, b)
+    assert r["order_label"] == V.CAUSE_ORDER_SENSITIVE and r["swapped_shares"] == b["shares"]
+    text = V.route_text(r)
+    assert text.startswith("note reading 60%") and "cause-order-sensitive" in text
+    assert "with the order swapped, synthesis rules 70%; note reading 30%" in text
+    same = V.route_order(a, {"shares": {"synthesis rules": 0.45, "note reading": 0.55}})
+    assert same["order_label"] is None and "cause-order-sensitive" not in V.route_text(same)
+    assert V.route_order(a, {"shares": None})["order_label"] is None
+    assert V.leading(None) is None and V.leading({"x": 0.5, "a": 0.5}) == "a"
+    nxt = V.xv_code(_ivs("matches", "worse"), OK, r)["next"]
+    assert "cause-order-sensitive" in nxt and "note reading 60%" in nxt and "synthesis rules 70%" in nxt
 
 
 def test_spearman_and_ranks():
@@ -436,6 +486,7 @@ def test_the_spend_gate():
             m = {V.PHASE_OUTCOME: {"code": code}}
             assert "control" in V.spend_refusal(m, kind) and "waiver" in V.spend_refusal(m, kind)
             assert V.spend_refusal(dict(m, **{V.PHASE_CONTROL: {}}), kind)        # declared is not run
+            assert V.spend_refusal(dict(m, **{V.PHASE_CONTROL_OUTCOME: {}}), kind)   # an outcome needs its code
             assert V.spend_refusal(dict(m, **{V.PHASE_CONTROL_OUTCOME: {"code": "x"}}), kind) is None
             assert V.spend_refusal(dict(m, **{V.PHASE_WAIVER: {"user_words": "go", "date": "2026-11-27"}}),
                                    kind) is None
@@ -452,7 +503,7 @@ def test_require_spend_refuses_off_main_and_closed(monkeypatch):
     monkeypatch.setattr(V, "on_main", lambda: ({V.PHASE_OUTCOME: {"code": "XV-both"}}, None))
     with pytest.raises(SystemExit, match="control"):
         V.require_spend("synthesis")
-    m = {V.PHASE_OUTCOME: {"code": "XV-both"}, V.PHASE_CONTROL_OUTCOME: {}}
+    m = {V.PHASE_OUTCOME: {"code": "XV-both"}, V.PHASE_CONTROL_OUTCOME: {"code": "a control code"}}
     monkeypatch.setattr(V, "on_main", lambda: (m, None))
     assert V.require_spend("search-row") is m
 
@@ -548,8 +599,9 @@ def _fake_set_rows(draw):
     return set_rows
 
 
-def _world(tmp_path, monkeypatch, refuse=None, s=0.5):
-    """Six made-up parts (two clusters on the 40's sets, two panel), T = 0.822 on every part, S = s, N = 0, K = 0."""
+def _world(tmp_path, monkeypatch, refuse=None, s=0.5, n=0.0, k_=0.0):
+    """Six made-up parts (two clusters on the 40's sets, two panel), T = 0.822 on every part, S = s, N = n, K = k_.
+    A refused part's coverage is all 'no-note', so a route that took it in would lean to note reading."""
     keys = ["bks__a", "bks__b", "goat__c", "goat__d", "panel__e", "panel__f"]
     draw = {"parts": [{"pkey": k, "set": k.split("__")[0], "cluster": f"x|c{i % 2}"} for i, k in enumerate(keys)]}
     monkeypatch.setattr(SN, "set_rows", _fake_set_rows(draw))
@@ -557,7 +609,7 @@ def _world(tmp_path, monkeypatch, refuse=None, s=0.5):
     monkeypatch.setattr(SE, "share", lambda sd, draw_, num, den, keys=None: {"defined": False, "why": "fake"})
     monkeypatch.setattr(V, "voice_dir", lambda: tmp_path)
     monkeypatch.setattr(V, "require_voice", lambda *a: {})
-    fl = {k: _floors(0.822, s, 0.0, 0.0) for k in keys}
+    fl = {k: _floors(0.822, s, n, k_) for k in keys}
     stored = {k: {"true": {"held": fl[k]["true"]}, "tr-di": {"held": fl[k]["tr-di"]},
                   "tr_di_less_true": math.log(fl[k]["tr-di"] / fl[k]["true"])} for k in keys}
     stored_iv = _fake_set_rows(draw)(None, draw, {k: s["tr_di_less_true"] for k, s in stored.items()})["bks_goat"]["all"]
@@ -566,8 +618,12 @@ def _world(tmp_path, monkeypatch, refuse=None, s=0.5):
     for k in keys:
         build["parts"][k] = {"guitars": {g: {"audio_sha256": f"{g}-{k}"} for g in V.RENDERED},
                              "unclaimed": {"share": 0.1 * (keys.index(k) + 1)},
-                             "cover": {"by_cause": {"after-release": 2.0, "late-onset": 1.0}, "uncovered_share": 0.03},
+                             "cover": {"by_cause": {"after-release": 2.0, "late-onset": 1.0},
+                                       "by_cause_swapped": {"after-release": 2.5, "late-onset": 0.5},
+                                       "uncovered_share": 0.03},
                              "ends": {"sample": 1}}
+        if refuse and k in refuse:
+            build["parts"][k]["cover"] = {"by_cause": {"no-note": 50.0}, "by_cause_swapped": {"no-note": 50.0}}
         rec = {"part": k, "guitars": {g: {"held": fl[k][g], "dry_sha256": f"{g}-{k}"} for g in V.RENDERED}}
         if refuse and k in refuse:
             rec["guitars"]["vc-env"].update(held=math.inf, refused="silent render", reran=True)
@@ -593,7 +649,10 @@ def test_the_read_on_made_up_floors(monkeypatch, tmp_path, capsys):
     assert abs(r["terms"]["S"]["mean"] - 0.5) < 1e-12 and r["mean_sum_gap"] < 1e-12 and r["sum_max_gap"] < 1e-12
     assert r["passing_parts_on_the_40"] == 4 and r["refused"] == []
     assert r["route"]["shares"] == {"synthesis rules": 2 / 3, "note reading": 1 / 3}
+    assert r["route"]["swapped_shares"] == {"synthesis rules": 2.5 / 3, "note reading": 0.5 / 3}
+    assert r["route_label"] is None and r["route_swapped"]["shares"] == r["route"]["swapped_shares"]
     assert r["unclaimed"]["above"] == 2 and r["unclaimed"]["at_or_below"] == 2
+    assert r["unclaimed"]["spearman_with_S"] == V.NOT_COMPUTABLE       # S is the same on every part
     assert len(r["cluster_left_out"]["S"]) == 2 and len(r["largest_three"]["T"]["tags"]) == 3
     assert rep["beside"]["sample_ends"] == 6
     text = json.dumps(rows) + json.dumps(rep)
@@ -605,13 +664,73 @@ def test_the_read_on_made_up_floors(monkeypatch, tmp_path, capsys):
 
 
 def test_the_read_with_a_refusal_reads_passing_only_and_itt_beside(monkeypatch, tmp_path):
-    _world(tmp_path, monkeypatch, refuse={"bks__a", "goat__c"}, s=0.2)
+    keys = _world(tmp_path, monkeypatch, refuse={"bks__a", "goat__c"}, s=0.2)
     V.cmd_read(_args())
-    r = json.loads(V.report_path().read_text())["read"]
+    rep = json.loads(V.report_path().read_text())
+    r = rep["read"]
     assert len(r["refused"]) == 2 and r["passing_parts_on_the_40"] == 2
     assert r["code"] == "XV-sound" and r["itt"] is not None              # passing-only decides: S +0.2 reads worse
     assert r["itt"]["xv"]["code"] == "XV-undecided" and r["label"] == S.REFUSAL_SENSITIVE   # the zeros pull S to +0.1
     assert abs(r["terms"]["S"]["mean"] - 0.2) < 1e-12
+    # the refused parts are left out of the route, the median split and Spearman
+    assert r["route"]["shares"] == {"synthesis rules": 2 / 3, "note reading": 1 / 3}
+    assert r["route"]["by_cause"]["no-note"] == 0.0
+    assert r["unclaimed"]["above"] + r["unclaimed"]["at_or_below"] == 2 and r["unclaimed"]["spearman_parts"] == 2
+    assert r["unclaimed"]["spearman_with_S"] == V.NOT_COMPUTABLE
+    # the refusal report carries tags and the floors' own reasons, never part keys
+    rr = rep["refusal_report"]
+    assert sorted(rr["kinds"]) == sorted(V.tag(k) for k in ("bks__a", "goat__c"))
+    assert all(v["reasons"] == ["vc-env"] and v["kind"] == "technical" for v in rr["kinds"].values())
+    assert rr["pooled"]["refused"] == 2 and rr["pooled"]["parts"] == 4
+    assert rep["refused_why"] == {V.tag(k): {"vc-env": "silent render"} for k in ("bks__a", "goat__c")}
+    text = V.rows_path().read_text() + V.report_path().read_text()
+    for k in keys:
+        assert k not in text, k
+
+
+def test_the_cut_label_through_the_read(monkeypatch, tmp_path):
+    _world(tmp_path, monkeypatch, s=0.5, n=0.15, k_=-0.05)    # N +0.15 worse; N+K +0.10 undecided; K matches
+    V.cmd_read(_args())
+    r = json.loads(V.report_path().read_text())["read"]
+    assert r["readings"]["N"]["reading"] == "worse" and r["readings"]["K"]["reading"] == "matches"
+    assert r["readings"]["N+K"]["reading"] == "undecided"
+    assert r["code"] == "XV-both" and r["xv"]["with_n_plus_k"] == "XV-sound" and r["cut_label"] == V.CUT_SENSITIVE
+
+
+def test_a_malformed_floor_stops_the_read(monkeypatch, tmp_path):
+    for bad in (None, math.inf, 0.0, -1.0):
+        _world(tmp_path, monkeypatch)
+        rec = json.loads(V.floor_path("goat__c").read_text())
+        rec["guitars"]["vc-own"]["held"] = bad                 # no refused flag
+        V.floor_path("goat__c").write_text(json.dumps(rec, allow_nan=True))
+        with pytest.raises(SystemExit, match="malformed floor record"):
+            V.cmd_read(_args())
+        assert not V.report_path().exists() and not V.rows_path().exists()
+
+
+def test_a_floor_record_never_sets_the_stored_floors():
+    stored = {"k": {"true": {"held": 1.0}, "tr-di": {"held": 2.0}}}
+    for g in ("true", "tr-di", "xn-list"):
+        with pytest.raises(SystemExit, match="not one of the rendered guitars"):
+            V.floors_of(stored, {"k": {"guitars": {g: {"held": 1.0}}}})
+
+
+def test_a_non_finite_stored_floor_gets_an_explicit_reason(monkeypatch, tmp_path):
+    stored = {"k": {"true": {"held": math.inf}, "tr-di": {"held": None}}}
+    fl, why = V.floors_of(stored, {"k": {"guitars": {"vc-own": {"held": 1.5}}}})
+    assert fl["k"] == {"true": None, "tr-di": None, "vc-own": 1.5}
+    assert "stored true floor" in why["k"]["true"] and "stored tr-di floor" in why["k"]["tr-di"]
+    _world(tmp_path, monkeypatch)
+    real = V._stored_floors
+    st, iv = real(None)
+    st["panel__e"]["true"]["held"] = math.nan                  # a panel part: the 40 still reproduce T
+    st["panel__e"]["tr_di_less_true"] = None
+    monkeypatch.setattr(V, "_stored_floors", lambda m: (st, iv))
+    V.cmd_read(_args())
+    rep = json.loads(V.report_path().read_text())
+    assert "stored true floor" in rep["refused_why"][V.tag("panel__e")]["true"]
+    assert rep["refusal_report"]["kinds"][V.tag("panel__e")]["reasons"] == ["true"]
+    assert rep["t_reproduced"]["holds"] and rep["read"]["code"] == "XV-sound"
 
 
 def test_the_read_refuses_a_pending_rerun_a_foreign_guitar_and_a_missing_floor(monkeypatch, tmp_path):
@@ -649,6 +768,13 @@ def test_t_reproduces():
     assert not V.t_reproduces(st, _iv(0.83, 0.714, 0.930), _iv(0.83, 0.714, 0.930))["holds"]
     st["k"]["tr_di_less_true"] = 0.4
     assert not V.t_reproduces(st, iv, dict(iv))["holds"]
+    # None stored values: a part with no stored floor must also have no stored T, and the intervals must exist
+    none = {"k": {"true": {"held": None}, "tr-di": {"held": 2.0}, "tr_di_less_true": None}}
+    assert V.t_reproduces(none, iv, dict(iv))["per_part"] and V.t_reproduces(none, iv, dict(iv))["holds"]
+    assert not V.t_reproduces({"k": dict(none["k"], tr_di_less_true=0.5)}, iv, dict(iv))["per_part"]
+    assert V.t_reproduces({"k": {}}, iv, dict(iv))["per_part"]          # nothing stored: None equals None
+    for a, b in ((None, iv), (iv, None), (None, None)):
+        assert not V.t_reproduces(st, a, b)["holds"]
 
 
 def test_floors_of_and_pending_reruns():
@@ -675,3 +801,5 @@ def test_the_declaration_in_the_ledger():
     for k in ("planner", "review", "label"):
         assert d["seen"][k], k
     assert "960" in d["seen"]["definitions"]["uncovered"] and "40 dB" in d["seen"]["definitions"]["uncovered"]
+    assert V.CAUSE_ORDER_SENSITIVE in d["beside_cause_order"] and "vc-env comes from tr-di" in d["guitar_sources"]
+    assert set(d["review_fixes"]) >= {"cause_order", "tags", "malformed_floor"} and "re-fit" in d["limits_finish_refit"]

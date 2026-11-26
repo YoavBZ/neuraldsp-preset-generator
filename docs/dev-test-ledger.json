@@ -7836,7 +7836,18 @@
       "cut_artefacts": "the planner's, as worded: note_rebuild's log-mel distance in the dry domain, the cut guitar against the true DI beside tr-di against the true DI, on 4 parts"
      }
     },
-    "cant_show": "the search gain from fixing either side (bench floors did not order like the D's); timbre against note identity inside sounding spans; other presets, the ear or product conditions (notes, onsets and the judge's DI all come from the true DI); one preset, so S also carries any static tone difference a search would absorb; the score only"
+    "cant_show": "the search gain from fixing either side (bench floors did not order like the D's); timbre against note identity inside sounding spans; other presets, the ear or product conditions (notes, onsets and the judge's DI all come from the true DI); one preset, so S also carries any static tone difference a search would absorb; the score only",
+    "guitar_sources": "a clarifying line (the review of the declaration PR): vc-own, vc-cut and vc-fin are built from the raw section (pretrain_set.section_audio) through the part's p.finish; vc-env comes from tr-di, not from the raw section",
+    "beside_cause_order": "added on the review of the declaration PR (fix 1): the declared order (skipped, late onset, after an end within 600 ms, no note nearby) stays the deciding split; beside it the same split with the order swapped (after an end within 600 ms before late onset), as the no-limit split is; when the two orders name a different larger route group, the route carries the mark cause-order-sensitive and names both groups with their shares under both orders; no threshold, no dB-rise rule",
+    "review_fixes": {
+     "review": "the declaration PR's independent review, 2026-11-26: PASS WITH FIXES; fixes 1 to 3 binding, the rest done as asked",
+     "cause_order": "fix 1: see beside_cause_order (cover_figures' by_cause_swapped, route_order)",
+     "tags": "fix 2: the read's refusal report takes 12-hex tags for parts and for sets_of, so no part key enters rows.json or report.json when a part is refused; its kinds come from refused_why's reasons (the guitar whose floor was refused)",
+     "malformed_floor": "fix 3: a Unit C record whose floor is missing, non-finite or not positive without a refused flag stops the read (never read as a refusal); a Unit C record may set only the rendered guitars, never the stored true or tr-di floors; a stored true or tr-di floor that is not finite and positive gets an explicit reason in refused_why",
+     "spend_gate": "the control's outcome opens the gate only when it carries a code field",
+     "not_computable": "S above and below the median and the Spearman are reported as 'not computable' when their interval or rank correlation cannot be formed"
+    },
+    "limits_finish_refit": "song_bank.measure re-fits its EQ to each guitar's own audio, so vc-own and vc-cut each get their own re-fit; N and K therefore also carry the finish's re-fit, not only the gate and the cuts"
    }
   },
   {
