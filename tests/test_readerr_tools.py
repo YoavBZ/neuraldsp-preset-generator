@@ -137,7 +137,9 @@ def test_real_manifest_matches_the_pin_when_present():
         rec = RT.licence_record(c, man)
         assert set(rec) == set(RT.LICENCE_FIELDS) and all(rec.values())
     assert RT.checkpoint_path("ymt3", man, RT.ROOT).name == "last.ckpt"
-    assert RT.MANIFEST.name == "readerr-download-manifest-v2.json"
+    assert RT.MANIFEST.name == "readerr-download-manifest-v3.json"
+    pins = {p["name"]: p["version"] for p in man["locks"]["A_mt3"]["packages"]}
+    assert (pins["transformers"], pins["tokenizers"], pins["torch"]) == ("4.45.1", "0.20.3", "2.7.1")   # YourMT3's pin
     for c, i in RT.CANDIDATES.items():                    # O9: each fetched checkpoint carries its scan
         pg = RT.manifest_item(man, i)["pickle_globals"]
         assert pg and all(set(e) == {"member", "globals"} and e["globals"] for e in pg), c
@@ -721,12 +723,12 @@ def test_tx_move_old(monkeypatch, root, capsys):
     monkeypatch.setattr(RT, "require_main", lambda: None)
     monkeypatch.setattr(RT, "load_manifest", lambda *a, **k: man)
     with pytest.raises(SystemExit, match="nothing of the old install"):
-        RT.cmd_tx_move_old(None)
+        RT.cmd_tx_move_old(type("A", (), {"lock": None})())
     _old_install(root, man)
     (root / "python-3.12").mkdir()                       # the new interpreter is never touched
     keep = pathlib.Path(RT.manifest_item(man, "hf_midi_transcription")["pinned_path"])
     keep.write_bytes(b"archive")                         # nor the checked archives
-    RT.cmd_tx_move_old(None)
+    RT.cmd_tx_move_old(type("A", (), {"lock": None})())
     rec = json.loads(next(root.glob("move-old-*.json")).read_text())
     froms = [pathlib.Path(m["from"]).name for m in rec["moved"]]
     assert froms[0] == RT.PTH_NAME and len(froms) == 9 and rec["deleted"] == []
@@ -737,7 +739,29 @@ def test_tx_move_old(monkeypatch, root, capsys):
     moved_b = next(pathlib.Path(m["to"]) for m in rec["moved"] if pathlib.Path(m["from"]).name == "venv-b")
     assert (moved_b / "bin" / "python").read_text() == "old"                                # nothing deleted
     with pytest.raises(SystemExit, match="nothing of the old install"):
-        RT.cmd_tx_move_old(None)
+        RT.cmd_tx_move_old(type("A", (), {"lock": None})())
+
+
+def test_tx_move_old_one_lock(monkeypatch, root):
+    man, _ = make_manifest(root)
+    monkeypatch.setattr(RT, "require_main", lambda: None)
+    monkeypatch.setattr(RT, "load_manifest", lambda *a, **k: man)
+    _old_install(root, man)
+    RT.cmd_tx_move_old(type("A", (), {"lock": "A"})())
+    rec = json.loads(next(root.glob("move-old-*.json")).read_text())
+    assert rec["locks"] == ["A"] and sorted(pathlib.Path(m["from"]).name for m in rec["moved"]) == \
+        ["install-A.json", "lock-A.txt", "venv-a"]
+    for name in ("venv-b", "install-B.json", "lock-B.txt"):            # lock B's files stay exactly where they were
+        assert (root / name).exists()
+    assert (root / "venv-b" / "lib" / "python3.12" / "site-packages" / RT.PTH_NAME).exists()
+    for i in ("hf_midi_transcription", "piano_transcription_inference"):
+        a = RT.manifest_item(man, i)
+        assert (pathlib.Path(a["pinned_path"]).parent / f"{i}-{a['commit'].split()[0]}").exists()
+    with pytest.raises(SystemExit, match="nothing of the old install"):
+        RT.cmd_tx_move_old(type("A", (), {"lock": "A"})())
+    with pytest.raises(SystemExit, match="no lock 'C'"):
+        RT.old_targets(man, locks=["C"])
+    assert len(RT.old_targets(man, locks=["B"])) == 6                    # .pth, venv, record, lock file, two folders
 
 
 def test_tree_refusal():
