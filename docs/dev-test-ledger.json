@@ -7754,6 +7754,89 @@
      "phase_scratch_readerr_xp_outcome"
     ],
     "grepped": "no readerr_tools, tx-install, tx-fetch, tx-notes, tx-score, ymt3, kong-fl, kong-gaps, xr-cand, XP-, tools-gate, notes-tx, candidates-tx or phase_scratch_readerr_p2b existed in docs/, learn/ or tests/ on main before this declaration"
+   },
+   "phase_scratch_voice": {
+    "declared": "2026-11-26, before anything in it runs",
+    "plan": "docs/scratch-voice-plan.md; the planner's plan (handover plans/voice-gap-plan.md, sha256 7b8a1bbe413cfac889b6ed3b2390901f3aaec85ea5e41d6cb2218115bb30a145, its independent review appended) passed an independent review (Opus, high), PASS WITH AMENDMENTS; the review's amendments 1 to 8 are binding and override the plan's text where they differ; the orchestrator's call on amendment 1: every vc-* guitar is built from the raw section (pretrain_set.section_audio) through the part's own finish p.finish, so all of them share tr-di's finish chain",
+    "user_go": "the user's route call 2026-11-26: price the sound gap first",
+    "question": "at the real floor (row (b)'s answer, the held half, the true DI as the judge's DI), how much of T = ln(d_tr-di / d_true) (+0.822 [+0.714, +0.930] on the 40, seen) is real audio inside our note windows, how much our note activity, how much the cuts and how much the finish",
+    "chain": "tr-di -> vc-own -> vc-cut -> vc-fin -> true (amendment 6): S, N and K are priced with the finish on, as tr-di is built, and F is the finish at real sound; the shares depend on the order only through the finish's position; the codes read S and N; no other order runs",
+    "guitars": {
+     "vc-own": "the raw section gated by our played notes (scratch_readerr.played_trace): each window from 2 ms before the onset (PRE_ATTACK_S) to the note's own end, a linear fade-in over [on - 2 ms, on] (NOTE_FADE_IN_S, amendment 6) and the end kind's linear fade ending there (re-pluck 10 ms, mute 30 ms, release 150 ms, sample end 150 ms); skipped notes open no window; windows combine by maximum, never by sum; the 10-ms edge fade (EDGE_FADE_S); no per-note gain, tilt, tuning or denoise; then p.finish and one overall gain to -22.9 LUFS, recorded",
+     "vc-cut": "the raw section with the worst-case notch at every one of our onset groups (each group's first onset): a 10-ms linear fade-out ending at the onset and a 2-ms linear fade-in over [on - 2 ms, on], combined by maximum (amendment 6: a notch of about -15.6 dB at 1.67 ms before the onset, about 3 ms wide); then p.finish and -22.9 LUFS",
+     "vc-fin": "the raw section through p.finish (song_bank.measure, then average_balance), then -22.9 LUFS (amendment 1); proof: vc-fin equals the stored average-balance DI (note_replay's avg) brought to -22.9 LUFS by at_lufs, max |difference| / max |vc-fin| at most 1e-5",
+     "vc-env": "beside: tr-di times a gain that makes its 20-ms RMS level (5-ms hop) follow the true DI's (note_replay.di_section): per frame the difference in dB clipped to +-20 dB (ORACLE_CLAMP_DB), 0 dB where tr-di's frame is under its own loudest less 40 dB; the dB gain linear between frame centres, held at the ends; then -22.9 LUFS",
+     "avg+mild": "beside, stored: row (c)'s dry guitar, rendered at row (b)'s answer (not stored at answer (b))",
+     "true, tr-di": "stored: the exact-notes test's real floors (PF/fs/exact/floors.json, hashed in phase_scratch_exact_targets)"
+    },
+    "measure": "per guitar row (b)'s stored, hashed answer rendered through it (2 renders: a priming render and the kept one), note_replay.half_distance on the held half against the clean record with the true DI as the judge's DI at the part's lag, as rederive_rows.cmd_floor_real does; paired per part through scratch_notes.set_rows; the 40 (BKS+GOAT) decide, all 47 beside",
+    "terms": {
+     "S": "ln(d_tr-di / d_vc-own): real audio inside our note windows closes at most S (an upper bound); not a sound gap: S also holds every note error the gate cannot see (extra attacks in true sustain, wrong pitches, bends and articulation, leftover level shaping) (amendment 2)",
+     "N": "ln(d_vc-own / d_vc-cut): our note activity, a lower bound for notes and timing; it mixes note reading with synthesis rules (amendment 7)",
+     "K": "ln(d_vc-cut / d_vc-fin): the cuts themselves, over-stated because vc-cut notches every group while vc-own notches only where every window closes (amendment 5)",
+     "F": "ln(d_vc-fin / d_true): the finish, average_balance alone (amendment 1)",
+     "T": "ln(d_tr-di / d_true) = S + N + K + F exactly per part, held to 1e-12",
+     "one_set": "S, N, K, F and T on one passing part set: a part refused in any of the six floors (true, tr-di, vc-fin, vc-cut, vc-own, vc-env) drops from all of them (amendment 3); set_rows' pooled mean is linear, so the sum holds on the 40's mean too; avg+mild is beside on its own"
+    },
+    "table": {
+     "rule": "paired_reading of S and N on the 40, the first that holds; F's reading attached to every code; coded as scratch_voice.XV_TABLE and xv_code, tested before any run: every interval case, malformed ones included, ends in exactly one code",
+     "codes": [
+      "XV-anomaly",
+      "XV-both",
+      "XV-sound",
+      "XV-notes",
+      "XV-undecided"
+     ],
+     "XV-anomaly": "a build proof or the repeat check fails, T does not reproduce from the stored files, the sum fails on a part, any of S, N, K, F, T has no usable interval or reading, K reads worse or better, or S or N reads better (amendment 4; F reading better is not an anomaly): stop; to the user",
+     "XV-both": "S worse and N worse: both tracks; N's uncovered frames by cause go to their tracks as named targets; E1 and E2 say, loosely, which kind of sound; the spend gate holds",
+     "XV-sound": "S worse, N not worse: real audio inside our note windows closes at most S ('dominates' only if N reads matches); E1 against E2, loosely sustain against spectrum; the spend gate holds; the search row through vc-own only on its own declaration and the user's go",
+     "XV-notes": "N worse, S not worse: our note activity alone costs a heard size under real sound; routed by N's cause split; note-track candidates may be screened here at 94 renders each, a screen only (adoption needs the note track's own search row); no synthesis spend",
+     "last_row": "anything else",
+     "XV-undecided": "anything else: not split at the floor; undecided is not failed; if F reads worse, the finish holds it and the held fs-tone question returns to the user",
+     "cut_sensitive": "N+K = ln(d_vc-own / d_vc-fin) read beside N; the code is marked cut-sensitive when it changes with N+K in N's place (amendment 5)",
+     "s1": "only a silent render can refuse (the judge's DI is the true DI); a refusal reruns once and is reported with refusal_report; the read is passing-only, the itt_values read (a refused part at 0.0) beside the codes only, not the sums, and the code is marked refusal-sensitive when the two codes differ"
+    },
+    "spend_gate": "under XV-sound or XV-both, no learned synthesis, DI-restoration or search-row spend on this test's account until main holds phase_scratch_voice_control_outcome (a declared control that drops the unclaimed onset groups from both tr-di and vc-own, 47 parts x 2 guitars x 2 renders = 188 renders, its own declaration phase_scratch_voice_control) or phase_scratch_voice_waiver (the user's words and the date); coded as scratch_voice.spend_refusal and require_spend; necessary, not sufficient (amendment 2)",
+    "beside": {
+     "E1, E2": "E1 = ln(d_tr-di / d_vc-env) for the level curve, E2 = ln(d_vc-env / d_vc-own) for the rest; loose: E1 also takes the level of extra attacks",
+     "share": "Fieller's share S/T (scratch_exact.share)",
+     "unclaimed": "per part the share of our onset groups with no true-DI rise of 3 dB or more within +-20 ms (amendment 2): S above and below its median on the 40, and its Spearman with S; beside, not decided",
+     "causes": "N's uncovered playing frames by cause, zero renders (amendment 7): each uncovered piece of a playing held-half frame, at its midpoint, takes the first that holds: skipped (inside a skipped note's [on - 2 ms, max(on, off)]); late onset (one of our windows opens within 50 ms after it, REFINE_S); after a release, re-pluck, mute, sample end or cut (the last window before it ended within 600 ms, TILT_ISOLATED_S, by that window's end kind); no note nearby (anything else); beside, the same with no distance limit; pooled over the 40's passing parts; route groups: synthesis rules (skipped, the end kinds) and note reading (late onset, no note nearby), each named to its own track with its share, the larger first; the count of sample ends reported",
+     "splits": "clean, crunch, all 47; each cluster of the 40 left out; the three largest parts' contributions (12-hex tags) and the 40 without them; the avg+mild floor against the true DI and tr-di"
+    },
+    "files": "PF/fs/voice/: build.json (Unit B: the four proofs rule_off_is_tr_di, trace_is_tr_di_report, all_pass_is_vc_fin, vc_fin_is_avg; per part each built guitar's and avg+mild's sha256, vc-own's gain, the unclaimed groups, the coverage and causes, the end counts; scratch_readerr.py's blob sha and played_trace's source sha256), dry/<guitar>/, floors/<part>.json (Unit C), repeat/<part>.json (Unit C), rows.json and report.json (the read); each file written once; git gets counts and 12-hex tags only",
+    "phases": "1 this declaration (zero renders) -> 2 build (learn/voice_build.py, zero renders; on 47 of 47: the rule off rebuilds tr-di byte for byte, the trace equals tr-di's stored report, an all-pass window gives vc-fin byte for byte, vc-fin equals the stored avg at -22.9 LUFS; hash PR phase_scratch_voice_dry) -> 3 floors (learn/voice_floors.py, 478 renders; on the two check parts, the first BKS and the first GOAT part by key, tr-di and the true DI repeat their stored floors, distance and render sha256) -> 4 read (scratch_voice read, zero renders, once: T reproduces from the stored files, the sum per part to 1e-12, each cluster left out, the three largest parts) -> 5 audit, then the results PR with phase_scratch_voice_outcome",
+    "renders": {
+     "floors": 470,
+     "repeat": 8,
+     "all": 478,
+     "control": 188,
+     "control_note": "only under XV-sound or XV-both, on its own declaration",
+     "search_row": "about 13,100 to 13,500 renders, about 2 h (measured on xf-now); its own declaration and the user's go",
+     "time": "about 160 renders a shard: about 9 min at the real floor's rate (32 renders in 106 to 112 s), about 6 min at the bench floors' (160 in 363 to 366 s)"
+    },
+    "guards": "every command refuses unless this checkout runs main's code (learn/scratch_voice.py, learn/voice_build.py, learn/voice_floors.py and the pinned imports scratch_search.py, scratch_notes.py, scratch_exact.py, note_rebuild.py, note_transcribe.py, note_replay.py, pretrain_set.py; git diff --quiet against origin/main) and its own keys (phase_scratch_voice* only), and main holds phase_fs_draw, phase_fs_answers_stem, phase_scratch_exact_targets, this key and the keys the command reads; the prefix sits outside every guarded prefix; scratch_readerr.py (the note track's) is not pinned: only the build calls played_trace and its proofs re-check it",
+    "code": "learn/scratch_voice.py (names, paths, guards, XV_TABLE, xv_code, the term arithmetic, the coverage, causes and unclaimed groups, the spend gate, read); tests/test_scratch_voice.py; later units learn/voice_build.py (Unit B) and learn/voice_floors.py (Unit C); edits no other module",
+    "keys_to_come": [
+     "phase_scratch_voice_dry",
+     "phase_scratch_voice_outcome",
+     "phase_scratch_voice_control",
+     "phase_scratch_voice_control_outcome",
+     "phase_scratch_voice_waiver"
+    ],
+    "grepped": "no phase_scratch_voice* key, guitar name (vc-own, vc-cut, vc-fin, vc-env), code (XV-*), module name (scratch_voice, voice_build, voice_floors) or data folder (fs/voice) existed in docs/, learn/, tests/ or the ledger before this declaration",
+    "seen": {
+     "label": "seen before the declaration (the planner's zero-render probe in memory from a frozen worktree at 96b2e7fc, the review's zero-render checks at 7ded1a6c, and stored results)",
+     "stored": "T +0.822 [+0.714, +0.930] on the 40 (BKS+GOAT pooled cluster means; the review's plain mean +0.823 from PF/fs/exact/floors-real/); row (b) reproduces on all 47 parts; D_swap - D* +0.426 [+0.290, +0.562] (the exact-notes test, by search); the rf2 real floor's four values fitted, -0.003; the tone split's 846 renders at answer (c); answer (b) loses +0.161 through the clip-free DI",
+     "planner": "on 47 of 47 parts the two build proofs hold and the trace-and-gate pass took 55 s in one process; our notes leave a median 3% of the true DI's playing frames uncovered on the held half (quartiles 1.4% and 11.8%, max 31%; 10 of the 40 above 10%); cut artefacts in the dry domain log-mel 0.16 to 0.19 against tr-di's 13 to 17, on 4 parts (not verified by the review); vc-own's overall gain 0.0 to 0.15 dB",
+     "review": "uncovered playing frames on 8 deciding parts, held half: median 4.0% by sample share (3.6% by whole frames), quartiles 1.8% to 5.9%, max 27.6%; unclaimed onset groups on the 40: median 7.8% (quartiles 2.0% to 14.6%, max 67%); on the 8 traced parts release and re-pluck were most of the ends, none had a sample end; disk for four guitar sets about 370 MB (4 x 47 x 492,000 samples x 4 bytes); 39 GiB free against the 31 GB guard",
+     "definitions": {
+      "uncovered": "the review's: the true DI (note_replay.di_section) in 20-ms frames (960 samples) at a 5-ms hop (240 samples), note_rebuild.frame_levels_db; a frame plays within 40 dB of the section's loudest frame (MUTE_FLOOR_DB, J0's playing floor); the part's held half, frame centres in [a + 0.25, b + 0.25) s of the section (A 1.0-5.5 s, B 5.5-10.0 s on the trimmed timeline); covered by the windows [on - 2 ms, end] of every played note in played_trace (samples by round()); the headline is each playing frame's uncovered sample share, whole-frame uncovered beside; the declared figure (scratch_voice.COVER, cover_figures) is this definition. The planner's figure is worded 'the true DI's playing frames uncovered on the held half'; its frame, hop and floor were not recorded, and the review found the two agree",
+      "unclaimed": "the review's: note_rebuild.onset_groups of build 2's notes after its fixes over the whole section; at each group's first onset t, note_rebuild.rise_curve of the true DI (2-ms high-passed frames, 1-ms hop) over hops max(0, int((t - 0.02) x 48000) // 48) to int((t + 0.02) x 48000) // 48 + 1; unclaimed when that span is empty or its largest rise is under 3 dB (REFINE_MIN_RISE_DB, SNAP_S); the share is unclaimed groups over groups (scratch_voice.UNCLAIMED, unclaimed_groups)",
+      "cut_artefacts": "the planner's, as worded: note_rebuild's log-mel distance in the dry domain, the cut guitar against the true DI beside tr-di against the true DI, on 4 parts"
+     }
+    },
+    "cant_show": "the search gain from fixing either side (bench floors did not order like the D's); timbre against note identity inside sounding spans; other presets, the ear or product conditions (notes, onsets and the judge's DI all come from the true DI); one preset, so S also carries any static tone difference a search would absorb; the score only"
    }
   },
   {
