@@ -7941,6 +7941,180 @@
      "renders": 0
     },
     "ran": "2026-11-26, tx-gate once from a frozen detached worktree of main at 92af6196 (#647) through gate_driver.py, a record-keeping wrapper that copies each run_tx result as it returns (the gate code unchanged), main .venv driving the two readerr venvs on CPython 3.12.16, niced, 399 s wall, zero renders"
+   },
+   "phase_scratch_readerr_notes_tx": {
+    "sha256": "4aad3f1765d3022c131c5e74ecfe6a96b43d78ad39275710715cee68381d6035",
+    "counts": {
+     "inputs": 136,
+     "bench": 47,
+     "truth": 79,
+     "lists": 10,
+     "candidates": 26,
+     "families": 3,
+     "failed_inputs": 0,
+     "renders": 0
+    },
+    "basic_pitch_stored_notes": {
+     "total": 8134,
+     "by_group": {
+      "bench": 5336,
+      "truth": 2351,
+      "list": 447
+     },
+     "zero_note_inputs": []
+    },
+    "notes_by_candidate": {
+     "kong-fl-o0.2-f0.1": {
+      "notes": 4935,
+      "zero_note_inputs": []
+     },
+     "kong-fl-o0.2-f0.2": {
+      "notes": 4935,
+      "zero_note_inputs": []
+     },
+     "kong-fl-o0.2-f0.3": {
+      "notes": 4935,
+      "zero_note_inputs": []
+     },
+     "kong-fl-o0.3-f0.1": {
+      "notes": 4781,
+      "zero_note_inputs": []
+     },
+     "kong-fl-o0.3-f0.2": {
+      "notes": 4781,
+      "zero_note_inputs": []
+     },
+     "kong-fl-o0.3-f0.3": {
+      "notes": 4781,
+      "zero_note_inputs": []
+     },
+     "kong-fl-o0.4-f0.1": {
+      "notes": 4630,
+      "zero_note_inputs": []
+     },
+     "kong-fl-o0.4-f0.2": {
+      "notes": 4630,
+      "zero_note_inputs": []
+     },
+     "kong-fl-o0.4-f0.3": {
+      "notes": 4630,
+      "zero_note_inputs": []
+     },
+     "kong-fl-o0.5-f0.1": {
+      "notes": 4447,
+      "zero_note_inputs": []
+     },
+     "kong-fl-o0.5-f0.2": {
+      "notes": 4447,
+      "zero_note_inputs": []
+     },
+     "kong-fl-o0.5-f0.3": {
+      "notes": 4447,
+      "zero_note_inputs": []
+     },
+     "kong-gaps-o0.2-f0.1": {
+      "notes": 4563,
+      "zero_note_inputs": []
+     },
+     "kong-gaps-o0.2-f0.2": {
+      "notes": 4563,
+      "zero_note_inputs": []
+     },
+     "kong-gaps-o0.2-f0.3": {
+      "notes": 4563,
+      "zero_note_inputs": []
+     },
+     "kong-gaps-o0.3-f0.1": {
+      "notes": 4393,
+      "zero_note_inputs": []
+     },
+     "kong-gaps-o0.3-f0.2": {
+      "notes": 4393,
+      "zero_note_inputs": []
+     },
+     "kong-gaps-o0.3-f0.3": {
+      "notes": 4393,
+      "zero_note_inputs": []
+     },
+     "kong-gaps-o0.4-f0.1": {
+      "notes": 4213,
+      "zero_note_inputs": []
+     },
+     "kong-gaps-o0.4-f0.2": {
+      "notes": 4213,
+      "zero_note_inputs": []
+     },
+     "kong-gaps-o0.4-f0.3": {
+      "notes": 4213,
+      "zero_note_inputs": []
+     },
+     "kong-gaps-o0.5-f0.1": {
+      "notes": 4015,
+      "zero_note_inputs": []
+     },
+     "kong-gaps-o0.5-f0.2": {
+      "notes": 4015,
+      "zero_note_inputs": []
+     },
+     "kong-gaps-o0.5-f0.3": {
+      "notes": 4015,
+      "zero_note_inputs": []
+     },
+     "ymt3-guitar": {
+      "notes": 3576,
+      "zero_note_inputs": [
+       "list-chords-six",
+       "truth-004",
+       "truth-006",
+       "truth-009",
+       "truth-010",
+       "truth-011",
+       "truth-012",
+       "truth-014",
+       "truth-047",
+       "truth-048",
+       "truth-049",
+       "truth-050",
+       "truth-051",
+       "truth-052",
+       "truth-053",
+       "truth-054"
+      ]
+     },
+     "ymt3-pitched": {
+      "notes": 4434,
+      "zero_note_inputs": []
+     }
+    },
+    "ymt3_programmes_identical_inputs": {
+     "total": 38,
+     "bench": 28,
+     "truth": 8,
+     "lists": 2
+    },
+    "wall_s": {
+     "shards": {
+      "0/3": {
+       "inputs": 46,
+       "seconds": 989.3
+      },
+      "1/3": {
+       "inputs": 45,
+       "seconds": 1010.1
+      },
+      "2/3": {
+       "inputs": 45,
+       "seconds": 974.4
+      }
+     },
+     "family_runner_seconds": {
+      "ymt3": 1264.0,
+      "kong-fl": 836.0,
+      "kong-gaps": 834.7
+     },
+     "note": "three shards in parallel (--shard k/3), each running ymt3, kong-fl, kong-gaps in turn at the code's TX_THREADS 1; family runner seconds are the sum of the per-input runner times over all 136 inputs"
+    },
+    "ran": "2026-11-26 09:42-09:59, tx-notes --shard k/3 for k 0, 1, 2 in parallel, then tx-notes --combine, from a frozen detached worktree of main at 4fb7dc95 (#649), niced under caffeinate; no input failed; zero renders"
    }
   },
   {
