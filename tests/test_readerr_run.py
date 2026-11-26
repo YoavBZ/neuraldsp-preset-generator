@@ -559,6 +559,29 @@ def test_check_globals_and_the_denylist():
         set(R.DENY_NAMES)
 
 
+def test_the_denylist_covers_python2_names_and_torchs_renames():
+    for name in ("commands.getoutput", "cPickle.loads", "__builtin__.set", "copy_reg._reconstructor",
+                 "cStringIO.StringIO", "urllib2.urlopen", "httplib.HTTPConnection", "__builtin__.reduce",
+                 "__builtin__.intern", "copyreg._reconstructor", "functools.reduce", "io.open", "_io.open",
+                 "urllib.request.urlopen", "http.client.HTTPConnection", "StringIO.StringIO", "whichdb.whichdb",
+                 "_abcoll.Callable", "collections.abc.Callable", "Queue.Queue", "UserDict.UserDict",
+                 "collections.UserDict", "exceptions.StandardError", "itertools.imap", "builtins.map"):
+        assert R.denied_global(name), name
+        with pytest.raises(SystemExit, match="denylisted"):
+            R.check_globals({"m.pkl": [name]}, [name])
+    assert {R.torch_py2_renamed(f"{m}.{n}") for (m, n) in R.TORCH_PY2_NAMES} <= set(R.DENY_NAMES)
+    assert R.torch_py2_renamed("__builtin__.reduce") == "functools.reduce"
+    assert R.torch_py2_renamed("copy_reg._reconstructor") == "copyreg._reconstructor"
+    assert R.torch_py2_renamed("collections.OrderedDict") == "collections.OrderedDict"
+    for name in ("collections.OrderedDict", "_codecs.encode", "numpy.core.multiarray._reconstruct",
+                 "numpy.core.multiarray.scalar", "numpy.dtype", "numpy.ndarray", "numpy.dtypes.Int64DType",
+                 "torch.FloatStorage", "torch.LongStorage", "torch._utils._rebuild_tensor_v2",
+                 "utils.event_codec.FastCodec", "utils.note_event_dataclasses.Event",
+                 "utils.note_event_dataclasses.EventRange", "utils.task_manager.TaskManager",
+                 "utils.tokenizer.NoteEventTokenizer"):     # every global the audited scan found, and the safe type
+        assert not R.denied_global(name), name
+
+
 # --- the network and process refusals -------------------------------------------------------------------------------------
 
 def test_every_network_and_process_call_refuses(monkeypatch):
@@ -916,6 +939,11 @@ def test_module_level_is_the_standard_library():
 
 def test_no_runtime_fetch():
     src = (REPO / "learn" / "readerr_run.py").read_text()
+    tree = ast.parse(src)
+    deny = [n for n in tree.body if isinstance(n, ast.Assign) and [getattr(t, "id", None) for t in n.targets]
+            == ["DENY_MODULES"]]
+    assert len(deny) == 1                  # the denylist names network modules only to refuse them: left out here
+    src = src.replace(ast.get_source_segment(src, deny[0]), "")
     for word in ("urllib", "requests", "hf_hub_download", "snapshot_download", "from_pretrained", "http://",
                  "https://", "load_state_dict_from_url", "torch.hub"):
         assert word not in src, word

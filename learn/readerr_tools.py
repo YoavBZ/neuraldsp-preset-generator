@@ -4,8 +4,9 @@
     $MAIN -m learn.readerr_tools tx-install [--lock A|B]       # the two pyenv 3.12.13 venvs, from the manifest's locks
     $MAIN -m learn.readerr_tools tx-fetch [--cand ymt3|kong-fl|kong-gaps]   # the three pinned checkpoints
 
-**The manifest** is U4's hand-back (`MANIFEST`), read only when its sha256 is `MANIFEST_SHA256`. Every URL, size,
-sha256, lock line and pinned path comes from it; nothing is resolved here.
+**The manifest** is U4's hand-back as v2 (`MANIFEST`: v1 plus each checkpoint's scanned `pickle_globals`, O9),
+read only when its sha256 is `MANIFEST_SHA256`. Every URL, size, sha256, lock line and pinned path comes from it;
+nothing is resolved here.
 
 **`tx-install`.** Each lock gets its own venv (`VENVS`), made by pyenv's Python 3.12.13 (`INTERPRETER`, its version
 checked), then `pip install --require-hashes --only-binary :all: --no-deps --no-cache-dir` from the lock's
@@ -48,8 +49,8 @@ import urllib.request
 
 HOME = pathlib.Path(os.path.expanduser("~/ndsp-presets"))
 ROOT = HOME / "tools" / "readerr"
-MANIFEST = HOME / "handover" / "2026-11-25" / "readerr-download-manifest.json"
-MANIFEST_SHA256 = "35a998dbd342812a40db2a0e171cb2d3935f26d5d6c69ab5460c34b75ebf836b"
+MANIFEST = HOME / "handover" / "2026-11-26" / "readerr-download-manifest-v2.json"   # O9: v1 + the audited scan
+MANIFEST_SHA256 = "94a84fc9f4e5eb47f7ef6783fa2663d2e1cc120514d0e0f4ef9053e9782c65b1"
 INTERPRETER = pathlib.Path(os.path.expanduser("~/.pyenv/versions/3.12.13/bin/python3"))
 PYTHON_VERSION = "3.12.13"
 REPO = pathlib.Path(__file__).resolve().parents[1]

@@ -136,6 +136,11 @@ def test_real_manifest_matches_the_pin_when_present():
         rec = RT.licence_record(c, man)
         assert set(rec) == set(RT.LICENCE_FIELDS) and all(rec.values())
     assert RT.checkpoint_path("ymt3", man, RT.ROOT).name == "last.ckpt"
+    assert RT.MANIFEST.name == "readerr-download-manifest-v2.json"
+    for c, i in RT.CANDIDATES.items():                    # O9: each fetched checkpoint carries its scan
+        pg = RT.manifest_item(man, i)["pickle_globals"]
+        assert pg and all(set(e) == {"member", "globals"} and e["globals"] for e in pg), c
+    assert "pickle_globals" not in RT.manifest_item(man, "mr-mt3-mt3pth")
     for lock in RT.LOCKS:
         assert RT.lock_lines(man, lock)
     for i in RT.LOCKS["B"]["archives"]:

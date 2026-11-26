@@ -3283,13 +3283,27 @@ def gate_checkpoint_refusal(item, path):
 ALLOW_FIELD = "pickle_globals"           # the manifest item's list of "module.name" globals (see tx_allow_globals)
 
 
+TORCH_SAFE_TYPES = ("numpy.dtypes.Int64DType",)   # declared (2026-11-26 audit): with numpy >= 1.25 the BUILD of an
+                                         # 'i8' dtype needs it, so the guarded load would refuse without it; the
+                                         # manifest's pickle_globals stay the scan's record exactly
+
+
 def tx_allow_globals(man, fam):
-    """(Pure.) A checkpoint's pickle globals from the manifest (`readerr_tools.load_manifest()`): its item's
-    `pickle_globals`, a list of "module.name". Refused when the manifest lists none: the allowlist is never guessed."""
+    """(Pure.) A checkpoint's allowlist: its manifest item's `pickle_globals` (`readerr_tools.load_manifest()`), the
+    scan's record, either "module.name"s or manifest v2's [{member, globals}] (its distinct globals in scan order),
+    then TORCH_SAFE_TYPES. Refused when the manifest lists none: the allowlist is never guessed."""
     g = manifest_item_of(man, fam).get(ALLOW_FIELD)
     if not isinstance(g, list) or not g:
         raise SystemExit(f"the manifest lists no {ALLOW_FIELD} for {fam}: the guarded load's allowlist has no source")
-    return list(g)
+    names = []
+    for e in g:
+        got = e.get("globals") if isinstance(e, dict) else [e]
+        if not isinstance(got, list) or not all(isinstance(x, str) for x in got):
+            raise SystemExit(f"{fam}: a {ALLOW_FIELD} entry is not a name or a {{member, globals}} record")
+        for x in got:
+            if x not in names:
+                names.append(x)
+    return names + [t for t in TORCH_SAFE_TYPES if t not in names]
 
 
 def family_of(cid):
