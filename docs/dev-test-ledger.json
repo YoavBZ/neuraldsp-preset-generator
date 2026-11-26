@@ -7848,6 +7848,98 @@
      "not_computable": "S above and below the median and the Spearman are reported as 'not computable' when their interval or rank correlation cannot be formed"
     },
     "limits_finish_refit": "song_bank.measure re-fits its EQ to each guitar's own audio, so vc-own and vc-cut each get their own re-fit; N and K therefore also carry the finish's re-fit, not only the gate and the cuts"
+   },
+   "phase_scratch_readerr_tools": {
+    "sha256": "c4e4513d3a43fd07a1ae952bdc74a752eb0d5a7ae9f8dc846abc5f9ded7ced11",
+    "manifest_sha256": "37752c5b8835b81f571d4d25101f1ddf56e025423d33bab4c681070c9533cb8e",
+    "python": {
+     "version": "3.12.16",
+     "build": "python-build-standalone 20261124, cpython-3.12.16+20261124-aarch64-apple-darwin-install_only.tar.gz",
+     "asset_sha256": "431b99a9c2cdd37ad9b06e425be0e520d2dbce0552abe454257abef592fe3634",
+     "sha256sums_sha256": "7e902de89fdcf79ad073be6d44445fd6ec9fa5592f008612852dae85874fee6a",
+     "record_sha256": "66dc1b7555c73a9d4a753dd1eac7e9cb6cc1edb54f26e567c4c0bb25e44ec051"
+    },
+    "venvs": {
+     "A": {
+      "install_record_sha256": "7a48e58a0faddf43946ebe80d9ab22f13e19574ee7de9ddeffaeb3c1d68a1770",
+      "freeze_sha256": "0d50a8b0d3c81af14b72c6b6f68fd4cf121fc79d987240a02ce9fc659a0c6b16",
+      "lock_file_sha256": "0cc227b333e5525255e56c304f319a5d376f7b4f3c634029dbb7eba02c8ebc49",
+      "packages": 52,
+      "installed_under_manifest": "37752c5b8835b81f571d4d25101f1ddf56e025423d33bab4c681070c9533cb8e"
+     },
+     "B": {
+      "install_record_sha256": "908cac6e9778d506c49e75fd8d95d0797d262520c1100b23f46030e957872f59",
+      "freeze_sha256": "6d1e732a0610f3cf2c8dbd82e6ad4f9087f7d7f07a611ecab50a65f327a0453f",
+      "lock_file_sha256": "3e44e7327782d4a02885c5331b62967f88560cd2b30f50ac6287afd23af06d3d",
+      "packages": 52,
+      "installed_under_manifest": "94a84fc9f4e5eb47f7ef6783fa2663d2e1cc120514d0e0f4ef9053e9782c65b1"
+     },
+     "freeze": "sha256 of `pip freeze --all` stdout in each venv, 2026-11-26 after the gate",
+     "note": "venv B was installed under manifest v2 (94a84fc9...); v3 changed only lock A (O11), and v3's lock B lines rebuild venv B's lock file byte for byte (sha256 equal)"
+    },
+    "checkpoints": {
+     "ymt3": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+     "kong-fl": "50d93dba89bdd3401849bc735614478e83d9f46d21fa3f71d8aca5acc0a52028",
+     "kong-gaps": "65483e7c0e340a90415b15b520687587698c8c728f5fa470a205f13ee45c6513"
+    },
+    "gate": {
+     "1_pickle_scan": "pass: one pickle member per checkpoint; each member's scanned globals equal the manifest v3 item's pickle_globals exactly, in order (ymt3 14, kong-fl 8, kong-gaps 8); none on the denylist; the allowlist is that list plus the declared TORCH_SAFE_TYPES (numpy.dtypes.Int64DType), so 15, 9, 9",
+     "2_guarded_load": "pass: each checkpoint's size and sha256 the manifest's and its load report written in every run; the wrapper and weights_only=True with that allowlist are inferred from the code plus rc 0, tools-gate.json does not record them",
+     "3_key_report": "pass: one module per family (YourMT3 strict; Regress_onset_offset_frame_velocity_CRNN non-strict as shipped), 0 missing and 0 unexpected keys",
+     "4_no_fetch": "pass: the 32 guards (os.exec*, os.spawn*, os.posix_spawn*, os.popen, os.system, posix, subprocess, _posixsubprocess.fork_exec, socket connect, connect_ex, sendto, create_connection, getaddrinfo) listed in every run's record; the offline variables and 'none tripped' are inferred from the code plus rc 0, tools-gate.json does not record them",
+     "5_repeat": "pass: 3 runs on bench-000 to bench-003 (2 in one process, 1 fresh), events and every grid point identical, all three families",
+     "6_timing": "--first 3 at 1 and 2 threads; per input 11.93 and 9.56 s (ymt3), 5.84 and 4.08 s (kong-fl), 5.82 and 4.06 s (kong-gaps); projection for 136 inputs 1622 and 1301 s, 794 and 554 s, 791 and 552 s; the inputs are 136 as phase_scratch_readerr_notes counts them (the amendment's text says 133); per input is wall time / 3 including the model load, so the projections lean high",
+     "kong_grid": "the 12 declared points (onset 0.2-0.5 x frame 0.1-0.3) ran without a patch on both kong families; frame_threshold moves only note ends, onset_threshold the counts",
+     "ymt3_programs": "pitched and guitar gave identical events on all 4 bench parts",
+     "zero_notes": "no family read 0 notes on any bench part at any grid point"
+    },
+    "records": {
+     "folder": "2026-11-26/readerr-gate-records (under handover/)",
+     "manifest_sha256": "257d34100cf928a5c177d7190c296676008fd4c18bbb6cab64b1118d2a423ead",
+     "manifest": "MANIFEST.txt: one line per file, '<path in the folder> <sha256>', sorted by path; 54 runner records under gate-records/ and gate_driver.py",
+     "from_records": "gate.kong_grid, gate.ymt3_programs, gate.zero_notes, bench_events, counts.grid_points and counts.zero_note_parts come from these records, not from tools-gate.json"
+    },
+    "bench_events": {
+     "bp_reread": [
+      127,
+      150,
+      186,
+      172
+     ],
+     "ymt3": [
+      72,
+      83,
+      108,
+      105
+     ],
+     "kong-fl": [
+      79,
+      98,
+      117,
+      112
+     ],
+     "kong-gaps": [
+      74,
+      97,
+      104,
+      102
+     ]
+    },
+    "counts": {
+     "families": 3,
+     "bench_parts": 4,
+     "runs_per_part": 3,
+     "timed_parts": 3,
+     "inputs": 136,
+     "grid_points": {
+      "ymt3": 2,
+      "kong-fl": 12,
+      "kong-gaps": 12
+     },
+     "zero_note_parts": 0,
+     "renders": 0
+    },
+    "ran": "2026-11-26, tx-gate once from a frozen detached worktree of main at 92af6196 (#647) through gate_driver.py, a record-keeping wrapper that copies each run_tx result as it returns (the gate code unchanged), main .venv driving the two readerr venvs on CPython 3.12.16, niced, 399 s wall, zero renders"
    }
   },
   {
