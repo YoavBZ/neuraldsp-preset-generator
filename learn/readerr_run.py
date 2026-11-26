@@ -101,7 +101,32 @@ DENY_NAMES = tuple(f"{m}.{n}" for m in ("builtins", "__builtin__")
                    for n in ("eval", "exec", "compile", "getattr", "__import__", "open", "setattr", "delattr",
                              "globals", "breakpoint"))
 DENY_MODULES = ("os", "posix", "nt", "subprocess", "sys", "importlib", "runpy", "socket", "shutil", "pickle", "_pickle",
-                "marshal", "_posixsubprocess", "ctypes", "pty", "code")
+                "marshal", "_posixsubprocess", "ctypes", "pty", "code",
+                # Python 2 module names a protocol-2 pickle may carry (the 2026-11-26 audit)
+                "commands", "cPickle", "__builtin__", "copy_reg", "cStringIO", "urllib2", "httplib",
+                # the modules torch's Python 2 renames lead to (torch._utils.IMPORT_MAPPING's targets, less builtins
+                # and collections, whose names are listed below), and the stdlib's for urllib2 and httplib
+                "copyreg", "queue", "reprlib", "dbm", "io", "_io", "urllib", "http")
+DENY_PATHS = ("collections.abc",)        # a module path denied whole (collections itself holds OrderedDict)
+# torch._utils.IMPORT_MAPPING and NAME_MAPPING (torch 2.7.1 and 2.8.0 alike): torch's weights_only unpickler renames
+# a Python 2 global before it looks it up (`_read_global_instruction`), so a name is denied as read and as renamed
+TORCH_PY2_IMPORTS = {"__builtin__": "builtins", "copy_reg": "copyreg", "Queue": "queue", "repr": "reprlib",
+                     "_abcoll": "collections.abc", "UserDict": "collections", "UserList": "collections",
+                     "UserString": "collections", "whichdb": "dbm", "StringIO": "io", "cStringIO": "io"}
+TORCH_PY2_NAMES = {("__builtin__", "xrange"): ("builtins", "range"), ("__builtin__", "reduce"): ("functools", "reduce"),
+                   ("__builtin__", "intern"): ("sys", "intern"), ("__builtin__", "unichr"): ("builtins", "chr"),
+                   ("__builtin__", "unicode"): ("builtins", "str"), ("__builtin__", "long"): ("builtins", "int"),
+                   ("itertools", "izip"): ("builtins", "zip"), ("itertools", "imap"): ("builtins", "map"),
+                   ("itertools", "ifilter"): ("builtins", "filter"),
+                   ("itertools", "ifilterfalse"): ("itertools", "filterfalse"),
+                   ("itertools", "izip_longest"): ("itertools", "zip_longest"),
+                   ("UserDict", "IterableUserDict"): ("collections", "UserDict"),
+                   ("UserList", "UserList"): ("collections", "UserList"),
+                   ("UserString", "UserString"): ("collections", "UserString"),
+                   ("__builtin__", "basestring"): ("builtins", "str"),
+                   ("exceptions", "StandardError"): ("builtins", "Exception"),
+                   ("UserDict", "UserDict"): ("collections", "UserDict")}
+DENY_NAMES = DENY_NAMES + tuple(sorted({f"{m}.{n}" for m, n in TORCH_PY2_NAMES.values()}))   # every rename's target
 
 
 def refuse(msg):
@@ -359,8 +384,20 @@ _UNKNOWN = object()                      # a stack top that is not a known strin
 
 
 def denied_global(name):
-    """(Pure.) A "module.name" on the fixed denylist: a denied builtin, or any dotted part a denied module."""
-    return name in DENY_NAMES or any(part in DENY_MODULES for part in name.split("."))
+    """(Pure.) A "module.name" on the fixed denylist, as read or after torch's Python 2 renames: a denied name, any
+    dotted part a denied module, or inside a denied module path."""
+    return any(n in DENY_NAMES or any(part in DENY_MODULES for part in n.split("."))
+               or any(n == d or n.startswith(d + ".") for d in DENY_PATHS) for n in (name, torch_py2_renamed(name)))
+
+
+def torch_py2_renamed(name):
+    """(Pure.) A "module.name" as torch's weights_only unpickler would look it up after its Python 2 renames."""
+    module, _, attr = name.rpartition(".")
+    if (module, attr) in TORCH_PY2_NAMES:
+        return ".".join(TORCH_PY2_NAMES[(module, attr)])
+    if module in TORCH_PY2_IMPORTS:
+        return f"{TORCH_PY2_IMPORTS[module]}.{attr}"
+    return name
 
 
 def scan_pickle(data):

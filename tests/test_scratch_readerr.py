@@ -1893,7 +1893,7 @@ def test_the_allowlist_comes_from_the_manifest_and_rides_in_every_torch_spec(mon
     _stub_tools(monkeypatch, _FakeTools(tmp_path))
     assert X.tx_manifest_item("kong-gaps") == "guitar-gaps"           # F's CANDIDATES, never a second copy
     man = {"items": [{"id": "yourmt3-moe-nops", "pickle_globals": ALLOW}, {"id": "guitar-fl"}]}
-    assert X.tx_allow_globals(man, "ymt3") == ALLOW
+    assert X.tx_allow_globals(man, "ymt3") == ALLOW + list(X.TORCH_SAFE_TYPES)
     with pytest.raises(SystemExit, match="lists no pickle_globals for kong-fl"):
         X.tx_allow_globals(man, "kong-fl")
     with pytest.raises(SystemExit, match="0 items for kong-gaps"):
@@ -1905,6 +1905,24 @@ def test_the_allowlist_comes_from_the_manifest_and_rides_in_every_torch_spec(mon
             X.make_spec("mt3", "/y.ckpt", SHA, options={"programs": "pitched"}, allow_globals=bad)
     with pytest.raises(SystemExit, match="lacks"):
         X.make_spec("kong", "/k.pth", SHA, options=KONG_OPTS)          # #641: allow_globals is required
+
+
+def test_the_declared_safe_types_join_every_allowlist_and_pass_the_runner(tmp_path):
+    from learn import readerr_run as R
+
+    assert X.TORCH_SAFE_TYPES == ("numpy.dtypes.Int64DType",)
+    assert not any(R.denied_global(t) for t in X.TORCH_SAFE_TYPES)
+    v2 = [{"member": "archive/data.pkl", "globals": ALLOW + ["collections.OrderedDict"]}, {"member": "b/data.pkl",
+                                                                                         "globals": ALLOW[1:]}]
+    man = {"items": [{"id": i, "pickle_globals": v2} for i in ("yourmt3-moe-nops", "guitar-fl", "guitar-gaps")]}
+    for fam in X.TX_FAMILIES:
+        allow = X.tx_allow_globals(man, fam)
+        assert allow == ALLOW + list(X.TORCH_SAFE_TYPES)              # distinct, in scan order, then the safe types
+        spec = X.tx_spec(fam, str(tmp_path / "c.ckpt"), SHA, allow)
+        R.check_spec(X.TX_FAMILIES[fam]["mode"], spec)
+    with pytest.raises(SystemExit, match="not a name or"):
+        X.tx_allow_globals({"items": [{"id": "guitar-fl", "pickle_globals": [{"member": "m", "globals": "x"}]}]},
+                           "kong-fl")
 
 
 def test_the_runners_new_fields_are_recorded_never_refused():

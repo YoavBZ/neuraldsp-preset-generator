@@ -693,7 +693,7 @@ rule below replaces note error as Phase 2's deciding figure.
 pinned in `readerr_tools.MANIFEST_SHA256`. Every URL, size, sha256, lock line and pinned path comes from it.
 
 **`tx-install`** (`readerr_tools`, zero renders). Two venvs under `tools/readerr/` under the data root, each made by
-pyenv's Python 3.12.13 (its version checked):
+the pinned standalone CPython 3.12.16 (its version checked; it replaced pyenv's 3.12.13, see 10j):
 
 - **Lock A:** `mt3-infer` 0.2.0 with torch 2.7.1 (52 wheels). **Lock B:** the Riley models with torch 2.8.0 (52
   wheels).
@@ -975,3 +975,36 @@ No transcriber candidate's figure exists yet.
 `xr-` command is queued.
 
 **Privacy.** Synthetic part keys and names in tests. The ledger holds hashes, counts and the declared constants only.
+
+### 10j. Manifest v2 (O9, 2026-11-26)
+
+- **The scan.** After `tx-install` and `tx-fetch`, unit D's standard-library `scan_checkpoint` listed every global in
+  each fetched checkpoint without loading anything.
+  - YourMT3+ has 14 globals: torch's storages and rebuild, `collections.OrderedDict`, `_codecs.encode`, numpy's
+    reconstruct, scalar, dtype and ndarray, and five of YourMT3's own `utils.*` classes.
+  - Each Riley model has 8: the same set less the scalar and the `utils.*` classes.
+  - None is on the denylist.
+- **Manifest v2** is U4's manifest plus each checkpoint's `pickle_globals`, exactly as scanned. It is a new file; v1
+  is never edited. `readerr_tools.MANIFEST` and `MANIFEST_SHA256` now point to it.
+- **The audit:** an independent audit of these globals found them SAFE (2026-11-26).
+- **One declared addition, `TORCH_SAFE_TYPES` (`numpy.dtypes.Int64DType`).** With numpy 1.25 or later, rebuilding an
+  `'i8'` dtype needs it, so the guarded load would refuse without it.
+  - It joins each family's allowlist in `tx_allow_globals`.
+  - v2 stays the scan's record exactly.
+- **The denylist widens** to Python 2's module names (`commands`, `cPickle`, `__builtin__`, `copy_reg`, `cStringIO`,
+  `urllib2`, `httplib`) and the targets of torch's Python 2 renames (`torch._utils.IMPORT_MAPPING` and
+  `NAME_MAPPING`). A name is checked both as read and as renamed.
+- **The venvs' interpreter (2026-11-26, the orchestrator's technical call).** pyenv's 3.12.13 lacks `_lzma`
+  (`librosa` imports `pooch`, which imports `lzma`), and no local Python has it. The shared pyenv builds and Homebrew
+  stay untouched, because other venvs and live jobs depend on them. Instead, `tx-python` fetches
+  python-build-standalone's CPython 3.12.16 (`install_only`, release `20261124`, MPL-2.0; one asset pinned by URL, size and the sha256 in the
+  release's SHA256SUMS). It unpacks it with the data filter under `tools/readerr/python-3.12/` and checks that `lzma`,
+  `ssl`, `sqlite3` and `ctypes` import. `tx-install` builds both venvs from it, its version checked to equal 3.12.16.
+  Every locked wheel admits 3.12.16.
+  - After the unpack, every symlink's real path must stay inside the folder. `tx-install` refuses unless the
+    interpreter's record holds the pinned sha256 and version.
+  - `tx-move-old` moves the old pyenv-built install aside, never deleting it: the two venvs (venv-b's `.pth` file
+    first), their records and lock files, and the two unpacked code folders. It writes a record of what moved where.
+- **Provenance: `guitar-gaps`.** The pinned `guitar-gaps.pth` is a 5,000-iteration checkpoint (`iteration: 5000`
+  inside), not the paper's 12,200-iteration file. It is the file `hf_midi_transcription` ships, so the test uses it
+  as shipped.
