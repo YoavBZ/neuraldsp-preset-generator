@@ -3,6 +3,117 @@
 Results of `docs/scratch-readerr-plan.md`. Every number here is by the score (J0), on the exact-notes test's bench,
 unless said otherwise. The bench is sharper than real songs, so sizes carry over to real songs only as a direction.
 
+## Phase 2b, the downloaded transcribers: RX-undecided (2026-11-26; ledger `phase_scratch_readerr_outcome`; zero renders; audited 2026-11-26 (independent, Opus))
+
+**The question.** Does an open guitar transcriber remove most of Basic Pitch's extra notes on the bench without
+losing notes, enough that a priced row could decide it?
+
+**Who was tried.** Three transcribers, installed from hashed locks and pinned checkpoints, checked for unsafe contents
+and run offline (`phase_scratch_readerr_tools`):
+
+- YourMT3+ (`ymt3`), with every pitched programme kept (as shipped) or the guitar programmes only;
+- the two Riley guitar models (`kong-fl`, `kong-gaps`), each on a 4 × 3 grid of onset and frame thresholds.
+
+Each was read plain and as `+bp`, which borrows loudness and bends from the paired Basic Pitch note. `select` ran on
+those 26 `+bp` lists and on Phase 2a's 149 Basic Pitch settings: 175 candidates in all.
+
+**The rule.** The rule was fixed from the deciding row's own numbers before anything was installed. It predicts each
+list's gain by the score from its counts on the 40, as g = E·x + M·y:
+
+- x is the share of extras removed and y the share of misses added;
+- E = −0.275 and M = +0.277 (intent-to-treat), with h = 0.1305, half the width of E's interval.
+
+A list qualifies only if all of these hold on the 40:
+
+1. extra_rate reads "better";
+2. miss_rate, end error and onset error do not read "worse" (sign only);
+3. g ≤ −h;
+4. it is shipped, or it is its family's cross-set pick and passes on both BKS and GOAT;
+5. it does no harm on the real-DI arm;
+6. it repeats.
+
+**The code is RX-undecided.**
+
+- 19 lists are better by the mean (g < 0 with extra_rate better), but none qualifies.
+- miss_rate reads "worse" on the 40 for all 26 transcriber lists (item 2).
+- None of the 175 reaches g ≤ −h.
+- Passing-only constants (E −0.220, M +0.293, h 0.149) give no qualifier either, so the code is not
+  refusal-sensitive.
+- Next, by the table: no priced row; to the user with each candidate's g.
+
+**Each family's best list** (lowest g on the 40; ✓ meets, ✗ fails; "not worse" includes undecided):
+
+| Family | Best list | g on the 40 | BKS | GOAT | 1 extras | 2 misses | 2 ends | 2 onsets | 3 g ≤ −h | 4 | 5 real DI | 6 repeats |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `kong-fl` | `kong-fl-o0.2-f0.3+bp` | −0.124 | −0.173 | −0.015 | ✓ | ✗ | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ |
+| `kong-gaps` | `kong-gaps-o0.2-f0.3+bp` | +0.113 | +0.115 | +0.117 | ✓ | ✗ | ✗ | ✓ | ✗ | ✗ | ✓ | ✓ |
+| `ymt3` | `ymt3-pitched+bp` (shipped) | +0.379 | +0.253 | +0.638 | ✓ | ✗ | ✓ | ✓ | ✗ | ✓ | ✗ | ✓ |
+| Basic Pitch grid | `grid-o0.6-f0.4-l58.0-m1` | −0.069 | −0.059 | −0.085 | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ |
+| Basic Pitch shifts | `shift-k4` | −0.032 | −0.028 | −0.041 | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ |
+
+- `kong-fl`'s best list comes nearest: −0.1235 against −h = −0.1305. Its gain sits in BKS; on GOAT it is −0.015.
+  It is its family's pick on both sets but fails there on g, so item 4 fails too.
+- Every transcriber removes 82–95% of the stored re-read's 1,624 extras on the 40, but adds misses:
+  - `kong-fl` reads 344 to 575 misses against the re-read's 246;
+  - `kong-gaps` 563 to 786;
+  - `ymt3` 784 and 899.
+- Higher onset thresholds remove more extras but lose more notes, and g rises with them.
+
+**The 19 better by the mean** (g on the 40, lowest first):
+
+| Kind | Lists |
+|---|---|
+| `kong-fl` (8) | o0.2-f0.3 −0.124, o0.2-f0.2 −0.119, o0.2-f0.1 −0.098, o0.3-f0.3 −0.083, o0.3-f0.2 −0.080, o0.3-f0.1 −0.061 (shipped), o0.4-f0.3 −0.009, o0.4-f0.2 −0.006 (all `+bp`) |
+| Basic Pitch grid (8) | o0.6-f0.4-l58.0-m1 −0.069, o0.5-f0.4-l58.0-m1 −0.063, o0.6-f0.4-l58.0-m0 −0.052, o0.5-f0.4-l58.0-m0 −0.049, o0.6-f0.3-l58.0-m1 −0.042, o0.6-f0.3-l58.0-m0 −0.027, o0.7-f0.4-l58.0-m1 −0.022, o0.4-f0.4-l58.0-m1 −0.020 |
+| Basic Pitch shifts (3) | k4 −0.032, k3 −0.024, k2 −0.009 |
+
+**The real-DI arm** (79 Guitar-TECHS windows and the 10 lists, note figures only, against Basic Pitch's stored read,
+sign only):
+
+- Every transcriber's extra_rate reads "better" in nearly every group.
+- `kong-fl`'s miss_rate is undecided in every group at every setting, so it does no harm (item 5).
+- `kong-gaps` reads miss_rate "worse" on P1 scales from onset 0.2, on the lists from 0.3, on P1 and P2 from 0.4, and
+  everywhere at 0.5.
+- Both `ymt3` lists read miss_rate "worse" on P1, P2 and the lists.
+- `ymt3-guitar` read no notes at all on 16 real-DI inputs (15 windows, 1 list), where `ymt3-pitched` read 3 to 28.
+  The filter is correct. The runner keeps programmes 24 to 31, the same set as mt3-infer's own vocabulary
+  (`"Guitar": np.arange(24, 32)`). On those 16 inputs YourMT3+ gave every note a programme outside the guitars.
+  The raw programmes are not stored, so which instrument it chose is not known.
+
+**Licences, as recorded** (development use is fine for all; a product question only if one wins):
+
+- `ymt3` is unresolved: two code claims (GPL-3.0 and Apache-2.0), none covers the weights, and the training-data
+  licences are not audited.
+- `kong-fl` and `kong-gaps` are unclear for product, NC assumed: MIT is claimed with no LICENSE file, and the
+  training data includes sold transcriptions and a base model trained on MAESTRO (CC BY-NC-SA).
+
+**A correction to the amendment.** The amendment expected a `+bp` list's timing figures to differ from its plain
+list's. They are identical on all 26: `ms_with_bp` copies each note's `on` and `off` and borrows only loudness and
+bends. So the counts, onset error and end error are the plain list's. Only the dry figures differ (`logmel`, `env_corr`
+and pause error, from the rebuilt guitar).
+
+**What it can't show.**
+
+- g is a straight-line prediction from two measured slopes, never a reading; only a row decides. On the shrunk answer
+  E is not shown, so the predicted gain holds for the full answer only.
+- The bench prices fidelity to the song as Basic Pitch heard it, and sizes are the exact world's.
+- **The bench bias** (the amendment's dependencies and risks). A transcriber with real-guitar priors may refuse the
+  bank guitar's notes, and each refusal counts as a miss. That matters here for three reasons:
+  - item 2 (misses) is what sinks every transcriber, and it is read on the bench only;
+  - on real DIs, `kong-fl`'s miss_rate is undecided in every group, and undecided is not failed;
+  - on the 47, most of `kong-fl-o0.2-f0.3`'s misses are chord members: 244 of its 454, against 54 of 302 for
+    the stored re-read.
+
+**Cost (measured; zero renders throughout):**
+
+| Step | Wall |
+|---|---|
+| `tx-gate` (scan, load, keys, 3 × 4 repeats, timing) | 399 s |
+| `tx-notes`, three shards (136 inputs × 3 transcribers) | 974 to 1,010 s |
+| `tx-score`, three shards (2,063 rebuilds) | 937 to 1,026 s |
+| `tx-score --combine` | about 2 min |
+| `select` | 3.6 s |
+
 ## The `xr-matched` row: XH-both (2026-11-26; ledger `phase_scratch_readerr_xr_outcome`; audited 2026-11-26 (independent, PASS WITH FIXES, wording applied))
 
 **The question.** Do Basic Pitch's extra notes cost the preset within a part, at the exact test's scale?

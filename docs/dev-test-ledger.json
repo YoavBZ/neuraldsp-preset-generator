@@ -8445,6 +8445,176 @@
     },
     "words": "descriptive: no figure decided (RX-untracked); sign only, not on J0's scale, no size ruled out",
     "ran": "2026-11-26 10:23-10:43, tx-score --shard k/3 for k 0, 1, 2 in parallel, then tx-score --combine, from a frozen detached worktree of main at 6914fbe5 (#652), niced under caffeinate; no input failed; zero renders"
+   },
+   "phase_scratch_readerr_outcome": {
+    "code": "RX-undecided",
+    "select_sha256": "aa1659a2e8165610c36a7f45e9473599c7e6d48afb738acb4f5cd1716ef6a640",
+    "pick": null,
+    "next": "no priced row; to the user with each candidate's g",
+    "constants": {
+     "itt": {
+      "E": -0.2752,
+      "M": 0.2768,
+      "h": 0.1305,
+      "treat": "itt"
+     },
+     "passing_only": {
+      "E": -0.2203,
+      "M": 0.2925,
+      "h": 0.1492,
+      "treat": "per"
+     }
+    },
+    "qualifiers": {
+     "itt": [],
+     "passing_only": [],
+     "refusal_sensitive": false
+    },
+    "why": "no list qualifies: miss_rate reads worse on the 40 for all 26 transcriber lists (item 2), and no list of the 175 reaches g <= -h; 19 lists are better by the mean (g < 0 with extra_rate better), so the code is RX-undecided, not RX-none",
+    "better_by_mean": [
+     "kong-fl-o0.2-f0.3+bp",
+     "kong-fl-o0.2-f0.2+bp",
+     "kong-fl-o0.2-f0.1+bp",
+     "kong-fl-o0.3-f0.3+bp",
+     "kong-fl-o0.3-f0.2+bp",
+     "grid-o0.6-f0.4-l58.0-m1",
+     "grid-o0.5-f0.4-l58.0-m1",
+     "kong-fl-o0.3-f0.1+bp",
+     "grid-o0.6-f0.4-l58.0-m0",
+     "grid-o0.5-f0.4-l58.0-m0",
+     "grid-o0.6-f0.3-l58.0-m1",
+     "shift-k4",
+     "grid-o0.6-f0.3-l58.0-m0",
+     "shift-k3",
+     "grid-o0.7-f0.4-l58.0-m1",
+     "grid-o0.4-f0.4-l58.0-m1",
+     "kong-fl-o0.4-f0.3+bp",
+     "shift-k2",
+     "kong-fl-o0.4-f0.2+bp"
+    ],
+    "family_best": {
+     "kong-fl": {
+      "g_40": -0.1235,
+      "g_bks": -0.1733,
+      "g_goat": -0.0152,
+      "extra_rate_better": true,
+      "miss_rate_not_worse": false,
+      "end_error_not_worse": true,
+      "onset_error_not_worse": true,
+      "g_at_most_minus_h": false,
+      "item4": false,
+      "item5_no_real_harm": true,
+      "item6_repeats": true,
+      "list": "kong-fl-o0.2-f0.3+bp"
+     },
+     "kong-gaps": {
+      "g_40": 0.1126,
+      "g_bks": 0.1151,
+      "g_goat": 0.1168,
+      "extra_rate_better": true,
+      "miss_rate_not_worse": false,
+      "end_error_not_worse": false,
+      "onset_error_not_worse": true,
+      "g_at_most_minus_h": false,
+      "item4": false,
+      "item5_no_real_harm": true,
+      "item6_repeats": true,
+      "list": "kong-gaps-o0.2-f0.3+bp"
+     },
+     "ymt3": {
+      "g_40": 0.3785,
+      "g_bks": 0.2529,
+      "g_goat": 0.6378,
+      "extra_rate_better": true,
+      "miss_rate_not_worse": false,
+      "end_error_not_worse": true,
+      "onset_error_not_worse": true,
+      "g_at_most_minus_h": false,
+      "item4": true,
+      "item5_no_real_harm": false,
+      "item6_repeats": true,
+      "list": "ymt3-pitched+bp"
+     },
+     "bp-grid": {
+      "g_40": -0.0686,
+      "g_bks": -0.0592,
+      "g_goat": -0.0854,
+      "extra_rate_better": true,
+      "miss_rate_not_worse": true,
+      "end_error_not_worse": true,
+      "onset_error_not_worse": true,
+      "g_at_most_minus_h": false,
+      "item4": false,
+      "item5_no_real_harm": true,
+      "item6_repeats": true,
+      "list": "grid-o0.6-f0.4-l58.0-m1"
+     },
+     "shift": {
+      "g_40": -0.0324,
+      "g_bks": -0.0284,
+      "g_goat": -0.0412,
+      "extra_rate_better": true,
+      "miss_rate_not_worse": true,
+      "end_error_not_worse": false,
+      "onset_error_not_worse": true,
+      "g_at_most_minus_h": false,
+      "item4": false,
+      "item5_no_real_harm": false,
+      "item6_repeats": true,
+      "list": "shift-k4"
+     }
+    },
+    "family_picks": {
+     "bp-grid": {
+      "pick": "grid-o0.6-f0.4-l58.0-m1",
+      "passes": false,
+      "bks_pick": "grid-o0.6-f0.4-l58.0-m1",
+      "goat_pick": "grid-o0.6-f0.4-l58.0-m1"
+     },
+     "shift": {
+      "pick": "shift-k3",
+      "passes": false,
+      "bks_pick": "shift-k4",
+      "goat_pick": "shift-k3"
+     },
+     "ymt3": {
+      "pick": null,
+      "passes": false,
+      "bks_pick": null,
+      "goat_pick": null
+     },
+     "kong-fl": {
+      "pick": "kong-fl-o0.2-f0.3+bp",
+      "passes": false,
+      "bks_pick": "kong-fl-o0.2-f0.3+bp",
+      "goat_pick": "kong-fl-o0.2-f0.3+bp"
+     },
+     "kong-gaps": {
+      "pick": null,
+      "passes": false,
+      "bks_pick": null,
+      "goat_pick": null
+     }
+    },
+    "counts": {
+     "candidates": 175,
+     "transcriber_lists": 26,
+     "settings": 149,
+     "better_by_mean": 19,
+     "g_at_most_minus_h": 0,
+     "transcriber_miss_rate_not_worse": 0,
+     "settings_miss_rate_not_worse": 14,
+     "renders": 0
+    },
+    "licence": {
+     "kong-fl": "unclear for product, NC assumed (user's call, only if it wins)",
+     "kong-gaps": "unclear for product, NC assumed (user's call, only if it wins)",
+     "ymt3": "unresolved"
+    },
+    "bp_timing_note": "the +bp lists' timing figures (onset_error, end_error and every count) equal their plain lists' on all 26: ms_with_bp copies on and off and borrows only loudness and bends, so only the dry figures (logmel, env_corr, pause_error) differ; the amendment expected the timing figures to differ too",
+    "audit": "an independent pre-read before the run expected RX-undecided for these reasons; the run gives it",
+    "ran": "2026-11-26, select once from a frozen detached worktree of main at b5263c01 (#654), 3.6 s, zero renders",
+    "audited": "audited 2026-11-26 (independent, Opus): RX-undecided confirmed, every number matched"
    }
   },
   {
