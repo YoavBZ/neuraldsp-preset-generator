@@ -522,6 +522,23 @@ def _padded(src, n, workdir):
     return p
 
 
+def load_mono(path, target_sr=None):
+    """The torch modes' only audio read: the file by soundfile (never `librosa.load`, whose audioread fallback probes
+    with ffmpeg in a subprocess), the channel mean as float32 (`librosa.to_mono`'s mono), then `librosa.resample` to
+    `target_sr` when it differs (librosa's default resampler, as `librosa.load(path, sr=target_sr)` uses). -> (mono
+    float32, its rate)."""
+    import numpy as np
+    import soundfile as sf
+
+    x, sr = sf.read(path, dtype="float32", always_2d=True)
+    y = np.mean(x, axis=1).astype(np.float32)
+    if target_sr is None or sr == target_sr:
+        return y, sr
+    import librosa
+
+    return librosa.resample(y, orig_sr=sr, target_sr=target_sr).astype(np.float32), target_sr
+
+
 class BasicPitch:
     """Basic Pitch's ONNX model on the CPU with capped threads, as `bp_run.py` builds it."""
 
@@ -799,13 +816,10 @@ class Mt3Adapter:
                                          "mt3_infer.models.yourmt3.inference_loader"))
 
     def read(self, path):
-        import numpy as np
-        import soundfile as sf
         from mt3_infer.models.yourmt3.utils.event2note import merge_zipped_note_events_and_ties_to_notes
         from mt3_infer.models.yourmt3.utils.note2event import mix_notes
 
-        x, sr = sf.read(path, dtype="float32", always_2d=True)
-        audio = np.mean(x, axis=1).astype(np.float32)        # mono, as MT3Base.transcribe makes it
+        audio, sr = load_mono(path)                          # mono, as MT3Base.transcribe makes it; its own resample
         tokens = self.ad.forward(self.ad.preprocess(audio, sr))
         m = self.ad.model
         total = sum(a.shape[0] for a in tokens)
@@ -829,8 +843,9 @@ class KongAdapter:
     """Riley's guitar models through the `piano_transcription_inference` fork at cfe28ed. TO CONFIRM ON INSTALL: the
     calls below were read from the pinned commit's source, not run. Built as `hf_midi_transcription` 96f6797 builds a
     non-piano model: `PianoTranscription(KONG_MODEL_TYPE, device="cpu", checkpoint_path=<pinned>,
-    segment_samples=10 * sample_rate, batch_size=8)` (16 kHz); audio by `librosa.load(path, sr=sample_rate)` as its
-    `transcribe` reads it. One `transcribe(audio, None)` gives the model output (the four regression maps kept); each
+    segment_samples=10 * sample_rate, batch_size=8)` (16 kHz); audio by `load_mono` (soundfile, the channel mean,
+    `librosa.resample` to 16 kHz), what its `librosa.load(path, sr=sample_rate)` gives for a wav but never through
+    audioread's ffmpeg probe, a subprocess the guard refuses. One `transcribe(audio, None)` gives the model output (the four regression maps kept); each
     (onset, frame) point is then the fork's own `RegressionPostProcessor`, which takes the thresholds as arguments, so
     no patch is needed; offset 0.3 and pedal 0.2 as shipped."""
 
@@ -848,10 +863,8 @@ class KongAdapter:
                              piano_transcription_inference_commit=KONG_FORK_COMMIT)
 
     def read(self, path):
-        import librosa
-
-        audio, _ = librosa.load(path, sr=self.sr)
-        out = self.tr.transcribe(audio, None)["output_dict"]
+        audio, _ = load_mono(path, self.sr)
+        out =self.tr.transcribe(audio, None)["output_dict"]
         missing = [k for k in KONG_RAW_KEYS if k not in out]
         if missing:
             refuse(f"kong: the model output lacks {missing}")

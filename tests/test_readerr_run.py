@@ -444,6 +444,80 @@ def test_module_versions_from_the_modules_not_metadata():
     assert R.KONG_FORK_COMMIT == "cfe28ed26be892ad7d4e8a9aadcf95cb904c9320"
 
 
+def _stereo_wav(path, sr, seconds=1.0):
+    """A synthetic stereo 16-bit wav: left a 220 Hz sine, right silence (standard library only)."""
+    with wave.open(str(path), "wb") as w:
+        w.setnchannels(2)
+        w.setsampwidth(2)
+        w.setframerate(sr)
+        w.writeframes(b"".join(struct.pack("<hh", int(16000 * math.sin(2 * math.pi * 220 * i / sr)), 0)
+                               for i in range(int(seconds * sr))))
+
+
+class _FakeTranscriptor:
+    """The fork's PianoTranscription stand-in: records what `transcribe` was given, answers the four maps."""
+
+    def __init__(self):
+        self.calls = []
+
+    def transcribe(self, audio, midi_path):
+        self.calls.append((audio, midi_path))
+        return {"output_dict": dict({k: [[0.0]] for k in R.KONG_RAW_KEYS}, onset_output=[[1.0]])}
+
+
+def test_kong_read_path_under_the_process_guard(monkeypatch, tmp_path):
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("soundfile")
+    src = tmp_path / "synthetic.wav"
+    _stereo_wav(src, 16000)
+    ad = object.__new__(R.KongAdapter)                                 # the real read path, a fake model
+    ad.sr, ad.tr = 16000, _FakeTranscriptor()
+    with monkeypatch.context() as m:
+        R.install_refusals(m.setattr)
+        with pytest.raises(SystemExit, match="refused"):
+            subprocess.run(["true"])                                   # the guard is live
+        raw = ad.read(str(src))
+    assert sorted(raw) == sorted(R.KONG_RAW_KEYS)                      # the derived maps are dropped
+    audio, midi_path = ad.tr.calls[0]
+    assert midi_path is None and audio.dtype == np.float32 and audio.shape == (16000,)
+    assert abs(float(np.max(np.abs(audio))) - 0.5 * 16000 / 32768) < 1e-3                  # the channel mean
+
+
+def test_load_mono_resamples_like_librosa_load_under_the_guard(monkeypatch, tmp_path):
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("soundfile")
+    librosa = pytest.importorskip("librosa")
+    src = tmp_path / "synthetic.wav"
+    _stereo_wav(src, 22050)
+    with monkeypatch.context() as m:
+        R.install_refusals(m.setattr)
+        y, sr = R.load_mono(str(src), 16000)
+        ad = object.__new__(R.KongAdapter)
+        ad.sr, ad.tr = 16000, _FakeTranscriptor()
+        ad.read(str(src))
+    assert sr == 16000 and y.dtype == np.float32 and abs(len(y) - 16000) <= 1
+    assert np.array_equal(ad.tr.calls[0][0], y)
+    want, _ = librosa.load(str(src), sr=16000)                         # outside the guard: soundfile's path
+    assert np.allclose(y, want, atol=1e-6)
+
+
+def test_load_mono_native_rate(tmp_path):
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("soundfile")
+    src = tmp_path / "synthetic.wav"
+    _stereo_wav(src, 22050, seconds=0.5)
+    y, sr = R.load_mono(str(src))
+    assert sr == 22050 and y.shape == (11025,) and y.dtype == np.float32
+    assert R.load_mono(str(src), 22050)[1] == 22050
+
+
+def test_no_librosa_load_anywhere():
+    tree = ast.parse((REPO / "learn" / "readerr_run.py").read_text())
+    calls = [ast.unparse(n.func) for n in ast.walk(tree) if isinstance(n, ast.Call)]
+    assert not [c for c in calls if c.endswith(".load") and "librosa" in c]
+    assert "librosa.resample" in calls and "sf.read" in calls
+
+
 def test_kong_events():
     notes = [{"onset_time": 0.1, "offset_time": 0.5, "midi_note": 64, "velocity": 127},
              {"onset_time": 0.2, "offset_time": 0.3, "midi_note": 40, "velocity": 0}]
@@ -1013,8 +1087,11 @@ def test_torch_mode_smoke_in_its_venv(tmp_path, mode):
     if not py.exists() or not ckpt.is_file():
         pytest.skip(f"no {mode} venv or checkpoint here")
     src = tmp_path / "synthetic.wav"
-    _tone_wav(src, seconds=3.0, sr=16000)
+    _tone_wav(src, seconds=3.0, sr=22050)                             # not the models' rate: the resample runs
+    from learn import scratch_readerr as X
+
     allow = sorted({g for gs in R.scan_checkpoint(str(ckpt)).values() for g in gs})   # the gate audits the real list
+    allow += [t for t in X.TORCH_SAFE_TYPES if t not in allow]        # as the gate's tx_allow_globals adds them
     spec = {"model": str(ckpt), "model_sha256": R.file_sha(str(ckpt)), "options": options, "grid": grid,
             "allow_globals": allow, "lead_in_s": 0.5}
     dst = tmp_path / "synthetic.json"
