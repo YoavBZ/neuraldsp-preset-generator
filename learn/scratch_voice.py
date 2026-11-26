@@ -7,7 +7,7 @@ floors). This test splits T into four terms along a declared chain of guitars (`
 
     tr-di  ->  vc-own  ->  vc-cut  ->  vc-fin  ->  true
 
-| Guitar | What it is (`vc-own`, `vc-cut` and `vc-fin` are built from the raw section, `pretrain_set.section_audio`, through the part's own finish `p.finish`, then -22.9 LUFS: the orchestrator's call on amendment 1; `vc-env` comes from `tr-di`) |
+| Guitar | What it is (`vc-own`, `vc-cut` and `vc-fin` are built from the raw section, `pretrain_set.section_audio`, through the part's own finish `p.finish`, then -22.9 LUFS: the orchestrator's call on amendment 1; on the padded length with the edge fade, as `tr-di`'s compose (review B1, `WINDOWS["chain"]`); `vc-env` comes from `tr-di`) |
 |---|---|
 | `vc-own` | the raw section gated by our played notes (`WINDOWS`), then the finish |
 | `vc-cut` | the raw section with the worst-case notch at every one of our onset groups (`NOTCH`), then the finish |
@@ -130,6 +130,9 @@ WINDOWS = {                              # vc-own
     "edge_fade_s": NR.EDGE_FADE_S,       # the dry guitar's window edges, as synthesise_redo
     "level": "no per-note gain, tilt, tuning or denoise; one overall gain to -22.9 LUFS, recorded",
     "finish": "the part's own finish p.finish (song_bank.measure, then average_balance), then -22.9 LUFS",
+    "chain": "as tr-di's compose (review B1): the raw section on the padded length n + END_PAD_S (the file's real "
+             "continuation past n, else zeros, recorded per part), the gate on the padded timeline, the edge fade "
+             "(EDGE_FADE_S) at both padded ends, p.finish, cut to n, then -22.9 LUFS; vc-own, vc-cut and vc-fin alike",
 }
 NOTCH = {                                # vc-cut
     "source": WINDOWS["source"],
@@ -138,10 +141,17 @@ NOTCH = {                                # vc-cut
     "fade_in_s": NR.NOTE_FADE_IN_S,      # ... and a 2-ms linear fade-in over [on - 2 ms, on]
     "combine": "maximum of the two (amendment 6): a notch of about -15.6 dB at 1.67 ms before the onset, about 3 ms",
     "finish": WINDOWS["finish"],
+    "chain": WINDOWS["chain"],
 }
-FIN_RULE = {"source": WINDOWS["source"], "finish": WINDOWS["finish"],
-            "proof": "vc-fin equals the stored average-balance DI (note_replay's avg) brought to -22.9 LUFS by "
-                     "at_lufs: max |difference| / max |vc-fin| <= FIN_PROOF_TOL (amendment 1)"}
+FIN_RULE = {"source": WINDOWS["source"], "finish": WINDOWS["finish"], "chain": WINDOWS["chain"],
+            "proof": "the same builder with the pad off and no edge fade (the raw section's n samples, p.finish, "
+                     "-22.9 LUFS) equals the stored average-balance DI (note_replay's avg) brought to -22.9 LUFS by "
+                     "at_lufs: max |difference| / max |vc-fin| <= FIN_PROOF_TOL (amendment 1, re-declared by review "
+                     "B1); the padded vc-fin equals the padded gate path at all-pass byte for byte "
+                     "(all_pass_is_vc_fin)",
+            "length_term": "beside, per part: the held-half RMS ratio and note_rebuild.logmel_distance (pad-off "
+                           "vc-fin the reference side) between the padded and the pad-off vc-fin, the size of the "
+                           "length term now inside F"}
 FIN_PROOF_TOL = 1e-5
 ENV = {                                  # vc-env (beside)
     "from": "tr-di (build 2's, finished, at -22.9 LUFS)",

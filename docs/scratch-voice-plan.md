@@ -43,17 +43,27 @@ S, N and K are priced with the finish on, as `tr-di` is built. F is the finish a
 | `avg+mild` (beside, stored) | Row (c)'s dry guitar, rendered at row (b)'s answer |
 | true DI, `tr-di` | Stored: the exact-notes test's real floors (`floors.json`, hashed in `phase_scratch_exact_targets`) |
 
+**The chain (review B1 of Unit B's PR).** `tr-di`'s `compose` finishes n + `END_PAD_S` samples that end in the edge fade, and cuts to n afterwards. A finish on exactly n samples changes the section's end, because `eq_to` filters circularly and `average_balance` continues with zeros. Half B ends at the last sample, so that difference would land in S. So `vc-own`, `vc-cut` and `vc-fin` are built exactly like `tr-di`'s chain:
+1. the raw section on the padded length (the file's real continuation past n, else zeros, recorded per part);
+2. the gate on the padded timeline;
+3. the 10-ms edge fade at both padded ends, on all three, so N and K carry none of it;
+4. `p.finish`, cut to n, then −22.9 LUFS.
+
+The true DI keeps its n-length finish, so the length term sits in F. Its size is recorded beside, per part: the held-half RMS ratio and `logmel_distance` between the padded and the pad-off `vc-fin`.
+
 **`vc-own`.** `scratch_readerr.played_trace` gives every note's span as `synthesise_redo` plays it.
 - Each played note opens a window from 2 ms before its onset (`PRE_ATTACK_S`) to its own end.
 - The window has a linear fade-in over [on − 2 ms, on] (`NOTE_FADE_IN_S`, amendment 6) and its end kind's linear fade ending at the end: re-pluck 10 ms, mute 30 ms, release 150 ms, sample end 150 ms.
 - Notes the synthesis skips open no window.
-- Windows combine by maximum, never by sum, because simultaneous notes are the same audio. The 10-ms edge fade (`EDGE_FADE_S`) applies at the section's edges.
+- Windows combine by maximum, never by sum, because simultaneous notes are the same audio. The 10-ms edge fade (`EDGE_FADE_S`) applies at the padded section's edges, as on every `vc-*` built from the raw section.
 - No per-note gain, tilt, tuning or denoise is applied; the cut carries them. One overall gain brings the guitar to −22.9 LUFS, and it is recorded.
 - A miss is silent in our gaps and rides through under a sounding note. Extras add nothing.
 
 **`vc-cut`.** At every onset group's first onset, a 10-ms linear fade-out ends at the onset and a 2-ms linear fade-in runs over [on − 2 ms, on]. The two combine by maximum (amendment 6), giving a notch of about −15.6 dB at 1.67 ms before the onset, about 3 ms wide.
 
-**`vc-fin`.** `average_balance(measure(raw))`, as `tr-di`'s finish, then −22.9 LUFS. The true DI is `measure(raw)`, so F is `average_balance` alone (amendment 1). Proof: `vc-fin` equals the stored average-balance DI (`note_replay`'s `avg`) brought to −22.9 LUFS by `at_lufs`, with max |difference| / max |`vc-fin`| at most 1e-5.
+**`vc-fin`.** `average_balance(measure(raw))`, as `tr-di`'s finish and on its padded chain, then −22.9 LUFS. The true DI is `measure(raw)` on n samples, so F is `average_balance` plus the finish-length term (amendment 1, review B1). Two proofs:
+- **Proof 4.** The same builder with the pad off and no edge fade equals the stored average-balance DI (`note_replay`'s `avg`) brought to −22.9 LUFS by `at_lufs`. Max |difference| / max |pad-off `vc-fin`| must be at most 1e-5.
+- **Proof 3.** The padded `vc-fin` equals the padded gate path at all-pass, byte for byte.
 
 **`vc-env`** (beside). Per 20-ms frame at a 5-ms hop, the gain is the true DI's level less `tr-di`'s, in dB, clipped to ±20 dB. It is 0 dB where `tr-di`'s frame is under its own loudest less 40 dB. The gain in dB is linear between frame centres and held at the ends. Then −22.9 LUFS.
 
@@ -68,7 +78,7 @@ For each guitar, row (b)'s stored, hashed answer is rendered through it (2 rende
 | S | ln(d_tr-di / d_vc-own) | Real audio inside our note windows closes at most S. It is an upper bound and **not a sound gap**: S also holds every note error the gate can't see, such as extra attacks in true sustain, wrong pitches, bends and articulation, and leftover level shaping (amendment 2) |
 | N | ln(d_vc-own / d_vc-cut) | Our note activity: a lower bound for notes and timing. It mixes note reading with synthesis rules (amendment 7) |
 | K | ln(d_vc-cut / d_vc-fin) | The cuts themselves. Over-stated, because `vc-cut` notches every group while `vc-own` notches only where every window closes (amendment 5) |
-| F | ln(d_vc-fin / d_true) | The finish: `average_balance` alone |
+| F | ln(d_vc-fin / d_true) | The finish: `average_balance`, and the finish-length term (review B1; its size beside) |
 
 T = S + N + K + F exactly, per part, held to 1e-12.
 
@@ -138,8 +148,9 @@ It is coded as `scratch_voice.spend_refusal` and `require_spend`. The gate is ne
 2. **Build** (`learn/voice_build.py`, zero renders). Verify on 47 of 47 parts:
    - the rule off rebuilds `tr-di` byte for byte;
    - the trace equals `tr-di`'s stored report;
-   - an all-pass window gives `vc-fin` byte for byte;
-   - `vc-fin` equals the stored `avg` at −22.9 LUFS.
+   - an all-pass window gives the padded `vc-fin` byte for byte;
+   - the pad-off builder equals the stored `avg` at −22.9 LUFS (review B1);
+   - beside, as stops: the raw section measures to the true DI, and `tr-di`'s unfinished synthesis sounds only inside the trace's windows.
 
    Hash PR: `phase_scratch_voice_dry`.
 3. **Floors** (`learn/voice_floors.py`, 478 renders). Verify: on the two check parts (the first BKS and the first GOAT part by key), `tr-di` and the true DI repeat their stored floors, distance and render sha256.
@@ -160,7 +171,7 @@ It is coded as `scratch_voice.spend_refusal` and `require_spend`. The gate is ne
 
 | File | Writer | Holds |
 |---|---|---|
-| `build.json` | Unit B | `proofs` (`rule_off_is_tr_di`, `trace_is_tr_di_report`, `all_pass_is_vc_fin`, `vc_fin_is_avg`, each held of 47), `proofs_hold`; per part `guitars` (each built guitar's and `avg+mild`'s `file_sha256`, `audio_sha256`), `gain_db` (`vc-own`'s), `unclaimed` (`unclaimed_groups`), `cover` (`cover_figures`), `ends` (counts by kind); `scratch_readerr.py`'s blob sha and `played_trace`'s source sha256 |
+| `build.json` | Unit B | `proofs` (`rule_off_is_tr_di`, `trace_is_tr_di_report`, `all_pass_is_vc_fin`, `vc_fin_is_avg`, each held of 47), `proofs_hold`; per part `guitars` (each built guitar's and `avg+mild`'s `file_sha256`, `audio_sha256`), `gain_db` (`vc-own`'s), `unclaimed` (`unclaimed_groups`), `cover` (`cover_figures`), `ends` (counts by kind), `pad` (real and zero continuation samples), `length_term` (review B1), `support`; `checks` (`raw_is_true_di`, `synth_inside_gate`); `scratch_readerr.py`'s blob sha and `played_trace`'s source sha256 |
 | `build-parts/<part>.json` | Unit B | one part's build record, written by `build --shard`; `--combine` folds them into `build.json` |
 | `dry/<guitar>/<part>.npy` | Unit B | the four `vc-*` guitars, float32 |
 | `floors/<part>.json` | Unit C | `guitars`: per rendered guitar only (never the stored true DI or `tr-di`) `held`, `audio_sha256`, `dry_sha256` (the build's `audio_sha256`), `refused` (a reason or none), `reran`, `carried_from`. A `held` that is missing, non-finite or not positive without `refused` stops the read |
