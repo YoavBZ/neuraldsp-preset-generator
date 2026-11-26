@@ -133,6 +133,9 @@ WINDOWS = {                              # vc-own
     "chain": "as tr-di's compose (review B1): the raw section on the padded length n + END_PAD_S (the file's real "
              "continuation past n, else zeros, recorded per part), the gate on the padded timeline, the edge fade "
              "(EDGE_FADE_S) at both padded ends, p.finish, cut to n, then -22.9 LUFS; vc-own, vc-cut and vc-fin alike",
+    "end_fade": "where any of the pad is zero-filled, the end edge fade ends at the last real sample, zeros after "
+                "(the fix to #653's review: the zero pad's hard cut at n re-shaped the finish's EQ); proof 3 and "
+                "the length term are read on that gate",
 }
 NOTCH = {                                # vc-cut
     "source": WINDOWS["source"],
@@ -147,8 +150,8 @@ FIN_RULE = {"source": WINDOWS["source"], "finish": WINDOWS["finish"], "chain": W
             "proof": "the same builder with the pad off and no edge fade (the raw section's n samples, p.finish, "
                      "-22.9 LUFS) equals the stored average-balance DI (note_replay's avg) brought to -22.9 LUFS by "
                      "at_lufs: max |difference| / max |vc-fin| <= FIN_PROOF_TOL (amendment 1, re-declared by review "
-                     "B1); the padded vc-fin equals the padded gate path at all-pass byte for byte "
-                     "(all_pass_is_vc_fin)",
+                     "B1); the padded vc-fin equals the padded gate path at all-pass byte for byte, both with the end "
+                     "fade at the real end (all_pass_is_vc_fin; WINDOWS['end_fade'])",
             "length_term": "beside, per part: the held-half RMS ratio and note_rebuild.logmel_distance (pad-off "
                            "vc-fin the reference side) between the padded and the pad-off vc-fin, the size of the "
                            "length term now inside F"}

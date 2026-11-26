@@ -51,6 +51,8 @@ S, N and K are priced with the finish on, as `tr-di` is built. F is the finish a
 
 The true DI keeps its n-length finish, so the length term sits in F. Its size is recorded beside, per part: the held-half RMS ratio and `logmel_distance` between the padded and the pad-off `vc-fin`.
 
+**The end fade (the fix to #653's review).** On 31 parts the file ends at the section and is still sounding at n, so a zero pad made a hard cut there, and the finish's spectrum fit took the cut's leakage into the whole part's EQ. Where the pad is zero-filled, the end edge fade therefore ends at the last real sample, with zeros after it, on `vc-own`, `vc-cut` and `vc-fin` alike. Proof 3 and the length term are read on that gate. Each part records its level at n and whether the fade moved. The first build (build.json sha256 55c9e316…) is superseded and kept as seen.
+
 **`vc-own`.** `scratch_readerr.played_trace` gives every note's span as `synthesise_redo` plays it.
 - Each played note opens a window from 2 ms before its onset (`PRE_ATTACK_S`) to its own end.
 - The window has a linear fade-in over [on − 2 ms, on] (`NOTE_FADE_IN_S`, amendment 6) and its end kind's linear fade ending at the end: re-pluck 10 ms, mute 30 ms, release 150 ms, sample end 150 ms.
