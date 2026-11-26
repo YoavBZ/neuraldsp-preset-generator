@@ -21,7 +21,9 @@ note's span as `synthesise_redo` plays it.
 **The chain** (the orchestrator's call on amendment 1, and review B1: `vc-own`, `vc-cut` and `vc-fin` exactly as
 `tr-di`'s `compose`): the padded raw section times the gate (made on the padded timeline, with `synthesise_redo`'s 10-ms
 edge fade at both padded ends), `p.finish` once, cut to n, then -22.9 LUFS by `at_lufs`; `measure` is never applied
-twice. All three carry the same edge fade, so N and K carry none of it; the finish-length term sits in F.
+twice. All three carry the same edge fade, so N and K carry none of it; the finish-length term sits in F. Where the
+padded continuation is zero-filled (the file ends at the section), the end edge fade ends at the last real sample
+instead, zeros after (`real_end`, the fix to #653's review: a hard cut at n re-shaped the finish's EQ).
 - `vc-fin`: the gate is the edge fade alone (`edge_gain`).
 - `vc-own`: the played-note gate (`own_gain`): per played note a window from round((on - PRE_ATTACK_S) * SR) to its
   trace end, its first NOTE_FADE_IN_S a linear fade-in (the sample's own `prepare_sample` ramp), its last the end
@@ -42,8 +44,8 @@ twice. All three carry the same edge fade, so N and K carry none of it; the fini
 1. `rule_off_is_tr_di`: the gate off, the same notes, bank, ring, loudness option, finish and T rebuild `tr-di`
    (`rederive_fit.guitar`) byte for byte, its sha256 build 2's;
 2. `trace_is_tr_di_report`: the trace's counts equal build 2's stored `tr-di` report (`trace_equals_report`);
-3. `all_pass_is_vc_fin`: the padded gate path with one all-pass window (no fades, the edge fade on) through the window
-   machinery gives the padded `vc-fin` byte for byte;
+3. `all_pass_is_vc_fin`: the padded gate path with one all-pass window (no fades, the edge fade on, its end at the
+   real end) through the window machinery gives the padded `vc-fin` byte for byte;
 4. `vc_fin_is_avg` (re-declared by review B1): the same builder with the pad off and no edge fade (the section's n
    samples, `p.finish`, -22.9 LUFS) against the stored `PF/replay/di/avg` brought to -22.9 LUFS by `at_lufs`:
    max |difference| / max |pad-off vc-fin| <= FIN_PROOF_TOL (1e-5). A failure goes to the user; never loosened.
@@ -111,7 +113,8 @@ CHOICES = {
                     "real continuation past n, zeros where the file ends, both counts recorded per part as `pad`), "
                     "the gate on the padded timeline, synthesise_redo's edge fade at both padded ends (all three "
                     "alike, so N and K carry none of it), p.finish, cut to n, -22.9 LUFS. The true DI keeps its "
-                    "n-length finish, so the length term sits in F, its size recorded beside (`length_term`: the held-half RMS "
+                    "n-length finish, so the length term sits in F, its size recorded beside (`length_term`: the "
+                    "held-half RMS "
                     "ratio and logmel_distance, pad-off the reference side, between padded and pad-off vc-fin). "
                     "Proof 4 is re-declared on the same builder with the pad off and no edge fade against the stored "
                     "avg; proof 3 is the padded all-pass gate path against the padded vc-fin (edge_gain, a separate "
@@ -131,8 +134,20 @@ CHOICES = {
                      "round((t - PRE_ATTACK_S) * SR) (as the next window)",
     "env_frames": "the frame levels of tr-di and the true DI by note_rebuild.frame_levels_db (960-sample frames at a "
                   "240-sample hop), the frame centre i * hop + frame / 2 (COVER's), numpy.interp over the samples",
-    "gain_db": "each guitar's overall level step: 20 log10 of the RMS after at_lufs over the RMS before it; "
-               "build.json's gain_db is vc-own's, lufs_gain_db every guitar's",
+    "gain_db": "each guitar's level step from its finished audio to -22.9 LUFS (the finish's step; at_lufs after "
+               "p.finish): 20 log10 of the RMS after at_lufs over the RMS before it; build.json's gain_db is "
+               "vc-own's, lufs_gain_db every guitar's; gate_step_db (vc-own's step less vc-fin's) is the gate's own "
+               "share, what the planner's 0-0.15 dB probe measured",
+    "end_fade_at_real_end": "the fix to #653's review: on the 31 zero-filled parts the file ends at n, often still "
+                            "sounding (|last sample| up to 0.51 of the peak), so the zero pad made a hard cut at n "
+                            "and the padded-end edge fade fell on zeros; smoothed_spectrum (measure, average_balance) "
+                            "saw the cut's broadband leakage and re-shaped the whole part's EQ (the length term up "
+                            "to 2.51). Where any of the pad is zero-filled, synthesise_redo's 10-ms end edge fade "
+                            "ends at the last real sample (real_end), zeros after, on vc-own, vc-cut, vc-fin and "
+                            "proof 3's all-pass gate alike; real-continuation parts are byte for byte as before. "
+                            "Proof 3 and the length term are read on that gate; per part `end_level` records the "
+                            "section's level at n and whether the edge fade moved. Superseded build.json sha256 "
+                            "55c9e3161fdc143ff85218d76a7d2728e08cda61ad91fae5c9b36f5f5de35154 (seen)",
     "raw_is_true_di": "the raw section, measured (song_bank.measure) and rounded to float32 as note_replay.di_section "
                       "does, must equal the true DI exactly, or the build stops",
     "part_files": "one record a part under build-parts/: the shards write them, the combine reads them",
@@ -194,11 +209,28 @@ def cut_windows(onsets, length, rate=SR):
     return out
 
 
-def window_gain(windows, length, edge=0):
+def end_ramp(g, edge, end):
+    """The end edge fade in place: linear over the `edge` samples ending at `end` (exclusive; the last real sample
+    gets 0, as `synthesise_redo`'s last sample), zeros after. end None: the array's end."""
+    import numpy as np
+
+    end = len(g) if end is None else end
+    if not 0 < end <= len(g):
+        raise ValueError("the real end lies outside the gate")
+    k = min(edge, end)
+    if k:
+        g[end - k:end] *= np.linspace(1.0, 0.0, edge)[edge - k:]
+    g[end:] = 0.0
+    return g
+
+
+def window_gain(windows, length, edge=0, end=None):
     """The gate on `length` samples: each window (start, end, fade-in, end fade) an envelope of ones with its fade-in
     (linspace(0, 1, fade-in) cut to the window) times its end fade (linspace(1, 0, min(dur, end fade))) over its last
     samples, cut at 0 and `length`; windows combine by maximum, never by sum; then `edge` samples of linear fade at
-    both ends (`synthesise_redo`'s edge fade; 0: none). -> float64 array."""
+    the start and at the end (`synthesise_redo`'s edge fade; 0: none). `end` (the build's fix to #653's review): where
+    the real signal ends when the padded continuation is zero-filled; the end fade ends there, zeros after; None: at
+    `length`, as `synthesise_redo`. -> float64 array."""
     import numpy as np
 
     g = np.zeros(length)
@@ -221,36 +253,49 @@ def window_gain(windows, length, edge=0):
             np.maximum(g[s:e], env[:e - s], out=g[s:e])
     if edge:
         g[:edge] *= np.linspace(0.0, 1.0, edge)
-        g[length - edge:] *= np.linspace(1.0, 0.0, edge)
+        end_ramp(g, edge, end)
+    elif end is not None:
+        g[end:] = 0.0
     return g
 
 
-def own_gain(notes, trace, length, rate=SR):
-    """vc-own's gate on the padded length, with the edge fade."""
-    return window_gain(own_windows(notes, trace, rate), length, edge_samples(length, rate))
+def own_gain(notes, trace, length, rate=SR, end=None):
+    """vc-own's gate on the padded length, with the edge fade (its end at `end`, see `window_gain`)."""
+    return window_gain(own_windows(notes, trace, rate), length, edge_samples(length, rate), end)
 
 
-def cut_gain(onsets, length, rate=SR):
+def cut_gain(onsets, length, rate=SR, end=None):
     """vc-cut's gate on the padded length, with the edge fade (review B1: as vc-own's and vc-fin's)."""
-    return window_gain(cut_windows(onsets, length, rate), length, edge_samples(length, rate))
+    return window_gain(cut_windows(onsets, length, rate), length, edge_samples(length, rate), end)
 
 
-def edge_gain(length, rate=SR):
-    """vc-fin's gate: `synthesise_redo`'s edge fade alone on the padded length (ones with the two ramps), made apart
-    from `window_gain` so proof 3 compares two code paths."""
+def edge_gain(length, rate=SR, end=None):
+    """vc-fin's gate: `synthesise_redo`'s edge fade alone on the padded length (ones with the two ramps; the end ramp
+    at `end`, see `window_gain`), made apart from `window_gain` so proof 3 compares two code paths."""
     import numpy as np
 
     g = np.ones(length)
     edge = edge_samples(length, rate)
     if edge:
         g[:edge] *= np.linspace(0.0, 1.0, edge)
-        g[length - edge:] *= np.linspace(1.0, 0.0, edge)
+        e = length if end is None else end
+        if not 0 < e <= length:
+            raise ValueError("the real end lies outside the gate")
+        k = min(edge, e)
+        g[e - k:e] = g[e - k:e] * np.linspace(1.0, 0.0, edge)[edge - k:]
+        g[e:] = 0.0
     return g
 
 
-def all_pass_gain(length, rate=SR):
-    """Proof 3's gate: one all-pass window (no fades) through `window_gain`, with the edge fade."""
-    return window_gain([(0, length, 0, 0)], length, edge_samples(length, rate))
+def all_pass_gain(length, rate=SR, end=None):
+    """Proof 3's gate: one all-pass window (no fades) through `window_gain`, with the edge fade (its end at `end`)."""
+    return window_gain([(0, length, 0, 0)], length, edge_samples(length, rate), end)
+
+
+def real_end(n, pad):
+    """(Pure.) Where the padded raw section's real signal ends: n + the real continuation when any of the pad is
+    zero-filled (the fix to #653's review), else None (the gate's end, as `synthesise_redo`)."""
+    return n + int(pad["real"]) if int(pad["zeros"]) > 0 else None
 
 
 def span_mask(windows, length):
@@ -405,23 +450,47 @@ def env_guitar(tr64, di64, rate=SR):
     return out, level_step_db(y, out), rep
 
 
-def build_guitars(raw_l, notes, trace, finish, n, tr64, di64, rate=SR):
+def build_guitars(raw_l, notes, trace, finish, n, tr64, di64, rate=SR, end=None):
     """The four guitars of one part, proof 3's all-pass guitar and proof 4's pad-off vc-fin, float32. raw_l: the
-    padded raw section (n + END_PAD_S samples, the length the trace was made on). -> {"guitars": {guitar: float32},
-    "all_pass", "fin_pad_off": float32, "gates": {guitar: float64}, "lufs_gain_db": {...}, "env": report}."""
+    padded raw section (n + END_PAD_S samples, the length the trace was made on); end: `real_end` (the end edge fade
+    there on vc-own, vc-cut, vc-fin and the all-pass gate alike; None: at the padded end). -> {"guitars": {guitar:
+    float32}, "all_pass", "fin_pad_off": float32, "gates": {guitar: float64}, "lufs_gain_db": {...}, "env": report}."""
     import numpy as np
 
     f32 = lambda y: np.asarray(y, np.float32)   # noqa: E731
     length = len(raw_l)
-    gates = {FIN: edge_gain(length, rate), OWN: own_gain(notes, trace, length, rate),
-             CUT: cut_gain(group_onsets(notes), length, rate)}
+    gates = {FIN: edge_gain(length, rate, end), OWN: own_gain(notes, trace, length, rate, end),
+             CUT: cut_gain(group_onsets(notes), length, rate, end)}
     made = {g: through_gate(raw_l, gates[g], finish, n, rate) for g in (FIN, CUT, OWN)}
-    allp, _ = through_gate(raw_l, all_pass_gain(length, rate), finish, n, rate)
+    allp, _ = through_gate(raw_l, all_pass_gain(length, rate, end), finish, n, rate)
     off, _ = pad_off(np.asarray(raw_l, np.float64)[:n], finish, n, rate)
     env, env_step, rep = env_guitar(tr64, di64, rate)
     return {"guitars": {FIN: f32(made[FIN][0]), CUT: f32(made[CUT][0]), OWN: f32(made[OWN][0]), ENV_G: f32(env)},
             "all_pass": f32(allp), "fin_pad_off": f32(off), "gates": gates,
             "lufs_gain_db": {FIN: made[FIN][1], CUT: made[CUT][1], OWN: made[OWN][1], ENV_G: env_step}, "env": rep}
+
+
+def end_level(raw_l, n, end, rate=SR):
+    """The section's level where it ends (at n), and where the end edge fade went: |the last sample| over the
+    section's peak, the RMS of its last 10 ms (EDGE_FADE_S) in dB (full scale) and against the peak, and whether
+    the edge fade moved from the padded end to the real end (`real_end`). -> dict."""
+    import numpy as np
+
+    x = np.asarray(raw_l, np.float64)[:n]
+    k = min(n, int(SV.WINDOWS["edge_fade_s"] * rate))
+    peak = float(np.max(np.abs(x))) if n else 0.0
+    rms = float(np.sqrt(np.mean(x[n - k:] ** 2))) if k else 0.0
+    return {"last_over_peak": float(abs(x[-1])) / peak if peak > 0 else None,
+            "last_10ms_rms_db": 20 * math.log10(rms) if rms > 0 else None,
+            "last_10ms_rms_db_re_peak": 20 * math.log10(rms / peak) if rms > 0 and peak > 0 else None,
+            "edge_moved": end is not None, "edge_end_offset": None if end is None else int(end - n)}
+
+
+def gate_step_db(steps):
+    """(Pure.) The gate's own share of vc-own's level step: vc-own's step to -22.9 LUFS less vc-fin's (both after the
+    finish), or None."""
+    a, b = (steps or {}).get(OWN), (steps or {}).get(FIN)
+    return a - b if a is not None and b is not None else None
 
 
 def fin_ratio(fin32, avg64, rate=SR):
@@ -475,10 +544,11 @@ def code_identity():
 
 
 PART_FIELDS = ("plan", "part", "tag", "set", "held", "renders", "code", "checks", "proofs", "fin_ratio", "guitars",
-               "gain_db", "lufs_gain_db", "env", "pad", "length_term", "support", "unclaimed", "cover", "ends",
-               "trace_report")
-BUILD_PART_FIELDS = ("tag", "set", "held", "guitars", "gain_db", "lufs_gain_db", "env", "pad", "length_term",
-                     "support", "unclaimed", "cover", "ends", "fin_ratio", "proofs", "checks", "trace_report")
+               "gain_db", "lufs_gain_db", "gate_step_db", "env", "pad", "end_level", "length_term", "support",
+               "unclaimed", "cover", "ends", "trace_report")
+BUILD_PART_FIELDS = ("tag", "set", "held", "guitars", "gain_db", "lufs_gain_db", "gate_step_db", "env", "pad",
+                     "end_level", "length_term", "support", "unclaimed", "cover", "ends", "fin_ratio", "proofs",
+                     "checks", "trace_report")
 
 
 def combine_body(per, keys):
@@ -510,7 +580,10 @@ def combine_body(per, keys):
             "gain_db_range": [min(gains), max(gains)] if gains else None,
             "fin_ratio_max": max(ratios) if ratios else None,
             "pad": {"zero_padded_parts": sum(per[k]["pad"]["zeros"] > 0 for k in keys),
-                    "first_n_unequal_parts": sum(not per[k]["pad"]["first_n_equal"] for k in keys)},
+                    "first_n_unequal_parts": sum(not per[k]["pad"]["first_n_equal"] for k in keys),
+                    "edge_moved_parts": sum(bool(per[k]["end_level"]["edge_moved"]) for k in keys)},
+            "gate_step_db_range": (lambda xs: [min(xs), max(xs)] if xs else None)(
+                [per[k]["gate_step_db"] for k in keys if per[k]["gate_step_db"] is not None]),
             "length_term": {"held_rms_db_range": span("held_rms_db"), "logmel_held_range": span("logmel_held"),
                             "logmel_whole_range": span("logmel_whole"), "label": "beside: the length term inside F"},
             "support": {"nonzero_outside_gate": sum(per[k]["support"]["nonzero_outside_gate"] for k in keys)},
@@ -524,7 +597,7 @@ def dry_body(build, sha):
             "proofs_hold": build["proofs_hold"], "ends": build["ends"],
             "scratch_readerr_blob_sha": build["scratch_readerr_blob_sha"],
             "played_trace_sha256": build["played_trace_sha256"], "fin_ratio_max": build["fin_ratio_max"],
-            "gain_db_range": build["gain_db_range"],
+            "gain_db_range": build["gain_db_range"], "gate_step_db_range": build["gate_step_db_range"],
             "checks": {c: f"{v['held']} of {v['of']}" for c, v in build["checks"].items()},
             "pad": build["pad"], "length_term": build["length_term"], "support": build["support"]}
 
@@ -584,7 +657,8 @@ def part_record(p, dp, raw_l, pad, avg64, am_path, am_file_sha, stored_rep, iden
     off = RF.guitar(p, p.T)                     # the gate off: rederive_fit's compose of T, float32
     proofs = {"rule_off_is_tr_di": same_bytes(off, p.X) and S.npy_sha(off) == p.x_sha,
               "trace_is_tr_di_report": RX.trace_equals_report(rep, stored_rep)}
-    b = build_guitars(raw_l, p.notes, trace, p.finish, p.n, p.X, p.di, rate)
+    end = real_end(p.n, pad)
+    b = build_guitars(raw_l, p.notes, trace, p.finish, p.n, p.X, p.di, rate, end)
     g = b["guitars"]
     proofs["all_pass_is_vc_fin"] = same_bytes(b["all_pass"], g[FIN])
     ratio = fin_ratio(b["fin_pad_off"], avg64, rate)
@@ -622,8 +696,9 @@ def part_record(p, dp, raw_l, pad, avg64, am_path, am_file_sha, stored_rep, iden
     guitars[AVG_MILD] = {"file_sha256": am_file_sha, "audio_sha256": S.npy_sha(np.load(am_path))}
     rec = {"plan": PLAN, "part": p.key, "tag": tag, "set": p.set, "held": dp["held"], "renders": 0, "code": ident,
            "checks": {"raw_is_true_di": True, "synth_inside_gate": True}, "proofs": proofs, "fin_ratio": ratio,
-           "guitars": guitars, "gain_db": b["lufs_gain_db"][OWN], "lufs_gain_db": b["lufs_gain_db"], "env": b["env"],
-           "pad": dict(pad), "length_term": lterm, "support": support,
+           "guitars": guitars, "gain_db": b["lufs_gain_db"][OWN], "lufs_gain_db": b["lufs_gain_db"],
+           "gate_step_db": gate_step_db(b["lufs_gain_db"]), "env": b["env"],
+           "pad": dict(pad), "end_level": end_level(raw_l, p.n, end, rate), "length_term": lterm, "support": support,
            "unclaimed": unclaimed, "cover": cover, "ends": ends, "trace_report": rep}
     _save_once(part_path(p.key), rec)
     return rec

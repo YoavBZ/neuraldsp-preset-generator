@@ -136,8 +136,11 @@ def _rec(k, ok=True, ident=IDENT, gain=0.1):
             "proofs": {p: (ok or p != "vc_fin_is_avg") for p in VB.PROOFS}, "fin_ratio": 1e-7,
             "guitars": {g: {"file_sha256": hashlib.sha256(f"{g}{k}".encode()).hexdigest(),
                             "audio_sha256": hashlib.sha256(f"a{g}{k}".encode()).hexdigest()} for g in VB.GUITARS},
-            "gain_db": gain, "lufs_gain_db": {g: gain for g in VB.BUILT}, "env": {"frames": 10},
+            "gain_db": gain, "lufs_gain_db": {g: gain for g in VB.BUILT}, "gate_step_db": gain / 2,
+            "env": {"frames": 10},
             "pad": {"real": 4800, "zeros": 0, "first_n_equal": True},
+            "end_level": {"last_over_peak": 0.1, "last_10ms_rms_db": -30.0, "last_10ms_rms_db_re_peak": -20.0,
+                          "edge_moved": False, "edge_end_offset": None},
             "length_term": {"held": "B", "held_rms_ratio": 1.0, "held_rms_db": gain / 10, "logmel_held": 0.01,
                             "logmel_whole": 0.02, "reference": "pad-off vc-fin"},
             "support": {"inside": True, "nonzero": 100, "nonzero_outside_spans": 0, "nonzero_outside_gate": 1},
@@ -163,7 +166,9 @@ def test_combine_counts_the_proofs_and_holds_only_on_all_47():
     assert tuple(b["parts"][keys[0]]) == VB.BUILD_PART_FIELDS
     assert b["checks"] == {c: {"held": 47, "of": 47} for c in VB.CHECKS} and "synth_inside_gate" in VB.CHECKS
     assert b["length_term"]["held_rms_db_range"] == [0.0, 0.046] and b["support"]["nonzero_outside_gate"] == 47
-    assert b["pad"] == {"zero_padded_parts": 0, "first_n_unequal_parts": 0}
+    assert b["pad"] == {"zero_padded_parts": 0, "first_n_unequal_parts": 0, "edge_moved_parts": 0}
+    assert b["gate_step_db_range"] == [0.0, 0.23]
+    assert "end_fade_at_real_end" in b["rules"]["choices"] and "end_fade" in b["rules"]["windows"]
     assert "padded_chain" in b["rules"]["choices"] and "chain" in b["rules"]["fin"]
     for g in V.RENDERED:                                  # what scratch_voice read and Unit C read
         assert b["parts"][keys[0]]["guitars"][g]["audio_sha256"]
@@ -481,7 +486,7 @@ def test_a_dry_guitar_is_written_once(monkeypatch, tmp_path):
 
 # --- one part behind fakes (numpy) ------------------------------------------------------------------------------------
 
-def _fake_part(monkeypatch, tmp_path):
+def _fake_part(monkeypatch, tmp_path, zero_filled=False):
     """A part on the stand-in bank: `song_bank.measure` and the finish stood in by fixed linear maps, X and its sha256
     made by the same compose of T, so proofs 1-3 hold by construction; proof 4 holds when avg is the finish of the
     measured raw section."""
@@ -509,6 +514,10 @@ def _fake_part(monkeypatch, tmp_path):
     am = tmp_path / "avg+mild.npy"
     np.save(am, np.asarray(raw_l[:n], np.float32))
     pad = {"real": VB.pad_samples(), "zeros": 0, "first_n_equal": True}
+    if zero_filled:                                              # the file ends at the section, still sounding
+        raw_l = raw_l.copy()
+        raw_l[n:] = 0.0
+        pad = {"real": 0, "zeros": VB.pad_samples(), "first_n_equal": True}
     return p, {"held": "A"}, raw_l, pad, finish(raw_l[:n]), am, S.file_sha(am), rep, VB.code_identity()
 
 
@@ -747,3 +756,111 @@ def test_the_padded_raw_section_is_the_section_and_its_real_continuation(monkeyp
         assert np.array_equal(np.asarray(x[n:], np.float32), want), (f.name, start)
     x, rep = VB.padded_raw(slow_f, 1.0)                           # resampled: the continuation from the longer read
     assert rep["real"] == pad and rep["zeros"] == 0 and len(x) == PS.section_audio(slow_f, 1.0).size + pad
+
+
+# --- the fix to #653's review: the end edge fade at the real end (numpy) ----------------------------------------------
+
+def _old_edge(length):
+    """The gate's edge fade as #651 made it (both ramps at the padded ends), restated for the byte-identity check."""
+    import numpy as np
+
+    g = np.ones(length)
+    g[:480] *= np.linspace(0.0, 1.0, 480)
+    g[length - 480:] *= np.linspace(1.0, 0.0, 480)
+    return g
+
+
+def test_the_real_end_is_n_plus_the_real_continuation_only_when_zero_filled():
+    assert VB.real_end(1000, {"real": 4800, "zeros": 0}) is None
+    assert VB.real_end(1000, {"real": 0, "zeros": 4800}) == 1000
+    assert VB.real_end(1000, {"real": 1200, "zeros": 3600}) == 2200
+
+
+def test_a_zero_filled_part_still_sounding_at_n_gets_the_fade_at_n():
+    np = pytest.importorskip("numpy")
+    n = 3 * SR
+    length = n + VB.pad_samples()
+    end = VB.real_end(n, {"real": 0, "zeros": VB.pad_samples()})
+    fade = np.linspace(1.0, 0.0, 480)
+    notes = [{"on": 2.5, "off": 3.2}]                            # a note still ringing past n
+    trace = [{"played": True, "end": 3.2, "end_kind": "release"}]   # its release starts past n
+    gates = {"vc-fin": VB.edge_gain(length, end=end), "all-pass": VB.all_pass_gain(length, end=end),
+             "vc-cut": VB.cut_gain([1.0], length, end=end), "vc-own": VB.own_gain(notes, trace, length, end=end)}
+    for name, g in gates.items():
+        assert np.array_equal(g[n - 480:n], fade), name               # the fade ends at the last real sample ...
+        assert np.all(g[n:] == 0.0) and g[n - 481] == 1.0, name       # ... zeros after; whole before it
+        if name != "vc-own":                                     # (vc-own has no window at the start)
+            assert np.array_equal(g[:480], np.linspace(0.0, 1.0, 480)), name   # the start fade unchanged
+    assert VB.same_bytes(gates["vc-fin"], gates["all-pass"])
+    part = VB.edge_gain(length, end=n + 1000)                    # a partly real continuation
+    assert np.array_equal(part[n + 520:n + 1000], fade) and np.all(part[n + 1000:] == 0.0)
+    with pytest.raises(ValueError):
+        VB.edge_gain(length, end=length + 1)
+
+
+def test_a_real_continuation_part_is_byte_identical_to_before():
+    np = pytest.importorskip("numpy")
+    raw_l, notes, trace, finish, n, tr, di = _world()
+    length = len(raw_l)
+    old = _old_edge(length)
+    assert VB.edge_gain(length).tobytes() == old.tobytes()
+    assert VB.all_pass_gain(length).tobytes() == old.tobytes()
+    for ws in (VB.own_windows(notes, trace), VB.cut_windows(VB.group_onsets(notes), length)):
+        g0 = VB.window_gain(ws, length)                          # no edge, then #651's ramps by hand
+        g0[:480] *= np.linspace(0.0, 1.0, 480)
+        g0[length - 480:] *= np.linspace(1.0, 0.0, 480)
+        assert VB.window_gain(ws, length, 480).tobytes() == g0.tobytes()
+        assert VB.window_gain(ws, length, 480, None).tobytes() == g0.tobytes()
+    a = VB.build_guitars(raw_l, notes, trace, finish, n, tr, di)
+    b = VB.build_guitars(raw_l, notes, trace, finish, n, tr, di, end=None)
+    fin_old, _ = VB.through_gate(raw_l, old, finish, n)
+    assert VB.same_bytes(a["guitars"]["vc-fin"], fin_old)
+    for g in VB.BUILT:
+        assert S.npy_sha(a["guitars"][g]) == S.npy_sha(b["guitars"][g]), g
+
+
+def test_the_zero_filled_fix_lowers_the_length_term_through_a_spectrum_fitting_finish():
+    """The fault on synthetic signals: a section still sounding at n, zero-filled past it, through a finish that fits
+    its EQ to the audio's smoothed spectrum (`average_balance`): the hard cut moves the whole part's EQ; the fade at
+    n takes most of it back."""
+    np = pytest.importorskip("numpy")
+    for m in ("scipy", "pyloudnorm"):
+        pytest.importorskip(m)
+    from learn import di_robustness as DR
+
+    rng = np.random.default_rng(13)
+    n = int(10.25 * SR)
+    t = np.arange(n) / SR
+    x = 0.3 * np.sin(2 * np.pi * 110 * t) * (0.6 + 0.4 * np.sin(2 * np.pi * 0.7 * t)) + 0.003 * rng.standard_normal(n)
+    raw_l = np.concatenate([x, np.zeros(VB.pad_samples())])
+    others = {"s": [np.asarray(np.sin(2 * np.pi * 220 * t[:SR * 4]) * 0.1 + 0.01 * rng.standard_normal(SR * 4))]}
+
+    def finish(y):
+        return DR.average_balance(y, others)
+    off, _ = VB.pad_off(x, finish, n)
+    L = len(raw_l)
+    cut, _ = VB.through_gate(raw_l, VB.edge_gain(L), finish, n)
+    faded, _ = VB.through_gate(raw_l, VB.edge_gain(L, end=n), finish, n)
+    before = VB.length_term(cut, off, "B")["logmel_held"]
+    after = VB.length_term(faded, off, "B")["logmel_held"]
+    assert after < before
+
+
+def test_one_zero_filled_part_records_its_end_and_moves_the_fade(monkeypatch, tmp_path):
+    np = pytest.importorskip("numpy")
+    p, dp, raw_l, pad, avg, am, am_sha, rep, ident = _fake_part(monkeypatch, tmp_path, zero_filled=True)
+    rec = VB.part_record(p, dp, raw_l, pad, avg, am, am_sha, rep, ident)
+    assert all(rec["proofs"][k] is True for k in VB.PROOFS) and rec["checks"] == {c: True for c in VB.CHECKS}
+    el = rec["end_level"]
+    assert el["edge_moved"] is True and el["edge_end_offset"] == 0 and 0 < el["last_over_peak"] <= 1
+    assert el["last_10ms_rms_db"] < 0 and el["last_10ms_rms_db_re_peak"] < 0
+    want, _ = VB.through_gate(raw_l, VB.edge_gain(len(raw_l), end=p.n), p.finish, p.n)
+    assert np.load(V.dry_path("vc-fin", p.key)).tobytes() == np.asarray(want, np.float32).tobytes()
+    assert rec["gate_step_db"] == rec["lufs_gain_db"]["vc-own"] - rec["lufs_gain_db"]["vc-fin"]
+
+
+def test_a_real_continuation_part_records_no_moved_fade(monkeypatch, tmp_path):
+    pytest.importorskip("numpy")
+    p, dp, raw_l, pad, avg, am, am_sha, rep, ident = _fake_part(monkeypatch, tmp_path)
+    rec = VB.part_record(p, dp, raw_l, pad, avg, am, am_sha, rep, ident)
+    assert rec["end_level"]["edge_moved"] is False and rec["end_level"]["edge_end_offset"] is None
