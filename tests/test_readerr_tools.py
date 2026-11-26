@@ -7,6 +7,7 @@ import ast
 import hashlib
 import io
 import json
+import os
 import pathlib
 import re
 import tarfile
@@ -441,15 +442,15 @@ def test_kept_member():
 class FakeRun:
     """Stands in for the pyenv interpreter and the venv's pip: makes the venv's folders, lists the lock."""
 
-    def __init__(self, root, man, wrong_list=False):
-        self.root, self.man, self.wrong, self.calls = root, man, wrong_list, []
+    def __init__(self, root, man, wrong_list=False, version="3.12.16"):
+        self.root, self.man, self.wrong, self.calls, self.version = root, man, wrong_list, [], version
 
     def __call__(self, *a):
         a = [str(x) for x in a]
         self.calls.append(a)
         if a[-1] == "import sys; print(sys.version.split()[0])":
             assert a[0] == str(self.root / "python-3.12" / "python" / "bin" / "python3")   # tx-python's, never pyenv's
-            return "3.12.16\n"                 # what tx-python's pinned interpreter reports
+            return f"{self.version}\n"         # what tx-python's interpreter reports
         if a[-2:-1] == ["venv"]:
             pathlib.Path(a[-1], "bin").mkdir(parents=True)
             return ""
@@ -474,7 +475,7 @@ def _fake_interpreter(root):
     p = root / "python-3.12" / "python" / "bin" / "python3"
     p.parent.mkdir(parents=True)
     p.write_text("")
-    (root / "python-3.12.json").write_text("{}")
+    (root / "python-3.12.json").write_text(json.dumps({"sha256": RT.PBS_SHA256, "version": RT.PYTHON_VERSION}))
 
 
 def test_tx_install_lock_b(monkeypatch, root, capsys):
@@ -527,10 +528,23 @@ def test_tx_install_needs_tx_pythons_interpreter_at_the_pinned_version(monkeypat
         RT.cmd_tx_install(type("A", (), {"lock": "A"})())
     assert not (root / "venv-a").exists() and not fake.calls
     _fake_interpreter(root)
-    monkeypatch.setattr(RT, "PYTHON_VERSION", "3.12.99")
-    with pytest.raises(SystemExit, match="not the pinned 3.12.99"):
+    monkeypatch.setattr(RT, "_run", FakeRun(root, man, version="3.12.13"))
+    with pytest.raises(SystemExit, match="not the pinned 3.12.16"):
         RT.cmd_tx_install(type("A", (), {"lock": "A"})())
     assert not (root / "venv-a").exists() and not (root / "lock-A.txt").exists()
+
+
+def test_tx_install_needs_the_pinned_asset_in_the_record(monkeypatch, root):
+    man, _ = make_manifest(root)
+    _commands(monkeypatch, root, man, {})
+    fake = FakeRun(root, man)
+    monkeypatch.setattr(RT, "_run", fake)
+    _fake_interpreter(root)
+    for rec in ({}, {"sha256": "0" * 64, "version": RT.PYTHON_VERSION}, {"sha256": RT.PBS_SHA256, "version": "3.12.13"}):
+        (root / "python-3.12.json").write_text(json.dumps(rec))
+        with pytest.raises(SystemExit, match="does not record the pinned asset"):
+            RT.cmd_tx_install(type("A", (), {"lock": "A"})())
+        assert not fake.calls and not (root / "venv-a").exists()
 
 
 # --- tx-python on a made-up asset ---------------------------------------------------------------------------------------------
@@ -631,6 +645,99 @@ def test_tx_python_wrong_version_or_disk(monkeypatch, root):
     with pytest.raises(SystemExit, match="DISK GUARD"):
         RT.cmd_tx_python(None)
     assert not (r2 / "python-3.12").exists()
+
+
+def _escape_tree(base):
+    """python/a/d1 -> .. (python itself), then python/a/x -> d1/../../evil: inside by its letters, outside by its real
+    path (d1/.. is python's parent, one more .. leaves the folder)."""
+    a = base / "python" / "a"
+    a.mkdir(parents=True)
+    (a / "ok.py").write_text("")
+    os.symlink("..", a / "d1")
+    os.symlink("d1/../../evil", a / "x")
+    os.symlink("ok.py", a / "fine")
+
+
+def test_links_outside_reads_real_paths(tmp_path):
+    f = tmp_path / "unpacked"
+    _escape_tree(f)
+    assert RT.links_outside(f) == ["python/a/x"]
+    assert RT.tree_refusal([{"name": "python/a/d1", "type": "symlink", "link": ".."},
+                            {"name": "python/a/x", "type": "symlink", "link": "d1/../../evil"}], "python") is None
+
+
+def test_tx_python_refuses_a_link_whose_real_path_leaves(monkeypatch, root):
+    extra = []
+    for name, link in (("python/a/d1", ".."), ("python/a/x", "d1/../../evil")):
+        ti = tarfile.TarInfo(name)
+        ti.type, ti.linkname = tarfile.SYMTYPE, link
+        extra.append(ti)
+    _python_asset(monkeypatch, root, make_python_tar(extra=extra))
+    try:          # newer data filters rewrite the target lexically ("../evil", inside); older ones keep it
+        RT.cmd_tx_python(None)
+    except SystemExit as e:                               # ... and then the real-path walk refuses it
+        assert "real path leaves" in str(e) or "refused" in str(e)
+        assert not (root / "python-3.12").exists() and not (root / "python-3.12.json").exists()
+        assert any(".set-aside-" in p.name for p in root.iterdir())                        # kept, never deleted
+    else:
+        assert RT.links_outside(root / "python-3.12") == []                                # never an escape in place
+
+
+def test_tx_python_walk_runs_before_the_version_check(monkeypatch, root):
+    _python_asset(monkeypatch, root, make_python_tar())
+    real = RT.tarfile.TarFile.extractall
+
+    def extract_then_plant(self, path, *a, **k):          # a link the archive check could not see
+        real(self, path, *a, **k)
+        _escape_tree(pathlib.Path(path) / "extra")
+        (pathlib.Path(path) / "extra" / "python" / "a").rename(pathlib.Path(path) / "python" / "a")
+    monkeypatch.setattr(RT.tarfile.TarFile, "extractall", extract_then_plant)
+    monkeypatch.setattr(RT, "_run", lambda *a: pytest.fail("the version check ran before the walk"))
+    with pytest.raises(SystemExit, match="real path leaves"):
+        RT.cmd_tx_python(None)
+    assert not (root / "python-3.12").exists()
+    assert any(p.name.startswith("python-3.12.set-aside-") for p in root.iterdir())
+
+
+def _old_install(root, man):
+    for lock in ("A", "B"):
+        v = root / f"venv-{lock.lower()}"
+        (v / "bin").mkdir(parents=True)
+        (v / "bin" / "python").write_text("old")
+        (root / f"install-{lock}.json").write_text("{}")
+        (root / f"lock-{lock}.txt").write_text("x")
+    site = root / "venv-b" / "lib" / "python3.12" / "site-packages"
+    site.mkdir(parents=True)
+    (site / RT.PTH_NAME).write_text("/x\n")
+    for i in ("hf_midi_transcription", "piano_transcription_inference"):
+        a = RT.manifest_item(man, i)
+        d = pathlib.Path(a["pinned_path"]).parent / f"{i}-{a['commit'].split()[0]}"
+        d.mkdir(parents=True)
+        (d / "k.py").write_text("k")
+
+
+def test_tx_move_old(monkeypatch, root, capsys):
+    man, _ = make_manifest(root)
+    monkeypatch.setattr(RT, "require_main", lambda: None)
+    monkeypatch.setattr(RT, "load_manifest", lambda *a, **k: man)
+    with pytest.raises(SystemExit, match="nothing of the old install"):
+        RT.cmd_tx_move_old(None)
+    _old_install(root, man)
+    (root / "python-3.12").mkdir()                       # the new interpreter is never touched
+    keep = pathlib.Path(RT.manifest_item(man, "hf_midi_transcription")["pinned_path"])
+    keep.write_bytes(b"archive")                         # nor the checked archives
+    RT.cmd_tx_move_old(None)
+    rec = json.loads(next(root.glob("move-old-*.json")).read_text())
+    froms = [pathlib.Path(m["from"]).name for m in rec["moved"]]
+    assert froms[0] == RT.PTH_NAME and len(froms) == 9 and rec["deleted"] == []
+    assert pathlib.Path(rec["moved"][0]["to"]).parent == root                 # the .pth leaves the venv first
+    for m in rec["moved"]:
+        assert not pathlib.Path(m["from"]).exists() and pathlib.Path(m["to"]).exists() and ".set-aside-" in m["to"]
+    assert (root / "python-3.12").exists() and keep.read_bytes() == b"archive"
+    moved_b = next(pathlib.Path(m["to"]) for m in rec["moved"] if pathlib.Path(m["from"]).name == "venv-b")
+    assert (moved_b / "bin" / "python").read_text() == "old"                                # nothing deleted
+    with pytest.raises(SystemExit, match="nothing of the old install"):
+        RT.cmd_tx_move_old(None)
 
 
 def test_tree_refusal():

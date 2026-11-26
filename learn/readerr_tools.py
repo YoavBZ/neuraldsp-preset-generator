@@ -1,6 +1,7 @@
 """The note-reading diagnosis's Phase 2b install and fetch (`docs/scratch-readerr-plan.md` section 10; ledger
 `preset-ladder` `phase_scratch_readerr_p2b`; the amendment's unit F).
 
+    $MAIN -m learn.readerr_tools tx-move-old                   # once: the old pyenv-built install moved aside
     $MAIN -m learn.readerr_tools tx-python                     # first: the pinned standalone CPython 3.12.16
     $MAIN -m learn.readerr_tools tx-install [--lock A|B]       # the two venvs, from the manifest's locks
     $MAIN -m learn.readerr_tools tx-fetch [--cand ymt3|kong-fl|kong-gaps]   # the three pinned checkpoints
@@ -13,7 +14,8 @@ nothing is resolved here.
 own interpreter: python-build-standalone's CPython (`PBS_*`, one release asset pinned by tag, size and the release's
 SHA256SUMS sha256), fetched through a partial file, checked, and unpacked with tarfile's data filter under
 `python-3.12/` (no `..`, no absolute name, no link leaving the tree, no device). It must then `import lzma, ssl,
-sqlite3, ctypes` and report the pinned version. The record is `python-3.12.json`.
+sqlite3, ctypes` and report the pinned version; before that, every unpacked symlink's real path must stay inside
+the folder. The record is `python-3.12.json`, holding the asset's sha256, which `tx-install` requires.
 
 **`tx-install`.** Each lock gets its own venv (`VENVS`), made by that interpreter (`INTERPRETER`, its version
 checked to equal `PYTHON_VERSION`), then `pip install --require-hashes --only-binary :all: --no-deps --no-cache-dir` from the lock's
@@ -539,8 +541,12 @@ def interpreter(root=None):
     """The venvs' interpreter (tx-python's), refused unless tx-python has run."""
     d = pathlib.Path(root or ROOT) / PY_DIR_NAME
     p = d / PBS_TOP / "bin" / "python3"
-    if not (d.parent / f"{PY_DIR_NAME}.json").is_file() or not p.exists():
+    rec = d.parent / f"{PY_DIR_NAME}.json"
+    if not rec.is_file() or not p.exists():
         refuse(f"no interpreter at {p} (run tx-python first)")
+    got = json.loads(rec.read_text())
+    if got.get("sha256") != PBS_SHA256 or got.get("version") != PYTHON_VERSION:
+        refuse(f"{rec.name} does not record the pinned asset's sha256 {PBS_SHA256[:12]} and version {PYTHON_VERSION}")
     under_root(p, root)                  # its link resolves inside ROOT
     return p.absolute()                  # the path itself, not the link's target (a venv keeps it as given)
 
@@ -570,6 +576,58 @@ def tree_refusal(members, top):
             if not resolved or resolved[0] != top:
                 return f"link {name!r} -> {link!r} leaves {top}/"
     return None
+
+
+def links_outside(folder):
+    """Every symlink under `folder` (files and folders alike, never followed) whose `os.path.realpath` lies outside
+    the folder's own real path. -> [relative paths], sorted."""
+    top = os.path.realpath(folder)
+    bad = []
+    for d, dirs, files in os.walk(folder, followlinks=False):
+        for n in dirs + files:
+            p = os.path.join(d, n)
+            if os.path.islink(p):
+                r = os.path.realpath(p)
+                if os.path.commonpath([top, r]) != top:
+                    bad.append(os.path.relpath(p, folder))
+    return sorted(bad)
+
+
+def old_targets(man, root=None):
+    """(Pure but for `exists`.) What `tx-move-old` moves, in order: venv-b's `.pth` file first (so it is inactive
+    wherever venv-b goes), the two venvs, their install records and lock files, and the two unpacked code folders.
+    -> [paths that exist]."""
+    r = pathlib.Path(root or ROOT)
+    cands = sorted((r / LOCKS["B"]["venv"] / "lib").glob(f"python*/site-packages/{PTH_NAME}"))
+    for lock in LOCKS:
+        cands += [r / LOCKS[lock]["venv"], r / f"install-{lock}.json", r / f"lock-{lock}.txt"]
+    for i in LOCKS["B"]["archives"]:
+        a = manifest_item(man, i)
+        cands.append(pathlib.Path(a["pinned_path"]).parent / f"{a['id']}-{a['commit'].split()[0]}")
+    return [under_root(c, root) for c in cands if c.exists() or c.is_symlink()]
+
+
+def cmd_tx_move_old(_args):
+    """Move aside, never delete, the old pyenv-built install (`old_targets`), each with `move_aside`'s timestamp;
+    refused when nothing matches. -> move-old-<time>.json, what moved where."""
+    require_main()
+    man = load_manifest()
+    todo = old_targets(man)
+    if not todo:
+        refuse("nothing of the old install is there to move aside")
+    moved = []
+    for p in todo:
+        if p.name == PTH_NAME:           # out of the venv first, so it is inactive and its record stays true
+            q = set_aside_path(under_root(ROOT / f"{LOCKS['B']['venv']}.{PTH_NAME}"), stamp())
+            os.rename(p, q)
+            print(f"MOVED ASIDE: {p} -> {q}")
+        else:
+            q = move_aside(p)
+        moved.append({"from": str(p), "to": str(q)})
+    rec = {"plan": "docs/scratch-readerr-plan.md section 10j", "ledger": f"{LEDGER_ID} {PHASE}",
+           "made": time.strftime("%Y-%m-%d %H:%M:%S"), "moved": moved, "deleted": []}
+    out = write_once_json(ROOT / f"move-old-{stamp()}.json", rec)
+    print(f"MOVED ASIDE {len(moved)} items; record {out} sha256 {file_sha(out)}")
 
 
 def _kind(m):
@@ -604,9 +662,16 @@ def cmd_tx_python(_args):
             refuse(why)
         part = under_root(dest.with_name(f"{dest.name}.partial-{stamp()}"))
         part.mkdir(parents=True)
-        t.extractall(part, filter="data")
+        try:
+            t.extractall(part, filter="data")
+        except (tarfile.TarError, OSError) as e:       # the data filter's refusals included
+            q = move_aside(part)
+            refuse(f"{PBS_ASSET}: the unpack refused ({type(e).__name__}: {e}); kept at {q}")
     os.rename(part, dest)
     try:
+        bad = links_outside(dest)
+        if bad:
+            refuse(f"links whose real path leaves {dest.name}/: {bad[:4]}")
         version = _run(dest / PBS_TOP / "bin" / "python3", "-I", "-c", PY_CHECK).strip()
         if version != PYTHON_VERSION:
             refuse(f"the unpacked interpreter is {version}, not {PYTHON_VERSION}")
@@ -686,6 +751,8 @@ def main(argv=None):
 
     ap = argparse.ArgumentParser(prog="readerr_tools", description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
+    m = sub.add_parser("tx-move-old", help="move the old pyenv-built venvs, records and unpacked code aside")
+    m.set_defaults(func=cmd_tx_move_old)
     t = sub.add_parser("tx-python", help="the pinned standalone CPython 3.12 the venvs are made from")
     t.set_defaults(func=cmd_tx_python)
     a = sub.add_parser("tx-install", help="the two venvs from the manifest's locks, on tx-python's interpreter")

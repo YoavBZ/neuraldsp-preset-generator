@@ -1001,6 +1001,10 @@ No transcriber candidate's figure exists yet.
   release's SHA256SUMS). It unpacks it with the data filter under `tools/readerr/python-3.12/` and checks that `lzma`,
   `ssl`, `sqlite3` and `ctypes` import. `tx-install` builds both venvs from it, its version checked to equal 3.12.16.
   Every locked wheel admits 3.12.16.
+  - After the unpack, every symlink's real path must stay inside the folder. `tx-install` refuses unless the
+    interpreter's record holds the pinned sha256 and version.
+  - `tx-move-old` moves the old pyenv-built install aside, never deleting it: the two venvs (venv-b's `.pth` file
+    first), their records and lock files, and the two unpacked code folders. It writes a record of what moved where.
 - **Provenance: `guitar-gaps`.** The pinned `guitar-gaps.pth` is a 5,000-iteration checkpoint (`iteration: 5000`
   inside), not the paper's 12,200-iteration file. It is the file `hf_midi_transcription` ships, so the test uses it
   as shipped.
