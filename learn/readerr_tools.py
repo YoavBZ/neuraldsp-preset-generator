@@ -1,15 +1,22 @@
 """The note-reading diagnosis's Phase 2b install and fetch (`docs/scratch-readerr-plan.md` section 10; ledger
 `preset-ladder` `phase_scratch_readerr_p2b`; the amendment's unit F).
 
-    $MAIN -m learn.readerr_tools tx-install [--lock A|B]       # the two pyenv 3.12.13 venvs, from the manifest's locks
+    $MAIN -m learn.readerr_tools tx-python                     # first: the pinned standalone CPython 3.12.16
+    $MAIN -m learn.readerr_tools tx-install [--lock A|B]       # the two venvs, from the manifest's locks
     $MAIN -m learn.readerr_tools tx-fetch [--cand ymt3|kong-fl|kong-gaps]   # the three pinned checkpoints
 
 **The manifest** is U4's hand-back as v2 (`MANIFEST`: v1 plus each checkpoint's scanned `pickle_globals`, O9),
 read only when its sha256 is `MANIFEST_SHA256`. Every URL, size, sha256, lock line and pinned path comes from it;
 nothing is resolved here.
 
-**`tx-install`.** Each lock gets its own venv (`VENVS`), made by pyenv's Python 3.12.13 (`INTERPRETER`, its version
-checked), then `pip install --require-hashes --only-binary :all: --no-deps --no-cache-dir` from the lock's
+**`tx-python`.** No local Python 3.12 has `_lzma` (librosa imports pooch, which imports lzma), so the venvs get their
+own interpreter: python-build-standalone's CPython (`PBS_*`, one release asset pinned by tag, size and the release's
+SHA256SUMS sha256), fetched through a partial file, checked, and unpacked with tarfile's data filter under
+`python-3.12/` (no `..`, no absolute name, no link leaving the tree, no device). It must then `import lzma, ssl,
+sqlite3, ctypes` and report the pinned version. The record is `python-3.12.json`.
+
+**`tx-install`.** Each lock gets its own venv (`VENVS`), made by that interpreter (`INTERPRETER`, its version
+checked to equal `PYTHON_VERSION`), then `pip install --require-hashes --only-binary :all: --no-deps --no-cache-dir` from the lock's
 `require_hashes_lines` (each line checked; torch at the lock's declared version). Lock B also takes the two code
 archives (review amendment 7): each is fetched from its commit-pinned URL and checked against the manifest's size and
 sha256 and the archive's own commit header; its build files (`setup.py`, `pyproject.toml`, `setup.cfg`) are read and
@@ -51,8 +58,19 @@ HOME = pathlib.Path(os.path.expanduser("~/ndsp-presets"))
 ROOT = HOME / "tools" / "readerr"
 MANIFEST = HOME / "handover" / "2026-11-26" / "readerr-download-manifest-v2.json"   # O9: v1 + the audited scan
 MANIFEST_SHA256 = "94a84fc9f4e5eb47f7ef6783fa2663d2e1cc120514d0e0f4ef9053e9782c65b1"
-INTERPRETER = pathlib.Path(os.path.expanduser("~/.pyenv/versions/3.12.13/bin/python3"))
-PYTHON_VERSION = "3.12.13"
+PBS_TAG = "20261124"                     # astral-sh/python-build-standalone's release (tag commit 48d61fcd), MPL-2.0
+PBS_ASSET = "cpython-3.12.16+20261124-aarch64-apple-darwin-install_only.tar.gz"
+PBS_URL = ("https://github.com/astral-sh/python-build-standalone/releases/download/20261124/"
+           "cpython-3.12.16%2B20261124-aarch64-apple-darwin-install_only.tar.gz")
+PBS_SIZE = 25399370
+PBS_SHA256 = "431b99a9c2cdd37ad9b06e425be0e520d2dbce0552abe454257abef592fe3634"   # the release's SHA256SUMS line
+PBS_SUMS_SHA256 = "7e902de89fdcf79ad073be6d44445fd6ec9fa5592f008612852dae85874fee6a"   # that SHA256SUMS file, as read
+PBS_TOP = "python"                       # the archive's one top folder
+PYTHON_VERSION = "3.12.16"               # the newest 3.12 in that release; every locked wheel admits it
+PY_DIR_NAME = "python-3.12"
+PY_DIR = ROOT / PY_DIR_NAME             # (as configured; the code reads ROOT when it runs)
+INTERPRETER = PY_DIR / PBS_TOP / "bin" / "python3"
+PY_CHECK = "import lzma, ssl, sqlite3, ctypes, sys; print(sys.version.split()[0])"
 REPO = pathlib.Path(__file__).resolve().parents[1]
 OWN_FILE = "learn/readerr_tools.py"
 LEDGER = "docs/dev-test-ledger.json"
@@ -456,14 +474,15 @@ def install_lock(man, lock):
     why = disk_refusal(free_bytes(), need)
     if why:
         refuse(why)
-    version = _run(INTERPRETER, "-I", "-c", "import sys; print(sys.version.split()[0])").strip()
+    interp = interpreter()
+    version = _run(interp, "-I", "-c", "import sys; print(sys.version.split()[0])").strip()
     if version != PYTHON_VERSION:
-        refuse(f"{INTERPRETER} is Python {version}, not {PYTHON_VERSION}")
+        refuse(f"{interp} is Python {version}, not the pinned {PYTHON_VERSION}")
     made = []
     try:
         made.append(write_once_text(lock_file, "\n".join(lines) + "\n"))
         made.append(venv)
-        _run(INTERPRETER, "-I", "-m", "venv", venv)
+        _run(interp, "-I", "-m", "venv", venv)
         py = venv_python(lock)
         pip = (py, "-I", "-m", "pip")
         pip_version = _run(*pip, "--version").split()[1]
@@ -483,7 +502,7 @@ def install_lock(man, lock):
         raise
     rec = {"plan": "docs/scratch-readerr-plan.md section 10", "ledger": f"{LEDGER_ID} {PHASE}",
            "made": time.strftime("%Y-%m-%d %H:%M:%S"), "lock": lock, "manifest_sha256": MANIFEST_SHA256,
-           "lock_file_sha256": file_sha(lock_file), "packages": len(lines), "interpreter": str(INTERPRETER),
+           "lock_file_sha256": file_sha(lock_file), "packages": len(lines), "interpreter": str(interp),
            "python": version, "pip": pip_version, "venv": str(venv), "listed": listed, "code": code,
            "installed_bytes": sum(f.stat().st_size for f in venv.rglob("*") if f.is_file() and not f.is_symlink()),
            "free_gb_after": free_bytes() / 1e9}
@@ -514,6 +533,95 @@ def unpack_code(py, archives, made):
     pth = write_once_text(site / PTH_NAME, "".join(r + "\n" for r in roots))
     code["pth"] = {"path": str(pth), "lines": roots}
     return code
+
+
+def interpreter(root=None):
+    """The venvs' interpreter (tx-python's), refused unless tx-python has run."""
+    d = pathlib.Path(root or ROOT) / PY_DIR_NAME
+    p = d / PBS_TOP / "bin" / "python3"
+    if not (d.parent / f"{PY_DIR_NAME}.json").is_file() or not p.exists():
+        refuse(f"no interpreter at {p} (run tx-python first)")
+    under_root(p, root)                  # its link resolves inside ROOT
+    return p.absolute()                  # the path itself, not the link's target (a venv keeps it as given)
+
+
+def tree_refusal(members, top):
+    """(Pure.) Why an interpreter archive may not be unpacked: every member sits in `top/`, with no `..` and no
+    absolute name; it is a file, a folder or a link; a link's target is relative and stays inside `top/`."""
+    for m in members:
+        name, kind, link = m["name"], m["type"], m.get("link")
+        parts = pathlib.PurePosixPath(name).parts
+        if name.startswith("/") or ".." in parts or not parts or parts[0] != top:
+            return f"member {name!r} is outside {top}/"
+        if kind not in ("file", "dir", "symlink", "hardlink"):
+            return f"member {name!r} is a {kind}"
+        if kind in ("symlink", "hardlink"):
+            base = pathlib.PurePosixPath(name).parent if kind == "symlink" else pathlib.PurePosixPath()
+            if not link or link.startswith("/"):
+                return f"link {name!r} -> {link!r} is absolute or empty"
+            resolved = []
+            for part in (base / link).parts:
+                if part == "..":
+                    if not resolved:
+                        return f"link {name!r} -> {link!r} leaves the tree"
+                    resolved.pop()
+                elif part != ".":
+                    resolved.append(part)
+            if not resolved or resolved[0] != top:
+                return f"link {name!r} -> {link!r} leaves {top}/"
+    return None
+
+
+def _kind(m):
+    return ("file" if m.isfile() else "dir" if m.isdir() else "symlink" if m.issym() else
+            "hardlink" if m.islnk() else "other")
+
+
+def cmd_tx_python(_args):
+    """The pinned standalone CPython: refused if its folder or record exists; fetched (or an archive in place kept
+    only with the pinned size and sha256); checked; unpacked through a partial folder with the data filter; then
+    `PY_CHECK` must report PYTHON_VERSION. A failure after the unpack moves the folder aside. -> python-3.12.json."""
+    require_main()
+    dest, record = under_root(ROOT / PY_DIR_NAME), under_root(ROOT / f"{PY_DIR_NAME}.json")
+    for p in (dest, record):
+        if p.exists() or p.is_symlink():
+            refuse(f"{p} exists")
+    print_free("before")
+    arc = under_root(ROOT / "downloads" / PBS_ASSET)
+    if not ((arc.exists() or arc.is_symlink()) and verify_or_aside(arc, PBS_SIZE, PBS_SHA256)):
+        why = disk_refusal(free_bytes(), PBS_SIZE)
+        if why:
+            refuse(why)
+        fetch(PBS_URL, arc, PBS_SIZE, PBS_SHA256)
+    with tarfile.open(arc, "r:gz") as t:
+        ms = t.getmembers()
+        why = tree_refusal([{"name": m.name, "type": _kind(m), "link": m.linkname} for m in ms], PBS_TOP)
+        if why:
+            refuse(f"{PBS_ASSET}: {why}")
+        unpacked = sum(m.size for m in ms)
+        why = disk_refusal(free_bytes(), unpacked)
+        if why:
+            refuse(why)
+        part = under_root(dest.with_name(f"{dest.name}.partial-{stamp()}"))
+        part.mkdir(parents=True)
+        t.extractall(part, filter="data")
+    os.rename(part, dest)
+    try:
+        version = _run(dest / PBS_TOP / "bin" / "python3", "-I", "-c", PY_CHECK).strip()
+        if version != PYTHON_VERSION:
+            refuse(f"the unpacked interpreter is {version}, not {PYTHON_VERSION}")
+    except BaseException:
+        move_aside(dest)
+        raise
+    rec = {"plan": "docs/scratch-readerr-plan.md section 10j", "ledger": f"{LEDGER_ID} {PHASE}",
+           "made": time.strftime("%Y-%m-%d %H:%M:%S"), "release": PBS_TAG, "asset": PBS_ASSET, "url": PBS_URL,
+           "size": PBS_SIZE, "sha256": PBS_SHA256, "sha256sums_sha256": PBS_SUMS_SHA256, "members": len(ms),
+           "unpacked_bytes": unpacked, "version": version, "check": PY_CHECK, "path": str(dest / PBS_TOP),
+           "free_gb_after": free_bytes() / 1e9}
+    write_once_json(record, rec)
+    print(f"INTERPRETER {version} at {dest / PBS_TOP}: lzma, ssl, sqlite3, ctypes import; record sha256 "
+          f"{file_sha(record)}")
+    print_free("after")
 
 
 def cmd_tx_install(args):
@@ -578,7 +686,9 @@ def main(argv=None):
 
     ap = argparse.ArgumentParser(prog="readerr_tools", description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
-    a = sub.add_parser("tx-install", help="the two pyenv 3.12.13 venvs from the manifest's locks")
+    t = sub.add_parser("tx-python", help="the pinned standalone CPython 3.12 the venvs are made from")
+    t.set_defaults(func=cmd_tx_python)
+    a = sub.add_parser("tx-install", help="the two venvs from the manifest's locks, on tx-python's interpreter")
     a.add_argument("--lock", choices=sorted(LOCKS))
     a.set_defaults(func=cmd_tx_install)
     f = sub.add_parser("tx-fetch", help="the three pinned checkpoints (never mt3.pth)")

@@ -693,7 +693,7 @@ rule below replaces note error as Phase 2's deciding figure.
 pinned in `readerr_tools.MANIFEST_SHA256`. Every URL, size, sha256, lock line and pinned path comes from it.
 
 **`tx-install`** (`readerr_tools`, zero renders). Two venvs under `tools/readerr/` under the data root, each made by
-pyenv's Python 3.12.13 (its version checked):
+the pinned standalone CPython 3.12.16 (its version checked; it replaced pyenv's 3.12.13, see 10j):
 
 - **Lock A:** `mt3-infer` 0.2.0 with torch 2.7.1 (52 wheels). **Lock B:** the Riley models with torch 2.8.0 (52
   wheels).
@@ -994,6 +994,13 @@ No transcriber candidate's figure exists yet.
 - **The denylist widens** to Python 2's module names (`commands`, `cPickle`, `__builtin__`, `copy_reg`, `cStringIO`,
   `urllib2`, `httplib`) and the targets of torch's Python 2 renames (`torch._utils.IMPORT_MAPPING` and
   `NAME_MAPPING`). A name is checked both as read and as renamed.
+- **The venvs' interpreter (2026-11-26, the orchestrator's technical call).** pyenv's 3.12.13 lacks `_lzma`
+  (`librosa` imports `pooch`, which imports `lzma`), and no local Python has it. The shared pyenv builds and Homebrew
+  stay untouched, because other venvs and live jobs depend on them. Instead, `tx-python` fetches
+  python-build-standalone's CPython 3.12.16 (`install_only`, release `20261124`, MPL-2.0; one asset pinned by URL, size and the sha256 in the
+  release's SHA256SUMS). It unpacks it with the data filter under `tools/readerr/python-3.12/` and checks that `lzma`,
+  `ssl`, `sqlite3` and `ctypes` import. `tx-install` builds both venvs from it, its version checked to equal 3.12.16.
+  Every locked wheel admits 3.12.16.
 - **Provenance: `guitar-gaps`.** The pinned `guitar-gaps.pth` is a 5,000-iteration checkpoint (`iteration: 5000`
   inside), not the paper's 12,200-iteration file. It is the file `hf_midi_transcription` ships, so the test uses it
   as shipped.

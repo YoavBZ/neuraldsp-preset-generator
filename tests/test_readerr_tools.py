@@ -448,7 +448,8 @@ class FakeRun:
         a = [str(x) for x in a]
         self.calls.append(a)
         if a[-1] == "import sys; print(sys.version.split()[0])":
-            return "3.12.13\n"
+            assert a[0] == str(self.root / "python-3.12" / "python" / "bin" / "python3")   # tx-python's, never pyenv's
+            return "3.12.16\n"                 # what tx-python's pinned interpreter reports
         if a[-2:-1] == ["venv"]:
             pathlib.Path(a[-1], "bin").mkdir(parents=True)
             return ""
@@ -469,8 +470,16 @@ class FakeRun:
         raise AssertionError(a)
 
 
+def _fake_interpreter(root):
+    p = root / "python-3.12" / "python" / "bin" / "python3"
+    p.parent.mkdir(parents=True)
+    p.write_text("")
+    (root / "python-3.12.json").write_text("{}")
+
+
 def test_tx_install_lock_b(monkeypatch, root, capsys):
     man, tars = make_manifest(root)
+    _fake_interpreter(root)
     served = {RT.manifest_item(man, i)["url"]: tars[i] for i in tars}
     _commands(monkeypatch, root, man, served)
     fake = FakeRun(root, man)
@@ -479,7 +488,8 @@ def test_tx_install_lock_b(monkeypatch, root, capsys):
     out = capsys.readouterr().out
     assert "FREE DISK before" in out and "FREE DISK after" in out and "INSTALLED lock B" in out
     rec = json.loads((root / "install-B.json").read_text())
-    assert rec["packages"] == 3 and rec["python"] == "3.12.13"
+    assert rec["packages"] == 3 and rec["python"] == RT.PYTHON_VERSION == "3.12.16"
+    assert rec["interpreter"] == str(root / "python-3.12" / "python" / "bin" / "python3")
     pth = pathlib.Path(rec["code"]["pth"]["path"])
     assert pth.name == RT.PTH_NAME and pth.is_relative_to(root / "venv-b")
     roots = pth.read_text().split()
@@ -496,6 +506,7 @@ def test_tx_install_lock_b(monkeypatch, root, capsys):
 
 def test_tx_install_failure_moves_aside(monkeypatch, root):
     man, _ = make_manifest(root)
+    _fake_interpreter(root)
     _commands(monkeypatch, root, man, {})
     monkeypatch.setattr(RT, "_run", FakeRun(root, man, wrong_list=True))
     with pytest.raises(SystemExit, match="differ from the lock"):
@@ -505,6 +516,131 @@ def test_tx_install_failure_moves_aside(monkeypatch, root):
     assert any(n.startswith("venv-a.set-aside-") for n in names)
     assert any(n.startswith("lock-A.txt.set-aside-") for n in names)
     assert not (root / "install-A.json").exists()
+
+
+def test_tx_install_needs_tx_pythons_interpreter_at_the_pinned_version(monkeypatch, root):
+    man, _ = make_manifest(root)
+    _commands(monkeypatch, root, man, {})
+    fake = FakeRun(root, man)
+    monkeypatch.setattr(RT, "_run", fake)
+    with pytest.raises(SystemExit, match="run tx-python first"):
+        RT.cmd_tx_install(type("A", (), {"lock": "A"})())
+    assert not (root / "venv-a").exists() and not fake.calls
+    _fake_interpreter(root)
+    monkeypatch.setattr(RT, "PYTHON_VERSION", "3.12.99")
+    with pytest.raises(SystemExit, match="not the pinned 3.12.99"):
+        RT.cmd_tx_install(type("A", (), {"lock": "A"})())
+    assert not (root / "venv-a").exists() and not (root / "lock-A.txt").exists()
+
+
+# --- tx-python on a made-up asset ---------------------------------------------------------------------------------------------
+
+def make_python_tar(extra=(), top="python"):
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w:gz") as t:
+        for rel, data in {"bin/python3.12": b"#!fake\n", "lib/python3.12/os.py": b"x = 1\n"}.items():
+            ti = tarfile.TarInfo(f"{top}/{rel}")
+            ti.size, ti.mode = len(data), 0o755
+            t.addfile(ti, io.BytesIO(data))
+        ln = tarfile.TarInfo(f"{top}/bin/python3")
+        ln.type, ln.linkname = tarfile.SYMTYPE, "python3.12"
+        t.addfile(ln)
+        for ti in extra:
+            t.addfile(ti)
+    return buf.getvalue()
+
+
+def _python_asset(monkeypatch, root, data, version="3.12.16"):
+    monkeypatch.setattr(RT, "require_main", lambda: None)
+    monkeypatch.setattr(RT, "free_bytes", lambda: 45e9)
+    url = "https://example.invalid/asset.tar.gz"
+    monkeypatch.setattr(RT, "PBS_URL", url)
+    monkeypatch.setattr(RT, "PBS_SIZE", len(data))
+    monkeypatch.setattr(RT, "PBS_SHA256", sha(data))
+    http = FakeHTTP({url: data})
+    monkeypatch.setattr(RT.urllib.request, "urlopen", http)
+    calls = []
+
+    def run(*a):
+        calls.append([str(x) for x in a])
+        assert a[-1] == RT.PY_CHECK and str(a[0]).endswith("python-3.12/python/bin/python3")
+        return version + "\n"
+    monkeypatch.setattr(RT, "_run", run)
+    return http, calls
+
+
+def test_tx_python(monkeypatch, root, capsys):
+    data = make_python_tar()
+    http, calls = _python_asset(monkeypatch, root, data)
+    RT.cmd_tx_python(None)
+    out = capsys.readouterr().out
+    assert "FREE DISK before" in out and "FREE DISK after" in out and "INTERPRETER 3.12.16" in out
+    py = root / "python-3.12" / "python" / "bin"
+    assert (py / "python3").is_symlink() and (py / "python3").read_bytes() == b"#!fake\n"
+    assert (root / "downloads" / RT.PBS_ASSET).read_bytes() == data and len(http.asked) == 1 and len(calls) == 1
+    rec = json.loads((root / "python-3.12.json").read_text())
+    assert rec["version"] == "3.12.16" and rec["sha256"] == sha(data) and rec["members"] == 3
+    assert RT.interpreter() == py / "python3"
+    assert [p.name for p in root.iterdir() if "partial" in p.name] == []
+    with pytest.raises(SystemExit, match="exists"):
+        RT.cmd_tx_python(None)
+
+
+def test_tx_python_pins():
+    assert RT.PYTHON_VERSION == "3.12.16" and RT.PBS_ASSET.startswith("cpython-3.12.16+20261124-aarch64-apple-darwin")
+    assert RT.PBS_URL.endswith(RT.PBS_ASSET.replace("+", "%2B")) and f"/download/{RT.PBS_TAG}/" in RT.PBS_URL
+    assert RT.PBS_URL.startswith("https://github.com/astral-sh/python-build-standalone/releases/download/")
+    assert re.fullmatch(r"[0-9a-f]{64}", RT.PBS_SHA256) and RT.PBS_SIZE == 25399370
+    assert {"lzma", "ssl", "sqlite3", "ctypes"} <= set(re.findall(r"\w+", RT.PY_CHECK))
+
+
+def test_tx_python_refuses_a_bad_tree(monkeypatch, root):
+    up = tarfile.TarInfo("python/../evil.py")
+    up.size = 0
+    esc = tarfile.TarInfo("python/bin/out")
+    esc.type, esc.linkname = tarfile.SYMTYPE, "../../../etc/passwd"
+    ab = tarfile.TarInfo("python/bin/abs")
+    ab.type, ab.linkname = tarfile.SYMTYPE, "/usr/bin/python3"
+    dev = tarfile.TarInfo("python/dev0")
+    dev.type = tarfile.CHRTYPE
+    hard = tarfile.TarInfo("python/bin/h")
+    hard.type, hard.linkname = tarfile.LNKTYPE, "other/x"
+    for bad, msg in ((up, "outside python/"), (esc, "leaves"), (ab, "absolute"), (dev, "is a other"),
+                     (hard, "leaves python/")):
+        r = root / bad.name.replace("/", "_")
+        monkeypatch.setattr(RT, "ROOT", r)
+        r.mkdir()
+        _python_asset(monkeypatch, r, make_python_tar(extra=[bad]))
+        with pytest.raises(SystemExit, match=msg):
+            RT.cmd_tx_python(None)
+        assert not (r / "python-3.12").exists() and not (r / "python-3.12.json").exists()
+
+
+def test_tx_python_wrong_version_or_disk(monkeypatch, root):
+    data = make_python_tar()
+    _python_asset(monkeypatch, root, data, version="3.12.13")
+    with pytest.raises(SystemExit, match="not 3.12.16"):
+        RT.cmd_tx_python(None)
+    assert not (root / "python-3.12").exists()
+    assert any(p.name.startswith("python-3.12.set-aside-") for p in root.iterdir())        # moved aside, not deleted
+    r2 = root / "two"
+    r2.mkdir()
+    monkeypatch.setattr(RT, "ROOT", r2)
+    _python_asset(monkeypatch, r2, data)
+    monkeypatch.setattr(RT, "free_bytes", lambda: 31e9 + 10)
+    with pytest.raises(SystemExit, match="DISK GUARD"):
+        RT.cmd_tx_python(None)
+    assert not (r2 / "python-3.12").exists()
+
+
+def test_tree_refusal():
+    ok = [{"name": "python/bin/python3", "type": "symlink", "link": "python3.12"},
+          {"name": "python/lib/x.pc", "type": "symlink", "link": "../share/y"},
+          {"name": "python/bin/python3.12", "type": "file", "link": ""}]
+    assert RT.tree_refusal(ok, "python") is None
+    assert "leaves python/" in RT.tree_refusal([{"name": "python/a", "type": "symlink", "link": "../b"}], "python")
+    assert "leaves the tree" in RT.tree_refusal([{"name": "python/a", "type": "symlink", "link": "../../b"}],
+                                                "python")
 
 
 def test_tx_install_refuses_before_anything(monkeypatch, root):
