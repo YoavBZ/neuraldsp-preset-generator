@@ -8615,6 +8615,222 @@
     "audit": "an independent pre-read before the run expected RX-undecided for these reasons; the run gives it",
     "ran": "2026-11-26, select once from a frozen detached worktree of main at b5263c01 (#654), 3.6 s, zero renders",
     "audited": "audited 2026-11-26 (independent, Opus): RX-undecided confirmed, every number matched"
+   },
+   "phase_scratch_voice_dry": {
+    "sha256": "52fea1ed4d805e509cd63640443a73640b9fc58bcf1cabe82b8e56ebc924d8bf",
+    "plan": "docs/scratch-voice-plan.md",
+    "renders": 0,
+    "parts": 47,
+    "proofs": {
+     "rule_off_is_tr_di": "47 of 47",
+     "trace_is_tr_di_report": "47 of 47",
+     "all_pass_is_vc_fin": "47 of 47",
+     "vc_fin_is_avg": "47 of 47"
+    },
+    "proofs_hold": true,
+    "ends": {
+     "release": 1693,
+     "repluck": 1279,
+     "mute": 535,
+     "sample": 0,
+     "cut": 0
+    },
+    "scratch_readerr_blob_sha": "0ec8a65c8c06613f7800e4f3a892ae14f2c52b72",
+    "played_trace_sha256": "c3d347116b0f15abeadb0f49f9b74624d27170d9d9dfa3a77566495914c4afe4",
+    "fin_ratio_max": 1.5704527379858597e-07,
+    "gain_db_range": [
+     -0.6588468002837146,
+     1.1099564116532803
+    ],
+    "gate_step_db_range": [
+     -0.13359422789937475,
+     0.07782160829386267
+    ],
+    "checks": {
+     "raw_is_true_di": "47 of 47",
+     "synth_inside_gate": "47 of 47"
+    },
+    "pad": {
+     "zero_padded_parts": 31,
+     "first_n_unequal_parts": 16,
+     "edge_moved_parts": 31
+    },
+    "length_term": {
+     "held_rms_db_range": [
+      -0.21258013970697595,
+      0.023400224112527346
+     ],
+     "logmel_held_range": [
+      3.9530700095218346e-05,
+      0.80249805254079
+     ],
+     "logmel_whole_range": [
+      0.0014438505745315775,
+      0.7898767574829321
+     ],
+     "label": "beside: the length term inside F"
+    },
+    "support": {
+     "nonzero_outside_gate": 72186
+    },
+    "files": {
+     "build.json": 1,
+     "build-parts": 47,
+     "dry/vc-fin": 47,
+     "dry/vc-cut": 47,
+     "dry/vc-own": 47,
+     "dry/vc-env": 47,
+     "dry_bytes": 370008064
+    },
+    "ran": "2026-11-26, the rebuild after #655: build --shard 0/3, 1/3, 2/3 in parallel (150 s wall), then build --combine, from a fresh detached worktree of origin/main at b44d669c; zero renders; every proof and stop check held on 47 of 47",
+    "superseded": {
+     "build_sha256": "55c9e3161fdc143ff85218d76a7d2728e08cda61ad91fae5c9b36f5f5de35154",
+     "reason": "the review of this PR's first body: on the 31 zero-filled parts the zero pad made a hard, unfaded cut at n that the finish's spectrum fit took into the whole part's EQ (the length term up to 2.51); fixed by #655 (the end edge fade at the real end; phase_scratch_voice.build_end_fade)",
+     "kept": "moved aside, never deleted: PF/fs/voice/superseded-20261126-b1/ (build.json, build-parts/, dry/); no floor had been written",
+     "rebuilt_against_it": "the 16 real-continuation parts' four guitars are byte for byte the superseded ones (audio sha256, 64 of 64); on the 31 zero-filled parts vc-fin differs on 28, vc-cut on 28, vc-own on 23 and vc-env on 0 (where the gate is already 0 over the last 10 ms, or the section ends in silence, the fade changes nothing)"
+    },
+    "figures": {
+     "label": "zero-render figures from build.json, beside, not decided; part tags only; each quartile set names its parts: the 40 (BKS+GOAT, the deciding set) or all 47",
+     "pad": "16 parts carry the file's real continuation past n (on all 16 the longer read's first n samples differ from section_audio's, first_n_equal false, as a resampled read's end does; the section's own n samples are kept), 31 are zero-filled (the file has no samples past the section) and get the end edge fade at n (edge_moved 31 of 31)",
+     "length_term_logmel_held": {
+      "all_47": {
+       "q1": 0.0077,
+       "median": 0.0244,
+       "q3": 0.0595,
+       "max": 0.8025
+      },
+      "the_40": {
+       "q1": 0.0078,
+       "median": 0.0246,
+       "q3": 0.0687,
+       "max": 0.8025
+      },
+      "zero_filled_31": {
+       "q1": 0.0057,
+       "median": 0.0137,
+       "q3": 0.0285,
+       "max": 0.8025
+      },
+      "real_16": {
+       "q1": 0.0307,
+       "median": 0.0595,
+       "q3": 0.1129,
+       "max": 0.2002
+      }
+     },
+     "length_term_abs_held_rms_db": {
+      "all_47": {
+       "q1": 0.0025,
+       "median": 0.008,
+       "q3": 0.0244,
+       "max": 0.2126
+      },
+      "zero_filled_31": {
+       "q1": 0.003,
+       "median": 0.008,
+       "q3": 0.0159,
+       "max": 0.1002
+      },
+      "real_16": {
+       "q1": 0.0025,
+       "median": 0.0086,
+       "q3": 0.0302,
+       "max": 0.2126
+      }
+     },
+     "length_term_largest": "the cause on the largest length terms: in the superseded build the four largest (2.51, 1.19, 0.89, 0.86 by held-half logmel) were zero-filled parts, caused by the hard cut at n (with spectra estimated on the first n samples only the term fell to about 0, the reviewer's check); in this build the largest is 89b6da562e67 (goat, zero-filled) at 0.802, the residual the reviewer's test of the fix also left (about 0.80), its cause not established; then c1ea6ef819b3 (goat, zero-filled) 0.312 and three real-continuation BKS parts at 0.16 to 0.20",
+     "residual_89b6da562e67": {
+      "held": "B",
+      "held_rms_ratio": 0.9967,
+      "held_rms_db": -0.0291,
+      "logmel_held": 0.8025,
+      "logmel_whole": 0.7899,
+      "reference": "pad-off vc-fin"
+     },
+     "end_level": {
+      "last_over_peak_zero_filled_31": {
+       "q1": 0.0082,
+       "median": 0.0298,
+       "q3": 0.1148,
+       "max": 0.513
+      },
+      "last_over_peak_real_16": {
+       "q1": 0.0196,
+       "median": 0.0401,
+       "q3": 0.0709,
+       "max": 0.2238
+      },
+      "last_10ms_rms_db_re_peak_zero_filled": {
+       "q1": -24.7,
+       "median": -17.25,
+       "q3": -14.56,
+       "max": -8.44,
+       "n": 28
+      },
+      "last_10ms_rms_db_re_peak_real_16": {
+       "q1": -28.07,
+       "median": -21.05,
+       "q3": -15.7,
+       "max": -11.45
+      },
+      "label": "the section's level at n; 3 zero-filled parts end in digital silence (no dB)"
+     },
+     "vc_own_gain_db_range": [
+      -0.659,
+      1.11
+     ],
+     "gate_step_db": {
+      "q1": -0.0105,
+      "median": -0.0007,
+      "q3": 0.0024,
+      "max": 0.0778,
+      "min": -0.1336
+     },
+     "gain_label": "gain_db is each guitar's step from its finished audio to -22.9 LUFS (the finish's step); gate_step_db (vc-own's step less vc-fin's) is the gate's own share",
+     "fin_ratio": {
+      "median": 9.25e-08,
+      "max": 1.57e-07
+     },
+     "unclaimed_share": {
+      "the_40": {
+       "q1": 0.0196,
+       "median": 0.0779,
+       "q3": 0.1456,
+       "max": 0.6667
+      },
+      "all_47": {
+       "q1": 0.0093,
+       "median": 0.0698,
+       "q3": 0.1372,
+       "max": 0.6667
+      }
+     },
+     "uncovered_share": {
+      "the_40": {
+       "q1": 0.0066,
+       "median": 0.0229,
+       "q3": 0.07,
+       "max": 0.2756
+      },
+      "all_47": {
+       "q1": 0.0018,
+       "median": 0.0234,
+       "q3": 0.1069,
+       "max": 0.2756
+      }
+     },
+     "support": {
+      "label": "the review's note 1: build.json's support.nonzero_outside_gate counts every nonzero sample of tr-di's unfinished synthesis where vc-own's gate is 0 over the padded length, so with the end fade at n it counts tr-di's ring past n on the zero-filled parts; over the section [0, n), recomputed by a scratch script from the same trace, gate and synthesis (zero renders), it is 292 samples over the 47 parts (at most 18 a part)",
+      "in_section_0_n": {
+       "sum": 292,
+       "median": 5.0,
+       "max": 18
+      },
+      "past_n": 71894,
+      "raw_count_padded": 72186,
+      "recomputed_equals_stored": true
+     }
+    }
    }
   },
   {

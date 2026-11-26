@@ -154,7 +154,7 @@ It is coded as `scratch_voice.spend_refusal` and `require_spend`. The gate is ne
    - the pad-off builder equals the stored `avg` at −22.9 LUFS (review B1);
    - beside, as stops: the raw section measures to the true DI, and `tr-di`'s unfinished synthesis sounds only inside the trace's windows.
 
-   Hash PR: `phase_scratch_voice_dry`.
+   Hash PR: `phase_scratch_voice_dry`. **Done 2026-11-26**, rebuilt after the end-fade fix (#655), zero renders, 150 s on 3 shards. The four proofs, `raw_is_true_di` and `synth_inside_gate` held on 47 of 47. The 16 real-continuation parts are byte for byte the first build's; the 31 zero-filled parts get the end fade at n. Beside, the length term inside F has a median held-half logmel of 0.024 on all 47 (0.014 zero-filled, 0.060 real); the largest is 0.80, on one GOAT part, its cause not established. The first build (55c9e316…) is superseded and kept aside.
 3. **Floors** (`learn/voice_floors.py`, 478 renders). Verify: on the two check parts (the first BKS and the first GOAT part by key), `tr-di` and the true DI repeat their stored floors, distance and render sha256.
 4. **Read** (`python -m learn.scratch_voice read`, zero renders, once). It verifies, before the code is read:
    - T reproduces from the stored files;
