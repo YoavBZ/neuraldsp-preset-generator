@@ -3,7 +3,7 @@
 Results of `docs/scratch-readerr-plan.md`. Every number here is by the score (J0), on the exact-notes test's bench,
 unless said otherwise. The bench is sharper than real songs, so sizes carry over to real songs only as a direction.
 
-## Phase 2b, the downloaded transcribers: RX-undecided (2026-11-26; ledger `phase_scratch_readerr_outcome`; zero renders; an independent pre-read expected this code before the run)
+## Phase 2b, the downloaded transcribers: RX-undecided (2026-11-26; ledger `phase_scratch_readerr_outcome`; zero renders; audited 2026-11-26 (independent, Opus))
 
 **The question.** Does an open guitar transcriber remove most of Basic Pitch's extra notes on the bench without
 losing notes, enough that a priced row could decide it?
@@ -76,11 +76,14 @@ sign only):
   everywhere at 0.5.
 - Both `ymt3` lists read miss_rate "worse" on P1, P2 and the lists.
 - `ymt3-guitar` read no notes at all on 16 real-DI inputs (15 windows, 1 list), where `ymt3-pitched` read 3 to 28.
-  This is how the tool behaves, not a fault in the run: upstream uses 0-based GM programme numbers.
+  The filter is correct. The runner keeps programmes 24 to 31, the same set as mt3-infer's own vocabulary
+  (`"Guitar": np.arange(24, 32)`). On those 16 inputs YourMT3+ gave every note a programme outside the guitars.
+  The raw programmes are not stored, so which instrument it chose is not known.
 
 **Licences, as recorded** (development use is fine for all; a product question only if one wins):
 
-- `ymt3` is unresolved: two code claims (GPL-3.0 and Apache-2.0), and none covers the weights.
+- `ymt3` is unresolved: two code claims (GPL-3.0 and Apache-2.0), none covers the weights, and the training-data
+  licences are not audited.
 - `kong-fl` and `kong-gaps` are unclear for product, NC assumed: MIT is claimed with no LICENSE file, and the
   training data includes sold transcriptions and a base model trained on MAESTRO (CC BY-NC-SA).
 
@@ -94,6 +97,12 @@ and pause error, from the rebuilt guitar).
 - g is a straight-line prediction from two measured slopes, never a reading; only a row decides. On the shrunk answer
   E is not shown, so the predicted gain holds for the full answer only.
 - The bench prices fidelity to the song as Basic Pitch heard it, and sizes are the exact world's.
+- **The bench bias** (the amendment's dependencies and risks). A transcriber with real-guitar priors may refuse the
+  bank guitar's notes, and each refusal counts as a miss. That matters here for three reasons:
+  - item 2 (misses) is what sinks every transcriber, and it is read on the bench only;
+  - on real DIs, `kong-fl`'s miss_rate is undecided in every group, and undecided is not failed;
+  - on the 47, most of `kong-fl-o0.2-f0.3`'s misses are chord members: 244 of its 454, against 54 of 302 for
+    the stored re-read.
 
 **Cost (measured; zero renders throughout):**
 

@@ -8613,7 +8613,8 @@
     },
     "bp_timing_note": "the +bp lists' timing figures (onset_error, end_error and every count) equal their plain lists' on all 26: ms_with_bp copies on and off and borrows only loudness and bends, so only the dry figures (logmel, env_corr, pause_error) differ; the amendment expected the timing figures to differ too",
     "audit": "an independent pre-read before the run expected RX-undecided for these reasons; the run gives it",
-    "ran": "2026-11-26, select once from a frozen detached worktree of main at b5263c01 (#654), 3.6 s, zero renders"
+    "ran": "2026-11-26, select once from a frozen detached worktree of main at b5263c01 (#654), 3.6 s, zero renders",
+    "audited": "audited 2026-11-26 (independent, Opus): RX-undecided confirmed, every number matched"
    }
   },
   {
