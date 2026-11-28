@@ -9023,7 +9023,24 @@
       "timing": "a true-DI rise of 3 dB or more within +-50 ms of the group's first onset (unclaimed_groups at a 50-ms window, REFINE_S)"
      }
     },
-    "cant_show": "an extra attack against a real soft or late one (the timing limit); what the dropped groups' real playing would add beyond coverage (dilution); other presets, the ear or product conditions; the score only"
+    "cant_show": "an extra attack against a real soft or late one (the timing limit); what the dropped groups' real playing would add beyond coverage (dilution); other presets, the ear or product conditions; the score only",
+    "review_fixes": {
+     "review": "the declaration PR's independent review (#658, 2026-11-28): PASS WITH FIXES; all 8 amendments applied and the implementer's 8 calls kept; the reviewer ran the builder in memory on 3 real parts and every proof held; appended here, the text above unchanged; where it differs, this wins",
+     "coverage_label_required": "binding fix 1: under XC-part and XC-notes the control's outcome must carry the coverage_label key (None or coverage-sensitive); a missing key or any other value keeps the gate shut (spend_refusal failed open before)",
+     "waiver_scope": "the orchestrator's call (to keep the waiver narrow and avoid asking the user twice): phase_scratch_voice_waiver opens the gate only when it carries user_words, answers_code (the XC code it answers, equal to the control outcome's code), date (YYYY-MM-DD, on or after the control outcome's date) and spend_kinds (a non-empty list of search-row, synthesis, di-restoration, the kinds require_spend takes, holding the kind asked); a waiver without these opens nothing, and a waiver with no control outcome on main opens nothing (it supersedes the waiver wording in spend_gate above and in phase_scratch_voice's spend_gate); coded as scratch_voice.waiver_refusal",
+     "waiver_fields": [
+      "user_words",
+      "date",
+      "answers_code",
+      "spend_kinds"
+     ],
+     "outcome_fields": [
+      "code",
+      "coverage_label",
+      "date"
+     ],
+     "level_step_db": "wording (non-binding): level_step_db is only at_lufs' residual step, since both guitars end at -22.9 LUFS; the real level change of the kept audio is outside_change's rms_ratio_db"
+    }
    }
   },
   {

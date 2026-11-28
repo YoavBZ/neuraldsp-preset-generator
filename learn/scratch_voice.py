@@ -39,7 +39,9 @@ unclaimed-groups control (about 188 renders, `phase_scratch_voice_control_outcom
 (`phase_scratch_voice_waiver`): `spend_refusal`, `require_spend`. The control (`learn/voice_control.py`, its own
 declaration `phase_scratch_voice_control`) opens the gate only on a declared XC code (`CONTROL_CODES`); it stays shut
 under XC-anomaly, and under XC-notes (or XC-part marked `coverage-sensitive`) it opens only through the user's waiver
-(the control's review, amendments 3 and 4).
+(the control's review, amendments 3 and 4). Under XC-part and XC-notes the outcome must carry `coverage_label`, and the
+waiver must answer the outcome's code, on or after its date, for the spend kind asked (`waiver_refusal`; #658's
+review); a waiver with no control outcome opens nothing.
 
 The builders (`learn/voice_build.py`, Unit B: `build.json` and the four `vc-*` guitars, the proofs, and per part the
 figures `unclaimed_groups` and `cover_figures` compute) and the floors (`learn/voice_floors.py`, Unit C: one record a
@@ -240,7 +242,10 @@ SPEND_CODES = ("XV-sound", "XV-both")    # the codes under which the control (or
 SPEND_KINDS = ("synthesis", "di-restoration", "search-row")
 # The control's outcome codes as the gate reads them (`learn/voice_control.py`'s XC_TABLE; its table_guard pins the two
 # equal): the gate opens only on a declared code; never under XC-anomaly; under XC-notes, and under XC-part marked
-# coverage-sensitive, only through the user's waiver (the control's review, amendments 3 and 4).
+# coverage-sensitive, only through the user's waiver (the control's review, amendments 3 and 4). #658's review: a forced
+# code's outcome must carry `coverage_label`; the waiver is scoped by WAIVER_FIELDS (`waiver_refusal`).
+WAIVER_FIELDS = ("user_words", "date", "answers_code", "spend_kinds")
+CONTROL_OUTCOME_FIELDS = ("code", "coverage_label", "date")   # what the gate reads off the control's outcome
 CONTROL_CODES = ("XC-anomaly", "XC-stands", "XC-part", "XC-notes", "XC-undecided")
 CONTROL_SHUT = ("XC-anomaly",)
 CONTROL_WAIVER_ONLY = ("XC-notes",)
@@ -625,14 +630,49 @@ def check_parts(parts):
 
 # --- the spend gate (amendment 2) --------------------------------------------------------------------------------------------
 
+def iso_date(s):
+    """(Pure.) `s` when it is a YYYY-MM-DD date string (so dates compare as strings), else None."""
+    if not isinstance(s, str) or len(s) != 10 or s[4] != "-" or s[7] != "-":
+        return None
+    y, m, d = s[:4], s[5:7], s[8:]
+    if not (y.isdigit() and m.isdigit() and d.isdigit()) or not (1 <= int(m) <= 12 and 1 <= int(d) <= 31):
+        return None
+    return s
+
+
+def waiver_refusal(waiver, ctl, kind):
+    """(Pure.) Why the user's waiver does not open `kind` under the control's outcome `ctl`, or None (the
+    orchestrator's call on #658's review: a narrow waiver). It must carry the user's words (`user_words`), the XC code
+    it answers (`answers_code`, equal to the outcome's `code`), its `date` (YYYY-MM-DD, on or after the outcome's
+    `date`) and `spend_kinds` (a non-empty list of SPEND_KINDS holding `kind`). A waiver without these opens nothing."""
+    if not isinstance(waiver, dict):
+        return f"main has no {PHASE_WAIVER}"
+    if not waiver.get("user_words"):
+        return f"{PHASE_WAIVER} carries no user's words"
+    if waiver.get("answers_code") != (ctl or {}).get("code"):
+        return f"{PHASE_WAIVER} answers {waiver.get('answers_code')!r}, not the control's {(ctl or {}).get('code')!r}"
+    wd, cd = iso_date(waiver.get("date")), iso_date((ctl or {}).get("date"))
+    if wd is None or cd is None:
+        return f"{PHASE_WAIVER} or the control's outcome carries no YYYY-MM-DD date"
+    if wd < cd:
+        return f"{PHASE_WAIVER} ({wd}) predates the control's outcome ({cd})"
+    ks = waiver.get("spend_kinds")
+    if not isinstance(ks, list) or not ks or any(k not in SPEND_KINDS for k in ks):
+        return f"{PHASE_WAIVER}'s spend_kinds is not a non-empty list of {list(SPEND_KINDS)}"
+    if kind not in ks:
+        return f"{PHASE_WAIVER} does not cover {kind}"
+    return None
+
+
 def spend_refusal(entry, kind):
     """(Pure.) Why a synthesis, DI-restoration or search-row spend may not run on this test's account, or None. entry:
-    main's `preset-ladder` entry. Under XV-sound or XV-both it needs the control's audited outcome or the user's
-    waiver (with the user's words and the date); under XV-notes no synthesis or DI-restoration spend at all; without
-    the audited outcome, nothing. The control's outcome opens it only on a declared XC code (CONTROL_CODES): never
-    under XC-anomaly (the waiver does not open it either); under XC-notes, or XC-part whose `coverage_label` is
-    coverage-sensitive, only with the user's waiver. Holding is necessary, not sufficient: the search row needs its
-    own declaration and the user's go."""
+    main's `preset-ladder` entry. Under XV-sound or XV-both it needs the control's audited outcome; under XV-notes no
+    synthesis or DI-restoration spend at all; without the audited outcome, nothing. The control's outcome opens it only
+    on a declared XC code (CONTROL_CODES): never under XC-anomaly (no waiver opens it); under XC-part and XC-notes the
+    outcome must carry `coverage_label` (None or coverage-sensitive), else the gate stays shut (#658's review, binding
+    fix 1); under XC-notes, or XC-part marked coverage-sensitive, only through the user's waiver scoped to that code,
+    date and spend kind (`waiver_refusal`). A waiver alone, with no control outcome, opens nothing. Holding is
+    necessary, not sufficient: the search row needs its own declaration and the user's go."""
     if kind not in SPEND_KINDS:
         raise ValueError(kind)
     out = (entry or {}).get(PHASE_OUTCOME)
@@ -644,24 +684,26 @@ def spend_refusal(entry, kind):
     if code not in SPEND_CODES:
         return f"{code}: no spend on this test's account; to the user"
     ctl = (entry or {}).get(PHASE_CONTROL_OUTCOME)
-    w = (entry or {}).get(PHASE_WAIVER)
-    waived = isinstance(w, dict) and bool(w.get("user_words")) and bool(w.get("date"))
-    if isinstance(ctl, dict) and ctl.get("code"):          # the control's audited outcome carries its code
-        c = ctl["code"]
-        if c not in CONTROL_CODES:
-            return f"the control's code {c!r} is not a declared XC code: the gate stays shut; to the user"
-        if c in CONTROL_SHUT:
-            return f"{c}: the control's construction is off; the gate stays shut; to the user"
-        if c in CONTROL_WAIVER_ONLY or (c in COVERAGE_FORCED and ctl.get("coverage_label") == COVERAGE_SENSITIVE):
-            if waived:
-                return None
-            lab = f" ({COVERAGE_SENSITIVE})" if c not in CONTROL_WAIVER_ONLY else ""
-            return (f"{c}{lab}: to the user before any sound-route spend; the gate opens only through "
-                    f"{PHASE_WAIVER} (the user's words and the date)")
-        return None
-    if waived:
-        return None
-    return f"{code}: " + GATE_NOTE + " must be on main first"
+    if not (isinstance(ctl, dict) and ctl.get("code")):    # the control's audited outcome carries its code
+        return (f"{code}: " + GATE_NOTE + " must be on main first (a waiver opens only the XC code it answers, "
+                "so the control's outcome comes first)")
+    c = ctl["code"]
+    if c not in CONTROL_CODES:
+        return f"the control's code {c!r} is not a declared XC code: the gate stays shut; to the user"
+    if c in CONTROL_SHUT:
+        return f"{c}: the control's construction is off; the gate stays shut; to the user"
+    if c in COVERAGE_FORCED:
+        if "coverage_label" not in ctl or ctl["coverage_label"] not in (None, COVERAGE_SENSITIVE):
+            return (f"{c}: the control's outcome carries no coverage_label (None or {COVERAGE_SENSITIVE}): the gate "
+                    "stays shut; to the user")
+    if c in CONTROL_WAIVER_ONLY or (c in COVERAGE_FORCED and ctl["coverage_label"] == COVERAGE_SENSITIVE):
+        why = waiver_refusal((entry or {}).get(PHASE_WAIVER), ctl, kind)
+        if why is None:
+            return None
+        lab = f" ({COVERAGE_SENSITIVE})" if c not in CONTROL_WAIVER_ONLY else ""
+        return (f"{c}{lab}: to the user before any sound-route spend; the gate opens only through a {PHASE_WAIVER} "
+                f"that answers {c} for {kind}: {why}")
+    return None
 
 
 def require_spend(kind):

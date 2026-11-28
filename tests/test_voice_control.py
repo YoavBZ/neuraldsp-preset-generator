@@ -202,23 +202,68 @@ def test_coverage_sensitive_is_set_when_the_clean_subset_differs_and_forces_unde
 
 # --- the spend gate ---------------------------------------------------------------------------------------------------
 
+def _waiver(code, kinds=tuple(V.SPEND_KINDS), date="2026-11-29", **kw):
+    return {V.PHASE_WAIVER: dict({"user_words": "go", "date": date, "answers_code": code, "spend_kinds": list(kinds)},
+                                 **kw)}
+
+
 def test_the_gate_opens_only_on_a_declared_code_and_stays_shut_under_anomaly():
-    waiver = {V.PHASE_WAIVER: {"user_words": "go", "date": "2026-11-28"}}
     for xv in V.SPEND_CODES:
         m = {V.PHASE_OUTCOME: {"code": xv}}
         for kind in V.SPEND_KINDS:
             def gate(ctl, extra=None):
-                return V.spend_refusal(dict(m, **{V.PHASE_CONTROL_OUTCOME: ctl}, **(extra or {})), kind)
+                return V.spend_refusal(dict(m, **{V.PHASE_CONTROL_OUTCOME: dict(ctl, date="2026-11-28")},
+                                            **(extra or {})), kind)
             for c in ("XC-stands", "XC-undecided", "XC-part"):
-                assert gate({"code": c}) is None and VC.gate_state(c) == "open"
-            assert "stays shut" in gate({"code": "XC-anomaly"}) and "stays shut" in gate({"code": "XC-anomaly"}, waiver)
+                assert gate({"code": c, "coverage_label": None}) is None and VC.gate_state(c) == "open"
+            for c in ("XC-stands", "XC-undecided"):                  # the key is required only on forced codes
+                assert gate({"code": c}) is None
+            for c in VC.COVERAGE_FORCED:                              # #658's review, binding fix 1: never fail open
+                assert "no coverage_label" in gate({"code": c})
+                assert "no coverage_label" in gate({"code": c}, _waiver(c))
+                assert "no coverage_label" in gate({"code": c, "coverage_label": "x"}, _waiver(c))
+            assert "stays shut" in gate({"code": "XC-anomaly"})
+            assert "stays shut" in gate({"code": "XC-anomaly"}, _waiver("XC-anomaly"))
             assert VC.gate_state("XC-anomaly") == "shut"
-            assert V.PHASE_WAIVER in gate({"code": "XC-notes"}) and gate({"code": "XC-notes"}, waiver) is None
+            notes = {"code": "XC-notes", "coverage_label": None}
+            assert V.PHASE_WAIVER in gate(notes) and gate(notes, _waiver("XC-notes")) is None
             cs = {"code": "XC-part", "coverage_label": "coverage-sensitive"}
-            assert "coverage-sensitive" in gate(cs) and gate(cs, waiver) is None
+            assert "coverage-sensitive" in gate(cs) and gate(cs, _waiver("XC-part")) is None
             assert gate({"code": "XC-stands", "coverage_label": "coverage-sensitive"}) is None
-            assert "not a declared" in gate({"code": "XV-both"}) and "not a declared" in gate({"code": "x"}, waiver)
+            assert "not a declared" in gate({"code": "XV-both"}) and "not a declared" in gate({"code": "x"},
+                                                                                               _waiver("x"))
             assert VC.gate_state("x") == "shut"
+
+
+def test_the_waiver_is_scoped_to_its_code_date_and_spend_kinds():
+    for xv in V.SPEND_CODES:
+        m = {V.PHASE_OUTCOME: {"code": xv}}
+        for c, lab in (("XC-notes", None), ("XC-part", "coverage-sensitive")):
+            ctl = {V.PHASE_CONTROL_OUTCOME: {"code": c, "coverage_label": lab, "date": "2026-11-28"}}
+            for kind in V.SPEND_KINDS:
+                def gate(w):
+                    return V.spend_refusal(dict(m, **ctl, **w), kind)
+                assert gate(_waiver(c)) is None
+                assert gate(_waiver(c, date="2026-11-28")) is None               # the same day counts
+                assert "predates" in gate(_waiver(c, date="2026-11-27"))
+                assert "YYYY-MM-DD" in gate(_waiver(c, date="28 Nov 2026"))
+                assert "YYYY-MM-DD" in gate(_waiver(c, date=None))
+                other = "XC-part" if c == "XC-notes" else "XC-notes"
+                assert "answers" in gate(_waiver(other))                         # it answers another code
+                assert "answers" in gate(_waiver(None))
+                rest = [k for k in V.SPEND_KINDS if k != kind]
+                assert "does not cover" in gate(_waiver(c, kinds=rest))          # scoped to its spend kinds
+                assert gate(_waiver(c, kinds=[kind])) is None
+                assert "spend_kinds" in gate(_waiver(c, kinds=[]))
+                assert "spend_kinds" in gate(_waiver(c, kinds=[kind, "training"]))
+                assert "spend_kinds" in gate(_waiver(c, spend_kinds=kind))       # a string, not a list
+                assert "user's words" in gate(_waiver(c, user_words=""))
+                assert gate({V.PHASE_WAIVER: {"user_words": "go", "date": "2026-11-29"}})   # the old unscoped form
+            nodate = {V.PHASE_CONTROL_OUTCOME: {"code": c, "coverage_label": lab}}
+            assert "YYYY-MM-DD" in V.spend_refusal(dict(m, **nodate, **_waiver(c)), "search-row")
+    assert V.WAIVER_FIELDS == ("user_words", "date", "answers_code", "spend_kinds")
+    assert V.CONTROL_OUTCOME_FIELDS == ("code", "coverage_label", "date")
+    assert V.iso_date("2026-11-28") == "2026-11-28" and V.iso_date("2026-13-01") is None and V.iso_date(20261128) is None
 
 
 # --- the term arithmetic (pure) ---------------------------------------------------------------------------------------
@@ -614,6 +659,10 @@ def test_the_declaration_in_the_ledger():
     assert d["seen"]["definitions"]["window state"] and d["seen"]["definitions"]["fade-in"]
     assert set(d["amendments"]) == {str(i) for i in range(1, 9)}
     assert d["outcome_fields"] == ["code", "coverage_label"] and "XC-anomaly" in d["spend_gate"]
+    fx = d["review_fixes"]                                                       # #658's review, appended
+    assert fx["outcome_fields"] == list(V.CONTROL_OUTCOME_FIELDS) and fx["waiver_fields"] == list(V.WAIVER_FIELDS)
+    assert "coverage_label" in fx["coverage_label_required"] and "answers_code" in fx["waiver_scope"]
+    assert "rms_ratio_db" in fx["level_step_db"]
     assert "50 ms" in d["limits"]["timing"] and "coverage-sensitive" in d["coverage_sensitive"]
 
 

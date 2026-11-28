@@ -20,7 +20,8 @@ signal steps (the control's review, amendment 1): on `tr-uc` the hiss removal (`
 and the -22.9 LUFS step run again on the guitar without the dropped notes; on `vc-uc` the finish and the LUFS step do.
 So "every other note stays byte for byte" holds only before the hiss removal (`outside_dropped_same`), and the
 finished audio's change outside the dropped spans and the level step against the parent are recorded beside, per part,
-for both guitars (`outside_change`, `level_step_db`).
+for both guitars (`outside_change`, `level_step_db`). `level_step_db` is only `at_lufs`' residual step; the real level
+change of the kept audio is `outside_change`'s `rms_ratio_db`.
 
 **The terms** (renamed for the no-reused-terms rule, amendment 8), on the floors of row (b)'s answer (the held half, the
 true DI as the judge's DI), paired per part through `scratch_notes.set_rows`; the 40 decide, all 47 beside:
@@ -161,7 +162,8 @@ CHOICES = {
     "outside_change": "per guitar against its parent, on the held half's samples ([a + TRIM_S, b + TRIM_S) s, round()) "
                       "outside the dropped spans: max |child - parent| over max |parent|, the difference's RMS against "
                       "the parent's in dB, and the RMS ratio in dB; level_step_db: the child's step to -22.9 LUFS less "
-                      "the parent's",
+                      "the parent's, only at_lufs' residual step (both guitars end at -22.9 LUFS); the real level "
+                      "change of the kept audio is outside_change's rms_ratio_db (#658's review)",
     "readerr_identity": "scratch_readerr.py's blob sha and played_trace's source sha256 are recorded beside the sound-"
                         "gap build's; a change does not stop the build (trace_holds re-checks the behaviour)",
     "carried": "a part is carried when both its guitars are byte-identical to their parents (audio sha256): every part "

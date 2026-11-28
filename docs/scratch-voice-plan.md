@@ -123,6 +123,17 @@ It is coded as `scratch_voice.spend_refusal` and `require_spend`. The gate is ne
 
 **Tightened by the control's declaration (2026-11-28, its review's amendments 3 and 4).** The control's outcome opens the gate only on a declared XC code. It stays shut under XC-anomaly, and the waiver does not open it there. Under XC-notes, and under XC-part marked `coverage-sensitive`, it opens only through `phase_scratch_voice_waiver`. XC-stands, XC-undecided and an unmarked XC-part open it. See "The unclaimed-groups control" below.
 
+**Tightened again on the declaration PR's review (#658, 2026-11-28).**
+- **No fail-open.** Under XC-part and XC-notes the control's outcome must carry `coverage_label` (none, or `coverage-sensitive`). Without it the gate stays shut (binding fix 1).
+- **A narrow waiver** (the orchestrator's call). `phase_scratch_voice_waiver` opens the gate only when it carries all of these:
+  - `user_words`: the user's words;
+  - `answers_code`: the XC code it answers, equal to the control outcome's `code`;
+  - `date`: YYYY-MM-DD, on or after the control outcome's `date`;
+  - `spend_kinds`: a non-empty list of the declared spend kinds (`search-row`, `synthesis`, `di-restoration`) that holds the kind asked.
+- **What the waiver can't do.** A waiver without these fields opens nothing. A waiver with no control outcome on main opens nothing either. The control's outcome therefore carries `code`, `coverage_label` and `date`.
+
+This is coded as `scratch_voice.waiver_refusal` (`WAIVER_FIELDS`, `CONTROL_OUTCOME_FIELDS`).
+
 ## Beside the read (zero renders)
 
 - **E1, E2.** E1 = ln(d_tr-di / d_vc-env) is the level curve; E2 = ln(d_vc-env / d_vc-own) is the rest. The split is loose, because E1 also takes the level of extra attacks.
@@ -242,7 +253,7 @@ The flags are build.json's `unclaimed.flags` (hashed in `phase_scratch_voice_dry
 
 - **T is not re-fitted.** Tuning, mutes, tilt and the kept groups' levels stay `tr-di`'s.
 - **Kept notes stay cut.** Kept notes that end at a dropped note's pluck stay cut in both guitars, as the shared trace has them.
-- **The whole-signal steps are part of the counterfactual** (amendment 1). On `tr-uc` the hiss removal, the finish's EQ re-fit and the −22.9 LUFS step run again; on `vc-uc` the finish and the LUFS step do. So "every other note stays byte for byte" holds only before the hiss removal. Per part, for both guitars, the finished audio's change outside the dropped spans (held half) and the level step against the parent are recorded beside.
+- **The whole-signal steps are part of the counterfactual** (amendment 1). On `tr-uc` the hiss removal, the finish's EQ re-fit and the −22.9 LUFS step run again; on `vc-uc` the finish and the LUFS step do. So "every other note stays byte for byte" holds only before the hiss removal. Per part, for both guitars, the finished audio's change outside the dropped spans (held half) and the level step against the parent are recorded beside. The level step (`level_step_db`) is only `at_lufs`' residual step, since both guitars end at −22.9 LUFS; the real level change of the kept audio is `outside_change`'s `rms_ratio_db` (#658's review).
 - **Why not the alternatives.** No fade-in rule on a sample bank removes only the attack. Editing the note list re-sources about 15% of the kept notes. Merging into a same-pitch note still sounding applies to few dropped notes and needs a forked synthesis.
 
 ### What it reads
@@ -280,7 +291,7 @@ The floors are read as in the main test: row (b)'s answer, the held half, the tr
   - The code is also read on the coverage-clean deciding parts. When that code differs from the 40's, the read is marked `coverage-sensitive`. A subset whose intervals can't be formed reads XC-anomaly there, so the label is set.
   - Under XC-part and XC-notes, a coverage-sensitive code goes to the user with both subsets, not to the code's figure, and the gate opens only through the waiver.
   - Both subsets' Ux, Ubx, Urx and Sx are always reported.
-- **The spend gate** (amendment 3). See "The spend gate" above. The outcome key carries `code` and `coverage_label`.
+- **The spend gate** (amendment 3, and #658's review). See "The spend gate" above. The outcome key carries `code`, `coverage_label` and `date`. Where a waiver is needed, it must answer that code, on or after that date, for the spend kind asked.
 
 ### Phases, each verified before the next
 

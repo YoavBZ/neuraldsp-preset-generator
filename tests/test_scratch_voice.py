@@ -490,11 +490,18 @@ def test_the_spend_gate():
             assert "not a declared XC code" in V.spend_refusal(dict(m, **{V.PHASE_CONTROL_OUTCOME: {"code": "x"}}),
                                                                 kind)     # the control's review, amendment 3
             for c in ("XC-stands", "XC-part", "XC-undecided"):
-                assert V.spend_refusal(dict(m, **{V.PHASE_CONTROL_OUTCOME: {"code": c}}), kind) is None
+                assert V.spend_refusal(dict(m, **{V.PHASE_CONTROL_OUTCOME: {"code": c, "coverage_label": None}}),
+                                       kind) is None
+            assert "no coverage_label" in V.spend_refusal(                       # #658's review: never fail open
+                dict(m, **{V.PHASE_CONTROL_OUTCOME: {"code": "XC-part"}}), kind)
             for c in ("XC-anomaly", "XC-notes"):
-                assert V.spend_refusal(dict(m, **{V.PHASE_CONTROL_OUTCOME: {"code": c}}), kind)
-            assert V.spend_refusal(dict(m, **{V.PHASE_WAIVER: {"user_words": "go", "date": "2026-11-27"}}),
-                                   kind) is None
+                assert V.spend_refusal(dict(m, **{V.PHASE_CONTROL_OUTCOME: {"code": c, "coverage_label": None}}),
+                                       kind)
+            # a waiver alone, unscoped or scoped, opens nothing without the control's outcome (#658's review)
+            assert V.spend_refusal(dict(m, **{V.PHASE_WAIVER: {"user_words": "go", "date": "2026-11-27"}}), kind)
+            assert V.spend_refusal(dict(m, **{V.PHASE_WAIVER: {"user_words": "go", "date": "2026-11-28",
+                                                              "answers_code": "XC-notes",
+                                                              "spend_kinds": list(V.SPEND_KINDS)}}), kind)
             assert V.spend_refusal(dict(m, **{V.PHASE_WAIVER: {"date": "2026-11-27"}}), kind)
     assert "no synthesis spend" in V.spend_refusal({V.PHASE_OUTCOME: {"code": "XV-notes"}}, "synthesis")
     with pytest.raises(ValueError):
