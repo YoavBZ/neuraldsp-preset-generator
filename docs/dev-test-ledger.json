@@ -10394,6 +10394,87 @@
     "later_keys": "phase_scratch_prior_probe_outcome",
     "code": "learn/prior_probe.py (new; learn/loudar_run.py and LOUDAR's files unchanged); tests tests/test_prior_probe.py",
     "public_repo": "git gets 12-hex tags only; GOAT item ids, part keys and paths stay under PF/fs/prior-probe/"
+   },
+   "phase_scratch_envelope_outcome": {
+    "phase": "Phase 4's read (docs/scratch-envelope-plan.md, XE_TABLE): C_k and R_k on the 40 for the three EQ steps, the two swaps beside; the figures are in docs/scratch-envelope-results.md; audited 2026-11-28 (independent, Opus), CONFIRMED WITH CAVEATS",
+    "code": "XE-split",
+    "then": null,
+    "date": "2026-11-28",
+    "surprises": [],
+    "flags": [],
+    "reading": "C_win reads worse (closes) and R_win reads worse on the 40 (paired_reading); no C or R of the EQ steps reads better, C_part does not close, R_group and R_win do not match; by the score (J0), at one preset, oracle corrections from the true DI",
+    "next": "the user's route pick: per-note correction (route 1's kind) covers about 29% of S, per-43-ms band correction about 43%, the rest is finer structure; no route named here; any search row needs its own go",
+    "refusal_sensitive": "no: 0 refusals (the passing set is all 40, the beside steps included; all 47 beside)",
+    "terms_the_40": {
+     "S": "+0.501 [+0.399, +0.603] worse (reproduced per part and on the 40 from the stored files)",
+     "C_part": "+0.003 [-0.001, +0.007] matches",
+     "R_part": "+0.498 [+0.395, +0.600] worse",
+     "C_group": "+0.144 [+0.111, +0.177] worse",
+     "R_group": "+0.357 [+0.279, +0.435] worse",
+     "C_win": "+0.215 [+0.168, +0.262] worse",
+     "R_win": "+0.286 [+0.222, +0.350] worse",
+     "C_mag": "+0.442 [+0.338, +0.546] worse (beside)",
+     "R_mag": "+0.059 [+0.043, +0.076] undecided (beside)",
+     "C_phase": "+0.026 [+0.018, +0.035] matches (beside)",
+     "R_phase": "+0.475 [+0.371, +0.578] worse (beside)",
+     "identity": "C_k + R_k = S per part on every step (largest gap 3.3e-16)"
+    },
+    "fieller_share_of_S": {
+     "part": "0.006 [-0.002, 0.015]",
+     "group": "0.29 [0.25, 0.33]",
+     "win": "0.43 [0.39, 0.47]",
+     "mag": "0.88 [0.83, 0.92]",
+     "phase": "0.05 [0.03, 0.08]"
+    },
+    "beside": {
+     "all_47": "S +0.429, C_group +0.130, R_group +0.299, C_win +0.199 [+0.156, +0.242], R_win +0.230 [+0.186, +0.275], C_mag +0.377, R_mag +0.052 undecided; C_part -0.001 matches",
+     "clean_20": "S +0.671, C_group +0.183, R_group +0.487, C_win +0.283 [+0.188, +0.379], R_win +0.388 [+0.255, +0.520], C_mag +0.618, R_mag +0.053 undecided",
+     "crunch_20": "S +0.331, C_group +0.105, R_group +0.226, C_win +0.147 [+0.108, +0.187], R_win +0.184 [+0.147, +0.220], C_mag +0.266, R_mag +0.065 undecided",
+     "cluster_left_out": "32 reads, every term keeps its reading: C_group +0.132 to +0.151, R_group +0.322 to +0.368, C_win +0.196 to +0.224, R_win +0.257 to +0.294, C_mag +0.394 to +0.459, R_mag +0.055 to +0.062, C_part +0.002 to +0.005",
+     "largest_three": "C_win 8ae994594bad, a3b1b27272d3, 9c2b0e8c6bea (all BKS; without them +0.187 [+0.160, +0.213]); R_win b2ce529e68f9, a3b1b27272d3, ea5fc54a8160 (without them +0.265 [+0.208, +0.323]); C_group a3b1b27272d3, 9c2b0e8c6bea, c1ea6ef819b3 (without them +0.129); R_group b2ce529e68f9, 3ee6335d235b, 8ae994594bad (without them +0.335)",
+     "per_part": "on the 40, C_win and R_win positive on all 40; C_group negative on 1; R_mag negative on 4",
+     "ranks": "Spearman against fs-own's -D_own on the 40: C_group +0.44, C_win +0.47",
+     "E1": "vc-env's stored E1 +0.028 [+0.020, +0.037] matches; vt-win overlaps it (per-band level and decay)",
+     "realised_error_40": "median |error| dB, intent (before the finish against the clamped intent) / target (the finished guitar against the finished vc-own): vt-part 0.05 / 0.24, vt-group 0.33 / 1.24 (p90 2.92 / 5.37), vt-win 0.40 / 1.33 (p90 2.66 / 5.69), vt-mag 0.93 / 0.80, vt-phase 0.86 / 5.13; clamped vt-group 7.4%, vt-win 6.3%; floored vt-win 35%; spectral convergence vt-mag 0.24, vt-phase 0.26 (the 47)"
+    },
+    "caveats": [
+     "the magnitude swap is not 'magnitude detail' or timbre: at 88% overlap the STFT magnitude carries the true DI's pitches, partials, bends and level; the zero-render log-spectrum correlation with vc-own (80-2000 Hz) goes from 0.64 (vt-part) to 0.70 (vt-win) to 0.81 (vt-mag); may claim: by the score, the floor's distance is carried by the STFT magnitude, not the phase; may not claim: that 88% of S is timbre separable from notes; R_mag is the phase mismatch plus reconstruction error, not 'what notes cost'",
+     "band envelope correction buys about C_win = +0.215 (43%): an estimate within the realised error, likely understated, not a bound; the group step gives +0.144 (29%)",
+     "'the rest is not envelope at this resolution' means finer than third-octave bands at 43 ms; it does not show that the rest is note content",
+     "vt-win also corrects per-band level and decay over time, so it overlaps E1",
+     "an oracle at one preset, by the score: no song-only path is priced, floors don't predict search gain, nothing by ear",
+     "R_mag reads undecided, not matches: the magnitude swap is not said to close S"
+    ],
+    "may_claim": [
+     "by the score, on the 40, one EQ per onset group closes about 29% of S and one EQ per 43-ms window about 43%, estimates within the realised error, likely understated",
+     "a static EQ per part closes nothing (C_part matches), as built",
+     "the rest of S is not band envelope at third-octave and 43-ms resolution",
+     "the floor's distance is carried by the STFT magnitude, not the phase"
+    ],
+    "may_not_claim": [
+     "that 88% of S is timbre separable from notes, or that the magnitude swap closes S",
+     "that the rest is note content",
+     "that a bank, a pickup or any song-only method reaches these figures",
+     "any search, product or ear claim"
+    ],
+    "ran": "2026-11-28: the build from a fresh detached worktree of main at f8fbdbad (3 shards in parallel, 164, 163 and 153 s, then --combine; zero renders; phase_scratch_envelope_dry, #667); the floors from a fresh detached worktree of main at 780c7eba, 3 render processes, 18:36-18:43 (168 + 160 + 150 renders, 381, 389 and 380 s a shard); the repeat check exact on both check parts (tr-di and vc-own, distance and render sha256); read once, zero renders",
+    "renders": 478,
+    "refusals": 0,
+    "reruns": 0,
+    "carried": 0,
+    "audit": "independent (Opus), 2026-11-28: CONFIRMED WITH CAVEATS; XE-split stands and every figure reproduces; six binding caveats (above)",
+    "rows_sha256": "fd0a075e2b3bcba7a152aff3777e1512988d4156cd4e8ec5ba471d65da03584b",
+    "report_sha256": "0156a5f06197b4d0078a484d81cae6f600df2f1a31118d71a336ad37ee679fe3",
+    "build_sha256": "8c6e8eee95fe6f61f9fea1ad9238320272873549b14cffb57be1796e6a3ff7af",
+    "files": [
+     "PF/fs/envelope/dry/ (5 guitars x 47)",
+     "PF/fs/envelope/build-parts/ (47)",
+     "PF/fs/envelope/build.json",
+     "PF/fs/envelope/floors/ (47)",
+     "PF/fs/envelope/repeat/ (2)",
+     "PF/fs/envelope/rows.json",
+     "PF/fs/envelope/report.json"
+    ]
    }
   },
   {
