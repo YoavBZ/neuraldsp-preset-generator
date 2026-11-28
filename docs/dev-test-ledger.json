@@ -9364,6 +9364,76 @@
      "phase_scratch_own_outcome"
     ],
     "cant_show": "an oracle: vc-own is the true DI's audio, gated by notes read from the true DI, so nothing here speaks for the song-only path; C_own's residual holds N, K and F together (the 50-evaluation vc-fin row, about 2.6k renders, would split it, on its own go); by the score only, one search, one seed"
+   },
+   "phase_scratch_voice_control_outcome": {
+    "phase": "Phase 4's read (docs/scratch-voice-plan.md, 'The unclaimed-groups control'; XC_TABLE): Sx, Ux, Ubx, Urx on one passing set of four guitars at the real floor; the figures are in docs/scratch-voice-results.md, 'The unclaimed-groups control'; audited 2026-11-28 (independent, Opus), CONFIRMED WITH CAVEATS",
+    "code": "XC-stands",
+    "coverage_label": null,
+    "date": "2026-11-28",
+    "reading": "Ux reads matches on the 40 (paired_reading): a heard-size part of S from the unclaimed onset groups is ruled out, by the score; Ux is small, positive and not zero; by the score (J0), at one preset",
+    "next": "by the table: price the sound routes against S; S stays an upper bound (wrong pitches, bends and articulation stay inside S; the control addresses only the extra attacks); the spend gate opens on this code (scratch_voice.spend_refusal), necessary, not sufficient",
+    "gate": "open: XC-stands is a declared code, not shut and not waiver-only; coverage_label is null",
+    "coverage_sensitive": "no: the coverage-clean 26 of the 40 read XC-stands too",
+    "refusal_sensitive": "no: 0 refusals (the passing set is all 40, all 47 beside)",
+    "terms_the_40": {
+     "S": "+0.501 [+0.399, +0.603] worse (reproduced per part and on the 40 from the stored files)",
+     "Sx": "+0.456 [+0.363, +0.550] worse",
+     "Ux": "+0.044 [+0.017, +0.072] matches",
+     "Ubx": "-0.064 [-0.130, +0.001] matches",
+     "Urx": "-0.109 [-0.188, -0.030] better (the drop removed real playing)",
+     "identity": "Ux = Ubx - Urx per part (largest gap 2.2e-16); Ux, Ubx and Urx exactly 0 on the 12 carried parts"
+    },
+    "coverage_subsets": {
+     "clean_26": "S +0.517 [+0.384, +0.651], Sx +0.508 [+0.373, +0.643], Ux +0.009 [+0.001, +0.018] matches, Ubx +0.008 [-0.001, +0.017], Urx -0.002 [-0.004, +0.001]",
+     "moved_14": "S +0.579 [+0.158, +0.999], Sx +0.458 [+0.126, +0.790], Ux +0.121 [+0.028, +0.213] worse, Ubx -0.181 [-0.364, +0.003], Urx -0.301 [-0.499, -0.103] better"
+    },
+    "beside": {
+     "all_47": "S +0.429 [+0.351, +0.508], Sx +0.399 [+0.326, +0.472], Ux +0.031 [+0.012, +0.049] matches, Ubx -0.045 [-0.089, -0.001], Urx -0.076 [-0.129, -0.023]",
+     "clean_20": "Sx +0.602 [+0.427, +0.778], Ux +0.069 [+0.013, +0.124] undecided, Ubx -0.039, Urx -0.108 better",
+     "crunch_20": "Sx +0.311 [+0.245, +0.377], Ux +0.020 [+0.005, +0.035] matches, Ubx -0.090, Urx -0.110",
+     "bks_16": "Sx +0.438 [+0.273, +0.603], Ux +0.027 [+0.001, +0.052] matches, Ubx -0.030, Urx -0.057",
+     "goat_24": "Sx +0.475 [+0.371, +0.578], Ux +0.062 [+0.011, +0.113] undecided, Ubx -0.099, Urx -0.161 better",
+     "share": "Fieller Ux/S 0.089 [0.035, 0.140]",
+     "cluster_left_out": "every reading kept: S +0.454 to +0.515, Sx +0.415 to +0.470, Ux +0.031 to +0.046 (lowest lower end +0.012, highest upper end +0.075), Ubx -0.070 to -0.036, Urx -0.113 to -0.080",
+     "largest_three": "Ux ea5fc54a8160 +0.69, c1ea6ef819b3 +0.244, a3b1b27272d3 +0.227, all coverage-moved (without them +0.019 [+0.010, +0.028]; without ea5fc54a8160 alone +0.031); Ubx and Urx e8d444a97729, ea5fc54a8160, ddcdb0c10557 (without them Ubx -0.018, Urx -0.045); Sx 8ae994594bad, b2ce529e68f9, 3ee6335d235b (without them +0.427)",
+     "vc_uc_only_carry": "on 4 parts the dropped notes' windows lie inside other windows, so vc-uc is byte-identical to vc-own, Urx = 0 and Ux = Ubx: 89b6da562e67 +0.112, 9c2b0e8c6bea +0.066, 3ee6335d235b -0.010, 90074e8047e2 +0.002 (all coverage-clean)"
+    },
+    "caveats": [
+     "XC-stands rests on a mean 0.006 under the 0.05 line; the sturdy claim is that a heard-size share is ruled out on the 40; Ux is small, positive and not zero",
+     "dilution over-states Ux on the 40; quote both subsets: coverage-clean 26 Ux +0.009 [+0.001, +0.018], coverage-moved 14 Ux +0.121 [+0.028, +0.213] with Urx -0.30",
+     "on clean and GOAT, Ux reads undecided (+0.069 and +0.062), carried by ea5fc54a8160",
+     "S stays an upper bound; Sx is not 'the bank's sound'; it also carries the note errors the gate can't see and any static tone a search would absorb",
+     "the control can't tell an extra attack from a real soft or late one: 40 of the 161 groups on the 40 have a true rise within +-50 ms; likely timing errors (a real attack nearby); dropping them removed real playing, which feeds the dilution",
+     "kept audio is re-levelled on moved parts: the kept audio's level change outside the dropped spans (rms_ratio_db) runs -3.62 to +0.71 dB on tr-uc and -4.81 to +0.68 dB on vc-uc, both lows on ea5fc54a8160; so on those parts Ubx and Urx are not pure note-removal effects",
+     "all by the score, at one preset; nothing by ear; floors don't predict search gain",
+     "140 renders, not the declared about 148 (4 more vc-uc carry); rows.json and report.json sha256 below"
+    ],
+    "may_claim": [
+     "by the score, on the 40, the unclaimed onset groups do not hold a heard-size part of S (Ux matches, +0.044 [+0.017, +0.072], about 9% of S)",
+     "the sound routes are priced against S, which stays an upper bound",
+     "without the unclaimed groups, real audio inside our windows closes at most Sx, +0.456, which still reads worse: the upper bound stays heard-size",
+     "the share is small, positive and not zero"
+    ],
+    "may_not_claim": [
+     "that the unclaimed groups cost nothing (Ux is above zero)",
+     "that it holds on clean or on GOAT (Ux undecided on both)",
+     "that Sx is the bank's sound or a sound gap",
+     "that an extra attack is told apart from a real soft or late one",
+     "anything by ear, or any search or product gain"
+    ],
+    "ran": "build 2026-11-28 (phase_scratch_voice_control_dry, zero renders, 121 s); floors 2026-11-28 from a fresh detached worktree of origin/main at e1ccee29, 3 shards in parallel, 151 s: 132 renders plus 8 for the repeat check, 140 in all; 12 tr-uc and 16 vc-uc carries; the repeat check exact on f2030431a5bb and 60c856cd5dc4 (stored tr-di and vc-own, distance and render sha256); 0 refusals, 0 reruns; read once, zero renders, every check held (proofs, repeat, S reproduced, identity, zero where carried)",
+    "renders": 140,
+    "audit": "independent (Opus), 2026-11-28: CONFIRMED WITH CAVEATS; every term recomputed from the floor records and the stored floors and matched report.json exactly; the code rebuilt by hand: XC-stands",
+    "rows_sha256": "172ef12290ca78e0af60cd3ae784dedcaf734f18c2709fa505325c81f3d7d6e9",
+    "report_sha256": "90623d69c6a9333555c5c1d135f7b9221d6079c178108135774073793e76983b",
+    "build_sha256": "7e97075f6f900dcf1acef159d2ff92433eb7e5ae9dfe6b2eda78998af6646788",
+    "files": [
+     "PF/fs/voice/control/build.json",
+     "PF/fs/voice/control/floors/ (47)",
+     "PF/fs/voice/control/repeat/ (2)",
+     "PF/fs/voice/control/rows.json",
+     "PF/fs/voice/control/report.json"
+    ]
    }
   },
   {
