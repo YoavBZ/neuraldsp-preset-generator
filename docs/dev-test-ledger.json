@@ -9486,6 +9486,105 @@
     },
     "draw_sha256": "b9672bc333e08afb17ef967c5535b3d73c8b307cf57351f80b23823e29bde050",
     "next": "score --shard k/3 (about 940 renders), then reproduce and read (XW_TABLE on D_own = G(fs-own) - G(build 2) and C_own = G(fs-own) - G(row (b)), the 40)"
+   },
+   "phase_scratch_own_outcome": {
+    "phase": "Phase 6's read (docs/scratch-own-plan.md, XW_TABLE): D_own and C_own on the 40, the answer arm; the figures are in docs/scratch-own-results.md; audited 2026-11-28 (independent, Opus), CONFIRMED WITH CAVEATS",
+    "code": "XW-part",
+    "shrunk": "XW-closed",
+    "shrunk_sensitive": true,
+    "arms": {
+     "answer": "XW-part",
+     "shrunk": "XW-closed",
+     "cp50": "XW-part",
+     "cp100": "XW-part",
+     "cp200": "XW-part"
+    },
+    "reading": "D_own reads better and C_own undecided on the 40 (paired_reading): a heard-size part of build 2's search cost is recovered when the search gets real audio inside our note windows; by the score (J0), one search, one seed",
+    "next": "by the table: routes 1 and 2 stay open, their room at most -D_own; the residual belongs to N, K and F together; the user picks the sound route; the spectral-envelope steps are unlocked under XW-part (their own declaration and table)",
+    "label": null,
+    "refusal_sensitive": "no: 0 refusals, 0 reruns (all 47 parts answered and scored)",
+    "numbers_the_40": {
+     "D_own": "-0.191 [-0.261, -0.122] better; 34 of the 40 parts negative",
+     "minus_D_own": "+0.191 [+0.122, +0.261] worse",
+     "C_own": "+0.082 [+0.018, +0.146] undecided",
+     "vs_row_c": "-0.096 [-0.153, -0.038] matches (below row (c) on the score, short of the heard-size bar)",
+     "share": "Fieller -D_own / (build 2 - row (b)) 0.70 [0.52, 0.92], bounded; ratio of the 40-means 0.71",
+     "own_G": "fs-own -0.182 [-0.259, -0.106] passes; build 2 +0.009; row (b) -0.264; row (c) -0.087"
+    },
+    "arms_the_40": {
+     "D_own": {
+      "shrunk": "-0.102 [-0.160, -0.044] better",
+      "cp50": "-0.131 [-0.193, -0.068] better",
+      "cp100": "-0.179 [-0.249, -0.109] better",
+      "cp200": "-0.192 [-0.266, -0.118] better"
+     },
+     "C_own": {
+      "shrunk": "+0.042 [+0.007, +0.076] matches",
+      "cp50": "+0.100 [+0.042, +0.158] undecided",
+      "cp100": "+0.062 [-0.001, +0.125] undecided",
+      "cp200": "+0.085 [+0.022, +0.148] undecided"
+     },
+     "vs_row_c": {
+      "shrunk": "-0.031 matches",
+      "cp50": "-0.057 matches",
+      "cp100": "-0.125 better",
+      "cp200": "-0.095 matches"
+     }
+    },
+    "beside": {
+     "splits_D_own": "clean -0.254, crunch -0.129, BKS -0.161, GOAT -0.222, all 47 -0.124 [-0.207, -0.040], panel +0.011 [-0.268, +0.291]",
+     "splits_C_own": "clean +0.146, crunch +0.018, BKS +0.094, GOAT +0.070, all 47 +0.114 [+0.008, +0.220], panel +0.178 [-0.157, +0.513]",
+     "cluster_left_out": "D_own means [-0.205, -0.164], all 32 better; C_own [+0.059, +0.099], all undecided; against row (c) [-0.109, -0.084], better or matches",
+     "largest_three": "D_own 8ae994594bad, 9c3262e5b20e, c1ea6ef819b3; without them -0.156 [-0.207, -0.106] better; C_own 89cac0bf475c, b2ce529e68f9, 1cc512e059fb; without them +0.045 [+0.001, +0.088] matches",
+     "one_per_partner": "33 parts, 30 on the 40: D_own -0.203 [-0.298, -0.107] better; C_own +0.100 [+0.026, +0.174] undecided; against row (c) -0.100 matches",
+     "loudar": "fs-own cp50 less ld-stem G50 on BKS+panel (23 parts, bp_rows): -0.112 [-0.265, +0.041] matches, its negative undecided; part-weighted -0.116; BKS -0.110, panel -0.114: the oracle ceiling is not shown to sit above the released song-only rebuild on unseen sets",
+     "ranks": "Spearman against -D_own on the 40: the stored S +0.47, the control's Ux -0.26",
+     "frame_mask": "the audit's replicated search-half masks on the 40: vc-own's playing frames against tr-di's, Jaccard median 0.996, minimum 0.890, below 0.95 on 3 parts; mean difference 4.3 of about 418 frames; Spearman with D_own -0.10 (overlap), +0.12 (frame difference): small and unrelated"
+    },
+    "may_claim": [
+     "about 70% of build 2's search cost against row (b) is recovered, by the score (Fieller 0.70 [0.52, 0.92])",
+     "the residual against the true DI is undecided and holds N, K and F together",
+     "fs-own sits below row (c) on the score, short of the heard-size bar"
+    ],
+    "may_not_claim": [
+     "anything about the song-only path (vc-own is an oracle: the true DI's audio, gated by notes read from the true DI)",
+     "that the cost is closed",
+     "that the ceiling is above LOUDAR",
+     "any panel gain",
+     "anything by ear"
+    ],
+    "caveats": [
+     "shrunk-sensitive: the shrunk arm reads XW-closed (C_own +0.042 matches)",
+     "by the score, one search, one seed",
+     "the 47 parts are reused: read many times before",
+     "the panel shows nothing: D_own +0.011 [-0.268, +0.291], C_own +0.178 [-0.157, +0.513]",
+     "C_own mixes N, K and F; the 50-evaluation vc-fin row (about 2.6k renders, its own go) would split it",
+     "the search's frame mask moves with the dry guitar; the effect is small and unrelated to D_own"
+    ],
+    "defects": {
+     "privacy": "the read wrote nonfinite_replaced's setting names as they came, one a partner's part key, into the local rows.json and report.json (PF only; nothing in git); the fix is PR #663 (names tagged, the checks' mismatch names too); the stored files kept as they are (no re-read); the partner's tag is ea5fc54a8160",
+     "nonfinite_borrowed": "on 3 parts (b0936e9f5d83, 89cac0bf475c, c1ea6ef819b3) the borrowed answer from that one partner rendered non-finite and nonfinite_rule replaced it as declared; it enters only the borrowed answer, never G: no figure changes",
+     "start_ref_label": "scratch_notes.start_reference writes its constant dry 'tr-di' into each start-reference record whatever guitar it is handed; the record's dry_sha256 is vc-own's and the search records name vc-own; cosmetic, left as it is (the shared step is pinned)"
+    },
+    "reproduced": "build 2 - row (b) +0.274 [+0.186, +0.361] and LOUDAR's G50 on BKS+panel -0.051 [-0.159, +0.058] equal their stored rows exactly; every seen figure repeats to 3 places (LOUDAR - build 2 at cp50 +0.002 [-0.116, +0.121] among them)",
+    "ran": "2026-11-28 from fresh detached worktrees of main (309636c9 for the checks and the search, 44a686f2 for the score and the read), after the control's XC-stands opened the gate: check-score 40 renders (100 s), check-search 22 (48 s), both exact; search 3 shards in parallel, 4,244 + 4,252 + 3,933 = 12,429 renders (94 start references; 6,247-6,457 s a shard); answers (phase_scratch_own_answers); score 3 shards, 320 + 320 + 300 = 940 renders (711-736 s a shard), the scoring control on 47 of 47 with Cen exactly its stored value; reproduce held; read once",
+    "renders": 13431,
+    "refusals": 0,
+    "reruns": 0,
+    "audit": "independent (Opus), 2026-11-28: CONFIRMED WITH CAVEATS; every figure recomputed from the stored score records within 1e-12; XW-part and shrunk-sensitive confirmed; the frame masks replicated",
+    "rows_sha256": "c627325c49b7e73772651ff861b9b908ec1c34ddabb0875c2f6d6633e1c183dd",
+    "report_sha256": "decf09ffac71fafafaed7551a02a4b052eb23ce3edbd8bfc6741cef3544c7fda",
+    "answers_sha256": "dcd1c691162db1d5117cb16fb6008d6824211c89dd9f0483b7ff61e537c65db0",
+    "files": [
+     "PF/fs/own/checks/ (2 results)",
+     "PF/fs/own/search/ (47)",
+     "PF/fs/own/start-ref/ (47)",
+     "PF/fs/own/answers.json",
+     "PF/fs/own/score/ (47)",
+     "PF/fs/own/reproduce.json",
+     "PF/fs/own/rows.json",
+     "PF/fs/own/report.json"
+    ]
    }
   },
   {
