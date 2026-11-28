@@ -910,3 +910,37 @@ def test_a_stored_rows_file_is_read_only_at_mains_hash(tmp_path):
     assert O._hashed_rows({"phase_x": {"rows_sha256": "0"}}, p, "phase_x", "rows_sha256")[0] is None
     got, why = O._hashed_rows({"phase_x": {"rows_sha256": S.file_sha(p)}}, p, "phase_x", "rows_sha256")
     assert got == {"S": {"abc": 1.0}} and why is None
+
+
+def test_reproduce_reads_loudar_less_build_2_with_its_sign(monkeypatch, tmp_path):
+    """The seen figure beside is LOUDAR - build 2 at cp50 on BKS+panel (+0.002 under bp_rows): G50(ld-stem) -
+    G_cp50(b2), never its negative (the review of #659)."""
+    from learn import pipeline_fix as P
+
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path / "PF")
+    keys = ["bks__a@1#r|ac20", "bks__b@1#r|ac20", "panel__c@1#r|pr12", "goat__d@1#r|pr12"]
+    draw = {"parts": [{"pkey": k, "set": k.split("__")[0], "cluster": "x|c"} for k in keys]}
+
+    def set_rows(sd, draw_, values, keys_=None):
+        iv = _fake_iv(values, keys_)
+        return None if iv is None else {"bks_goat": {"all": iv, "clean": iv, "crunch": iv}, "deciding_pool": iv}
+    monkeypatch.setattr(SN, "set_rows", set_rows)
+    monkeypatch.setattr(SL, "bp_rows", lambda sd, draw_, v: {"bp": _fake_iv(v)})
+
+    def per(g, cp):
+        return {"itt": {k: {"G": g, "G_cp50": cp, "G_shrunk": g} for k in keys}}
+    monkeypatch.setattr(RR, "real_numbers", lambda m, d, sd, row: per(0.0, 0.1) if row == "b2" else per(-0.3, -0.2))
+    monkeypatch.setattr(O, "loudar_g50", lambda m, d: ({k: 0.3 for k in keys}, {}, {}))
+    ex, ld = tmp_path / "exact-rows.json", tmp_path / "loudar-rows.json"
+    gap = {"answer": {"real_gap": {"bks_goat": {"all": _iv(0.3, 0.25, 0.35)}}}}
+    ex.write_text(json.dumps({"rows": {"beside": gap}}))
+    ld.write_text(json.dumps({"rows": {"G50": {"bp": _iv(0.3, 0.25, 0.35)}}}))
+    monkeypatch.setattr(SE, "rows_path", lambda: ex)
+    monkeypatch.setattr(SL, "rows_path", lambda: ld)
+    m = {SE.PHASE_OUTCOME: {"rows_sha256": S.file_sha(ex)},
+         SL.PHASE_OUTCOME: {"read_files_sha256": {"rows.json": S.file_sha(ld)}}}
+    r = O.reproduce(m, draw, None)
+    got = r["seen_beside"]["loudar_less_b2_cp50_bp"]["iv"]
+    assert got["mean"] == pytest.approx(0.3 - 0.1) and got["mean"] > 0     # LOUDAR less build 2, not build 2 less it
+    assert r["seen_beside"]["b2_less_row_b_cp50"]["iv"]["mean"] == pytest.approx(0.1 - (-0.2))
+    assert r["exact"] == {"b2_less_row_b": True, "loudar_g50_bp": True}

@@ -886,7 +886,7 @@ def reproduce(m, draw, sd):
     beside = {"G_b2": RR.own_g(sd, draw, rn["itt"])["iv"], "G_row_b": RR.own_g(sd, draw, rb["itt"])["iv"],
               "b2_less_row_b_cp50": the_40(sd, draw, SN.paired_values(rn["itt"], rb["itt"], "G_cp50")),
               "b2_less_row_b_shrunk": the_40(sd, draw, SN.paired_values(rn["itt"], rb["itt"], "G_shrunk")),
-              "loudar_less_b2_cp50_bp": loudar_rows(sd, draw, b2cp, ld_itt, sets_of)["bp"]}
+              "loudar_less_b2_cp50_bp": loudar_rows(sd, draw, ld_itt, b2cp, sets_of)["bp"]}
     vr, vwhy = _hashed_rows(m, SV.rows_path(), SV.PHASE_OUTCOME, "rows_sha256")
     if vr:
         by_key = {tag(k): k for k in sets_of}
