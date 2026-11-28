@@ -542,8 +542,9 @@ def cmd_check_score(_args):
         P.save(out, rec)
         new[k], stored[k] = rec, json.loads(S.score_path(BOTH_ROW, k).read_text())
     verdict = SN.score_check_verdict(new, stored)
+    sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}
     res = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}", "renders": total, "passed": verdict["passed"],
-           "mismatches": [[tag(k), nm] for k, nm in verdict["mismatches"]], "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+           "mismatches": check_mismatches(verdict["mismatches"], sets_of), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     P.save(d / "result.json", res)
     print(f"FS-OWN CHECK-SCORE {'PASS' if res['passed'] else 'FAIL'}: {total} renders; mismatches {res['mismatches']}")
 
@@ -586,8 +587,9 @@ def cmd_check_search(_args):
         P.save(out, rec)
         new[k], stored[k] = rec, json.loads(S.search_path(BOTH_ROW, k).read_text())
     verdict = SN.search_check_verdict(new, stored)
+    sets_of = {p["pkey"]: p["set"] for p in draw["parts"]}
     res = {"plan": PLAN, "ledger": f"{LEDGER_ID} {PHASE}", "renders": total, "budget": SN.CHECK_BUDGET,
-           "passed": verdict["passed"], "mismatches": [[tag(k), nm] for k, nm in verdict["mismatches"]],
+           "passed": verdict["passed"], "mismatches": check_mismatches(verdict["mismatches"], sets_of),
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     P.save(d / "result.json", res)
     print(f"FS-OWN CHECK-SEARCH {'PASS' if res['passed'] else 'FAIL'}: {total} renders; mismatches "
@@ -901,13 +903,33 @@ def reproduce(m, draw, sd):
             "voice_rows": vwhy or "read", "holds": all(exact.values()) and all(seen.values())}
 
 
+SETTING_NAMES = ("cen", "answer", "cp50", "cp100", "cp200", "shrunk", "centre")   # score_row_part's own names
+CHECK_WORDS = ("settings", "refused", "curve", "first render")   # the check verdicts' own words
+
+
+def setting_tag(name, sets_of, plain=SETTING_NAMES):
+    """(Pure.) A scored setting's public name: `plain`'s names (score_row_part's own) as they are; any other (a
+    borrowed answer is named by its partner's part key) as the part's 12-hex tag."""
+    return name if name in plain and name not in sets_of else tag(name)
+
+
+def check_mismatches(mismatches, sets_of):
+    """(Pure.) A check verdict's mismatches [(part, name)] for its result file: the part as its tag, the name by
+    `setting_tag` (the verdicts' own words kept)."""
+    return [[tag(k), setting_tag(nm, sets_of, SETTING_NAMES + CHECK_WORDS)] for k, nm in mismatches]
+
+
 def _tagged_refusals(nums, sets_of):
+    """(Pure but for `refusal_report`.) The rows' refusals with every part key as its 12-hex tag: the refused and
+    missed parts, and the parts and setting names `nonfinite_rule` replaced (a partner's answer is named by its
+    part key)."""
     out = {}
     for r, n in nums.items():
         ref = {tag(k): v for k, v in n["refused"].items()}
         out[r] = {"refused": ref, "report": S.refusal_report(ref, {tag(k): s for k, s in sets_of.items()}, DECIDING),
                   "control_misses": sorted(tag(k) for k in n["control_misses"]),
-                  "nonfinite_replaced": {tag(k): v for k, v in n["replaced"].items()}}
+                  "nonfinite_replaced": {tag(k): [setting_tag(x, sets_of) for x in v]
+                                         for k, v in n["replaced"].items()}}
     return out
 
 

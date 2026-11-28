@@ -28,7 +28,7 @@ SRC = (REPO / "learn" / "scratch_own.py").read_text()
 TREE = ast.parse(SRC)
 LEDGER = json.loads((REPO / "docs" / "dev-test-ledger.json").read_text())
 ENTRY = next(t for t in LEDGER["tests"] if t["test_id"] == "preset-ladder")
-K1, K2 = "bks__set0__k1.wav@1.0#r.wav|ac20", "goat__item_0@2.0#r.wav|pr12"     # synthetic keys
+K1, K2 = "bks__set0__k1.wav@1.0#r.wav|ac20", "goat__fake0@2.0#r.wav|pr12"       # made-up keys
 
 
 def _iv(mean, lo, hi):
@@ -824,7 +824,7 @@ def test_the_read_holds_every_beside_figure_and_tags_only(monkeypatch, tmp_path)
 
     monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path / "PF")
     keys = [f"bks__s{i}__u{i}.wav@1.0#r.wav|ac20" for i in range(6)] + \
-        [f"goat__item_{i}@2.0#r.wav|pr12" for i in range(6)] + [f"panel__p{i}@3.0#r.wav|sw50r" for i in range(3)]
+        [f"goat__fake{i}@2.0#r.wav|pr12" for i in range(6)] + [f"panel__p{i}@3.0#r.wav|sw50r" for i in range(3)]
     draw = {"parts": [{"pkey": k, "set": k.split("__")[0], "cluster": f"x|c{i % 4}"} for i, k in enumerate(keys)]}
     monkeypatch.setattr(SE, "context", lambda: (draw, None))
 
@@ -844,8 +844,8 @@ def test_the_read_holds_every_beside_figure_and_tags_only(monkeypatch, tmp_path)
 
     def nums(g, refused=()):
         per = {k: {f: g + (0.01 * i if f == "G" else 0.0) for f in S.G_FIELDS} for i, k in enumerate(keys)}
-        return {"per": per, "itt": per, "refused": {k: {"search": "x"} for k in refused}, "replaced": {},
-                "control_misses": [], "answers_sha256": "a"}
+        return {"per": per, "itt": per, "refused": {k: {"search": "x"} for k in refused},
+                "replaced": {keys[1]: [keys[2], "cp50"]}, "control_misses": [], "answers_sha256": "a"}
     rows = {"b2": nums(0.01), "fs-stem": nums(-0.26), "fs-both": nums(-0.3)}
     monkeypatch.setattr(RR, "real_numbers", lambda m, draw_, sd, row: rows[row])
     monkeypatch.setattr(O, "own_numbers", lambda m, draw_, sd: nums(-0.2, refused=(keys[0],)))
@@ -901,6 +901,51 @@ def test_the_loudar_rows_read_both_ways(monkeypatch):
     assert math.isclose(r["part_weighted_mean"], -0.275)
     r = O.loudar_rows(None, None, {"a": 0.0}, {"a": 0.0}, sets)
     assert r["reading"] == "matches" and r["minus_reading"] == "matches" and "not shown" in r["said"]
+
+
+def test_the_replaced_settings_are_tagged():
+    """A borrowed answer `nonfinite_rule` replaces is named by its partner's part key: the read writes its 12-hex tag,
+    never the key (2026-11-28: three such names reached report.json before this fix)."""
+    k1, k2 = "goat__item_7@2.0#r.wav|pr12", "goat__item_8@2.0#r.wav|pr12"         # made up
+    sets_of = {k1: "goat", k2: "goat"}
+    n = {"refused": {}, "control_misses": [], "replaced": {k1: [k2, "cen", "shrunk", "panel__p@1#r|pr12"]}}
+    out = O._tagged_refusals({"fs-own": n}, sets_of)["fs-own"]
+    assert out["nonfinite_replaced"] == {O.tag(k1): [O.tag(k2), "cen", "shrunk", O.tag("panel__p@1#r|pr12")]}
+    text = json.dumps(out)
+    assert k1 not in text and k2 not in text and "item_8" not in text and "panel__" not in text
+    assert O.setting_tag("answer", sets_of) == "answer" and O.setting_tag(k2, sets_of) == O.tag(k2)
+
+
+def test_the_checks_tag_their_mismatch_names(monkeypatch, tmp_path):
+    """check-score's mismatches name a setting, a borrowed answer by its partner's part key: written as its tag;
+    the verdicts' own words (settings, refused, curve, first render) and the setting names as they are."""
+    from learn import pipeline_fix as P
+
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path / "PF")
+    k1, k2 = "bks__set0__k1.wav@1.0#r.wav|ac20", "goat__item_7@2.0#r.wav|pr12"       # made up
+    draw = {"parts": [{"pkey": k, "set": k.split("__")[0]} for k in (k1, k2)]}
+    sets_of = {k1: "bks", k2: "goat"}
+    assert O.check_mismatches([(k1, k2), (k1, "cen"), (k2, "settings")], sets_of) == \
+        [[O.tag(k1), O.tag(k2)], [O.tag(k1), "cen"], [O.tag(k2), "settings"]]
+    assert O.check_mismatches([(k1, n) for n in O.CHECK_WORDS], sets_of) == [[O.tag(k1), n] for n in O.CHECK_WORDS]
+    monkeypatch.setattr(O, "require_own", lambda *ph: _ctl("XC-stands"))
+    monkeypatch.setattr(O, "require_row_spend", lambda m: m)
+    monkeypatch.setattr(SE, "context", lambda: (draw, None))
+    monkeypatch.setattr(SN, "comparator_answers", lambda: {"parts": {k1: {}, k2: {}}})
+    monkeypatch.setattr(SN, "check_parts", lambda parts: [k1])
+    from learn import local_objective as LO
+    from learn import note_replay as NRP
+    monkeypatch.setattr(NRP, "no_separation_beside", lambda: None)
+    monkeypatch.setattr(LO, "_wait_cap", lambda cap=3: None)
+    P.save(S.answers_path("fs-both"), {})
+    P.save(S.score_path("fs-both", k1), {"held": {"cen": 1.0, k2: 2.0}, "render_sha256": {"cen": "a", k2: "b"}})
+    monkeypatch.setattr(S, "score_row_part", lambda *a: ({"held": {"cen": 1.0, k2: 3.0},
+                                                          "render_sha256": {"cen": "a", k2: "c"}}, 4))
+    O.cmd_check_score(_args())
+    text = (O.check_dir("check-score") / "result.json").read_text()
+    r = json.loads(text)
+    assert r["passed"] is False and r["mismatches"] == [[O.tag(k1), O.tag(k2)]]
+    assert k1 not in text and k2 not in text and "item_7" not in text
 
 
 def test_a_stored_rows_file_is_read_only_at_mains_hash(tmp_path):
