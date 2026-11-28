@@ -10475,6 +10475,134 @@
      "PF/fs/envelope/rows.json",
      "PF/fs/envelope/report.json"
     ]
+   },
+   "phase_scratch_prior_probe_outcome": {
+    "entered": "2026-11-28, after the run; checked by the orchestrator under the lean-review rule (a zero-render timing probe: the orchestrator's own check, no separate audit)",
+    "plan": "docs/prior-probe-results.md; docs/prior-probe-plan.md",
+    "run": "2026-11-28 from main at b51dd483: hours, prep (main .venv), check 19:04:43-19:06:09, time --steps 200 19:06:39-19:13:49 (loudar venv, nice 0, no renders), read; zero renders; no model kept",
+    "code": "PP-mps",
+    "code_why": "every check held on LOUDAR's own path (the MPS encoder, native clip_grad_norm_); no fallback, nothing cpu-only, no anomaly; 0 non-finite MPS steps (the five check steps, 200 long, 100 short); the file rule clean (no read outside the list, no write outside the probe's folder, no weights file)",
+    "rate": {
+     "label": "one run (time-20261128-190641.json), both blocks idle at start and end (0 render, 0 other torch)",
+     "long_526080": {
+      "steps_per_s": 0.7629,
+      "mean_s": 1.3109,
+      "median_s": 1.3104,
+      "warmup_mean_s": 1.3281,
+      "s_per_1000": 1310.9,
+      "h_per_1000": 0.3641,
+      "h_175000": 63.72,
+      "audio_h_per_1000": 6.089
+     },
+     "short_218624": {
+      "steps_per_s": 1.6438,
+      "mean_s": 0.6084,
+      "warmup_mean_s": 0.7133,
+      "h_per_1000": 0.169,
+      "h_175000": 29.57,
+      "audio_h_per_1000": 2.53
+     },
+     "split": {
+      "long": {
+       "encode_s": 1.12,
+       "network_s": 0.1908
+      },
+      "short": {
+       "encode_s": 0.4191,
+       "network_s": 0.1893
+      },
+      "from": "separate encode-only blocks (45 after 5 warm-up), idle"
+     },
+     "cached_latents_estimate": "arithmetic, not measured: the network alone at about 1/0.191 = 5.2 steps/s, about 191 s per 1,000 steps and 9.3 h for 175,000",
+     "cpu": {
+      "steps_per_s": 0.2196,
+      "from": "steps 2-5 of the check's five CPU steps, 4 threads",
+      "h_per_1000": 1.265,
+      "h_175000": 221.4
+     },
+     "resample": "the rate excludes LOUDAR's in-step resample, which is right for 48 kHz data",
+     "ema_branch": "ramp-up (it from 0, as training_loop)"
+    },
+    "memory": {
+     "memsize_gb": 34.4,
+     "time_peak_rss_gb": 2.11,
+     "time_mps_driver_peak_gb": {
+      "long": 3.94,
+      "short": 5.33
+     },
+     "time_mps_allocated_peak_gb": 1.76,
+     "check_peak_rss_gb": 11.7,
+     "check_mps_driver_gb": 6.19
+    },
+    "gradient_table": {
+     "rule": "every figure passed directly; no calibration needed",
+     "encoder": "latents [2, 64, 128]: 1.4e-6 relative L2 (tolerance 1e-3)",
+     "run_1": "shared CPU latents: loss 6.3e-8; gradients before the clip (137 tensors) global 1.83e-6, worst 7.1e-6; clip norm 0.97847 vs 0.97844 (3.1e-5), 0 non-finite, gradients after it as before",
+     "run_2": "the MPS run's own latents: loss 0.0; gradients global 1.83e-6, worst 8.3e-6; the clip as run 1",
+     "adamw": "global 1.0e-6, worst 2.6e-5",
+     "ema": "0.0 at it 1 and 175,000 (calibration refused at 175,000 by the gate: the CPU's own float32 error on the tiny deltas; the direct check passed)",
+     "five_steps": "losses MPS vs CPU equal to about 2e-7; weight change 7.4e-5 relative; clip norms 2.04, 1.33, 0.82, 1.02, 1.02",
+     "float64_reference": "held: CPU loss 2.7e-8 and global gradient 2.2e-6 off it; same draws"
+    },
+    "limits": {
+     "clip_scaling": "the check batch's norm was 0.978, so the clip's scaling path was not compared per tensor; it scaled in four of the five steps, where MPS and CPU agreed (losses about 2e-7, weight change 7.4e-5), and in 168 of the 200 long timed steps (up to 8.17) and all 100 short ones, every step finite",
+     "idle_launcher": "follow-up: the first check launch refused itself because the launching shell's command line and a separate caffeinate -i process matched the venv pattern outside the probe's lineage; relaunched with nohup and caffeinate -i -w <pid>, both runs then counted 0 and 0; the idle count should leave such wrappers out, or the plan should name the launcher",
+     "one_run": "the rates are one run's",
+     "probe_only": "200 steps say nothing about whether a fine-tune helps; the optimizer started fresh"
+    },
+    "hours": {
+     "library_h": 0.889,
+     "library_sections": 320,
+     "library_by_source_h": {
+      "telefunken / 2": 0.572,
+      "cambridge / 3": 0.139,
+      "cambridge / 2": 0.117,
+      "cambridge / undeclared": 0.036,
+      "telefunken / 3": 0.025
+     },
+     "library_excluded_h": {
+      "untrusted": 13.45,
+      "left-out band": 0.0,
+      "held band": 0.689,
+      "held out": 0.0,
+      "reserve DI": 0.136,
+      "user DI mark": 0.3,
+      "hum superset": 0.011,
+      "draw section": 0.0
+     },
+     "held_band_reasons_h": {
+      "V-real": 0.653,
+      "NS": 0.036
+     },
+     "egdb_h": 1.791,
+     "egfxset_h": 0.958,
+     "goat_h": 4.262,
+     "goat_items": 117,
+     "goat_excluded_items": {
+      "ruled out": 1,
+      "draw item": 24,
+      "5C: no screened window": 24,
+      "5C: DI near full scale": 6
+     },
+     "goat_by_tuning_h": {
+      "standard": 3.578,
+      "downtuned": 0.468,
+      "dropd": 0.077,
+      "othertunings": 0.138
+     },
+     "kind": "a count only; GOAT never checked for scope; the fine-tune declares its own set"
+    },
+    "outputs_sha256": {
+     "hours.json": "4846f715e2a544d8d84d55e13f158cee343f9d69b55528485c327505e5872525",
+     "prep.json": "6852ca67c596a537092114c3546719bc2b4a86b3c8a70ebe8fac3f2433229f5a",
+     "check.json": "8ea6a6baa494035ed2fe5cbb984b9441f29473eea5b31df47fd75908744db88e",
+     "time-20261128-190641.json": "dac78f81a3190c8e26e80c10b6d20d04eb1655a7a4665a0ca7b66c96c6aaec91",
+     "outcome.json": "32571d40b6df180244a9be1cdfe5d377fc9f54d39a861d41f7b4950022bb9288",
+     "segments": "seg-00.npy to seg-15.npy, hashed in prep.json"
+    },
+    "terms": "LOUDAR code MIT; checkpoint GuitarFx-175000.pt (sha256 d86e08bbb94b..., pinned) tagged MIT, trained on GOAT (CC BY-NC, granted on request); m2l autoencoder linear-cae 0.1.4, Apache-2.0; research use only; nothing ships",
+    "no_model": "no model, optimizer state or weights file was kept or written; PF/fs/prior-probe/ holds JSON and the 16 segments only",
+    "next": "prices route 3's fine-tune; the user picks the route"
    }
   },
   {
