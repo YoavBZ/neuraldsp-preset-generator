@@ -9585,6 +9585,389 @@
      "PF/fs/own/rows.json",
      "PF/fs/own/report.json"
     ]
+   },
+   "phase_scratch_envelope": {
+    "declared": "2026-11-28, before anything in it runs",
+    "plan": "docs/scratch-envelope-plan.md; the planner's plan (handover plans/envelope-and-prior-probe-plan.md, section A, sha256 2b86964950847632a7beeed1628c9a171f27a54a296496d37a6b09083765a8a6, its independent review appended) passed an independent review (Opus, high), PASS WITH AMENDMENTS; A's amendments 1 to 6 are binding and override the plan's text where they differ; the non-binding notes taken",
+    "user_go": "the user's choice, 2026-11-28: 'Spectral steps first (Recommended)' (with the LOUDAR MPS timing probe in parallel, its own declaration)",
+    "orchestrator_calls": {
+     "window_group_undecided": "R_win matches with R_group undecided goes to XE-undecided with the text 'window suffices; group undecided'; no new code",
+     "proof_failure": "a proof failure stops the shard",
+     "notes": "A's non-binding notes taken; names re-grepped on current origin/main"
+    },
+    "implementer_calls": {
+     "level_align": "before the gains the target's STFT is scaled by one factor per part, sqrt(the source's in-band power / the target's) over all 20 bands and every frame of the padded part, so the +-20 dB clamp bounds the envelope's shape, not the two signals' arbitrary levels: on 3 real parts in memory (zero renders, nothing written) the unaligned target sat 17-37 dB under the source and the clamp caught 40-100% of vt-part's cells and up to 79% of vt-group's; aligned, 0-11%. The finish (song_bank.measure: re-EQ to the average guitar, then -22.9 LUFS) and chain's -22.9 LUFS re-level every guitar, so the factor reaches a finished guitar only through the clamp; recorded per part as target_align_db; proof 4 runs on the unscaled target",
+     "passing_sets": "one passing set for the code (tr-di, vc-own, vt-part, vt-group, vt-win); vt-mag and vt-phase each on their own (tr-di, vc-own and that guitar), so a beside refusal never moves the code; the identity per step on that step's set (non-binding note)",
+     "then_field": "`then` is the code of the non-surprise rows (XE-group onward); `surprises` lists each C or R of the EQ steps reading better and C_part closing",
+     "error_figures": "the realised error's median and 90th percentile are of |error| in dB, the signed median beside; the swaps read on vt-win's cells and floor",
+     "own_gate": "the steps run only under the vc-own row's XW-closed or XW-part (its declaration's deferred call; XW-undecided would need the user's word first)"
+    },
+    "question": "how finely must the bank guitar's spectral envelope be corrected to close S (+0.501 [+0.399, +0.603] on the 40, by the score): per part, per onset group or per 43-ms window? The answer points the user at route 1, route 2 or neither",
+    "guitars": {
+     "rule": "each is tr-di before its finish, corrected toward vc-own before its finish, then p.finish, cut to n, -22.9 LUFS (voice_build.chain)",
+     "vt-part": "one EQ per part: a check, about 0 by construction (the finish refits each guitar's long-term tone)",
+     "vt-group": "one EQ per onset group: an oracle per-note EQ, not a bound on a bank",
+     "vt-win": "one EQ per 43-ms window (one STFT frame), 5-ms hop: tone moving inside the note",
+     "vt-mag": "beside: vc-own's magnitude, tr-di's phase",
+     "vt-phase": "beside: tr-di's magnitude, vc-own's phase"
+    },
+    "transform": {
+     "source": "note_rebuild.denoise_above(scratch_rederive._synth(notes, n, bank, ring, T's tuning, mutes, tilt, levels, loudness option, last=True)): tr-di before its finish, n + END_PAD_S samples, float64",
+     "target": "voice_build.padded_raw(prt.di_path, prt.start_s) times voice_build.own_gain(notes, played_trace(notes, n + pad, bank, T's tuning, ring, T's mutes), n + pad, end=real_end(n, pad)): vc-own before its finish",
+     "lengths": "both exactly n + voice_build.pad_samples() samples, or the part stops before writing",
+     "stft": "periodic Hann 2048 (0.5 - 0.5 cos(2 pi j / 2048)), hop 240, numpy.fft.rfft (1025 bins), the signal zero-extended by 1024 at both ends; frame i centred on sample 240 i; frames 0 to (L - 1) // 240 (frame_count), so every sample 0..L-1 lies within 240 of a frame centre",
+     "istft": "numpy.fft.irfft of each frame times the same window, overlap-added at the hop, divided by the overlap-added w^2 (never 0 on 0..L-1), cut back to 0..L-1",
+     "edge_bins": "bins 0-2 (below 55.7 Hz) and 767-1024 (above 17.96 kHz) keep 0 dB in the three EQ steps; vt-mag and vt-phase swap all 1,025 bins",
+     "units": "vt-part one unit; vt-group: frame i is in unit bisect_right(bounds, 240 i), bounds the onset groups' first onsets (voice_build.group_onsets) less 2 ms, round(... * SR): unit 0 everything before the first, the last to the padded end; vt-win: one frame each",
+     "energy": "E[unit, band] = the STFT power |X|^2 summed over the unit's frames and the band's bins",
+     "level_align": "the implementer's call: before the gains the target's STFT is scaled by one factor per part, sqrt(the source's in-band power / the target's), summed over all 20 bands and every frame of the padded part, so the clamp bounds the envelope's shape, not the two signals' arbitrary levels; the finish and -22.9 LUFS re-level every guitar, so the factor reaches a finished guitar only through the clamp; recorded per part (target_align_db); proof 4 runs on the unscaled target",
+     "gain": "sqrt(E_target / E_source), the same for every bin of the band and every frame of the unit; its amplitude dB (10 log10 of the power ratio) clamped to +-20 dB",
+     "floor": "a cell keeps 0 dB when E_source < max over the part's units at that step of E_source for that band, times 10^-4 (power dB), or when E_source = 0; E_target = 0 with E_source > 0 gives -20 dB (clamped)",
+     "swaps": "vt-mag |X_target| with X_source's phase, vt-phase |X_source| with X_target's phase, every bin; where the phase donor's magnitude is 0 the other signal's own bin is kept (its phase)",
+     "after": "voice_build.chain: p.finish on all n + pad samples, cut to n, -22.9 LUFS by at_lufs; float32",
+     "bands": {
+      "rule": "third-octave centres 1000 * 2^(k/3), k = -12..12, edges centre * 2^(+-1/6) on the exact centres; bin b (frequency b * 48000 / 2048) lies in a band when its frequency is in [lo, hi); a band with fewer than 4 bins merges with the next one up: 20 bands, bins 3..766 (band_table)",
+      "count": 20,
+      "table": [
+       {
+        "band": 0,
+        "centres_hz": [
+         62.5,
+         78.7,
+         99.2,
+         125.0,
+         157.5
+        ],
+        "lo_hz": 55.7,
+        "hi_hz": 176.8,
+        "bins": "3-7",
+        "n_bins": 5
+       },
+       {
+        "band": 1,
+        "centres_hz": [
+         198.4,
+         250.0
+        ],
+        "lo_hz": 176.8,
+        "hi_hz": 280.6,
+        "bins": "8-11",
+        "n_bins": 4
+       },
+       {
+        "band": 2,
+        "centres_hz": [
+         315.0
+        ],
+        "lo_hz": 280.6,
+        "hi_hz": 353.6,
+        "bins": "12-15",
+        "n_bins": 4
+       },
+       {
+        "band": 3,
+        "centres_hz": [
+         396.9
+        ],
+        "lo_hz": 353.6,
+        "hi_hz": 445.4,
+        "bins": "16-19",
+        "n_bins": 4
+       },
+       {
+        "band": 4,
+        "centres_hz": [
+         500.0
+        ],
+        "lo_hz": 445.4,
+        "hi_hz": 561.2,
+        "bins": "20-23",
+        "n_bins": 4
+       },
+       {
+        "band": 5,
+        "centres_hz": [
+         630.0
+        ],
+        "lo_hz": 561.2,
+        "hi_hz": 707.1,
+        "bins": "24-30",
+        "n_bins": 7
+       },
+       {
+        "band": 6,
+        "centres_hz": [
+         793.7
+        ],
+        "lo_hz": 707.1,
+        "hi_hz": 890.9,
+        "bins": "31-38",
+        "n_bins": 8
+       },
+       {
+        "band": 7,
+        "centres_hz": [
+         1000.0
+        ],
+        "lo_hz": 890.9,
+        "hi_hz": 1122.5,
+        "bins": "39-47",
+        "n_bins": 9
+       },
+       {
+        "band": 8,
+        "centres_hz": [
+         1259.9
+        ],
+        "lo_hz": 1122.5,
+        "hi_hz": 1414.2,
+        "bins": "48-60",
+        "n_bins": 13
+       },
+       {
+        "band": 9,
+        "centres_hz": [
+         1587.4
+        ],
+        "lo_hz": 1414.2,
+        "hi_hz": 1781.8,
+        "bins": "61-76",
+        "n_bins": 16
+       },
+       {
+        "band": 10,
+        "centres_hz": [
+         2000.0
+        ],
+        "lo_hz": 1781.8,
+        "hi_hz": 2244.9,
+        "bins": "77-95",
+        "n_bins": 19
+       },
+       {
+        "band": 11,
+        "centres_hz": [
+         2519.8
+        ],
+        "lo_hz": 2244.9,
+        "hi_hz": 2828.4,
+        "bins": "96-120",
+        "n_bins": 25
+       },
+       {
+        "band": 12,
+        "centres_hz": [
+         3174.8
+        ],
+        "lo_hz": 2828.4,
+        "hi_hz": 3563.6,
+        "bins": "121-152",
+        "n_bins": 32
+       },
+       {
+        "band": 13,
+        "centres_hz": [
+         4000.0
+        ],
+        "lo_hz": 3563.6,
+        "hi_hz": 4489.8,
+        "bins": "153-191",
+        "n_bins": 39
+       },
+       {
+        "band": 14,
+        "centres_hz": [
+         5039.7
+        ],
+        "lo_hz": 4489.8,
+        "hi_hz": 5656.9,
+        "bins": "192-241",
+        "n_bins": 50
+       },
+       {
+        "band": 15,
+        "centres_hz": [
+         6349.6
+        ],
+        "lo_hz": 5656.9,
+        "hi_hz": 7127.2,
+        "bins": "242-304",
+        "n_bins": 63
+       },
+       {
+        "band": 16,
+        "centres_hz": [
+         8000.0
+        ],
+        "lo_hz": 7127.2,
+        "hi_hz": 8979.7,
+        "bins": "305-383",
+        "n_bins": 79
+       },
+       {
+        "band": 17,
+        "centres_hz": [
+         10079.4
+        ],
+        "lo_hz": 8979.7,
+        "hi_hz": 11313.7,
+        "bins": "384-482",
+        "n_bins": 99
+       },
+       {
+        "band": 18,
+        "centres_hz": [
+         12699.2
+        ],
+        "lo_hz": 11313.7,
+        "hi_hz": 14254.4,
+        "bins": "483-608",
+        "n_bins": 126
+       },
+       {
+        "band": 19,
+        "centres_hz": [
+         16000.0
+        ],
+        "lo_hz": 14254.4,
+        "hi_hz": 17959.4,
+        "bins": "609-766",
+        "n_bins": 158
+       }
+      ]
+     }
+    },
+    "proofs": {
+     "names": [
+      "source_is_tr_di",
+      "target_is_vc_own",
+      "unity_is_source",
+      "swap_is_target"
+     ],
+     "source_is_tr_di": "the source through chain is tr-di byte for byte (build 2's sha256)",
+     "target_is_vc_own": "the target through chain is the stored vc-own byte for byte (the sound-gap build.json's audio_sha256); its inputs played_trace(p.notes, n + pad, p.bank, T's tuning, p.ring, T's mutes) and padded_raw(prt.di_path, prt.start_s), as voice_build.part_record",
+     "unity_is_source": "unity gains through apply_gains on each EQ step's units and the inverse return the source: max |y - x| / max |x| <= 1e-9, float64, before the finish",
+     "swap_is_target": "the target's STFT through the swap with its own magnitude and phase, then the inverse, returns the target within 1e-9 (amendment 6)",
+     "failure": "any failure stops the shard before that part writes anything (the orchestrator's call), on 47 of 47",
+     "checked": "in memory before this declaration (zero renders, every write stubbed, nothing under PF): all four held on 3 real parts (BKS, GOAT, panel), proofs 3 and 4 at 1.5e-16 to 4.3e-16; 7.6-8.2 s a part"
+    },
+    "realised_error": {
+     "intent": "before the finish: per cell (unit, band) 10 log10(E_y / E_source) less the clamped intended gain (the EQ steps); vt-mag against the target's band power, vt-phase against the source's, on vt-win's cells; cells floored at that step (vt-win's floor for the swaps) or with zero power left out",
+     "target": "the finished vt-k against the finished vc-own (chain's n samples, the same STFT, frames 0..(n - 1) // 240): per cell 10 log10(E_vt-k / E_vc-own), the step's cells and floor (vt-win's for the swaps)",
+     "figures": "per part and step: the median and 90th percentile of |error| in dB, the signed median, the cell count, the clamped and floored shares of the step's cells; spectral convergence (|| |Y| - |M| ||_F / || |M| ||_F, M the magnitude donor) for vt-mag and vt-phase; the level change before the finish (20 log10 of the RMS over the source's) and the step to -22.9 LUFS"
+    },
+    "terms": {
+     "C_k": "ln(d_tr-di / d_vt-k): what step k closes",
+     "R_k": "ln(d_vt-k / d_vc-own): what is left",
+     "S": "ln(d_tr-di / d_vc-own), reproduced per part from the stored floors against the sound-gap rows.json and on the 40 to +0.501 [+0.399, +0.603] to 3 places",
+     "identity": "C_k + R_k = S per part to 1e-12 on each step's passing set",
+     "floors": "row (b)'s answer, the held half, the true DI as the judge's DI; tr-di's floor stored (the exact-notes floors.json), vc-own's stored (the sound-gap floor records, hashed in its rows.json)",
+     "pool": "the 40 (BKS+GOAT) decide by scratch_notes.set_rows; all 47 beside"
+    },
+    "table": {
+     "rule": "paired_reading of C_k and R_k (k in part, group, win) on the 40, the first that holds; coded as scratch_envelope.XE_TABLE and xe_code, tested before any run: every interval case, malformed ones included, ends in exactly one code; vt-mag and vt-phase never change it",
+     "codes": [
+      "XE-anomaly",
+      "XE-static",
+      "XE-group",
+      "XE-window",
+      "XE-split",
+      "XE-detail",
+      "XE-undecided"
+     ],
+     "XE-anomaly": {
+      "when": "a proof, the repeat check, S's reproduction or the identity fails; a C or R of the EQ steps (part, group, win) has no usable interval or reading; or any of them reads better",
+      "said": "unexpected; audit. If the audit finds no fault, the figures go to the user as read",
+      "decides": "stop; audit; nothing said before the audit"
+     },
+     "XE-static": {
+      "when": "C_part reads worse (closes)",
+      "said": "unexpected by construction (the finish refits each guitar's long-term tone); audit the finish. If it stands, that part of S is static tone",
+      "decides": "the finish, not a sound route; an oracle: every correction comes from the true DI, read by the floor; a song-only way to get this envelope (for example from the stem, through the amp) is not priced here; the next search row (about 13,400 renders) needs its own go; a floor remainder over 0.10 may cost little by search (the floor-to-search mapping is concave)"
+     },
+     "XE-group": {
+      "when": "R_group reads matches",
+      "said": "a per-note correction is enough: a heard-size remainder after one EQ per onset group is ruled out, by the score",
+      "decides": "route 1's kind (a better-matched bank, pickup, or per-note EQ), an indication and not a bound on a bank (a bank also changes attacks and articulation); an oracle: every correction comes from the true DI, read by the floor; a song-only way to get this envelope (for example from the stem, through the amp) is not priced here; the next search row (about 13,400 renders) needs its own go; a floor remainder over 0.10 may cost little by search (the floor-to-search mapping is concave)"
+     },
+     "XE-window": {
+      "when": "R_win reads matches and R_group reads worse",
+      "said": "the tone must move inside the note: one EQ per onset group leaves a heard-size remainder, one EQ per 43-ms window does not, by the score",
+      "decides": "route 2, or samples that change over the note; an oracle: every correction comes from the true DI, read by the floor; a song-only way to get this envelope (for example from the stem, through the amp) is not priced here; the next search row (about 13,400 renders) needs its own go; a floor remainder over 0.10 may cost little by search (the floor-to-search mapping is concave)"
+     },
+     "XE-split": {
+      "when": "C_win reads worse (closes) and R_win reads worse",
+      "said": "envelope correction buys about C_win, an estimate within the realised error (the transform's error makes it understate rather than bound); the rest is not envelope at this resolution; C_group reads <C_group's reading>: that says whether per-note covers the envelope part",
+      "decides": "the envelope part to routes 1 and 2 as C_group and C_win say, the rest to note content or detail; an oracle: every correction comes from the true DI, read by the floor; a song-only way to get this envelope (for example from the stem, through the amp) is not priced here; the next search row (about 13,400 renders) needs its own go; a floor remainder over 0.10 may cost little by search (the floor-to-search mapping is concave)"
+     },
+     "XE-detail": {
+      "when": "R_win reads worse and C_win reads matches",
+      "said": "no heard-size part of S is envelope at this resolution: note content or detail, by the score, with the realised error beside",
+      "decides": "route 3 or the stem; route 2 only as whole-waveform generation; an oracle: every correction comes from the true DI, read by the floor; a song-only way to get this envelope (for example from the stem, through the amp) is not priced here; the next search row (about 13,400 renders) needs its own go; a floor remainder over 0.10 may cost little by search (the floor-to-search mapping is concave)"
+     },
+     "XE-undecided": {
+      "when": "anything else",
+      "said": "not decided; undecided is not failed",
+      "decides": "to the user with the intervals (R_win lo90 to hi90, R_group lo90 to hi90, C_win lo90 to hi90)"
+     },
+     "then": "amendment 3: under XE-static, or XE-anomaly from a C or R reading better with no fault, the read records `then`, the code the rest of the table gives (XE-group onward), and lists every surprise; a fault (a failed check or a missing interval) has no then",
+     "flags": {
+      "window_suffices": "R_win matches and R_group undecided: XE-undecided with the text 'window suffices; group undecided' (the orchestrator's call; no new code)",
+      "window_step_artefact": "R_group matches while R_win reads worse: flagged beside as a window-step artefact (non-binding note)"
+     }
+    },
+    "beside": {
+     "swaps": "vt-mag and vt-phase, each with its realised error; neither read as note content or string detail",
+     "share": "Fieller's C_k / S",
+     "E1": "vc-env's stored E1 (+0.028 [+0.020, +0.037], matches), the level-only, one-band relative; built on the finished guitar with 20-ms frames, so not a step; vt-win also corrects per-band level and decay at 43 ms",
+     "splits": "clean and crunch; each cluster of the 40 left out; the three largest parts; all 47",
+     "ranks": "Spearman of C_group and C_win with -D_own (fs-own's rows.json, rows_sha256 main's phase_scratch_own_outcome)",
+     "s1": "the passing-only read decides; the intent-to-treat code beside (a refused part at 0.0), refusal-sensitive when they differ",
+     "never": "none of these changes the code"
+    },
+    "seen": {
+     "label": "seen before the declaration",
+     "S": "+0.501 [+0.399, +0.603] worse on the 40 (phase_scratch_voice_outcome)",
+     "E1_E2": "E1 +0.028 [+0.020, +0.037] matches; E2 +0.472 [+0.371, +0.574] worse",
+     "Ux": "+0.044 [+0.017, +0.072] matches (XC-stands)",
+     "fs_own": "XW-part: D_own -0.191 [-0.261, -0.122], C_own +0.082 [+0.018, +0.146], Fieller 0.70 [0.52, 0.92]",
+     "review_probe": "0.5-0.8 dB median error on the window step; about 3 dB per bin on vt-mag",
+     "implementer_probe": "3 real parts in memory, the aligned target: the intent error's median |error| vt-win 0.40-0.49 dB (p90 2.6-2.8), vt-mag 0.71-0.91 dB per band-frame cell (spectral convergence 0.15-0.29), vt-part 0.03-0.06 dB; finished against the finished vc-own vt-part 0.14-0.32 dB, vt-group 1.02-1.57 dB, vt-win 1.16-1.37 dB (p90 5.2-5.5); clamped 0-11%, vt-win floored 32-39%; no floor rendered"
+    },
+    "amendments": {
+     "1": "the transform fully defined: E summed STFT power; the floor in power dB (E_src < max_band 1e-4); E_src = 0 gives 0 dB, E_tgt = 0 with E_src > 0 gives -20 dB; the clamp on the amplitude dB; bins on [lo, hi) of the exact centres; the inverse by overlap-add over the sum of w^2 with a declared frame count; in the swaps a zero phase donor keeps the other signal's bin",
+     "2": "the realised error before the finish against the clamped intent, and the finished vt-k against the finished vc-own, on the cells not floored, with the clamped and floored shares",
+     "3": "faults against surprises: a C or R of the EQ steps reading better and XE-static keep their codes, and the read records `then` (what the rest of the table gives); 'any C or R' restricted to part, group, win",
+     "4": "XE-window needs R_group worse; XE-detail needs C_win matches; XE-split 'buys about C_win, an estimate within the realised error'",
+     "5": "the goal wording on every Decides: an oracle from the true DI read by the floor; a song-only way to the envelope not priced; XE-group an indication, not a bound on a bank; the next search row its own go",
+     "6": "proof 2's inputs named and checked against build.json's vc-own audio_sha256; proof 4 added"
+    },
+    "non_binding_taken": [
+     "fs/envelope also in the ledger: harmless",
+     "re-grepped on the merged main",
+     "the identity per step on that step's passing set",
+     "a proof failure stops the shard",
+     "R_group matches while R_win worse flagged as a window-step artefact",
+     "E1 read beside vt-win",
+     "the concave floor-to-search mapping said in every Decides",
+     "'C_k closes' in the words"
+    ],
+    "grepped": "git grep -F on origin/main 55dea475 (after #664) over docs, learn, tests, scripts and reference: phase_scratch_envelope, scratch_envelope, envelope_build, vt- and XE- one hit each (the reservation list in tests/test_scratch_own.py, which scans only scratch_own.py); fs/envelope only in scratch_own.py's forbidden trees, its plan and the ledger's phase_scratch_own guards; envelope_floors, XE_TABLE, xe_code, C_part, C_group, C_win, R_part, R_group, R_win, C_mag, R_mag, C_phase, R_phase, EnvelopeWorld, level_align and target_align_db none; 'ENVELOPE' also matches ENVELOPE_RATE (tone-matching plan) and 'window suffices' a sentence in verify_tracks.py, neither a term here; no guarded key prefix covers phase_scratch_envelope",
+    "phases": "0 preconditions (#664 merged: XW-part on main; this declaration; the 31 GB disk guard) -> 1 this declaration (zero renders) -> 2 envelope_build build --shard k/3, then --combine (zero renders, about 440 MB), the hash PR phase_scratch_envelope_dry before any floor -> 3 envelope_floors floor --shard k/3, then --rerun (478 renders) -> 4 scratch_envelope read, once (zero renders; rows saved before the code) -> 5 audit, results PR with phase_scratch_envelope_outcome",
+    "renders": {
+     "floors": 470,
+     "repeat": 8,
+     "total": 478,
+     "rule": "5 guitars x 47 parts x 2 (a priming render and the kept one) + tr-di and vc-own on the two check parts x 2; a byte-identical guitar carries; measured: the sound-gap floors' 478 took about 6 minutes on 3 processes"
+    },
+    "guards": "every command refuses unless this checkout runs main's code (learn/scratch_envelope.py, learn/envelope_build.py, learn/envelope_floors.py and the pinned files: scratch_voice's CODE_FILES, scratch_own's CODE_FILES, scratch_readerr) and keys (phase_fs*, phase_scratch_envelope*, phase_scratch_own*, phase_scratch_voice*), main holds the keys it reads, and the vc-own row's code is XW-closed or XW-part; the build also needs rederive_fit's CODE_FILES main's; its own guard (require_envelope, as scratch_own.require_own); no edit to scratch_voice.py (no UNIT_FILES entry), voice_build.py, voice_floors.py, voice_control.py, scratch_own.py, scratch_search.py, scratch_notes.py, scratch_exact.py, rederive_rows.py or scratch_loudar.py; at most 3 render processes; the disk guard",
+    "code": "learn/scratch_envelope.py, learn/envelope_build.py, learn/envelope_floors.py; tests tests/test_scratch_envelope.py, tests/test_envelope_build.py, tests/test_envelope_floors.py",
+    "data": "PF/fs/envelope/ (dry/<guitar>/, build-parts/, build.json, floors/, floors-first/, repeat/, rows.json, report.json), each file written once; part keys only as 12-hex tags in git",
+    "keys_to_come": [
+     "phase_scratch_envelope_dry",
+     "phase_scratch_envelope_outcome"
+    ],
+    "cant_show": "an oracle: every correction comes from the true DI, so nothing here prices a song-only way to the envelope; floors are screens, not search gains (a search row needs its own go); the 47 parts have been read many times; by the score only, at one preset"
    }
   },
   {
