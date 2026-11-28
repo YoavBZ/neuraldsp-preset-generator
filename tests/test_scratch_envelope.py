@@ -577,6 +577,13 @@ def test_the_declaration_in_the_ledger():
         assert len(h["sha256"]) == 64 and h["proofs_hold"] is True and h["parts"] == E.PARTS and h["renders"] == 0
         assert set(h["proofs"]) == set(E.PROOFS) and all(v == "47 of 47" for v in h["proofs"].values())
         assert set(h["realised_error_medians_47"]) == set(E.BUILT) == set(h["realised_error_ranges_47"])
+    if E.PHASE_OUTCOME in ENTRY:                                                 # the audited read
+        o = ENTRY[E.PHASE_OUTCOME]
+        assert o["code"] in E.XE_CODES and "then" in o and (o["then"] is None or o["then"] in E.REST_CODES)
+        assert len(o["rows_sha256"]) == len(o["report_sha256"]) == 64 and "audited" in o["phase"]
+        assert 0 < o["renders"] <= sum(E.RENDERS.values())                       # carries render nothing
+        assert ks.index(E.PHASE_OUTCOME) > ks.index(E.PHASE_DRY)
+        assert (REPO / "docs" / "scratch-envelope-results.md").exists()
 
 
 def test_the_plan_doc_holds_the_band_table():
