@@ -647,8 +647,9 @@ def test_the_declaration_in_the_ledger():
     doc = json.loads((REPO / "docs" / "dev-test-ledger.json").read_text())
     e = next(t for t in doc["tests"] if t["test_id"] == V.LEDGER_ID)
     d = e[VC.PHASE]
-    ks = list(e)                                                                  # appended in order
-    assert d["plan"].startswith(V.PLAN) and set(ks[ks.index(VC.PHASE) + 1:]) <= {VC.PHASE_DRY, VC.PHASE_OUTCOME}
+    ks = list(e)                                  # appended in order; other tracks' keys may follow the declaration
+    later = {k for k in ks[ks.index(VC.PHASE) + 1:] if k.startswith(VC.PHASE)}
+    assert d["plan"].startswith(V.PLAN) and later <= {VC.PHASE_DRY, VC.PHASE_OUTCOME}
     if VC.PHASE_DRY in e:                                                        # the build's hash PR
         h = e[VC.PHASE_DRY]
         assert len(h["sha256"]) == 64 and h["proofs_hold"] is True and h["parts"] == V.PARTS

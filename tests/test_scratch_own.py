@@ -69,9 +69,10 @@ def test_the_declaration_is_in_the_ledger():
     assert d["keys_to_come"] == list(O.KEYS_TO_COME)
     assert d["gate"]["stop"] == list(O.XC_STOP) and d["gate"]["proceed"] == list(O.XC_PROCEED)
     assert d["plan"].startswith(O.PLAN) and (REPO / O.PLAN).exists()
-    assert list(ENTRY)[-1] == O.PHASE or list(ENTRY).index(O.PHASE) > list(ENTRY).index("phase_scratch_voice_outcome")
-    for k in O.KEYS_TO_COME:
-        assert k not in ENTRY
+    ks = list(ENTRY)                              # appended in order; other tracks' keys may follow the declaration
+    assert ks.index(O.PHASE) > ks.index("phase_scratch_voice_outcome")
+    assert {k for k in ks if k.startswith(O.KEY_PREFIX)} - {O.PHASE} <= set(O.KEYS_TO_COME)
+    assert all(ks.index(k) > ks.index(O.PHASE) for k in O.KEYS_TO_COME if k in ENTRY)
 
 
 def test_the_seen_figures_are_the_declarations():
