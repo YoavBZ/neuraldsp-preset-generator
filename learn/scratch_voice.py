@@ -36,7 +36,10 @@ own re-fit, and N and K also carry the finish's re-fit, not only the gate and th
 `XV_TABLE` reads `paired_reading` of S and N on the 40 (BKS+GOAT, all 47 beside), the first that holds; F's reading is
 attached to every code. Under XV-sound or XV-both no synthesis, DI-restoration or search-row spend runs before the
 unclaimed-groups control (about 188 renders, `phase_scratch_voice_control_outcome`) or the user's waiver
-(`phase_scratch_voice_waiver`): `spend_refusal`, `require_spend`.
+(`phase_scratch_voice_waiver`): `spend_refusal`, `require_spend`. The control (`learn/voice_control.py`, its own
+declaration `phase_scratch_voice_control`) opens the gate only on a declared XC code (`CONTROL_CODES`); it stays shut
+under XC-anomaly, and under XC-notes (or XC-part marked `coverage-sensitive`) it opens only through the user's waiver
+(the control's review, amendments 3 and 4).
 
 The builders (`learn/voice_build.py`, Unit B: `build.json` and the four `vc-*` guitars, the proofs, and per part the
 figures `unclaimed_groups` and `cover_figures` compute) and the floors (`learn/voice_floors.py`, Unit C: one record a
@@ -83,7 +86,8 @@ GUARDED_PREFIXES = ("phase_fs", "phase_scratch_notes", "phase_scratch_exact", "p
                     "phase_scratch_rederive", "phase_scratch_tone", "phase_nr")
 
 MODULE = "learn/scratch_voice.py"
-UNIT_FILES = ("learn/voice_build.py", "learn/voice_floors.py")   # Units B and C (absent on both sides until merged)
+UNIT_FILES = ("learn/voice_build.py", "learn/voice_floors.py",   # Units B and C
+              "learn/voice_control.py")                           # the unclaimed-groups control (its own declaration)
 OWN_FILES = (MODULE,) + UNIT_FILES
 PINNED = ("learn/scratch_search.py", "learn/scratch_notes.py", "learn/scratch_exact.py", "learn/note_rebuild.py",
           "learn/note_transcribe.py", "learn/note_replay.py", "learn/pretrain_set.py")   # this module's imports
@@ -234,6 +238,14 @@ XV_DECLARED = ("XV-anomaly", "XV-both", "XV-sound", "XV-notes", "XV-undecided")
 CHECKS = ("proofs", "repeat", "t_reproduces", "sum_holds")
 SPEND_CODES = ("XV-sound", "XV-both")    # the codes under which the control (or the waiver) gates any spend
 SPEND_KINDS = ("synthesis", "di-restoration", "search-row")
+# The control's outcome codes as the gate reads them (`learn/voice_control.py`'s XC_TABLE; its table_guard pins the two
+# equal): the gate opens only on a declared code; never under XC-anomaly; under XC-notes, and under XC-part marked
+# coverage-sensitive, only through the user's waiver (the control's review, amendments 3 and 4).
+CONTROL_CODES = ("XC-anomaly", "XC-stands", "XC-part", "XC-notes", "XC-undecided")
+CONTROL_SHUT = ("XC-anomaly",)
+CONTROL_WAIVER_ONLY = ("XC-notes",)
+COVERAGE_SENSITIVE = "coverage-sensitive"
+COVERAGE_FORCED = ("XC-part", "XC-notes")    # a coverage-sensitive code here goes to the user (amendment 4)
 CUT_SENSITIVE = "cut-sensitive"
 
 
@@ -617,8 +629,10 @@ def spend_refusal(entry, kind):
     """(Pure.) Why a synthesis, DI-restoration or search-row spend may not run on this test's account, or None. entry:
     main's `preset-ladder` entry. Under XV-sound or XV-both it needs the control's audited outcome or the user's
     waiver (with the user's words and the date); under XV-notes no synthesis or DI-restoration spend at all; without
-    the audited outcome, nothing. Holding is necessary, not sufficient: the search row needs its own declaration and
-    the user's go."""
+    the audited outcome, nothing. The control's outcome opens it only on a declared XC code (CONTROL_CODES): never
+    under XC-anomaly (the waiver does not open it either); under XC-notes, or XC-part whose `coverage_label` is
+    coverage-sensitive, only with the user's waiver. Holding is necessary, not sufficient: the search row needs its
+    own declaration and the user's go."""
     if kind not in SPEND_KINDS:
         raise ValueError(kind)
     out = (entry or {}).get(PHASE_OUTCOME)
@@ -630,10 +644,22 @@ def spend_refusal(entry, kind):
     if code not in SPEND_CODES:
         return f"{code}: no spend on this test's account; to the user"
     ctl = (entry or {}).get(PHASE_CONTROL_OUTCOME)
-    if isinstance(ctl, dict) and ctl.get("code"):          # the control's audited outcome carries its code
-        return None
     w = (entry or {}).get(PHASE_WAIVER)
-    if isinstance(w, dict) and w.get("user_words") and w.get("date"):
+    waived = isinstance(w, dict) and bool(w.get("user_words")) and bool(w.get("date"))
+    if isinstance(ctl, dict) and ctl.get("code"):          # the control's audited outcome carries its code
+        c = ctl["code"]
+        if c not in CONTROL_CODES:
+            return f"the control's code {c!r} is not a declared XC code: the gate stays shut; to the user"
+        if c in CONTROL_SHUT:
+            return f"{c}: the control's construction is off; the gate stays shut; to the user"
+        if c in CONTROL_WAIVER_ONLY or (c in COVERAGE_FORCED and ctl.get("coverage_label") == COVERAGE_SENSITIVE):
+            if waived:
+                return None
+            lab = f" ({COVERAGE_SENSITIVE})" if c not in CONTROL_WAIVER_ONLY else ""
+            return (f"{c}{lab}: to the user before any sound-route spend; the gate opens only through "
+                    f"{PHASE_WAIVER} (the user's words and the date)")
+        return None
+    if waived:
         return None
     return f"{code}: " + GATE_NOTE + " must be on main first"
 

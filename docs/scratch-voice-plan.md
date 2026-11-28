@@ -121,6 +121,8 @@ Under XV-sound or XV-both, no learned synthesis, DI restoration or search-row sp
 
 It is coded as `scratch_voice.spend_refusal` and `require_spend`. The gate is necessary, not sufficient: the search row (about 13,100–13,500 renders, about 2 hours, measured on `xf-now`) still needs its own declaration and the user's go. Under XV-notes there is no synthesis spend at all.
 
+**Tightened by the control's declaration (2026-11-28, its review's amendments 3 and 4).** The control's outcome opens the gate only on a declared XC code. It stays shut under XC-anomaly, and the waiver does not open it there. Under XC-notes, and under XC-part marked `coverage-sensitive`, it opens only through `phase_scratch_voice_waiver`. XC-stands, XC-undecided and an unmarked XC-part open it. See "The unclaimed-groups control" below.
+
 ## Beside the read (zero renders)
 
 - **E1, E2.** E1 = ln(d_tr-di / d_vc-env) is the level curve; E2 = ln(d_vc-env / d_vc-own) is the rest. The split is loose, because E1 also takes the level of extra attacks.
@@ -220,3 +222,136 @@ From the planner's zero-render probe (in memory, from a frozen worktree at 96b2e
 ## Done test
 
 `phase_scratch_voice_outcome` is on main with one audited XV code, and S, N, K and F are reported with their intervals and their limits.
+
+## The unclaimed-groups control (`phase_scratch_voice_control`)
+
+Declared 2026-11-28, on the user's route call "Control, then price routes". The planner's plan passed an independent review (Opus, high) with eight binding amendments, which win where they differ from the plan. The orchestrator's calls: keep "drops" literally (the reviewer agrees); rename the terms as amendment 8 asks; take the review's non-binding notes 2–5 and 7. Ledger `preset-ladder` `phase_scratch_voice_control`, then the hash PR `phase_scratch_voice_control_dry` and the results PR `phase_scratch_voice_control_outcome`. Code: `learn/voice_control.py`. Not run.
+
+### Goal
+
+The read was XV-both. S is +0.501 [+0.399, +0.603] on the 40, by the score. This control measures how much of S our unclaimed onset groups hold, so the sound routes are priced against the right figure. An unclaimed group is one with no true-DI rise of 3 dB within ±20 ms of its first onset (`scratch_voice.UNCLAIMED`). The control's outcome opens the spend gate.
+
+### The drop rule, one for both guitars
+
+The flags are build.json's `unclaimed.flags` (hashed in `phase_scratch_voice_dry`). They are recomputed and must be equal. A dropped note is any note of a flagged onset group. Dropped notes are not played in either guitar. The record stores the dropped group indices, never −∞ levels.
+
+| Guitar | Rule |
+|---|---|
+| `tr-uc` | `compose`'s steps on the same notes, bank, ring, loudness option, finish and T, with the dropped groups' levels at −∞ dB, so the dropped notes add exactly zero. The steps are `_synth`, `denoise_above` and `voice_build.chain` (compose's tail, byte for byte). Placement, sources, variety, bends, tilt and every kept note's end and gain stay `tr-di`'s. No new synthesis code |
+| `vc-uc` | `voice_build`'s gate path on the same padded raw section, with the dropped notes' trace records marked not played, so they open no window. Same padded chain, end fade (`real_end`), finish and −22.9 LUFS |
+
+- **T is not re-fitted.** Tuning, mutes, tilt and the kept groups' levels stay `tr-di`'s.
+- **Kept notes stay cut.** Kept notes that end at a dropped note's pluck stay cut in both guitars, as the shared trace has them.
+- **The whole-signal steps are part of the counterfactual** (amendment 1). On `tr-uc` the hiss removal, the finish's EQ re-fit and the −22.9 LUFS step run again; on `vc-uc` the finish and the LUFS step do. So "every other note stays byte for byte" holds only before the hiss removal. Per part, for both guitars, the finished audio's change outside the dropped spans (held half) and the level step against the parent are recorded beside.
+- **Why not the alternatives.** No fade-in rule on a sample bank removes only the attack. Editing the note list re-sources about 15% of the kept notes. Merging into a same-pitch note still sounding applies to few dropped notes and needs a forked synthesis.
+
+### What it reads
+
+The floors are read as in the main test: row (b)'s answer, the held half, the true DI as the judge's DI. Values are paired per part through `set_rows`; the 40 decide, and all 47 are reported beside. The terms are renamed so that none reuses an old term (amendment 8):
+
+| Term | Definition | Meaning |
+|---|---|---|
+| Sx | ln(d_tr-uc / d_vc-uc) | S without the unclaimed groups |
+| Ux | S − Sx | What the unclaimed groups hold of S |
+| Ubx | ln(d_tr-di / d_tr-uc) | The bank guitar's move |
+| Urx | ln(d_vc-own / d_vc-uc) | The real-sound guitar's move; below zero means the drop removed real playing |
+
+- **Identity.** Ux = Ubx − Urx exactly, per part, held to 1e-12. Ux, Ubx and Urx are exactly 0 on every carried part.
+- **One passing set** (amendment 6). The set runs over `tr-di`, `vc-own`, `tr-uc` and `vc-uc`. Each refusal reruns once (S1). A part refused in any of the four drops from every term, and refused parts are reported.
+- **N needs no new guitar.** Against the stored `vc-cut`, Nc = N − Urx exactly, so Urx is N's re-read.
+- **S is reproduced** per part from the stored files against the main test's `rows.json` (its sha256 the outcome key's), and to +0.501 [+0.399, +0.603] on the 40.
+
+### Outcome table
+
+`XC_TABLE` (`voice_control.xc_code`): `paired_reading` of Ux and Sx on the 40, the first row that holds.
+
+| Code | When | Meaning | Next for route pricing |
+|---|---|---|---|
+| XC-anomaly | A proof, the repeat check or an identity fails; S does not reproduce from the stored files; Ux ≠ 0 on a carried part; any of Sx, Ux, Ubx, Urx has no usable interval; or Urx reads worse (amendment 5) | The construction is off | Stop; to the user. The gate stays shut |
+| XC-stands | Ux reads matches or better | A heard-size part of S from the unclaimed groups is ruled out, by the score | Price the sound routes against S. S stays an upper bound |
+| XC-part | Ux worse and Sx worse | The unclaimed groups hold a heard-size part, and one remains without them | Price against Sx as the lower figure and S as the upper (dilution pulls Sx down; amendment 4). Ux goes to the note track as a named target, with Ubx and Urx |
+| XC-notes | Ux worse, Sx not worse | Without the unclaimed groups, real audio in our windows is not shown to close a heard-size part | To the user before any sound-route spend; the gate opens only through the waiver. The unclaimed groups are the first target |
+| XC-undecided | Anything else | Not decided; undecided is not failed | Price against S as the upper figure, with Sx beside |
+
+- **S stays an upper bound in every case** (non-binding note 6). Wrong pitches, bends and articulation stay inside S; the control addresses only the extra attacks.
+- **Dilution.** Both guitars losing the same playing pulls Sx toward 0 and pushes Ux up, so XC-stands is the safe direction. The same mechanism can produce the XC-notes pattern and biases Sx low under XC-part.
+- **`coverage-sensitive`** (amendment 4).
+  - The coverage-clean parts are those whose held-half `uncovered_weight` is exactly unchanged by the drop. Carried parts are included and counted separately. Membership is written into the hashed build.json before any floor.
+  - The code is also read on the coverage-clean deciding parts. When that code differs from the 40's, the read is marked `coverage-sensitive`. A subset whose intervals can't be formed reads XC-anomaly there, so the label is set.
+  - Under XC-part and XC-notes, a coverage-sensitive code goes to the user with both subsets, not to the code's figure, and the gate opens only through the waiver.
+  - Both subsets' Ux, Ubx, Urx and Sx are always reported.
+- **The spend gate** (amendment 3). See "The spend gate" above. The outcome key carries `code` and `coverage_label`.
+
+### Phases, each verified before the next
+
+1. **Declare** (this PR, zero renders). Verify: the tests pass, the table guard holds.
+2. **Build** (`python -m learn.voice_control build --shard k/3` for k = 0, 1, 2, then `--combine`; zero renders, 47 parts). A failed proof or check stops before the part writes anything:
+   - `flags_are_builds`: the recomputed flags equal build.json's;
+   - `rule_off_is_stored`: with no group dropped, the builder gives `tr-di` and `vc-own` byte for byte (their stored sha256), on all 47;
+   - `trace_holds`: the trace equals build 2's stored report and build.json's, and `tr-uc`'s own synthesis report has the same counts;
+   - `outside_dropped_same`: `tr-uc`'s synthesis before the hiss removal equals `tr-di`'s byte for byte outside the dropped notes' spans (amendment 1 scopes it there);
+   - `gate_outside_same`: `vc-uc`'s gate equals `vc-own`'s byte for byte outside the dropped notes' window spans, and is at most `vc-own`'s everywhere (amendment 2);
+   - `synth_inside_gate`: `voice_build`'s check on the control's pair: `tr-uc`'s synthesis before the hiss removal sounds only inside `vc-uc`'s windows;
+   - `drop_is_additive`: `tr-di`'s synthesis equals `tr-uc`'s plus the dropped-only synthesis, within 1e-9 of its peak (non-binding note 5);
+   - as stops beside: the raw section measures to the true DI, the pad and the coverage reproduce build.json's.
+
+   Recorded per part: the groups and notes dropped, the uncovered share before and after, coverage-clean, the kept notes cut by a dropped pluck, the dropped groups with a true rise within ±50 ms, and amendment 1's beside figures. Then the hash PR, `phase_scratch_voice_control_dry`.
+3. **Floors** (`python -m learn.voice_control floor --shard k/3`, then `--rerun` for any refusal). `voice_floors`' body runs on the control's own world (amendment 7): its own guitars, stored carry sources (`tr-di`, `vc-own`), repeat guitars and paths under `PF/fs/voice/control/`, so the main test's `repeat/` records never stand in. Verify first: on the two check parts, the stored `tr-di` and `vc-own` repeat their stored floors, distance and render sha256 (8 renders). Byte-identical guitars carry their parent's stored floor and name it.
+4. **Read** (`python -m learn.voice_control read`, zero renders, once). Before the code, it verifies that S reproduces per part from `rows.json`, that Ux = Ubx − Urx to 1e-12, and that Ux is exactly 0 on carried parts.
+5. **Audit**, then the results PR with `phase_scratch_voice_control_outcome`.
+
+### Cost (measured rates only)
+
+- **Renders:** 12 parts have no unclaimed group, so both guitars carry. 35 × 2 guitars × 2 = 140, plus 8 for the repeat check: about 148.
+  - `scratch_voice.CONTROL_RENDERS` (188, pinned in the main declaration) is the ceiling with no carry, 2 guitars × 47 × 2.
+  - With the repeat check the ceiling is 196.
+- **Time:** the main floors ran 478 renders in 389 s on 3 processes, so 148 is about 2 minutes. The main build took 126–135 s a shard.
+- **Disk:** about 185 MB, against 38 GiB free and the 31 GB guard.
+
+### Files (`PF/fs/voice/control/`, each written once)
+
+`build.json` (with the coverage membership), `build-parts/<part>.json`, `dry/tr-uc/` and `dry/vc-uc/`, `floors/`, `floors-first/`, `repeat/`, `rows.json` and `report.json`. The main test's files under `PF/fs/voice/` are only read. Git gets counts and 12-hex tags only.
+
+### Limits
+
+- **Timing** (non-binding note 7). The control can't tell an extra attack from a real soft or late one. The unclaimed groups with a true rise within ±50 ms of the onset are timing errors, not extras. They stay a declared limit, counted per part beside.
+- **Coverage.** Dropping removes real playing too, so the read reports the two guitars' moves separately and carries `coverage-sensitive`.
+
+### Names (grepped)
+
+On origin/main at da4e0e22, in docs/, learn/, tests/ and the ledger (hits inside `.json.gz` blobs not counted):
+- No hit for Sx, Ux, Ubx, Urx, `tr-uc`, `vc-uc`, `XC-`, `XC_TABLE`, `xc_code`, `fs/voice/control`, `coverage-sensitive`, `coverage_clean`, the new proof names or `phase_scratch_voice_control_dry`.
+- `voice_control` appears only inside the declared keys `phase_scratch_voice_control` and `_control_outcome`.
+- `synth_inside_gate` is `voice_build`'s existing check, reused by name for the same check on the control's pair.
+- The plan's Sc, U, Ub and Ur were renamed because "Sc" collides with 5B.1b's "P2a-Sc" and "P-Sc", and "U" with rederive's "in-U".
+
+### Seen before the declaration
+
+From the planner's two zero-render probes (in memory, from a frozen worktree at 1747d24d, whose `learn/` equals main's) and the review's zero-render probe over all 47 parts. Where the two differ, both are given; the definitions follow.
+
+- **Groups:** 173 unclaimed groups of 1,748 on the 47, and 161 of 1,464 on the 40 (both). 69 of the 161 lie in the held half (planner). 12 parts have no unclaimed group on the 47, 9 on the 40 (review).
+- **Notes dropped:** 204 on the 40, 198 of them played; 222 and 216 on the 47 (review; the planner's played counts agree).
+- **Coverage:**
+  - Dropping lifts the uncovered share on the 40 from a mean 5.6% to 11.9% (median 2.3% to 4.6%). 28 parts move by at most 0.005; 12 move by 0.022 to 0.87 (both).
+  - The coverage-clean subset is 26 of the 40: 11 BKS and 15 GOAT, 17 with drops and 9 without. Its S mean is 0.498, against 0.527 on the other 14 (review).
+  - Two parts dominate the coverage loss: `ea5fc54a8160` (8 of 12 groups unclaimed, uncovered 6% to 93%, S 0.75) and `e8d444a97729` (+0.70) (review).
+- **Kept notes cut by a dropped pluck:** 30 on the 40 (both).
+- **Bank attacks:** the bank's dry guitar shows a 3-dB rise at 108 of the 161 (both). Even after the full drop, 39 of the 108 still show a rise from other notes (review).
+- **Fade-in:** attacks left after a linear fade-in are 96, 89 and 77 of the 108 at 10, 20 and 50 ms (planner), or 97, 91 and 79 (review, whose fork leaves out tilt).
+- **Re-sourced:** a filtered placement re-sources 413 of 2,714 kept notes on the 40 (planner), or 404 (review).
+- **Mergeable:** 20 of 204 dropped notes (planner), or 12 (review).
+- **Window state at the unclaimed onset:** open through 115, closing 19, absent 27 (planner), or 118, 11, 32 (review).
+- **Timing:** 40 of the 161 have a true rise within ±50 ms (planner).
+- **Synthesis at −∞:** before the hiss removal, the output outside the dropped spans is byte-identical on 35 of 35 parts with drops, and the compose report is unchanged. After `denoise_above` it is identical on 0 of 35; the change outside the spans reaches 2.3% of peak (median 0.24%) (review).
+- **Replication:** flags, the trace report and the uncovered share equal build.json's on 47 of 47 (both).
+
+**Definitions** (non-binding note 2; the review's, where the planner's rule was not recorded):
+- **Window state:** at each unclaimed group's first onset t, over the other played notes' windows [on − 2 ms, trace end): *open through* when a window is open at t and the latest such end is after t + 3 ms; *closing* when every window open at t ends by t + 3 ms (cut at this pluck); *absent* when none is open.
+- **Mergeable:** a dropped played note with a kept played note of the same pitch sounding at its onset (that note's on < this onset < its trace end).
+- **Re-sourced:** a kept played note whose (string, fret), under `synthesise_redo`'s placing run on the list with the dropped notes removed, differs from its placing on the full list.
+- **Fade-in point:** a linear fade-in of 10, 20 or 50 ms from each dropped note's first sample (its window start, on − 2 ms), in the synthesis before the hiss removal, cut to n. An attack still reads when the faded guitar has a 3-dB rise within ±20 ms of the unclaimed onset (`unclaimed_groups`' rule) where the unfaded one had.
+- **Timing:** a true-DI rise of 3 dB or more within ±50 ms of the group's first onset (`REFINE_S`).
+
+### Done test
+
+`phase_scratch_voice_control_outcome` is on main with one audited XC code, and Ux, Ubx, Urx and Sx are reported with intervals on the 40 and on both coverage subsets.

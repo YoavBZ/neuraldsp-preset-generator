@@ -43,6 +43,13 @@ folder on close (`knob_ceiling.Renderer.close`).
 
 The command's body (`run_floor`) runs on a world object (`RealWorld`, or a fake in tests/test_voice_floors.py on the
 light CI runner: no numpy, no renders).
+
+**Another run's world** (the unclaimed-groups control, `learn/voice_control.py`; its review's amendment 7). A world may
+carry its own guitars and paths; whatever it leaves out takes this module's default, so the main test's floors run
+exactly as before: `order` (the rendered guitars; RENDERED), `stored_guitars` (the stored floors and first carry
+sources; STORED), `repeat_guitars` (the repeat check's; STORED), the methods `floor_path`, `first_path` and
+`repeat_path` (a part's records; `floors/`, `floors-first/`, `repeat/` under `PF/fs/voice/`), `plan`, `sha_fields`
+(the hashed inputs every record names; SHA_FIELDS) and `label` (the log's).
 """
 
 from __future__ import annotations
@@ -77,6 +84,47 @@ REASONS = {                              # S1's reasons: fixed strings, never a 
 }
 SHA_FIELDS = ("build", "answers", "floors")   # the hashed inputs every record names (`<field>_sha256`)
 FIELDS = ("held", "audio_sha256", "dry_sha256", "refused", "reran", "carried_from")   # a guitar's floor record
+
+
+# --- a world's own guitars and paths (each default is the main test's) -------------------------------------------------
+
+def w_order(w):
+    return tuple(getattr(w, "order", ORDER))
+
+
+def w_stored(w):
+    return tuple(getattr(w, "stored_guitars", STORED))
+
+
+def w_repeat(w):
+    return tuple(getattr(w, "repeat_guitars", STORED))
+
+
+def w_floor_path(w, pk):
+    f = getattr(w, "floor_path", None)
+    return f(pk) if f is not None else V.floor_path(pk)
+
+
+def w_first_path(w, pk):
+    f = getattr(w, "first_path", None)
+    return f(pk) if f is not None else first_path(pk)
+
+
+def w_repeat_path(w, pk):
+    f = getattr(w, "repeat_path", None)
+    return f(pk) if f is not None else V.repeat_path(pk)
+
+
+def w_sha_fields(w):
+    return tuple(getattr(w, "sha_fields", SHA_FIELDS))
+
+
+def w_plan(w):
+    return getattr(w, "plan", PLAN)
+
+
+def w_label(w):
+    return getattr(w, "label", "VOICE FLOORS")
 
 
 # --- the pure parts ---------------------------------------------------------------------------------------------------
@@ -144,16 +192,17 @@ def carried(src_rec, dry_sha, src, reran=False):
             "refused": src_rec.get("refused"), "reran": reran, "carried_from": src}
 
 
-def floor_guitars(todo, dry_shas, render, stored, done=None, reran=False):
+def floor_guitars(todo, dry_shas, render, stored, done=None, reran=False, order=ORDER, stored_names=STORED):
     """(Pure but for `render`.) The floors of one part's guitars `todo`, in order. dry_shas: {guitar: its dry sha256}
     (the rendered guitars' and the stored true DI's and tr-di's); render(guitar) -> (held, render sha256, finite);
     stored: {true, tr-di: {held, audio_sha256}}, the stored floors; done: {guitar: record} already settled for the part
     (the first pass's passing guitars on a rerun). A guitar byte-identical to one already floored takes its floor
-    (`carry_source`). -> ({guitar: record}, renders)."""
+    (`carry_source`). order, stored_names: the run's rendered and stored guitars (by default the main test's).
+    -> ({guitar: record}, renders)."""
     out, renders = dict(done or {}), 0
-    settled = [(g, dry_shas.get(g)) for g in STORED] + [(g, dry_shas.get(g)) for g in ORDER if g in out]
+    settled = [(g, dry_shas.get(g)) for g in stored_names] + [(g, dry_shas.get(g)) for g in order if g in out]
     floored = {g: {"held": stored[g].get("held"), "audio_sha256": stored[g].get("audio_sha256"),
-                   "refused": refusal_of(True, stored[g].get("held"))} for g in STORED}
+                   "refused": refusal_of(True, stored[g].get("held"))} for g in stored_names}
     for g in todo:
         sha = dry_shas.get(g)
         if not sha:
@@ -166,27 +215,28 @@ def floor_guitars(todo, dry_shas, render, stored, done=None, reran=False):
             renders += RENDERS_EACH
             out[g] = render_floor(held, audio_sha, finite, sha, reran)
         settled.append((g, sha))
-    return {g: out[g] for g in ORDER if g in out}, renders
+    return {g: out[g] for g in order if g in out}, renders
 
 
-def refused_guitars(rec):
-    """(Pure.) A floor record's refused guitars, in RENDERED's order."""
+def refused_guitars(rec, order=ORDER):
+    """(Pure.) A floor record's refused guitars, in RENDERED's order (or the run's `order`)."""
     gs = (rec or {}).get("guitars") or {}
-    return [g for g in ORDER if (gs.get(g) or {}).get("refused")]
+    return [g for g in order if (gs.get(g) or {}).get("refused")]
 
 
-def repeat_verdict(got, stored):
-    """(Pure.) The repeat check on one part: each of the true DI and tr-di's held distance and render sha256 equal to
-    the stored floor's. got, stored: {guitar: {held, audio_sha256}}. -> {guitars: {...}, holds}."""
+def repeat_verdict(got, stored, guitars=STORED):
+    """(Pure.) The repeat check on one part: each of the true DI and tr-di's (or the run's `guitars`') held distance and
+    render sha256 equal to the stored floor's. got, stored: {guitar: {held, audio_sha256}}. -> {guitars: {...},
+    holds}."""
     gs = {}
-    for g in STORED:
+    for g in guitars:
         a, b = got.get(g) or {}, stored.get(g) or {}
         same_d = a.get("held") is not None and a.get("held") == b.get("held")
         same_sha = bool(a.get("audio_sha256")) and a.get("audio_sha256") == b.get("audio_sha256")
         gs[g] = {"held": a.get("held"), "audio_sha256": a.get("audio_sha256"), "stored_held": b.get("held"),
                  "stored_audio_sha256": b.get("audio_sha256"), "distance_repeats": same_d, "sha_repeats": same_sha,
                  "holds": same_d and same_sha}
-    return {"guitars": gs, "holds": all(r["holds"] for r in gs.values()) and len(gs) == len(STORED)}
+    return {"guitars": gs, "holds": all(r["holds"] for r in gs.values()) and len(gs) == len(guitars)}
 
 
 def repeat_state(recs):
@@ -232,9 +282,9 @@ def _read(path):
 def run_repeat(w):
     """The repeat check on the two check parts (8 renders), each record written once; any mismatch stops. A part whose
     record exists is not rendered again (a failed one stops at once)."""
-    renders = 0
+    renders, guitars = 0, w_repeat(w)
     for pk in w.check_keys:
-        rp = V.repeat_path(pk)
+        rp = w_repeat_path(w, pk)
         old = _read(rp)
         if old is not None:
             if old.get("holds") is not True:
@@ -244,13 +294,13 @@ def run_repeat(w):
         if why:
             raise SystemExit(why)
         got = {}
-        for g in STORED:
+        for g in guitars:
             held, audio_sha, finite = w.render(pk, g)
             renders += RENDERS_EACH
             got[g] = {"held": held if finite and isinstance(held, float) and math.isfinite(held) else None,
                       "audio_sha256": audio_sha}
-        v = repeat_verdict(got, w.stored[pk])
-        rec = {"plan": PLAN, "tag": V.tag(pk), **v, "renders": len(STORED) * RENDERS_EACH,
+        v = repeat_verdict(got, w.stored[pk], guitars)
+        rec = {"plan": w_plan(w), "tag": V.tag(pk), **v, "renders": len(guitars) * RENDERS_EACH,
                "floors_sha256": w.shas["floors"], "answers_sha256": w.shas["answers"], "time": w.now()}
         write_once(rp, rec, V.tag(pk))
         w.log(f"repeat {V.tag(pk)}: holds {v['holds']}")
@@ -265,7 +315,7 @@ def wait_repeat(w, wait_s=REPEAT_WAIT_S, poll_s=REPEAT_POLL_S):
     after `wait_s`."""
     t0 = w.clock()
     while True:
-        st = repeat_state({k: _read(V.repeat_path(k)) for k in w.check_keys})
+        st = repeat_state({k: _read(w_repeat_path(w, k)) for k in w.check_keys})
         if st == "holds":
             return
         if st == "fails":
@@ -276,24 +326,26 @@ def wait_repeat(w, wait_s=REPEAT_WAIT_S, poll_s=REPEAT_POLL_S):
 
 
 def require_repeat(w):
-    st = repeat_state({k: _read(V.repeat_path(k)) for k in w.check_keys})
+    st = repeat_state({k: _read(w_repeat_path(w, k)) for k in w.check_keys})
     if st != "holds":
         raise SystemExit(f"the repeat check {st}: --rerun runs only after it held")
 
 
 def part_record(w, pk, guitars, renders, extra=None):
-    return {"plan": PLAN, "tag": V.tag(pk), "guitars": guitars, "renders": renders, **(extra or {}),
-            **{f"{f}_sha256": w.shas[f] for f in SHA_FIELDS}, "time": w.now()}
+    return {"plan": w_plan(w), "tag": V.tag(pk), "guitars": guitars, "renders": renders, **(extra or {}),
+            **{f"{f}_sha256": w.shas[f] for f in w_sha_fields(w)}, "time": w.now()}
 
 
 def floor_part(w, pk):
     """The main pass on one part: every rendered guitar in RENDERED's order (carries without a render). -> renders."""
-    out, first = V.floor_path(pk), first_path(pk)
+    out, first = w_floor_path(w, pk), w_first_path(w, pk)
     for p_ in (out, first):                              # written once (checked again at the write)
         if p_.exists():
             raise SystemExit(f"{V.tag(pk)}: a floor record exists, never overwritten")
-    gs, renders = floor_guitars(ORDER, w.dry_shas(pk), lambda g: w.render(pk, g), w.stored[pk])
-    bad = refused_guitars({"guitars": gs})
+    order = w_order(w)
+    gs, renders = floor_guitars(order, w.dry_shas(pk), lambda g: w.render(pk, g), w.stored[pk], order=order,
+                                stored_names=w_stored(w))
+    bad = refused_guitars({"guitars": gs}, order)
     write_once(first if bad else out, part_record(w, pk, gs, renders), V.tag(pk))
     w.log(f"{V.tag(pk)}: {'REFUSED ' + str(bad) + ' (--rerun once)' if bad else 'floored'}; {renders} renders; "
           f"carried {[g for g, r in gs.items() if r['carried_from']]}")
@@ -303,22 +355,24 @@ def floor_part(w, pk):
 def rerun_part(w, pk):
     """S1 on one part: its first-pass refused guitars rendered once more (the passing ones taken byte for byte), the
     part's one floors/ record written. -> renders."""
-    out, first = V.floor_path(pk), first_path(pk)
+    out, first = w_floor_path(w, pk), w_first_path(w, pk)
     if out.exists():
         raise SystemExit(f"{V.tag(pk)}: a floor record exists, never overwritten")
     rec = json.loads(first.read_text())
-    moved = [f for f in SHA_FIELDS if rec.get(f"{f}_sha256") != w.shas[f]]
+    moved = [f for f in w_sha_fields(w) if rec.get(f"{f}_sha256") != w.shas[f]]
     if moved:
         raise SystemExit(f"{V.tag(pk)}: the first pass ran on another {', '.join(moved)} file: no rerun, to the user")
-    bad = refused_guitars(rec)
+    order = w_order(w)
+    bad = refused_guitars(rec, order)
     if not bad:
         raise SystemExit(f"{V.tag(pk)}: its first-pass record holds no refusal")
     done = {g: r for g, r in rec["guitars"].items() if g not in bad}
-    gs, renders = floor_guitars(bad, w.dry_shas(pk), lambda g: w.render(pk, g), w.stored[pk], done=done, reran=True)
+    gs, renders = floor_guitars(bad, w.dry_shas(pk), lambda g: w.render(pk, g), w.stored[pk], done=done, reran=True,
+                                order=order, stored_names=w_stored(w))
     first_sha = S.file_sha(first)
     write_once(out, part_record(w, pk, gs, rec.get("renders", 0) + renders,
                                 {"rerun_renders": renders, "first_sha256": first_sha}), V.tag(pk))
-    still = refused_guitars({"guitars": gs})
+    still = refused_guitars({"guitars": gs}, order)
     w.log(f"{V.tag(pk)}: rerun {bad}; {'still refused ' + str(still) if still else 'passed'}; {renders} renders")
     return renders
 
@@ -330,14 +384,14 @@ def run_floor(args, w):
     if rerun:
         require_repeat(w)
         todo = [p["pkey"] for p in mine(w.parts, shard)
-                if first_path(p["pkey"]).exists() and not V.floor_path(p["pkey"]).exists()]
+                if w_first_path(w, p["pkey"]).exists() and not w_floor_path(w, p["pkey"]).exists()]
     else:
         if shard[0] != REPEAT_SHARD:
             wait_repeat(w)
         todo = [p["pkey"] for p in mine(w.parts, shard)
-                if not V.floor_path(p["pkey"]).exists() and not first_path(p["pkey"]).exists()]
+                if not w_floor_path(w, p["pkey"]).exists() and not w_first_path(w, p["pkey"]).exists()]
     if not todo and (rerun or shard[0] != REPEAT_SHARD):
-        w.log(f"VOICE FLOORS {'RERUN ' if rerun else ''}{shard[0]}/{shard[1]}: nothing to do")
+        w.log(f"{w_label(w)} {'RERUN ' if rerun else ''}{shard[0]}/{shard[1]}: nothing to do")
         return 0
     w.wait_cap()                                         # one render slot for this process
     if not rerun and shard[0] == REPEAT_SHARD:
@@ -347,7 +401,7 @@ def run_floor(args, w):
         if why:
             raise SystemExit(why)
         total += rerun_part(w, pk) if rerun else floor_part(w, pk)
-    w.log(f"VOICE FLOORS {'RERUN ' if rerun else ''}DONE {shard[0]}/{shard[1]}: {len(todo)} parts, {total} renders "
+    w.log(f"{w_label(w)} {'RERUN ' if rerun else ''}DONE {shard[0]}/{shard[1]}: {len(todo)} parts, {total} renders "
           f"in {w.clock() - t0:.0f} s")
     return total
 
