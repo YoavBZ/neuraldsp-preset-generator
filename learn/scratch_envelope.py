@@ -159,8 +159,9 @@ TRANSFORM = {
     "level_align": "the implementer's call: before the gains the target's STFT is scaled by one factor per part, sqrt("
                    "the source's in-band power / the target's), summed over all 20 bands and every frame of the padded "
                    "part, so the clamp bounds the envelope's shape, not the two signals' arbitrary levels; the finish "
-                   "and -22.9 LUFS re-level every guitar, so the factor reaches a finished guitar only through the "
-                   "clamp; recorded per part (target_align_db); proof 4 runs on the unscaled target",
+                   "and -22.9 LUFS re-level every guitar, so the factor reaches a finished guitar through the clamp "
+                   "and through the 0-dB cells (edge bins and floored cells), which the alignment places at the "
+                   "source's level; recorded per part (target_align_db); proof 4 runs on the unscaled target",
     "gain": "sqrt(E_target / E_source), the same for every bin of the band and every frame of the unit; its amplitude "
             f"dB (10 log10 of the power ratio) clamped to +-{CLAMP_DB:g} dB",
     "floor": "a cell keeps 0 dB when E_source < max over the part's units at that step of E_source for that band, "

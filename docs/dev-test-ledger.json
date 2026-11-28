@@ -9596,7 +9596,7 @@
      "notes": "A's non-binding notes taken; names re-grepped on current origin/main"
     },
     "implementer_calls": {
-     "level_align": "before the gains the target's STFT is scaled by one factor per part, sqrt(the source's in-band power / the target's) over all 20 bands and every frame of the padded part, so the +-20 dB clamp bounds the envelope's shape, not the two signals' arbitrary levels: on 3 real parts in memory (zero renders, nothing written) the unaligned target sat 17-37 dB under the source and the clamp caught 40-100% of vt-part's cells and up to 79% of vt-group's; aligned, 0-11%. The finish (song_bank.measure: re-EQ to the average guitar, then -22.9 LUFS) and chain's -22.9 LUFS re-level every guitar, so the factor reaches a finished guitar only through the clamp; recorded per part as target_align_db; proof 4 runs on the unscaled target",
+     "level_align": "before the gains the target's STFT is scaled by one factor per part, sqrt(the source's in-band power / the target's) over all 20 bands and every frame of the padded part, so the +-20 dB clamp bounds the envelope's shape, not the two signals' arbitrary levels: on 3 real parts in memory (zero renders, nothing written) the unaligned target sat 17-37 dB under the source and the clamp caught 40-100% of vt-part's cells and up to 79% of vt-group's; aligned, 0-11%. The finish (song_bank.measure: re-EQ to the average guitar, then -22.9 LUFS) and chain's -22.9 LUFS re-level every guitar, so the factor reaches a finished guitar through the clamp and through the 0-dB cells (edge bins and floored cells), which the alignment places at the source's level; recorded per part as target_align_db; proof 4 runs on the unscaled target",
      "passing_sets": "one passing set for the code (tr-di, vc-own, vt-part, vt-group, vt-win); vt-mag and vt-phase each on their own (tr-di, vc-own and that guitar), so a beside refusal never moves the code; the identity per step on that step's set (non-binding note)",
      "then_field": "`then` is the code of the non-surprise rows (XE-group onward); `surprises` lists each C or R of the EQ steps reading better and C_part closing",
      "error_figures": "the realised error's median and 90th percentile are of |error| in dB, the signed median beside; the swaps read on vt-win's cells and floor",
@@ -9620,7 +9620,7 @@
      "edge_bins": "bins 0-2 (below 55.7 Hz) and 767-1024 (above 17.96 kHz) keep 0 dB in the three EQ steps; vt-mag and vt-phase swap all 1,025 bins",
      "units": "vt-part one unit; vt-group: frame i is in unit bisect_right(bounds, 240 i), bounds the onset groups' first onsets (voice_build.group_onsets) less 2 ms, round(... * SR): unit 0 everything before the first, the last to the padded end; vt-win: one frame each",
      "energy": "E[unit, band] = the STFT power |X|^2 summed over the unit's frames and the band's bins",
-     "level_align": "the implementer's call: before the gains the target's STFT is scaled by one factor per part, sqrt(the source's in-band power / the target's), summed over all 20 bands and every frame of the padded part, so the clamp bounds the envelope's shape, not the two signals' arbitrary levels; the finish and -22.9 LUFS re-level every guitar, so the factor reaches a finished guitar only through the clamp; recorded per part (target_align_db); proof 4 runs on the unscaled target",
+     "level_align": "the implementer's call: before the gains the target's STFT is scaled by one factor per part, sqrt(the source's in-band power / the target's), summed over all 20 bands and every frame of the padded part, so the clamp bounds the envelope's shape, not the two signals' arbitrary levels; the finish and -22.9 LUFS re-level every guitar, so the factor reaches a finished guitar through the clamp and through the 0-dB cells (edge bins and floored cells), which the alignment places at the source's level; recorded per part (target_align_db); proof 4 runs on the unscaled target",
      "gain": "sqrt(E_target / E_source), the same for every bin of the band and every frame of the unit; its amplitude dB (10 log10 of the power ratio) clamped to +-20 dB",
      "floor": "a cell keeps 0 dB when E_source < max over the part's units at that step of E_source for that band, times 10^-4 (power dB), or when E_source = 0; E_target = 0 with E_source > 0 gives -20 dB (clamped)",
      "swaps": "vt-mag |X_target| with X_source's phase, vt-phase |X_source| with X_target's phase, every bin; where the phase donor's magnitude is 0 the other signal's own bin is kept (its phase)",
@@ -9968,6 +9968,242 @@
      "phase_scratch_envelope_outcome"
     ],
     "cant_show": "an oracle: every correction comes from the true DI, so nothing here prices a song-only way to the envelope; floors are screens, not search gains (a search row needs its own go); the 47 parts have been read many times; by the score only, at one preset"
+   },
+   "phase_scratch_envelope_dry": {
+    "sha256": "8c6e8eee95fe6f61f9fea1ad9238320272873549b14cffb57be1796e6a3ff7af",
+    "plan": "docs/scratch-envelope-plan.md",
+    "renders": 0,
+    "parts": 47,
+    "proofs": {
+     "source_is_tr_di": "47 of 47",
+     "target_is_vc_own": "47 of 47",
+     "unity_is_source": "47 of 47",
+     "swap_is_target": "47 of 47"
+    },
+    "proofs_hold": true,
+    "proof_ratio_max": {
+     "unity": 4.762557134555947e-16,
+     "swap": 5.133155809055854e-16
+    },
+    "scratch_readerr_blob_sha": "0ec8a65c8c06613f7800e4f3a892ae14f2c52b72",
+    "played_trace_sha256": "c3d347116b0f15abeadb0f49f9b74624d27170d9d9dfa3a77566495914c4afe4",
+    "realised_error_medians_47": {
+     "vt-part": {
+      "intent_median_abs_db": 0.055174724818526366,
+      "intent_p90_abs_db": 0.31273452576865896,
+      "target_median_abs_db": 0.2125670452320363,
+      "target_p90_abs_db": 0.7679277903510335,
+      "clamped_share": 0.0,
+      "floored_share": 0.0
+     },
+     "vt-group": {
+      "intent_median_abs_db": 0.33411018007530024,
+      "intent_p90_abs_db": 2.9463053941907336,
+      "target_median_abs_db": 1.2058683285501304,
+      "target_p90_abs_db": 5.094603109580581,
+      "clamped_share": 0.06428571428571428,
+      "floored_share": 0.09047619047619047
+     },
+     "vt-win": {
+      "intent_median_abs_db": 0.4145233120187801,
+      "intent_p90_abs_db": 2.67167459752315,
+      "target_median_abs_db": 1.3284017881243506,
+      "target_p90_abs_db": 5.535407196159085,
+      "clamped_share": 0.05995169082125604,
+      "floored_share": 0.35147342995169084
+     },
+     "vt-mag": {
+      "intent_median_abs_db": 0.9241427803813578,
+      "intent_p90_abs_db": 3.7264576603817403,
+      "target_median_abs_db": 0.7977590469187477,
+      "target_p90_abs_db": 3.2580536142755983,
+      "clamped_share": 0.0,
+      "floored_share": 0.35147342995169084
+     },
+     "vt-phase": {
+      "intent_median_abs_db": 0.8491965475584895,
+      "intent_p90_abs_db": 3.5609625288754,
+      "target_median_abs_db": 4.926696129595346,
+      "target_p90_abs_db": 15.676615559007875,
+      "clamped_share": 0.0,
+      "floored_share": 0.35147342995169084
+     }
+    },
+    "file": "PF/fs/envelope/build.json",
+    "realised_error_ranges_47": {
+     "vt-part": {
+      "intent_median_abs_db": [
+       0.007,
+       0.125
+      ],
+      "intent_p90_abs_db": [
+       0.115,
+       1.217
+      ],
+      "target_median_abs_db": [
+       0.098,
+       1.267
+      ],
+      "target_p90_abs_db": [
+       0.343,
+       1.964
+      ],
+      "clamped_share": [
+       0.0,
+       0.1
+      ],
+      "floored_share": [
+       0.0,
+       0.0
+      ],
+      "level_change_db": [
+       -0.139,
+       -0.001
+      ]
+     },
+     "vt-group": {
+      "intent_median_abs_db": [
+       0.127,
+       0.997
+      ],
+      "intent_p90_abs_db": [
+       1.619,
+       7.87
+      ],
+      "target_median_abs_db": [
+       0.698,
+       2.502
+      ],
+      "target_p90_abs_db": [
+       2.484,
+       13.942
+      ],
+      "clamped_share": [
+       0.013,
+       0.208
+      ],
+      "floored_share": [
+       0.011,
+       0.245
+      ],
+      "level_change_db": [
+       -0.299,
+       -0.025
+      ]
+     },
+     "vt-win": {
+      "intent_median_abs_db": [
+       0.075,
+       0.641
+      ],
+      "intent_p90_abs_db": [
+       1.895,
+       5.193
+      ],
+      "target_median_abs_db": [
+       0.94,
+       3.588
+      ],
+      "target_p90_abs_db": [
+       3.859,
+       23.299
+      ],
+      "clamped_share": [
+       0.014,
+       0.266
+      ],
+      "floored_share": [
+       0.142,
+       0.743
+      ],
+      "level_change_db": [
+       -0.379,
+       -0.031
+      ]
+     },
+     "vt-mag": {
+      "intent_median_abs_db": [
+       0.294,
+       1.443
+      ],
+      "intent_p90_abs_db": [
+       2.694,
+       6.709
+      ],
+      "target_median_abs_db": [
+       0.43,
+       1.566
+      ],
+      "target_p90_abs_db": [
+       2.116,
+       6.217
+      ],
+      "clamped_share": [
+       0.0,
+       0.0
+      ],
+      "floored_share": [
+       0.142,
+       0.743
+      ],
+      "level_change_db": [
+       -1.695,
+       -0.055
+      ],
+      "spectral_convergence": {
+       "median": 0.238,
+       "range": [
+        0.096,
+        0.525
+       ]
+      }
+     },
+     "vt-phase": {
+      "intent_median_abs_db": [
+       0.294,
+       1.496
+      ],
+      "intent_p90_abs_db": [
+       2.488,
+       6.888
+      ],
+      "target_median_abs_db": [
+       3.704,
+       8.89
+      ],
+      "target_p90_abs_db": [
+       12.495,
+       29.887
+      ],
+      "clamped_share": [
+       0.0,
+       0.0
+      ],
+      "floored_share": [
+       0.142,
+       0.743
+      ],
+      "level_change_db": [
+       -0.986,
+       -0.184
+      ],
+      "spectral_convergence": {
+       "median": 0.256,
+       "range": [
+        0.177,
+        0.396
+       ]
+      }
+     }
+    },
+    "label": "realised_error_medians_47: the median over the 47 parts of each part's figure (|error| in dB; intent = before the finish against the clamped intent, target = the finished vt-k against the finished vc-own); the ranges are over the 47 parts; shares are of the step's cells",
+    "target_align_db_range": [
+     17.493,
+     40.557
+    ],
+    "zero_padded_parts": 31,
+    "ran": "2026-11-28 from a fresh detached worktree of origin/main at f8fbdbad (#665): build --shard k/3, k = 0, 1, 2 in parallel (16 + 16 + 15 parts, 164, 163 and 153 s), then --combine; zero renders; 442 MB under PF/fs/envelope/; 35 GB free after",
+    "note": "build.json's rules hold #665's wording of level_align ('only through the clamp'); this PR corrects that sentence in the code, the declaration and the plan (wording only: the guitars are unchanged)"
    }
   },
   {
