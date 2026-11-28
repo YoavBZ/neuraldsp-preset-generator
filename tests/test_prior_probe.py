@@ -151,13 +151,101 @@ def test_a_near_zero_tensor_is_measured_against_the_floor():
 
 
 def test_calibration_rescues_rounding_and_not_a_broken_op():
-    rounding = _rows(n=10, ref=1.0, diff=5e-3, ref64=1.0, dev64=4e-3, cpu64=2e-3)    # within 3x the CPU's own error
+    rounding = _rows(n=10, ref=1.0, diff=2e-3, ref64=1.0, dev64=2e-3, cpu64=8e-4)    # within 3x the CPU's own error
     r = P.tensor_check(rounding, 1e-3)
     assert r["pass"] and r["global_how"] == "calibrated" and len(r["calibrated"]) == 10
+    assert r["calibration"] == "allowed"
     broken = _rows(n=10, ref=1.0, diff=5e-3, ref64=1.0, dev64=5e-3, cpu64=1e-4)      # 50x the CPU's own error
     assert not P.tensor_check(broken, 1e-3)["pass"]
     no64 = _rows(n=10, ref=1.0, diff=5e-3)                                           # no reference: nothing calibrated
-    assert not P.tensor_check(no64, 1e-3)["pass"]
+    r = P.tensor_check(no64, 1e-3)
+    assert not r["pass"] and r["calibration"] == "no float64 reference"
+
+
+def test_calibration_needs_a_reference_that_holds():
+    """Fix 2: a calibrated pass only on a reference that itself holds; never for a tensor above the 0.1 cap."""
+    wrong_ref = _rows(n=10, ref=1.0, diff=5e-3, ref64=1.0, dev64=4e-3, cpu64=2e-3)   # CPU 2e-3 off float64 globally
+    r = P.tensor_check(wrong_ref, 1e-3)
+    assert not r["pass"] and r["calibration"].startswith("refused") and r["global_how"] == "direct"
+    assert r["calibrated"] == [] and len(r["failing"]) == 10
+    fine = _rows(n=10, ref=1.0, diff=2e-3, ref64=1.0, dev64=2e-3, cpu64=8e-4)
+    r = P.tensor_check(fine, 1e-3, ref_ok=False)                                     # the loss or the draws failed
+    assert not r["pass"] and r["calibration"] == "refused: the reference does not hold"
+    capped = _rows(n=400, ref=100.0, diff=1e-4, ref64=100.0, dev64=1e-4, cpu64=1e-4)
+    capped["odd"] = {"ref": 1.0, "diff": 0.5, "ref64": 1.0, "dev64": 0.4, "cpu64": 0.3}  # 0.3 off: above the cap
+    r = P.tensor_check(capped, 1e-3)
+    assert r["calibration"] == "allowed" and r["global_err_cpu_f64"] < 1e-3          # the reference holds globally
+    assert r["capped"] == ["odd"] and r["failing"] == ["odd"] and not r["pass"]
+
+
+def test_reference_holds():
+    good = _rows(n=10, ref=1.0, diff=1e-4, ref64=1.0, dev64=1e-4, cpu64=1e-5)
+    h = P.reference_holds(0.5, 0.50001, good, True)
+    assert h["holds"] and h["why"] == [] and h["grad_err_cpu_f64"] == pytest.approx(1e-5)
+    assert not P.reference_holds(0.5, 0.501, good, True)["holds"]                    # the loss 2e-3 off
+    bad = _rows(n=10, ref=1.0, diff=1e-4, ref64=1.0, dev64=1e-4, cpu64=5e-3)
+    assert "global gradient" in P.reference_holds(0.5, 0.5, bad, True)["why"][0]
+    assert "noise" in P.reference_holds(0.5, 0.5, good, False)["why"][0]
+    assert not P.reference_holds(0.5, None, good, True)["holds"]
+    assert not P.reference_holds(0.5, 0.5, _rows(), True)["holds"]                   # no float64 gradients
+
+
+def test_encoder_verdict():
+    assert P.encoder_verdict(5e-4, None)["how"] == "direct"
+    assert P.encoder_verdict(2e-3, {"dev": 2e-3, "cpu": 8e-4})["how"] == "calibrated"
+    r = P.encoder_verdict(2e-2, {"dev": 2e-2, "cpu": 2e-2})                         # the float64 encoder is off itself
+    assert not r["pass"] and r["calibration"].startswith("refused")
+    assert not P.encoder_verdict(2e-3, None)["pass"]
+
+
+class _Fake:
+    """Fake train_once/f64_reference/compare_runs for run 2: records the calls, latents as plain made-up lists."""
+
+    def __init__(self, passes=True):
+        self.calls, self.passes = [], passes
+
+    def train(self, m, enc, dev, batch, enc_mode, clip_mode, shared=None, seed=None):
+        self.calls.append(("train", dev, enc_mode, clip_mode, shared))
+        return {"lat": ["lat", dev, enc_mode] if shared is None else shared, "t": "t", "z": "z"}
+
+    def reference(self, m, batch, lat, t, z):
+        self.calls.append(("reference", lat))
+        return {"loss": 1.0, "grads": {}, "norm": 2.0}
+
+    def compare(self, m, dev_r, cpu_r, ref):
+        self.calls.append(("compare", dev_r["lat"], cpu_r["lat"]))
+        return {"pass_network": self.passes, "pass_clip": True}
+
+
+def test_run_two_feeds_the_cpu_the_mps_runs_own_latents():
+    """Fix 1: the CPU reference and the float64 reference get the MPS run's own latents."""
+    f = _Fake()
+    rec, mode, fb, co = P.run_two(None, None, "batch", True, "native", f.train, f.reference, f.compare)
+    mps_lat = ["lat", "mps", "mps"]
+    assert f.calls == [("train", "mps", "mps", "native", None), ("train", "cpu", "cpu", "native", mps_lat),
+                       ("reference", mps_lat), ("compare", mps_lat, mps_lat)]
+    assert mode == "mps" and fb == [] and co == [] and rec["encoder"] == "mps"
+    assert rec["float64_reference"] == {"loss": 1.0, "norm": 2.0}
+
+
+def test_run_two_never_switches_the_encoder():
+    """Fix 1: the encoder is judged only by its latent check; a run-2 miss is cpu-only, not the CPU-encoder fallback."""
+    f = _Fake(passes=False)
+    rec, mode, fb, co = P.run_two(None, None, "batch", True, "foreach_false", f.train, f.reference, f.compare)
+    assert mode is None and fb == [] and len(co) == 1 and "mps encoder" in co[0]
+    assert [c for c in f.calls if c[0] == "train" and c[1] == "mps"] == [("train", "mps", "mps", "foreach_false",
+                                                                          None)]
+    f = _Fake()                                                    # the latent check failed: the CPU encoder, declared
+    rec, mode, fb, co = P.run_two(None, None, "batch", False, "native", f.train, f.reference, f.compare)
+    assert mode == "cpu" and fb == [P.FALLBACK_NAMES[("encoder", "cpu")]] and co == []
+    assert f.calls[0] == ("train", "mps", "cpu", "native", None)
+
+
+def test_run_two_names_an_unsupported_op():
+    def train(m, enc, dev, *a, **k):
+        raise NotImplementedError("The operator 'aten::made_up' is not currently implemented for the MPS device.")
+    rec, mode, fb, co = P.run_two(None, None, "batch", True, "native", train, None, None)
+    assert mode is None and rec["error"]["op"] == "aten::made_up" and "aten::made_up" in co[0]
 
 
 def test_missing_gradients():
@@ -180,7 +268,11 @@ def test_scalar_check():
     assert P.scalar_check(1.00001, 1.0, 1e-4)["how"] == "direct"
     miss = P.scalar_check(1.001, 1.0, 1e-4)
     assert not miss["pass"] and "no float64" in miss["how"]
-    assert P.scalar_check(1.001, 1.0, 1e-4, f64=1.0005)["pass"]          # 5e-4 against the CPU's 5e-4
+    ok = P.scalar_check(1.0002, 1.0, 1e-4, f64=1.0001)                    # 1e-4 against the CPU's 1e-4
+    assert ok["pass"] and ok["how"] == "calibrated" and ok["calibration"] == "allowed"
+    assert not P.scalar_check(1.0002, 1.0, 1e-4, f64=1.0001, ref_ok=False)["pass"]
+    off = P.scalar_check(1.001, 1.0, 1e-4, f64=1.0005)                    # the CPU 5e-4 off float64: refused
+    assert not off["pass"] and off["calibration"].startswith("refused")
     assert not P.scalar_check(1.01, 1.0, 1e-4, f64=1.0)["pass"]
     assert not P.scalar_check(float("nan"), 1.0, 1e-4)["pass"]
 
@@ -583,6 +675,7 @@ def test_the_rate_comes_only_from_an_idle_block():
     assert r["code"] == "PP-mps" and r["quoted"] == "time-2.json" and r["rate"]["rate"] == pytest.approx(2.0)
     assert r["projections"]["h_175000"] == pytest.approx(175000 / 2 / 3600)
     assert r["blocks_labelled"]["time-1.json"]["long"] is False
+    assert r["rate_note"] == P.RATE_NOTE and "resample" in P.RATE_NOTE
 
 
 def test_reading_codes():
@@ -612,6 +705,8 @@ def test_the_declaration_is_in_the_ledger():
     assert set(d["codes"]["table"]) == set(P.CODES)
     assert d["tolerances"]["relative"] == P.TOL and d["tolerances"]["calibration_multiple"] == P.CALIB_MULT
     assert d["tolerances"]["per_tensor_floor"] == P.PER_TENSOR_FLOOR
+    assert d["tolerances"]["calibration_cap"] == P.CALIB_CAP == 0.1
+    assert d["timing"]["resample"] == P.RATE_NOTE
     assert d["pins"]["files"] == P.LOUDAR_FILES
     assert d["pins"]["functions"] == {f"{f} {q}": s for (f, q), s in P.LOUDAR_FUNCS.items()}
     assert d["segments"]["seed"] == P.SEED and d["segments"]["n"] == P.N_SEGMENTS and d["segments"]["samples"] == P.SEG

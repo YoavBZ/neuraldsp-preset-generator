@@ -82,11 +82,11 @@ devices get the same draws. This is checked; if the draws differ, the probe stop
 
 | Check | Compared | Tolerance (relative) |
 |---|---|---|
-| Encoder forward | MPS latents against the CPU's | 1e-3, L2 |
+| Encoder forward | MPS latents against the CPU's; this check alone judges the encoder | 1e-3, L2 |
 | Run 1: the network alone, shared CPU latents | Loss | 1e-4 |
 | | Every gradient before the clip, per tensor and globally | 1e-3, L2; worst tensor reported |
 | | `clip_grad_norm_`: returned norm, non-finite count, gradients after | 1e-3; none non-finite; whether it scaled |
-| Run 2: end to end, each device's own latents | The same | The same |
+| Run 2: end to end | The MPS step with the chosen encoder, against the CPU network fed that MPS run's own latents; the same figures | The same |
 | AdamW's step, from identical gradients and weights | Per tensor and globally | 1e-3 |
 | The EMA update, at it 1 and 175,000 | Per tensor and globally | 1e-3 |
 | Five steps on each device | Loss sequence, clip norms, weight change | Reported; the CPU rate from steps 2 to 5 |
@@ -95,16 +95,22 @@ devices get the same draws. This is checked; if the draws differ, the probe stop
   norm, so near-zero tensors don't read as broken.
 - **Calibration.** A figure that misses its tolerance passes only if its error against a CPU float64 reference is
   within 3 times CPU float32's own error against that reference.
-  - The reference runs LOUDAR's `FM.loss_fn` on a float64 copy of the network, with the same t, noise and shared
-    latents.
+  - The reference runs LOUDAR's `FM.loss_fn` on a float64 copy of the network, with the same t and noise and the
+    run's shared latents (run 2's are the MPS run's own).
   - The rotary frequency buffer stays float32. LOUDAR computes rotary angles in float32 and rounds q and k to float32
     around the rotary step, so the reference carries float32 rounding there and float64 elsewhere.
   - If the reference cannot run, nothing is calibrated.
+  - **The gate** (the review of #666, fix 2). A calibrated pass is allowed only when the reference itself holds: CPU
+    float32 against float64 within the direct tolerances on both the loss (1e-4) and the global gradient (1e-3), and
+    the same draws on both devices. No tensor is calibrated whose CPU error against float64 is above 0.1. AdamW, the
+    EMA and the encoder are gated the same way on their own CPU-against-float64 error. Otherwise only the direct
+    checks apply, and each row records why.
 - **Why these tolerances.** The known MPS fault was 81-100% off. The tolerances catch a broken op and decide no route.
 - **Fallbacks,** each checked the same way.
   - The clip: `foreach=False` first, then the clip norm computed on the CPU (torch's own rule applied to the device's
     gradients).
-  - The encoder: on the CPU, with the latents moved to MPS.
+  - The encoder: on the CPU, with the latents moved to MPS, only when the encoder's own latent check fails. A run-2
+    miss never switches the encoder; it is PP-cpu-only (the review of #666, fix 1).
   - An unsupported op in the encoder or the clip tries its fallback.
   - An unsupported op anywhere else, or MPS out of memory, is PP-cpu-only with the op or the memory named.
   - Any other error stops the probe, and goes to the orchestrator.
@@ -117,6 +123,8 @@ devices get the same draws. This is checked; if the draws differ, the probe stop
   anomaly or a cpu-only check.
 - **The long block.** 200 steps at 526,080 samples, with `torch.mps.synchronize()` before each clock read.
   - Steps 1-20 are warm-up, reported apart. Steps 21-200 give the rate.
+  - The rate excludes LOUDAR's in-step resample (`get_batch`'s `resample_batch`, which GOAT's 44.1-kHz files take in
+    LOUDAR's own training), which is right for 48 kHz data.
   - The data are on the device before the clock. The non-finite and memory checks run outside it.
 - **The encode split.** An encode-only block (50 encodes, 5 warm-up) after each timed block gives the encode/network
   split. It never comes from a sync inside the step.

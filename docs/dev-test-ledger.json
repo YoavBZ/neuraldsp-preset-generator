@@ -10244,12 +10244,12 @@
     },
     "check": {
      "batch": "one fixed batch (segments 0 and 1), one seed (CHECK_SEED) for t and the noise, both drawn on the CPU by LOUDAR's code (checked equal across devices, else the probe stops)",
-     "encoder": "MPS latents against the CPU's: relative L2 at most 1e-3 (calibrated against a float64 encoder when it runs)",
+     "encoder": "MPS latents against the CPU's: relative L2 at most 1e-3 (calibrated against a float64 encoder only when that reference holds: the CPU's own error against it within 1e-3). This check alone judges the encoder, and so its CPU fallback (the review of #666, fix 1)",
      "run_1": "the network alone on shared CPU latents: the loss (1e-4 relative), every gradient before the clip per tensor and globally (1e-3 relative L2), the clip's returned norm (1e-3), its non-finite count (0), the gradients after it (1e-3), and whether it scaled (norm above 1)",
-     "run_2": "end to end on each device's own latents, the same figures",
+     "run_2": "end to end: the MPS step with the encoder the latent check chose, against the CPU network fed that MPS run's own latents (shared), with the float64 reference built on those same latents; the same figures as run 1. A miss here is PP-cpu-only; it never switches the encoder (the review of #666, fix 1)",
      "optimizer_ema": "AdamW's step and the EMA update from identical gradients (the CPU's after the clip) and weights copied to both devices, per tensor at 1e-3, calibrated; the EMA at it 1 and 175,000",
      "five_steps": "five steps on each device from the same start, one seed a step: the loss sequence, the clip norms and the weight change (reported); the CPU rate from steps 2 to 5",
-     "fallbacks": "each checked the same way, in order: the clip with foreach=False, then the clip norm on the CPU; the encoder on the CPU. An unsupported op in the encoder or the clip tries its fallback; anywhere else, or MPS out of memory, is PP-cpu-only with the op or the memory named; any other error stops the probe (to the orchestrator)",
+     "fallbacks": "each checked the same way, in order: the clip with foreach=False, then the clip norm on the CPU; the encoder on the CPU when its latent check fails. An unsupported op in the encoder or the clip tries its fallback; anywhere else, or MPS out of memory, is PP-cpu-only with the op or the memory named; any other error stops the probe (to the orchestrator)",
      "refuses": "while another torch or MPS process runs, or beside renders (it competes for the CPU's performance cores)"
     },
     "tolerances": {
@@ -10264,14 +10264,17 @@
      },
      "calibration_multiple": 3.0,
      "per_tensor_floor": 0.01,
-     "rule": "a figure that misses its tolerance passes only if its error against a CPU float64 reference is within 3 x CPU float32's own error against it; a tensor's norm floored at 1% of the RMS tensor norm; tolerances catch a broken op (the known fault was 81-100% off) and decide no route"
+     "calibration_cap": 0.1,
+     "rule": "a figure that misses its tolerance passes only if its error against a CPU float64 reference is within 3 x CPU float32's own error against it; a tensor's norm floored at 1% of the RMS tensor norm; tolerances catch a broken op (the known fault was 81-100% off) and decide no route",
+     "calibration_gate": "(the review of #666, fix 2) a calibrated pass only when the reference itself holds: CPU float32 against float64 within the direct tolerances on both the loss (1e-4) and the global gradient (1e-3), and the same draws on both devices (reference_holds); never for a tensor whose CPU error against float64 is above the cap (0.1); AdamW, the EMA and the encoder are gated the same way on their own CPU-against-float64 error; otherwise only the direct checks apply, and the record says so (each row's 'calibration')"
     },
     "nonfinite_step": "a step whose loss, clip_grad_norm_'s returned norm, or any parameter at its end is not finite",
     "timing": {
      "blocks": "200 steps on MPS at 526080 samples (steps 1-20 warm-up, reported apart; steps 21-200 give the rate); 100 steps (20 warm-up) at 218624 samples beside; an encode-only block of 50 (5 warm-up) after each for the encode/network split",
      "clock": "torch.mps.synchronize() before each clock read; data in memory on the device before the clock; the non-finite and memory checks outside it",
      "config": "the configuration the check passed, fallbacks included; time refuses after an anomaly or cpu-only check",
-     "report": "steps per second; seconds and hours per 1,000 steps and for 175,000 (the released checkpoint's count; no target count chosen here); 6.09 h of audio per 1,000 steps; peak RSS and MPS driver memory on the Mac's memory; non-finite steps; the hours"
+     "report": "steps per second; seconds and hours per 1,000 steps and for 175,000 (the released checkpoint's count; no target count chosen here); 6.09 h of audio per 1,000 steps; peak RSS and MPS driver memory on the Mac's memory; non-finite steps; the hours",
+     "resample": "the rate excludes LOUDAR's in-step resample (get_batch's resample_batch, which GOAT's 44.1-kHz files take in LOUDAR's own training), which is right for 48 kHz data"
     },
     "idle": "at the start and end of each timed block: no render process (pgrep -f au_render_server) and no other torch or MPS process (pgrep -f on the tools' venvs and the fit/train/curve commands), the probe's own process and its parents left out; counts recorded. The quoted rate comes only from a block idle at both ends; check and time refuse while another torch or MPS process runs (never two MPS jobs)",
     "codes": {

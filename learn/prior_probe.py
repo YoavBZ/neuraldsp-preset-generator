@@ -28,21 +28,26 @@ norm, and applies a declared fallback when one is in use). t and the noise are d
 one seed gives both devices the same draws (checked).
 
 **The check** (`check`, CPU at 4 threads and MPS; the review's amendment 2): one fixed batch, one seed.
-- The encoder forward: MPS latents against the CPU's, relative L2 at most 1e-3.
-- Run 1, the network alone on shared CPU latents; run 2, end to end on each device's own latents. Each compares the
-  loss (1e-4 relative), every gradient before the clip per tensor and globally (1e-3 relative L2, a tensor's norm
-  floored at 1% of the RMS tensor norm), the clip's returned norm (1e-3), its non-finite count (0) and the gradients
-  after it (1e-3), and records whether the clip scaled (norm above 1).
+- The encoder forward: MPS latents against the CPU's, relative L2 at most 1e-3. This check alone judges the encoder
+  (and so its CPU fallback).
+- Run 1, the network alone on shared CPU latents; run 2, end to end: the MPS step with the chosen encoder against the
+  CPU network fed that MPS run's own latents. Each compares the loss (1e-4 relative), every gradient before the clip
+  per tensor and globally (1e-3 relative L2, a tensor's norm floored at 1% of the RMS tensor norm), the clip's
+  returned norm (1e-3), its non-finite count (0) and the gradients after it (1e-3), and records whether the clip
+  scaled (norm above 1).
 - A figure that misses its tolerance passes only if its error against a CPU float64 reference is within 3 times CPU
   float32's own error against that reference (the calibration). The float64 reference runs LOUDAR's `FM.loss_fn` on a
-  float64 copy of the network with the same t, noise and shared latents (the rotary frequency buffer stays float32,
-  as LOUDAR computes rotary angles in float32); if it cannot run, nothing is calibrated.
+  float64 copy of the network with the same t, noise and the run's shared latents (the rotary frequency buffer stays
+  float32, as LOUDAR computes rotary angles in float32); if it cannot run, nothing is calibrated. A calibrated pass is
+  allowed only when the reference itself holds (CPU float32 against float64 within the direct tolerances on the loss
+  and the global gradient, and the same draws on both devices), and never for a tensor whose CPU error against
+  float64 is above 0.1; otherwise only the direct checks apply, and the record says so.
 - AdamW's step and the EMA update are compared from identical gradients and weights copied to both devices (the EMA
   on both of its branches, `it` 1 and 175,000).
 - Five steps on each device from the same start: the loss sequence, the clip norms and the weight change, reported;
   the CPU rate is quoted from steps 2 to 5.
-- Fallbacks, each checked the same way: the encoder on the CPU; the clip with `foreach=False`, then the clip norm on the
-  CPU. An unsupported op in the encoder or the clip tries its fallback; an unsupported op anywhere else, or MPS out of
+- Fallbacks, each checked the same way: the encoder on the CPU (when its latent check fails); the clip with
+  `foreach=False`, then the clip norm on the CPU. An unsupported op in the encoder or the clip tries its fallback; an unsupported op anywhere else, or MPS out of
   memory, is PP-cpu-only with the op or the memory named. Any other error stops the probe (to the orchestrator).
 
 **The timing** (`time`, MPS, the configuration the check passed, fallbacks included): 200 steps, `torch.mps.synchronize()`
@@ -50,7 +55,7 @@ before each clock read; steps 1-20 are warm-up, steps 21-200 give the rate. The 
 encode-only block (50 encodes, 5 warm-up), never from a sync inside the step. Beside it, 100 steps (20 warm-up) at
 218,624 samples (our 216,000-sample clip padded as LOUDAR pads it). Data are in memory before the clock. A step is
 non-finite when its loss, the clip's returned norm, or any parameter at its end is not finite. Peak RSS and MPS
-driver memory are recorded.
+driver memory are recorded. The rate excludes LOUDAR's in-step resample, which is right for 48 kHz data.
 
 **Idle** (amendment 6): at the start and end of each timed block, no render process (`pgrep -f au_render_server`) and
 no other torch or MPS process (`pgrep -f` on the tools' venvs and the training commands), the probe's own process and
@@ -135,8 +140,11 @@ TIMED_IT0 = 0                          # timed steps start at it = 0, as trainin
 TOL = {"encoder": 1e-3, "loss": 1e-4, "grad": 1e-3, "clip_norm": 1e-3, "clip_after": 1e-3, "adamw": 1e-3,
        "ema": 1e-3}                    # relative; they catch a broken op (the known fault was 81-100% off), decide no route
 CALIB_MULT = 3.0                       # a miss passes only within 3x CPU float32's own error against float64
+CALIB_CAP = 0.1                        # no tensor is calibrated whose CPU float32 error against float64 is above this
 PER_TENSOR_FLOOR = 0.01                # a tensor's norm floored at 1% of the RMS tensor norm (near-zero tensors)
 MAX_NORM = 1.0                         # conf/exp/GuitarFx.yaml max_grad_norm
+RATE_NOTE = ("the rate excludes LOUDAR's in-step resample (get_batch's resample_batch, which GOAT's 44.1-kHz files "
+             "take in LOUDAR's own training), which is right for 48 kHz data")
 
 CODES = ("PP-anomaly", "PP-cpu-only", "PP-unstable", "PP-mps-fallback", "PP-mps")   # the order: first that holds
 PP_TABLE = {
@@ -334,32 +342,72 @@ def rel(diff, ref):
     return diff / abs(ref) if ref else diff
 
 
-def scalar_check(dev, cpu, tol, f64=None, mult=CALIB_MULT):
+def scalar_check(dev, cpu, tol, f64=None, mult=CALIB_MULT, ref_ok=True, cap=CALIB_CAP):
     """(Pure.) One figure on MPS against the CPU's: relative error at most `tol`, or calibrated: its error against the
-    float64 reference within `mult` times the CPU's own. -> {"err", "pass", "how", ...}."""
+    float64 reference within `mult` times the CPU's own. Calibration is allowed only when the reference holds (`ref_ok`,
+    and the CPU's own error against float64 within `tol` and under `cap`); otherwise only the direct check applies and
+    the record says so. -> {"err", "pass", "how", "calibration", ...}."""
     vals = (dev, cpu) + ((f64,) if f64 is not None else ())
     if not all(isinstance(v, (int, float)) and math.isfinite(v) for v in vals):
-        return {"dev": dev, "cpu": cpu, "f64": f64, "err": None, "pass": False, "how": "non-finite"}
+        return {"dev": dev, "cpu": cpu, "f64": f64, "err": None, "pass": False, "how": "non-finite",
+                "calibration": "not reached"}
     err = rel(abs(dev - cpu), cpu)
     out = {"dev": dev, "cpu": cpu, "f64": f64, "err": err, "tol": tol}
+    if f64 is None:
+        cal = "no float64 reference"
+    else:
+        e_dev, e_cpu = rel(abs(dev - f64), f64), rel(abs(cpu - f64), f64)
+        out.update(err_dev_f64=e_dev, err_cpu_f64=e_cpu)
+        cal = ("refused: the reference does not hold" if not ref_ok else
+               "refused: the CPU's own error against float64 is above the tolerance" if e_cpu > tol else
+               "refused: the CPU's own error against float64 is above the cap" if e_cpu > cap else "allowed")
+    out["calibration"] = cal
     if err <= tol:
         return dict(out, **{"pass": True, "how": "direct"})
-    if f64 is None:
-        return dict(out, **{"pass": False, "how": "missed; no float64 reference"})
-    e_dev, e_cpu = rel(abs(dev - f64), f64), rel(abs(cpu - f64), f64)
-    ok = e_dev <= mult * e_cpu
-    return dict(out, **{"pass": ok, "how": "calibrated" if ok else "missed; calibration failed", "err_dev_f64": e_dev,
-                        "err_cpu_f64": e_cpu})
+    if cal != "allowed":
+        return dict(out, **{"pass": False, "how": f"missed; direct only ({cal})"})
+    ok = out["err_dev_f64"] <= mult * out["err_cpu_f64"]
+    return dict(out, **{"pass": ok, "how": "calibrated" if ok else "missed; calibration failed"})
 
 
-def tensor_check(rows, tol, mult=CALIB_MULT, floor_frac=PER_TENSOR_FLOOR):
+def reference_holds(cpu_loss, f64_loss, rows, same_draws, tol_loss=None, tol_grad=None):
+    """(Pure.) Whether the float64 reference may calibrate a run (the review of #666, fix 2): CPU float32 against
+    float64 within the direct tolerances on the loss (1e-4) and on the global gradient (1e-3), and t and the noise the
+    same on both devices. rows: `tensor_check`'s rows for the gradients before the clip. -> {"holds", "why", ...}."""
+    tol_loss = TOL["loss"] if tol_loss is None else tol_loss
+    tol_grad = TOL["grad"] if tol_grad is None else tol_grad
+    why = []
+    if not same_draws:
+        why.append("t or the noise differ between the devices")
+    le = None
+    if not all(isinstance(v, (int, float)) and math.isfinite(v) for v in (cpu_loss, f64_loss)):
+        why.append("no finite float64 loss")
+    else:
+        le = rel(abs(cpu_loss - f64_loss), f64_loss)
+        if le > tol_loss:
+            why.append(f"the CPU's loss is {le:.2e} off float64 (tolerance {tol_loss})")
+    vals = [r for r in rows.values() if not r.get("none")]
+    ge = None
+    if not vals or not all("ref64" in r and "cpu64" in r for r in vals):
+        why.append("no float64 gradients")
+    else:
+        ge = rel(math.sqrt(sum(r["cpu64"] ** 2 for r in vals)), math.sqrt(sum(r["ref64"] ** 2 for r in vals)))
+        if not math.isfinite(ge) or ge > tol_grad:
+            why.append(f"the CPU's global gradient is {ge:.2e} off float64 (tolerance {tol_grad})")
+    return {"holds": not why, "why": why, "loss_err_cpu_f64": le, "grad_err_cpu_f64": ge}
+
+
+def tensor_check(rows, tol, mult=CALIB_MULT, floor_frac=PER_TENSOR_FLOOR, ref_ok=True, cap=CALIB_CAP):
     """(Pure.) Every tensor on MPS against the CPU's, per tensor and globally (amendment 2).
 
     rows {name: {"ref": |cpu|, "diff": |dev - cpu|, and when the float64 reference exists "ref64": |f64|, "dev64":
     |dev - f64|, "cpu64": |cpu - f64|}} (L2 norms), or {"none": "both"} for a tensor with no value on either device,
     {"none": "dev"} / {"none": "cpu"} when only one lacks it (a failure). A tensor's error is diff / max(ref, floor)
     with floor = floor_frac x the RMS of the refs (and likewise against float64). A tensor or the global figure that
-    misses `tol` passes only if its error against float64 is within `mult` x the CPU's own. -> the table row."""
+    misses `tol` passes only if its error against float64 is within `mult` x the CPU's own, and only when the reference
+    holds: `ref_ok`, and the CPU's own global error against float64 within `tol`; a tensor whose own CPU error against
+    float64 is above `cap` (0.1) is never calibrated. Otherwise only direct checks apply, and the row says so.
+    -> the table row."""
     both_none = sorted(k for k, r in rows.items() if r.get("none") == "both")
     one_none = sorted(k for k, r in rows.items() if r.get("none") in ("dev", "cpu"))
     vals = {k: r for k, r in rows.items() if not r.get("none")}
@@ -376,19 +424,35 @@ def tensor_check(rows, tol, mult=CALIB_MULT, floor_frac=PER_TENSOR_FLOOR):
     k = len(vals)
     rms = math.sqrt(sum(r["ref"] ** 2 for r in vals.values()) / k)
     floor = floor_frac * rms
-    rms64 = math.sqrt(sum(r["ref64"] ** 2 for r in vals.values()) / k) if has64 else None
-    floor64 = floor_frac * rms64 if has64 else None
-    per, failing, calibrated = {}, [], []
+    out = {"tol": tol, "tensors": k, "floor": floor}
+    floor64 = None
+    if has64:
+        rms64 = math.sqrt(sum(r["ref64"] ** 2 for r in vals.values()) / k)
+        floor64 = floor_frac * rms64
+        gref64 = math.sqrt(sum(r["ref64"] ** 2 for r in vals.values()))
+        gd = rel(math.sqrt(sum(r["dev64"] ** 2 for r in vals.values())), gref64)
+        gc = rel(math.sqrt(sum(r["cpu64"] ** 2 for r in vals.values())), gref64)
+        out.update(global_err_dev_f64=gd, global_err_cpu_f64=gc)
+        cal = ("refused: the reference does not hold" if not ref_ok else
+               "refused: the CPU's own global error against float64 is above the tolerance" if gc > tol else
+               "allowed")
+    else:
+        cal = "no float64 reference"
+    out["calibration"] = cal
+    per, failing, calibrated, capped = {}, [], [], []
     for name, r in sorted(vals.items()):
         den = max(r["ref"], floor)
         e = r["diff"] / den if den else r["diff"]
-        ok, how = e <= tol, "direct"
-        if not ok and has64:
+        ok = e <= tol
+        if not ok and cal == "allowed":
             d64 = max(r["ref64"], floor64)
             ed, ec = (r["dev64"] / d64, r["cpu64"] / d64) if d64 else (r["dev64"], r["cpu64"])
-            ok, how = ed <= mult * ec, "calibrated"
-            if ok:
-                calibrated.append(name)
+            if ec > cap:
+                capped.append(name)
+            else:
+                ok = ed <= mult * ec
+                if ok:
+                    calibrated.append(name)
         per[name] = e
         if not ok:
             failing.append(name)
@@ -396,25 +460,43 @@ def tensor_check(rows, tol, mult=CALIB_MULT, floor_frac=PER_TENSOR_FLOOR):
     gdiff = math.sqrt(sum(r["diff"] ** 2 for r in vals.values()))
     g = rel(gdiff, gref)
     g_ok, g_how = g <= tol, "direct"
-    out = {"global_err": g, "tol": tol, "tensors": k, "floor": floor}
-    if not g_ok and has64:
-        gref64 = math.sqrt(sum(r["ref64"] ** 2 for r in vals.values()))
-        gd = rel(math.sqrt(sum(r["dev64"] ** 2 for r in vals.values())), gref64)
-        gc = rel(math.sqrt(sum(r["cpu64"] ** 2 for r in vals.values())), gref64)
-        g_ok, g_how = gd <= mult * gc, "calibrated"
-        out.update(global_err_dev_f64=gd, global_err_cpu_f64=gc)
+    if not g_ok and cal == "allowed":
+        g_ok, g_how = out["global_err_dev_f64"] <= mult * out["global_err_cpu_f64"], "calibrated"
     worst = max(per, key=lambda n: per[n])
-    out.update({"global_pass": g_ok, "global_how": g_how, "worst_tensor": worst, "worst_err": per[worst],
-                "failing": failing, "calibrated": calibrated, "float64": has64, "none_both": both_none,
-                "none_one": one_none, "pass": bool(g_ok and not failing and not one_none)})
+    out.update({"global_err": g, "global_pass": g_ok, "global_how": g_how, "worst_tensor": worst,
+                "worst_err": per[worst], "failing": failing, "calibrated": calibrated, "capped": capped,
+                "float64": has64, "none_both": both_none, "none_one": one_none,
+                "pass": bool(g_ok and not failing and not one_none)})
     return out
 
 
-def clip_check(norm, cpu_norm, nonfinite, after, f64_norm=None, tol=TOL["clip_norm"]):
+def encoder_verdict(err, f64, tol=None, mult=CALIB_MULT, cap=CALIB_CAP):
+    """(Pure.) The encoder's own latent check, which alone judges the encoder (the review of #666, fix 1): MPS
+    latents against the CPU's at most 1e-3 relative L2, or calibrated against a float64 encoder only when that
+    reference holds (the CPU's own error against it within 1e-3 and under the cap). f64: {"dev", "cpu"} relative
+    errors against float64, or None. -> the row."""
+    tol = TOL["encoder"] if tol is None else tol
+    out = {"err": err, "tol": tol, "f64": f64}
+    if f64 is None:
+        cal = "no float64 reference"
+    elif not (math.isfinite(f64["cpu"]) and f64["cpu"] <= tol and f64["cpu"] <= cap):
+        cal = "refused: the CPU's own error against float64 is above the tolerance"
+    else:
+        cal = "allowed"
+    out["calibration"] = cal
+    if isinstance(err, (int, float)) and math.isfinite(err) and err <= tol:
+        return dict(out, **{"pass": True, "how": "direct"})
+    if cal != "allowed":
+        return dict(out, **{"pass": False, "how": f"missed; direct only ({cal})"})
+    ok = math.isfinite(f64["dev"]) and f64["dev"] <= mult * f64["cpu"]
+    return dict(out, **{"pass": bool(ok), "how": "calibrated" if ok else "missed; calibration failed"})
+
+
+def clip_check(norm, cpu_norm, nonfinite, after, f64_norm=None, tol=TOL["clip_norm"], ref_ok=True):
     """(Pure.) The clip on MPS: its returned norm against the CPU's (`scalar_check`), no non-finite value in the norm
     or the gradients after it, and the gradients after it (`tensor_check`'s row `after`). Records whether it scaled
     (the CPU's norm above MAX_NORM). -> the row."""
-    n = scalar_check(norm, cpu_norm, tol, f64=f64_norm)
+    n = scalar_check(norm, cpu_norm, tol, f64=f64_norm, ref_ok=ref_ok)
     ok = bool(n["pass"] and nonfinite == 0 and after.get("pass"))
     scaled = (cpu_norm > MAX_NORM) if isinstance(cpu_norm, (int, float)) and math.isfinite(cpu_norm) else None
     return {"norm": n, "nonfinite": nonfinite, "after": after, "scaled": scaled, "pass": ok}
@@ -1219,25 +1301,36 @@ def cycled(m, xs, dev):
 
 class Encoder:
     """The encoder for a run: LOUDAR's own (`dp.encode`, the m2l autoencoder on `dev`), the CPU fallback (the CPU
-    autoencoder, the latents moved to the batch's device), or shared latents (the network-alone run)."""
+    autoencoder, the latents moved to the batch's device), or shared latents (the network-alone run). `last` keeps a
+    reference to the latents the last call returned (no copy, no sync), so run 2's CPU reference is fed the MPS run's
+    own latents."""
 
     def __init__(self, m, ae_cpu, ae_mps):
         self.m, self.ae = m, {"cpu": ae_cpu, "mps": ae_mps}
         self.orig = m["dp"].encode                 # LOUDAR's encode_fn (reads dp.autoencoder at each call)
+        self.last = None
+
+    def _keep(self, fn):
+        def encode(x):
+            z = fn(x)
+            self.last = z
+            return z
+        return encode
 
     def use(self, mode, dev, shared=None):
         dp = self.m["dp"]
         dp.__dict__.pop("encode", None)
+        self.last = None
         if shared is not None:
-            dp.encode = lambda x: shared.to(x.device)
+            dp.encode = self._keep(lambda x: shared.to(x.device))
             return
         if mode == "mps" and dev == "mps":
             dp.autoencoder = self.ae["mps"]
-            dp.encode = self.orig
+            dp.encode = self._keep(self.orig)
         else:                                      # the CPU encoder (on a CPU run, LOUDAR's own path)
             dp.autoencoder = self.ae["cpu"]
             orig = self.orig
-            dp.encode = (lambda x: orig(x.to("cpu")).to(x.device)) if dev != "cpu" else orig
+            dp.encode = self._keep((lambda x: orig(x.to("cpu")).to(x.device)) if dev != "cpu" else orig)
 
 
 def stub(m, net, dev, batches, it=0):
@@ -1321,7 +1414,7 @@ def total_norm(m, grads):
 
 def train_once(m, enc, dev, batch, enc_mode, clip_mode, shared=None, seed=CHECK_SEED):
     """One captured train_step + update_ema from the released weights on `dev`. -> {loss, t, z, norm, pre, post,
-    params, finite} (tensors on the CPU)."""
+    finite, lat} (tensors on the CPU; lat: the latents this run's encoder returned)."""
     import copy
 
     torch, rec = m["torch"], m["rec"]
@@ -1339,7 +1432,8 @@ def train_once(m, enc, dev, batch, enc_mode, clip_mode, shared=None, seed=CHECK_
     err = rec.error
     loss = float(err.mean(dim=1).mean())
     out = {"loss": loss, "t": rec.t, "z": rec.z, "norm": float(rec.norm), "pre": rec.pre, "post": rec.post,
-           "finite": params_finite(m, net)}
+           "finite": params_finite(m, net),
+           "lat": None if enc.last is None else enc.last.detach().to("cpu").clone()}
     del net, s
     return out
 
@@ -1386,18 +1480,23 @@ def compare_runs(m, dev_r, cpu_r, ref):
     """The loss, gradients before the clip, and the clip (norm, non-finite, after) of an MPS run against the CPU's."""
     torch = m["torch"]
     g64 = ref.get("grads") if "error" not in ref else None
-    loss = scalar_check(dev_r["loss"], cpu_r["loss"], TOL["loss"], f64=ref.get("loss") if g64 else None)
-    grads = tensor_check(norms_rows(m, dev_r["pre"], cpu_r["pre"], g64), TOL["grad"])
+    draws = bool(torch.equal(dev_r["t"], cpu_r["t"]) and torch.equal(dev_r["z"], cpu_r["z"]))
+    pre_rows = norms_rows(m, dev_r["pre"], cpu_r["pre"], g64)
+    holds = reference_holds(cpu_r["loss"], ref.get("loss") if g64 else None, pre_rows, draws)
+    ok = holds["holds"]                            # a calibrated pass only on a reference that itself holds (fix 2)
+    loss = scalar_check(dev_r["loss"], cpu_r["loss"], TOL["loss"], f64=ref.get("loss") if g64 else None, ref_ok=ok)
+    grads = tensor_check(pre_rows, TOL["grad"], ref_ok=ok)
     post64 = None
     if g64:
         coef = min(1.0, MAX_NORM / (ref["norm"] + 1e-6))
         post64 = {k: (None if v is None else v * coef) for k, v in g64.items()}
     nonfin = sum(int((~torch.isfinite(v)).sum()) for v in dev_r["post"].values() if v is not None)
     nonfin += 0 if math.isfinite(dev_r["norm"]) else 1
-    after = tensor_check(norms_rows(m, dev_r["post"], cpu_r["post"], post64), TOL["clip_after"])
-    clip = clip_check(dev_r["norm"], cpu_r["norm"], nonfin, after, f64_norm=ref.get("norm") if g64 else None)
-    draws = bool(torch.equal(dev_r["t"], cpu_r["t"]) and torch.equal(dev_r["z"], cpu_r["z"]))
-    return {"loss": loss, "grads": grads, "clip": clip, "same_draws": draws,
+    after = tensor_check(norms_rows(m, dev_r["post"], cpu_r["post"], post64), TOL["clip_after"], ref_ok=ok)
+    clip = clip_check(dev_r["norm"], cpu_r["norm"], nonfin, after, f64_norm=ref.get("norm") if g64 else None,
+                      ref_ok=ok)
+    return {"loss": loss, "grads": grads, "clip": clip, "same_draws": draws, "reference": holds,
+            "calibration": "allowed" if ok else f"refused, direct checks only: {'; '.join(holds['why'])}",
             "pass_network": bool(loss["pass"] and grads["pass"]), "pass_clip": bool(clip["pass"])}
 
 
@@ -1471,6 +1570,33 @@ def five_steps(m, enc, dev, xs, enc_mode, clip_mode):
     return {"losses": losses, "clip_norms": norms, "seconds": secs, "nonfinite": bad, "delta": delta}
 
 
+def run_two(m, enc, batch, enc_ok, clip_mode, train=None, reference=None, compare=None):
+    """Run 2, end to end (the review of #666, fix 1). The encoder is the one its own latent check chose (`enc_ok`:
+    LOUDAR's MPS encoder, else the CPU fallback); a failure here never switches it. The MPS step is compared against
+    the CPU network fed that MPS run's own latents (shared), with the float64 reference built on the same latents.
+    train/reference/compare default to train_once/f64_reference/compare_runs (a test passes fakes).
+    -> (record, encoder mode or None, fallbacks, cpu_only)."""
+    train = train or train_once
+    reference = reference or f64_reference
+    compare = compare or compare_runs
+    enc_mode = "mps" if enc_ok else "cpu"
+    fallbacks = [] if enc_ok else [FALLBACK_NAMES[("encoder", "cpu")]]
+    r, err = guarded(lambda: train(m, enc, "mps", batch, enc_mode, clip_mode))
+    if err:
+        return ({"encoder": enc_mode, "error": err}, None, fallbacks,
+                [f"run 2 ({enc_mode} encoder): {'MPS out of memory' if err['kind'] == 'oom' else 'unsupported op'}: "
+                 f"{err['op'] or err['error']}"])
+    lat = r["lat"]
+    cpu = train(m, enc, "cpu", batch, "cpu", "native", shared=lat)
+    ref = reference(m, batch, lat, cpu["t"], cpu["z"])
+    c = compare(m, r, cpu, ref)
+    rec = dict(c, encoder=enc_mode, latents="the MPS run's own, shared with the CPU network",
+               float64_reference={k: v for k, v in ref.items() if k != "grads"})
+    if not (c["pass_network"] and c["pass_clip"]):
+        return rec, None, fallbacks, [f"run 2: end to end does not match on MPS ({enc_mode} encoder)"]
+    return rec, enc_mode, fallbacks, []
+
+
 def cmd_check(a):
     """The gradient check, the fallbacks and the five steps -> PP_DIR/check.json (only JSON)."""
     require_on_main()
@@ -1541,11 +1667,8 @@ def cmd_check(a):
             r64 = float(torch.linalg.vector_norm(lat64))
             f64 = {"dev": float(torch.linalg.vector_norm(lat_mps.double() - lat64)) / r64,
                    "cpu": float(torch.linalg.vector_norm(lat_cpu.double() - lat64)) / r64}
-        e = rel(dn, rn)
-        ok = e <= TOL["encoder"] or (f64 is not None and f64["dev"] <= CALIB_MULT * f64["cpu"])
-        res["encoder"] = {"mps": {"err": e, "tol": TOL["encoder"], "f64": f64, "pass": bool(ok),
-                                  "shape": list(lat_cpu.shape)}}
-        enc_ok = bool(ok)
+        res["encoder"] = {"mps": dict(encoder_verdict(rel(dn, rn), f64), shape=list(lat_cpu.shape))}
+        enc_ok = bool(res["encoder"]["mps"]["pass"])
     if not enc_ok:
         res["encoder"]["cpu"] = {"pass": True, "note": "the CPU encoder's latents are the reference by construction"}
 
@@ -1580,28 +1703,14 @@ def cmd_check(a):
     if clip_mode and clip_mode != "native":
         fallbacks.append(FALLBACK_NAMES[("clip", clip_mode)])
 
-    # run 2: end to end on each device's own latents; the encoder's fallback if it fails
-    res["run2"] = {}
-    enc_mode = None
+    # run 2: end to end, the MPS step with the encoder the latent check chose (fix 1: the encoder is judged only by
+    # its own latent check), against the CPU network fed that MPS run's own latents, with a float64 reference built
+    # on those same latents
+    res["run2"], enc_mode = {}, None
     if not cpu_only:
-        cpu2 = train_once(m, enc, "cpu", batch, "cpu", "native")
-        for em in ENCODER_MODES if enc_ok else ("cpu",):
-            r, err = guarded(lambda: train_once(m, enc, "mps", batch, em, clip_mode))
-            if err:
-                res["run2"][em] = {"error": err}
-                if err["kind"] == "oom" or em == "cpu":
-                    cpu_only.append(f"run 2 ({em} encoder): {err['op'] or err['error']}")
-                    break
-                continue
-            c = compare_runs(m, r, cpu2, ref)
-            res["run2"][em] = c
-            if c["pass_network"] and c["pass_clip"]:
-                enc_mode = em
-                break
-        if enc_mode is None and not cpu_only:
-            cpu_only.append("run 2: end to end does not match on MPS, the CPU encoder included")
-        if enc_mode == "cpu":
-            fallbacks.append(FALLBACK_NAMES[("encoder", "cpu")])
+        res["run2"], enc_mode, fb, co = run_two(m, enc, batch, enc_ok, clip_mode)
+        fallbacks += fb
+        cpu_only += co
 
     # AdamW and the EMA from identical gradients
     if not cpu_only:
@@ -1724,7 +1833,7 @@ def time_run(a, check):
            "prep_sha256": m["prep_sha256"], "versions": LR.versions(), "threads": THREADS, "seed": TIME_SEED,
            "it": {"start": TIMED_IT0, "ema_branch": "ramp-up (it x batch_size < ema_rampup for it < 5,000), as "
                                                     "training_loop starts at it = 0"},
-           "blocks": {}, "encode": {}, "split": {}}
+           "rate_note": RATE_NOTE, "blocks": {}, "encode": {}, "split": {}}
     if m["anomaly"]:                               # a pin or hash failed: nothing runs
         return dict(rec, anomaly=list(m["anomaly"]), file_events=m["audit"].events,
                     time=time.strftime("%Y-%m-%d %H:%M:%S"))
@@ -1825,6 +1934,7 @@ def reading(check, times):
         raise SystemExit("no idle 526,080-sample block of 200 steps: rerun time when the machine is idle")
     code, why = pp_code(anomaly, cpu_only, nonfinite, fallbacks)
     out = {"code": code, "why": why, "order": list(CODES), "config": check.get("config"), "fallbacks": fallbacks,
+           "rate_note": RATE_NOTE,
            "nonfinite_mps_steps": nonfinite, "cpu_rate": (check.get("five") or {}).get("cpu_rate"),
            "cpu_projections": projections((check.get("five") or {}).get("cpu_rate")),
            "gradient_table": {k: check.get(k) for k in ("encoder", "run1", "run2", "optimizer_ema")},
