@@ -62,7 +62,7 @@ about whether a fine-tune helps. The fine-tune needs its own declaration and go.
 
 - **What they are.** 16 GOAT DI segments of 526,080 samples at 48 kHz, cycled two a step. They are float32 `.npy`
   files under `PF/fs/prior-probe/segments/`, about 34 MB.
-- **The rule** (`segment_rule`, seed 20261801).
+- **The rule** (`segment_rule`, seed 20264001).
   - The GOAT items outside the fs draw (its 24 GOAT items), never `item_5`.
   - Each item needs 5C's screened window and must not be near full scale.
   - Take a seeded order, then the first 16 whose window start plus 10.96 s lies inside the item.

@@ -122,7 +122,8 @@ SEG = 526080                           # conf/exp/GuitarFx.yaml audio_len (10.96
 SEG_SHORT = LR.pad_len(LR.CLIP)        # 218,624: our 216,000-sample clip padded as LOUDAR pads it
 BATCH = 2                              # conf/exp/GuitarFx.yaml batch_size
 N_SEGMENTS = 16                        # GOAT DI segments, cycled
-SEED = 20261801                        # above every seed on main (LOUDAR's runs use 20261701)
+SEED = 20264001                        # above loudar_run's whole seed range (LD_SEED to LD_SEED + 1,546) and every seed
+                                       # on main; this probe's seeds run to SEED + 300 (a test holds them apart)
 CHECK_SEED = SEED + 100                # the check's one fixed batch: t and the noise
 FIVE_SEED = SEED + 200                 # the five steps (one seed a step: FIVE_SEED + k)
 TIME_SEED = SEED + 300                 # each timed block (seeded once, as Trainer.__init__ seeds once)
@@ -262,6 +263,7 @@ def function_source(text, qualname):
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", SyntaxWarning)        # LOUDAR's trainer.py has a "\d" in a plain string
+        warnings.simplefilter("ignore", DeprecationWarning)   # (the same warning's class before Python 3.12)
         tree = ast.parse(text)
     parts = qualname.split(".")
     body = tree.body
@@ -1927,8 +1929,8 @@ def reading(check, times):
             nonfinite += len(b.get("nonfinite_steps") or [])
             e = b.get("error")
             if e:
-                cpu_only.append(f"time ({b.get('label')}): {'MPS out of memory' if e.get('kind') == 'oom' else 'an '
-                                'unsupported op'}: {e.get('op') or e.get('error')}")
+                what = "MPS out of memory" if e.get("kind") == "oom" else "an unsupported op"
+                cpu_only.append(f"time ({b.get('label')}): {what}: {e.get('op') or e.get('error')}")
     q = quoted_block(times)
     if q is None and not anomaly and not cpu_only:
         raise SystemExit("no idle 526,080-sample block of 200 steps: rerun time when the machine is idle")

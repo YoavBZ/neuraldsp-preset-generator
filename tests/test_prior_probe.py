@@ -53,6 +53,8 @@ def test_imports_with_numpy_and_torch_blocked(how):
 
 
 def test_top_level_imports_are_stdlib_and_loudar_run():
+    if not hasattr(sys, "stdlib_module_names"):                 # Python 3.10+ (CI runs 3.10 to 3.13)
+        pytest.skip("sys.stdlib_module_names needs Python 3.10")
     tree = ast.parse((REPO / "learn" / "prior_probe.py").read_text())
     names = set()
     for node in tree.body:
@@ -325,6 +327,15 @@ def test_cpu_rate_from_steps_two_to_five():
 def test_split_rate():
     assert P.split_rate(0.5, 0.2)["network_s"] == pytest.approx(0.3)
     assert P.split_rate(None, 0.2)["network_s"] is None
+
+
+def test_the_seeds_stand_apart_from_loudar_runs():
+    """The probe's seeds lie above every seed loudar_run gives (both slots, all 47 parts), and its file never names
+    loudar_run's base seed (tests/test_loudar_run.py's rule)."""
+    loudar = {v for slot in (0, 1) for j in range(47) for v in P.LR.seeds(slot, j).values()}
+    ours = {P.SEED, P.CHECK_SEED, P.TIME_SEED} | {P.FIVE_SEED + k for k in range(P.FIVE)}
+    assert min(ours) > max(loudar) and not ours & loudar and max(ours) == P.SEED + 300
+    assert str(P.LR.LD_SEED) not in (REPO / "learn" / "prior_probe.py").read_text()
 
 
 def test_batches_cycle_through_the_sixteen():

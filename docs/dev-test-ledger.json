@@ -10235,12 +10235,13 @@
      "data": "16 GOAT DI segments of 526,080 samples at 48 kHz, cycled two a step; float32 .npy under PF/fs/prior-probe/segments/ with prep.json (sha256 of each file and its samples, the item's zip member and its tag); RMS-normalised to -18 dB by LOUDAR's apply_RMS_normalization(use_gate=True) in the venv"
     },
     "segments": {
-     "seed": 20261801,
+     "seed": 20264001,
      "n": 16,
      "samples": 526080,
      "sr": 48000,
      "rule": "GOAT items outside the fs draw (its 24 GOAT items), never item_5, with 5C's screened window and not near full scale; a seeded order; the first 16 whose window start plus 10.96 s lies inside the item; each starts at its window; no Cambridge or MedleyDB file (so BKS and the panel's bands are out)",
-     "megabytes": 33.7
+     "megabytes": 33.7,
+     "seed_note": "above loudar_run's whole seed range and every seed on main; the probe's seeds run to SEED + 300 (changed from 20261801 before any run, the CI fix of #666)"
     },
     "check": {
      "batch": "one fixed batch (segments 0 and 1), one seed (CHECK_SEED) for t and the noise, both drawn on the CPU by LOUDAR's code (checked equal across devices, else the probe stops)",
