@@ -307,6 +307,18 @@ The floors are read as in the main test: row (b)'s answer, the held half, the tr
    - as stops beside: the raw section measures to the true DI, the pad and the coverage reproduce build.json's.
 
    Recorded per part: the groups and notes dropped, the uncovered share before and after, coverage-clean, the kept notes cut by a dropped pluck, the dropped groups with a true rise within ±50 ms, and amendment 1's beside figures. Then the hash PR, `phase_scratch_voice_control_dry`.
+
+   **Done 2026-11-28:** zero renders, 111 s on 3 shards, 121 s with the combine. All seven proofs and the three stop checks held on 47 of 47.
+   - **Dropped:** 161 of 1,464 groups on the 40 (204 notes, 198 played) and 173 of 1,748 on the 47 (222 notes, 216 played).
+   - **Carried:** 12 parts carry both guitars. On 4 more, `vc-uc` is byte-identical to `vc-own`, so about 140 renders remain, against the declared about 148.
+   - **Coverage-clean:** 26 of the 40 (11 BKS, 15 GOAT; 17 with drops, 9 carried), as the review's probe expected.
+   - **The uncovered share on the 40:** a mean of 5.6% before the drop and 11.9% after (median 2.3% and 4.6%).
+   - **The kept audio's level change outside the dropped spans** (`rms_ratio_db`) on the 31 deciding parts with drops:
+     - `tr-uc`: median +0.06 dB, from −3.62 to +0.71;
+     - `vc-uc`: median +0.00 dB, from −4.81 to +0.68.
+
+     Both lows are on `ea5fc54a8160`, the part whose coverage the drop moves most.
+   - **Build hash:** build.json sha256 7e97075f….
 3. **Floors** (`python -m learn.voice_control floor --shard k/3`, then `--rerun` for any refusal). `voice_floors`' body runs on the control's own world (amendment 7): its own guitars, stored carry sources (`tr-di`, `vc-own`), repeat guitars and paths under `PF/fs/voice/control/`, so the main test's `repeat/` records never stand in. Verify first: on the two check parts, the stored `tr-di` and `vc-own` repeat their stored floors, distance and render sha256 (8 renders). Byte-identical guitars carry their parent's stored floor and name it.
 4. **Read** (`python -m learn.voice_control read`, zero renders, once). Before the code, it verifies that S reproduces per part from `rows.json`, that Ux = Ubx − Urx to 1e-12, and that Ux is exactly 0 on carried parts.
 5. **Audit**, then the results PR with `phase_scratch_voice_control_outcome`.

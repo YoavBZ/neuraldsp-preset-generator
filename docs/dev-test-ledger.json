@@ -9041,6 +9041,205 @@
      ],
      "level_step_db": "wording (non-binding): level_step_db is only at_lufs' residual step, since both guitars end at -22.9 LUFS; the real level change of the kept audio is outside_change's rms_ratio_db"
     }
+   },
+   "phase_scratch_voice_control_dry": {
+    "sha256": "7e97075f6f900dcf1acef159d2ff92433eb7e5ae9dfe6b2eda78998af6646788",
+    "plan": "docs/scratch-voice-plan.md",
+    "renders": 0,
+    "parts": 47,
+    "proofs": {
+     "flags_are_builds": "47 of 47",
+     "rule_off_is_stored": "47 of 47",
+     "trace_holds": "47 of 47",
+     "outside_dropped_same": "47 of 47",
+     "gate_outside_same": "47 of 47",
+     "synth_inside_gate": "47 of 47",
+     "drop_is_additive": "47 of 47"
+    },
+    "checks": {
+     "raw_is_true_di": "47 of 47",
+     "pad_is_builds": "47 of 47",
+     "cover_is_builds": "47 of 47"
+    },
+    "proofs_hold": true,
+    "coverage": {
+     "clean_n": 32,
+     "deciding_n": 40,
+     "clean_deciding_n": 26,
+     "clean_deciding_carried_n": 9,
+     "clean_deciding_with_drops_n": 17,
+     "moved_deciding_n": 14
+    },
+    "dropped": {
+     "all_47": {
+      "parts": 47,
+      "groups": 173,
+      "groups_all": 1748,
+      "notes": 222,
+      "played_notes": 216,
+      "parts_with_drops": 35,
+      "carried": 12,
+      "cut_by_dropped": 32,
+      "rise_within_50ms": 44
+     },
+     "the_40": {
+      "parts": 40,
+      "groups": 161,
+      "groups_all": 1464,
+      "notes": 204,
+      "played_notes": 198,
+      "parts_with_drops": 31,
+      "carried": 9,
+      "cut_by_dropped": 30,
+      "rise_within_50ms": 40
+     }
+    },
+    "voice_build_sha256": "52fea1ed4d805e509cd63640443a73640b9fc58bcf1cabe82b8e56ebc924d8bf",
+    "scratch_readerr_blob_sha": "0ec8a65c8c06613f7800e4f3a892ae14f2c52b72",
+    "played_trace_sha256": "c3d347116b0f15abeadb0f49f9b74624d27170d9d9dfa3a77566495914c4afe4",
+    "files": {
+     "build.json": 1,
+     "build-parts": 47,
+     "dry/tr-uc": 47,
+     "dry/vc-uc": 47,
+     "dry_bytes": 185004032
+    },
+    "ran": "2026-11-28, from a fresh detached worktree of origin/main at 8bc321eb (#658 merged): build --shard 0/3, 1/3, 2/3 in parallel (111 s wall), then build --combine (121 s in all); zero renders; every proof and stop check held on 47 of 47; 37 GiB free after, against the 31 GB guard",
+    "figures": {
+     "label": "zero-render figures from build.json, beside, not decided; part tags only; ranges over the parts whose guitars are not both carried (35 of the 47, 31 of the 40)",
+     "coverage_clean_40": "26 of the 40 (11 BKS, 15 GOAT): 17 with drops, 9 carried; 14 coverage-moved; the review's probe expected 26 (17 and 9)",
+     "uncovered_share_40": {
+      "mean_before": 0.0562,
+      "mean_after": 0.1186,
+      "median_before": 0.0229,
+      "median_after": 0.046
+     },
+     "uncovered_move_40": {
+      "at_most_0.005": 28,
+      "larger": [
+       {
+        "move": 0.022,
+        "tag": "50342fbafeb8"
+       },
+       {
+        "move": 0.023,
+        "tag": "7f621844a6f0"
+       },
+       {
+        "move": 0.026,
+        "tag": "1b445da68053"
+       },
+       {
+        "move": 0.03,
+        "tag": "128250b8463c"
+       },
+       {
+        "move": 0.033,
+        "tag": "3320de84a198"
+       },
+       {
+        "move": 0.037,
+        "tag": "eba1d1b5d3f9"
+       },
+       {
+        "move": 0.072,
+        "tag": "a3b1b27272d3"
+       },
+       {
+        "move": 0.198,
+        "tag": "ddcdb0c10557"
+       },
+       {
+        "move": 0.23,
+        "tag": "8ad0ce9dc271"
+       },
+       {
+        "move": 0.249,
+        "tag": "c29832ab789c"
+       },
+       {
+        "move": 0.704,
+        "tag": "e8d444a97729"
+       },
+       {
+        "move": 0.87,
+        "tag": "ea5fc54a8160"
+       }
+      ]
+     },
+     "carry": "12 parts carry both guitars (no dropped played note); on 4 more parts vc-uc is byte-identical to vc-own (the dropped notes' windows lie inside other windows), so those 4 vc-uc floors carry too: about 35 + 31 = 66 rendered guitars, 132 renders plus 8 for the repeat check (140), against the declared about 148",
+     "outside_change": {
+      "tr-uc": {
+       "max_abs_rel_40": {
+        "n": 31,
+        "min": 0.0036,
+        "min_tag": "f2030431a5bb",
+        "median": 0.0581,
+        "max": 0.6781,
+        "max_tag": "8ad0ce9dc271"
+       },
+       "rms_ratio_db_40": {
+        "n": 31,
+        "min": -3.622,
+        "min_tag": "ea5fc54a8160",
+        "median": 0.059,
+        "max": 0.707,
+        "max_tag": "50342fbafeb8"
+       },
+       "diff_rms_db_re_parent_40": {
+        "n": 31,
+        "min": -48.7,
+        "min_tag": "f2030431a5bb",
+        "median": -26.7,
+        "max": -5.1,
+        "max_tag": "ea5fc54a8160"
+       },
+       "identical_parts": 0
+      },
+      "vc-uc": {
+       "max_abs_rel_40": {
+        "n": 31,
+        "min": 0.0,
+        "min_tag": "9c2b0e8c6bea",
+        "median": 0.0196,
+        "max": 0.38,
+        "max_tag": "ea5fc54a8160"
+       },
+       "rms_ratio_db_40": {
+        "n": 31,
+        "min": -4.814,
+        "min_tag": "ea5fc54a8160",
+        "median": 0.001,
+        "max": 0.68,
+        "max_tag": "ddcdb0c10557"
+       },
+       "diff_rms_db_re_parent_40": {
+        "n": 27,
+        "min": -100.3,
+        "min_tag": "89cac0bf475c",
+        "median": -31.5,
+        "max": -6.8,
+        "max_tag": "ea5fc54a8160"
+       },
+       "identical_parts": 4
+      },
+      "label": "the finished child against its parent on the held half outside the dropped spans (amendment 1): rms_ratio_db is the real level change of the kept audio; the largest drops are on ea5fc54a8160, the part whose coverage the drop moves most"
+     },
+     "level_step_db": {
+      "tr-uc": [
+       -0.255,
+       0.187
+      ],
+      "vc-uc": [
+       -0.175,
+       0.48
+      ],
+      "label": "only at_lufs' residual step against the parent's"
+     },
+     "drop_is_additive_max_ratio": 1.5325501703730659e-16,
+     "support_nonzero_outside_gate": 68275,
+     "timing": "of the dropped groups, 40 on the 40 (44 on the 47) have a true rise within +-50 ms: timing errors, not extras (the declared limit)"
+    }
    }
   },
   {
