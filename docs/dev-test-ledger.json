@@ -9240,6 +9240,130 @@
      "support_nonzero_outside_gate": 68275,
      "timing": "of the dropped groups, 40 on the 40 (44 on the 47) have a true rise within +-50 ms: timing errors, not extras (the declared limit)"
     }
+   },
+   "phase_scratch_own": {
+    "declared": "2026-11-28, before anything in it runs",
+    "plan": "docs/scratch-own-plan.md; the planner's plan (handover plans/own-search-row-plan.md, sha256 9f425215e4eadadbb5c73ae51d1d143a41c4f378b8dafc29966a39323eba31c7, its independent review appended) passed an independent review (Opus, high), PASS WITH AMENDMENTS; the review's amendments 1 to 11 are binding and override the plan's text where they differ; non-binding notes 1, 2, 3, 9 and 10 taken",
+    "user_go": "the user's go for this row, 2026-11-28 ('Yes, run it (Recommended)', after the control)",
+    "orchestrator_calls": {
+     "codes": "renamed XW-* (amendment 2: XO collides with the X_oracle arm); XW_TABLE, xw_code",
+     "control_terms": "the control's terms are Ux, Sx, Ubx and Urx (the control review's amendment 8)",
+     "deferred": "the spectral-envelope steps are deferred: built only after this row's code is on main, under XW-closed or XW-part (or XW-undecided on the user's word), with their own declaration and table; none is built here and no name is reserved",
+     "gate": "the control's review (2026-11-28): the user's renewed word under XC-notes or a coverage-sensitive XC-part is recorded once, in phase_scratch_voice_waiver (answers_code, date on or after the control outcome's, spend_kinds holding 'search-row'), enforced by scratch_voice.spend_refusal; this row keeps no word of its own and keeps its own stop under XC-anomaly as a second check"
+    },
+    "question": "by search, what does real audio inside our note windows buy? The row repeats build 2's search with one change, the dry guitar: the stored vc-own instead of tr-di. It is the search-level ceiling for any note-driven rebuild (routes 1 and 2) with today's note activity and finish",
+    "row": {
+     "name": "fs-own",
+     "dry": "vc-own (PF/fs/voice/dry/vc-own/<part>.npy, handed as stored: it already carries p.finish and -22.9 LUFS, as tr-di did)",
+     "reference": "xlnoG@-3 blanked outside the search half, as rows (b), (c), build 2 and fs-refit; the search sees the stem, never the real record",
+     "against": "row (b) fs-stem (the true DI) and build 2 (tr-di): against either the only change is the dry guitar"
+    },
+    "mechanics": "unchanged code, mirroring rederive_rows' fs-refit (_search_real, cmd_answers, cmd_score, the --for real checks): scratch_notes.start_reference, then scratch_search.search_row_part with dry_sha256; answer_parts, deciding_stop, score_row_part, read_row_parts; the same draw, halves, Cen, partners, seeds, 200-evaluation step 1 and step 2; only the guitar, its sha256, the name and the paths differ (a fake-world test against rederive_rows, amendment 10). The judge's frame mask in the search moves with the dry guitar (aligned_distance is handed it), as between row (b) and build 2: part of 'the dry guitar' (note 10)",
+    "guitar": "its file sha256 and its samples' audio_sha256 must be build.json's, and build.json's sha256 main's phase_scratch_voice_dry (52fea1ed...); its proofs held",
+    "score": "Cen, the answer, cp50, cp100, cp200, the shrunk answer and the borrowed answers through the true DI, judged on the held half against the clean record (score_row_part)",
+    "s1": "a technical refusal reruns once (--rerun, a fresh process), then reads at Cen (deciding_stop reports it); the passing-only read beside; refusal-sensitive when the two codes differ",
+    "no_carry": "vc-own is no searched guitar's audio: byte-identical (npy sha256) to the true DI, tr-di, avg+mild or rf2 on a part stops the row, to the orchestrator",
+    "numbers": {
+     "D_own": "G(fs-own) - G(build 2), per part, paired",
+     "C_own": "G(fs-own) - G(row (b)), per part, paired",
+     "pool": "the 40 (BKS+GOAT) decide by scratch_notes.set_rows; all 47 beside"
+    },
+    "table": {
+     "rule": "paired_reading of D_own, of -D_own (build 2 against the row: 'matches' rules a heard-size gain out) and of C_own on the 40, the answer arm, the first that holds; coded as scratch_own.XW_TABLE and xw_code, tested before any run: every interval case, malformed ones included, ends in exactly one code (amendment 1)",
+     "codes": [
+      "XW-anomaly",
+      "XW-worse",
+      "XW-closed",
+      "XW-part",
+      "XW-level",
+      "XW-undecided"
+     ],
+     "XW-anomaly": {
+      "when": "a check fails, a stored figure does not reproduce, any of D_own, -D_own and C_own has no usable interval or reading, or C_own reads better",
+      "said": "unexpected; audit. If the audit finds no fault, the figures go to the user as read, never dropped",
+      "decides": "stop; audit; nothing said before the audit"
+     },
+     "XW-worse": {
+      "when": "D_own reads worse",
+      "said": "if the audit finds no fault: real audio inside our note windows drives the search worse than the bank guitar",
+      "decides": "audit the gate and the cuts first; routes 1 and 2 are not supported"
+     },
+     "XW-closed": {
+      "when": "D_own reads better and C_own reads matches",
+      "said": "the cost is recovered: a heard-size loss against the true DI is ruled out, by the score",
+      "decides": "routes 1 and 2 stay open with the whole cost to gain; finer corrections of the bank's spectral envelope may follow, on their own declaration and table, after this row's code is on main"
+     },
+     "XW-part": {
+      "when": "D_own reads better and C_own does not read matches",
+      "said": "a heard-size part of the cost is recovered, by the score; C_own reads <C_own's reading>: a residual is shown (worse) or only not ruled out (undecided)",
+      "decides": "routes 1 and 2 stay open; their room is at most -D_own; finer corrections of the bank's spectral envelope may follow, on their own declaration and table, after this row's code is on main; the residual belongs to N, K and F together"
+     },
+     "XW-level": {
+      "when": "-D_own reads matches",
+      "said": "a heard-size gain from real audio inside our note windows is ruled out, by the score",
+      "decides": "routes 1 and 2 cannot pay by search; C_own's residual holds N, K and F together (F, +0.172 at the floor, is larger than N there): the cheap split of C_own is the 50-evaluation vc-fin row (about 2.6k renders), on its own declaration and go; the deferred envelope corrections do not run"
+     },
+     "XW-undecided": {
+      "when": "anything else",
+      "said": "not decided; undecided is not failed (with C_own matching: a heard-size loss against the true DI is ruled out, said in the report)",
+      "decides": "to the user with what the intervals rule out (D_own lo90 to hi90)"
+     }
+    },
+    "gate": {
+     "rule": "every render command (check-score, check-search, search, score) reads main's phase_scratch_voice_control_outcome first, then calls scratch_voice.require_spend('search-row') and relies on it",
+     "absent": "no control outcome on main: the row refuses",
+     "stop": [
+      "XC-anomaly"
+     ],
+     "wait": [
+      "XC-notes",
+      "XC-part marked coverage-sensitive (coverage_label)"
+     ],
+     "proceed": [
+      "XC-stands",
+      "XC-part",
+      "XC-undecided"
+     ],
+     "wait_means": "the spend gate opens only with the user's renewed word in phase_scratch_voice_waiver (answers_code the control's code, date on or after its outcome's, spend_kinds holding 'search-row')",
+     "undeclared": "an undeclared XC code stops, to the orchestrator",
+     "fails_closed": "under XC-part or XC-notes the control's outcome must carry coverage_label (None or coverage-sensitive), else the row stops, to the orchestrator, as spend_refusal does since #658; the table guard holds the row's codes equal to scratch_voice's declared gate (CONTROL_CODES, CONTROL_SHUT, CONTROL_WAIVER_ONLY, COVERAGE_FORCED)"
+    },
+    "beside": {
+     "arms": "the shrunk arm's code (shrunk-sensitive when it differs from the answer arm's) and the cp50, cp100 and cp200 codes",
+     "loudar": "G at cp50 of fs-own less ld-stem's G50 (S1 as LOUDAR's read) on BKS+panel (23 parts), pooled as scratch_loudar.bp_rows, the part-weighted mean beside, read both ways: 'better' says the oracle ceiling sits above the released song-only rebuild on unseen sets; anything else says it is not shown to",
+     "share": "Fieller's -D_own / (build 2 - row (b)) on the 40: the share recovered (note 3)",
+     "splits": "each cluster of the 40 left out; the three largest parts (12-hex tags, contribution, the 40 without them); clean, crunch, all 47, the panel; one part per partner",
+     "row_c": "G(fs-own) - G(row (c)) on every arm and split",
+     "ranks": "the stored S (phase_scratch_voice_outcome rows.json) and the control's Ux (its rows.json, rows_sha256 on main) per part against -D_own, Spearman on the 40",
+     "never": "none of these changes the code"
+    },
+    "reproduce": "before the read: build 2 - row (b) on the 40 equal to the exact-notes read's stored row exactly (phase_scratch_exact_outcome rows_sha256) and to +0.274 [+0.186, +0.361] to 3 places; LOUDAR's G50 on BKS+panel by bp_rows equal to its stored row exactly (phase_scratch_loudar_outcome rows.json); a failure reads XW-anomaly. The other seen figures are reported beside to 3 places and gate nothing",
+    "seen": {
+     "label": "seen before the declaration (weighting and checkpoint named)",
+     "b2_less_row_b": "answer, the 40, cluster read: +0.274 [+0.186, +0.361]; plain mean +0.277",
+     "b2_less_row_b_cp50": "cp50, the 40, cluster read: +0.230 [+0.147, +0.314] (the review's)",
+     "b2_less_row_b_shrunk": "shrunk, the 40, cluster read: +0.143 [+0.075, +0.212] (the review's)",
+     "G_b2": "+0.009 [-0.088, +0.106] (answer, the 40)",
+     "G_row_b": "-0.264 [-0.310, -0.219]",
+     "vc_own_floor": "+0.321 [+0.261, +0.380] (cluster), +0.315 (plain): N+K+F at the real floor",
+     "C_own_projection": "the review's post hoc projection of C_own: +0.06 to +0.16, so D_own about -0.11 to -0.21",
+     "loudar_less_b2_cp50": "BKS+panel by the declared bp_rows pooling: +0.002 [-0.116, +0.121], part-weighted -0.009; BKS alone -0.015 [-0.146, +0.117], the panel +0.019 (amendment 9); beside it -0.005 [-0.103, +0.092], the earlier reviewer's 11-cluster combined read",
+     "likely": "by its own power, the likely codes are XW-part or XW-undecided",
+     "vc_own": "on 47 of 47: 492,000 samples, -22.9 LUFS within 1e-3, npy sha256 build.json's audio_sha256, byte-identical to neither tr-di nor the true DI; no search in the stored rows (build 2, (b), (c), fs-refit) refused",
+     "frame_mask": "the judge's playing frames on the search half track tr-di's closely; a few parts differ (371 -> 417, 352 -> 324); both below the true DI's on many parts",
+     "repeat_use": "the 47 parts have been read many times (note 10)"
+    },
+    "grepped": "git grep -F on origin/main da4e0e22 over docs, learn, tests, scripts and reference: 0 hits for phase_scratch_own, fs-own, XW-, XW_TABLE, xw_code, XW_, scratch_own, D_own, C_own, fs/own and shrunk-sensitive, and none for XW as a word; arm-sensitive is taken (pipeline-fix-plan), so the shrunk arm's label is shrunk-sensitive; re-grepped on origin/main 8bc321eb (the control, #658, merged): still 0 hits in text files",
+    "phases": "0 preconditions (the control's outcome on main; 35 GB free; 3 slots free) -> 1 this declaration (zero renders) -> 2 check-score, check-search (62 renders, about 1 min: row (c)'s score and first 10 evaluations repeat exactly) -> 3 search --shard k/3, then --rerun (94 start references + about 12,300; 1.8-2.0 h) -> 4 answers, hash PR phase_scratch_own_answers before any score -> 5 score --shard k/3, then --rerun (940 renders, about 12 min) -> 6 reproduce, read (zero renders, once; rows saved before the code) -> 7 audit, results PR with phase_scratch_own_outcome",
+    "renders": "about 13,400 in all, from measured rates: fs-refit's search 4,239 + 4,228 + 3,929 = 12,396 renders (longest shard 6,652 s), its score 940 renders at 703-728 s a shard, its checks 40 + 22 = 62",
+    "guards": "every command refuses unless this checkout runs main's code (learn/scratch_own.py and its pinned files: scratch_search, scratch_notes, scratch_exact, scratch_voice, voice_build, voice_floors, rederive_rows, scratch_loudar, scratch_codec, rederive_fit, scratch_rederive, note_transcribe, note_replay) and keys (phase_fs*, phase_scratch_own*, phase_scratch_voice*), and main holds the keys it reads; at most 3 shards; the search opens nothing scored (rederive_rows' forbidden files, and any answers, rows, report, reproduce or outcome file, any score, floor or repeat folder, PF/fs/voice/control/ and PF/fs/envelope/: amendment 6); each file written once; the module edits none of the pinned files (amendment 11)",
+    "code": "learn/scratch_own.py, tests/test_scratch_own.py",
+    "data": "PF/fs/own/ (checks/, search/, start-ref/, answers.json, score/, the -rerun folders, reproduce.json, rows.json, report.json); part keys only as 12-hex tags in the read's files and in git",
+    "keys_to_come": [
+     "phase_scratch_own_answers",
+     "phase_scratch_own_outcome"
+    ],
+    "cant_show": "an oracle: vc-own is the true DI's audio, gated by notes read from the true DI, so nothing here speaks for the song-only path; C_own's residual holds N, K and F together (the 50-evaluation vc-fin row, about 2.6k renders, would split it, on its own go); by the score only, one search, one seed"
    }
   },
   {
