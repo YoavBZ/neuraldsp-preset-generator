@@ -10204,6 +10204,196 @@
     "zero_padded_parts": 31,
     "ran": "2026-11-28 from a fresh detached worktree of origin/main at f8fbdbad (#665): build --shard k/3, k = 0, 1, 2 in parallel (16 + 16 + 15 parts, 164, 163 and 153 s), then --combine; zero renders; 442 MB under PF/fs/envelope/; 35 GB free after",
     "note": "build.json's rules hold #665's wording of level_align ('only through the clamp'); this PR corrects that sentence in the code, the declaration and the plan (wording only: the guitars are unchanged)"
+   },
+   "phase_scratch_prior_probe": {
+    "declared": "2026-11-28, before anything in it runs",
+    "plan": "docs/prior-probe-plan.md; the planner's plan (handover plans/envelope-and-prior-probe-plan.md, section B, sha256 2b86964950847632a7beeed1628c9a171f27a54a296496d37a6b09083765a8a6, its independent review appended) passed an independent review (Opus, high), PASS WITH AMENDMENTS; B's amendments 1 to 6 are binding and override the plan's text where they differ; the non-binding notes taken",
+    "user_call": "the user's route call 2026-11-28: 'Spectral steps first (Recommended)' plus the LOUDAR MPS timing probe in parallel",
+    "orchestrator_calls": {
+     "amendment_1": "option 1: LOUDAR's own Trainer.train_step and Trainer.update_ema run unbound on a stub object; no LOUDAR file is edited",
+     "clip_fallback": "clip_grad_norm_(..., foreach=False) on MPS is the first fallback for the clip, then the clip norm computed on the CPU",
+     "imports": "top-level imports stdlib only (and loudar_run, stdlib-only at its top): $LV learn/prior_probe.py runs as a script",
+     "notes": "the review's other non-binding notes taken: the encode/network split from separate encode-only blocks; 218,624 samples timed beside; the CPU rate quoted from steps 2 to 5 of the five"
+    },
+    "implementer_calls": {
+     "placeholders": "training/trainer.py imports utils.log (pandas, plotly) and utils.training_utils (torchaudio), which are not in the loudar venv and nothing is downloaded; neither is used by train_step, update_ema or get_batch with a plain tensor batch, so both are placeholder modules during the import only, and a placeholder raises on any use",
+     "observers": "the FM instance's loss_fn, sample_time_training and sample_prior are wrapped on the instance (each calls the class's method and keeps a copy), and torch.nn.utils.clip_grad_norm_ is wrapped for the run (gradients before and after, the returned norm, the fallback in use); no value changes",
+     "segments_rate": "GOAT DIs are 44.1 kHz; prep resamples to 48 kHz (clean_di.resample) before cutting 526,080 samples, and check/time apply LOUDAR's own -18 dB rule to each 48-kHz segment (GuitarFxIterable normalises at the file's rate and get_batch resamples; the gain differs negligibly; timing and the gradient check are unaffected)",
+     "segment_start": "each segment starts at the item's 5C window (goat/units.json: a 10-s section that passed the library's screens); items without one, or near full scale, are not drawn",
+     "hours_reads": "a data read outside the list is one under the data root, or an audio/array file anywhere under the home directory; libraries' configuration reads elsewhere are not data and are not counted",
+     "dry": "hours --dry and prep --dry compute in memory and write nothing; they skip the main-code guard (the table guard still runs), so they can be tried before the merge",
+     "repeat": "a timed block that was not idle at both ends is labelled; the repeat is a rerun of time (each run writes its own time-<stamp>.json); read quotes the first idle 526,080-sample block of 200 steps and refuses while none exists",
+     "f64_reference": "the float64 reference keeps the rotary frequency buffer in float32 (LOUDAR computes rotary angles in float32 by construction, and rounds q and k to float32 around the rotary step), so it carries float32 rounding there and float64 elsewhere; if it cannot run, nothing is calibrated"
+    },
+    "question": "route 3's fine-tune priced on this Mac: steps per second on MPS at the real segment length, memory, and whether MPS gradients can be trusted on LOUDAR's training path. Zero renders; no model is kept",
+    "what_runs": {
+     "steps": "LOUDAR's own Trainer.train_step then Trainer.update_ema then it += 1 (training_loop's order), unbound on a stub holding args, network, diff_params, optimizer, ema, it, dset, device and get_batch (Trainer.get_batch bound to it); the optimizer and EMA built as Trainer.__init__ builds them",
+     "config": "config_train_GuitarFx.yaml's defaults: network dit_M2L, diff_params FM_m2l (class FM, not the tester's FM_to_EDM_wrapper, which overrides sample_prior and is equal at t=None), exp GuitarFx (AdamW lr 1e-4, weight decay 0.01, betas 0.9/0.999, eps 1e-8; batch 2; 526,080 samples; clip max_norm 1; EMA 0.9999, ramp-up 10,000), logging.log and log_spectrograms False; no augmentation (train_step never calls it; randomize_segment_length False)",
+     "ema_branch": "timed steps start at it = 0 as training_loop sets it: the ramp-up branch (it x batch_size < 10,000) for all 200; the EMA check covers both branches (it 1 and 175,000)",
+     "environment": "tools/loudar-venv (Python 3.12.13, torch 2.10.0, omegaconf 2.3.1 at their pins), loudar_run.set_env (offline, wandb disabled, no torch.compile, weights-only loads); PYTORCH_ENABLE_MPS_FALLBACK unset or the command refuses; 4 CPU threads; no .pyc written",
+     "weights": "GuitarFx-175000.pt through loudar_run.load_checkpoint (size and sha256 pinned, checked before torch is imported; safe load; EMA weights only); the network on the CPU as hydra builds it, in training mode, then copied to each device; the optimizer starts fresh",
+     "data": "16 GOAT DI segments of 526,080 samples at 48 kHz, cycled two a step; float32 .npy under PF/fs/prior-probe/segments/ with prep.json (sha256 of each file and its samples, the item's zip member and its tag); RMS-normalised to -18 dB by LOUDAR's apply_RMS_normalization(use_gate=True) in the venv"
+    },
+    "segments": {
+     "seed": 20264001,
+     "n": 16,
+     "samples": 526080,
+     "sr": 48000,
+     "rule": "GOAT items outside the fs draw (its 24 GOAT items), never item_5, with 5C's screened window and not near full scale; a seeded order; the first 16 whose window start plus 10.96 s lies inside the item; each starts at its window; no Cambridge or MedleyDB file (so BKS and the panel's bands are out)",
+     "megabytes": 33.7,
+     "seed_note": "above loudar_run's whole seed range and every seed on main; the probe's seeds run to SEED + 300 (changed from 20261801 before any run, the CI fix of #666)"
+    },
+    "check": {
+     "batch": "one fixed batch (segments 0 and 1), one seed (CHECK_SEED) for t and the noise, both drawn on the CPU by LOUDAR's code (checked equal across devices, else the probe stops)",
+     "encoder": "MPS latents against the CPU's: relative L2 at most 1e-3 (calibrated against a float64 encoder only when that reference holds: the CPU's own error against it within 1e-3). This check alone judges the encoder, and so its CPU fallback (the review of #666, fix 1)",
+     "run_1": "the network alone on shared CPU latents: the loss (1e-4 relative), every gradient before the clip per tensor and globally (1e-3 relative L2), the clip's returned norm (1e-3), its non-finite count (0), the gradients after it (1e-3), and whether it scaled (norm above 1)",
+     "run_2": "end to end: the MPS step with the encoder the latent check chose, against the CPU network fed that MPS run's own latents (shared), with the float64 reference built on those same latents; the same figures as run 1. A miss here is PP-cpu-only; it never switches the encoder (the review of #666, fix 1)",
+     "optimizer_ema": "AdamW's step and the EMA update from identical gradients (the CPU's after the clip) and weights copied to both devices, per tensor at 1e-3, calibrated; the EMA at it 1 and 175,000",
+     "five_steps": "five steps on each device from the same start, one seed a step: the loss sequence, the clip norms and the weight change (reported); the CPU rate from steps 2 to 5",
+     "fallbacks": "each checked the same way, in order: the clip with foreach=False, then the clip norm on the CPU; the encoder on the CPU when its latent check fails. An unsupported op in the encoder or the clip tries its fallback; anywhere else, or MPS out of memory, is PP-cpu-only with the op or the memory named; any other error stops the probe (to the orchestrator)",
+     "refuses": "while another torch or MPS process runs, or beside renders (it competes for the CPU's performance cores)"
+    },
+    "tolerances": {
+     "relative": {
+      "encoder": 0.001,
+      "loss": 0.0001,
+      "grad": 0.001,
+      "clip_norm": 0.001,
+      "clip_after": 0.001,
+      "adamw": 0.001,
+      "ema": 0.001
+     },
+     "calibration_multiple": 3.0,
+     "per_tensor_floor": 0.01,
+     "calibration_cap": 0.1,
+     "rule": "a figure that misses its tolerance passes only if its error against a CPU float64 reference is within 3 x CPU float32's own error against it; a tensor's norm floored at 1% of the RMS tensor norm; tolerances catch a broken op (the known fault was 81-100% off) and decide no route",
+     "calibration_gate": "(the review of #666, fix 2) a calibrated pass only when the reference itself holds: CPU float32 against float64 within the direct tolerances on both the loss (1e-4) and the global gradient (1e-3), and the same draws on both devices (reference_holds); never for a tensor whose CPU error against float64 is above the cap (0.1); AdamW, the EMA and the encoder are gated the same way on their own CPU-against-float64 error; otherwise only the direct checks apply, and the record says so (each row's 'calibration')"
+    },
+    "nonfinite_step": "a step whose loss, clip_grad_norm_'s returned norm, or any parameter at its end is not finite",
+    "timing": {
+     "blocks": "200 steps on MPS at 526080 samples (steps 1-20 warm-up, reported apart; steps 21-200 give the rate); 100 steps (20 warm-up) at 218624 samples beside; an encode-only block of 50 (5 warm-up) after each for the encode/network split",
+     "clock": "torch.mps.synchronize() before each clock read; data in memory on the device before the clock; the non-finite and memory checks outside it",
+     "config": "the configuration the check passed, fallbacks included; time refuses after an anomaly or cpu-only check",
+     "report": "steps per second; seconds and hours per 1,000 steps and for 175,000 (the released checkpoint's count; no target count chosen here); 6.09 h of audio per 1,000 steps; peak RSS and MPS driver memory on the Mac's memory; non-finite steps; the hours",
+     "resample": "the rate excludes LOUDAR's in-step resample (get_batch's resample_batch, which GOAT's 44.1-kHz files take in LOUDAR's own training), which is right for 48 kHz data"
+    },
+    "idle": "at the start and end of each timed block: no render process (pgrep -f au_render_server) and no other torch or MPS process (pgrep -f on the tools' venvs and the fit/train/curve commands), the probe's own process and its parents left out; counts recorded. The quoted rate comes only from a block idle at both ends; check and time refuse while another torch or MPS process runs (never two MPS jobs)",
+    "codes": {
+     "order": [
+      "PP-anomaly",
+      "PP-cpu-only",
+      "PP-unstable",
+      "PP-mps-fallback",
+      "PP-mps"
+     ],
+     "table": {
+      "PP-anomaly": "a pin or hash fails, a file outside the list is read, or a weights file is written",
+      "PP-cpu-only": "MPS gradients do not match even with the declared fallbacks, or an unsupported op outside the encoder and the clip, or MPS out of memory (the op or the memory named); the CPU rate is quoted from steps 2 to 5 of the five",
+      "PP-unstable": "the checks hold but a non-finite step appears (the five steps on MPS or any timed step)",
+      "PP-mps-fallback": "the checks hold only with a declared fallback; the fine-tune must use it",
+      "PP-mps": "every check holds on LOUDAR's own path, and 200 finite steps"
+     },
+     "rule": "pp_code: the first that holds; one code, then stop"
+    },
+    "file_rule": "an open audit hook in check and time: a data read outside the list (LOUDAR's code, the models' cache, the venv, the repo, the probe's folder) is PP-anomaly, and so is any write under the home directory outside the probe's folder or any weights-like file opened for writing; torch.save raises; the probe's folder holds only JSON and prep's 16 segments (checked by check, time and read)",
+    "pins": {
+     "loudar_commit": "9f3bd1659991b584afcfa7a3ac395c0512f24237",
+     "checkpoint_sha256": "d86e08bbb94bb12cef0b907dd7f3fd67ba112cc463c8ee0e964855155985c297",
+     "files": {
+      "training/trainer.py": "ebe72ed12ace515571aa5924094f0215b7fa02a42b6cfdfa0e26a988d142897f",
+      "diff_params/diffusion_latent.py": "551c874467a499c7b3634b59da6629851cf0f135071172a75dc36b2135d45ac8",
+      "networks/dit.py": "fe7529323b52eecf45db4113daf41a9493b0c2f4285298dfdd2061cd40ca3088",
+      "networks/transformer.py": "116b1da3bd61c1a721b444377f2ae278b410922ee2401569caae7befb5287c6d",
+      "utils/normalization.py": "00940169377080a6baf42f0c6a9b781332fe185ab95f6725b477b690574b882d",
+      "datasets/GuitarFx.py": "bb47ef30833969081572aaa90f2b7c4dd455618b4b8bd7db2b7870334c096eef",
+      "conf/config_train_GuitarFx.yaml": "45b819d7c7cacf9a3c90746d3d55dfd00544816c6e0b70804d8026d47087f52d",
+      "conf/exp/GuitarFx.yaml": "556d70ae3063d352af94586395bb753e4533725def8cbeb7fe795421d4c136d4",
+      "conf/diff_params/FM_m2l.yaml": "55b0eb677b6d06792a0d2dcf3b5676fc0014ddd69c0437f2d721ae782da6f966",
+      "conf/network/dit_M2L.yaml": "fe332e6766b76f7fff0bc20607314933b681f35e64e2961a8d580a0432258cbb",
+      "conf/dset/GuitarFx.yaml": "b49183f39d0358c3b79c87deb21bba6c66e68945c14e8ebded15919cd8cd45f7",
+      "conf/logging/base_logging.yaml": "938ffb4778059b461954a2e75cdbc2002c8690e055c5c413207ba71b308fe2e0"
+     },
+     "functions": {
+      "training/trainer.py Trainer.train_step": "f9d23befdbed4cb72cd4e06863379a513c84390f4f1f31033abb512883d69c87",
+      "training/trainer.py Trainer.update_ema": "ceaea5c1a0b3f65020a0271ec7b374e3ed9097112a229db169bf801311e8dcf4",
+      "training/trainer.py Trainer.get_batch": "297e4ff4740ac9765690486d2bf4df45d78eee2a748b592f7d81a25f48ae83ba",
+      "diff_params/diffusion_latent.py FM.loss_fn": "5561b34833dceb1136a1ecef187cd0f4246ac168d8baa5ec7ee1eb8b19323f5f",
+      "diff_params/diffusion_latent.py FM.prepare_train_preconditioning": "e2e6c5d73c38a70e600af2597cd0117819f12e33cd2db7a70e5199c04f3f98ae",
+      "diff_params/diffusion_latent.py FM.sample_time_training": "e8af60906bf19fc6ad84d283dc079240c0625579dafd2b2cfefd3a796d9b4b2b",
+      "diff_params/diffusion_latent.py FM.sample_prior": "6547918742d8010ea916b359ceac09fc0002b970cb20dfd5b95a276e3272770c",
+      "diff_params/diffusion_latent.py FM.transform_fwd": "a241b38778f28561ca1f89424d75ab8a86b719741dde0cdece87f8ad84492ad2",
+      "diff_params/diffusion_latent.py Diffusion.transform_fwd": "2a7ba778839533c91aebad939ec4a3df61b8a20653295882e0519dc3f0c3e5e1",
+      "utils/normalization.py apply_RMS_normalization": "c9fd7b3741909a0fcda5bec6cdd9fe943c02f3a2196ea669bb8d619ac679a685",
+      "utils/normalization.py compute_log_rms_gated_max": "2144b7ef3ce75a583654000dcc6debd1c41ee83dee02f236311fa041947dee5f"
+     },
+     "function_rule": "sha256 of each function's source lines as they stand in the file (function_source); the running function's code must come from that file and line"
+    },
+    "hours": {
+     "kind": "a count only, zero renders, from stored inventories; the fine-tune declares its own set",
+     "library": "the clean-DI library manifest's sections that are training_ok, clean, disjoint and split library (its screens: hum, hiss, bleed, drop-outs, clipping), by source and set",
+     "library_order": [
+      "untrusted",
+      "left-out band",
+      "held band",
+      "held out",
+      "reserve DI",
+      "user DI mark",
+      "hum superset",
+      "draw section"
+     ],
+     "exclusions": {
+      "left-out band": [
+       "Silent Waves",
+       "Drowning"
+      ],
+      "held band": "capture_labels.HELD_BANDS (V-real, NS, the panel, BKS, the reserve; window_count.held_reasons names which)",
+      "held out": "clean_di.refuse_held_out (sets 1 to 6's declared held-out material, Guitar-TECHS P3)",
+      "reserve DI": "pretrain_set.stage_f_dis: the reserve's stage-F DIs",
+      "user DI mark": "the DIs the user marked too low or metal-style: the DI-scope page's drops (di-scope/verdicts.json) and batch 3's marks (captures3/di-marks.json)",
+      "hum superset": "pretrain_set.HUM_SUSPECT",
+      "draw section": "the fs draw's 47 sections"
+     },
+     "other_sources": {
+      "egdb": "EGDB's DIs as stored (its manifest's seconds), unscreened here; LOUDAR's test set, so a fresh source",
+      "egfxset": "EGFxSet's clean single notes (WAV headers), unscreened here"
+     },
+     "goat": "apart: the prior's own training data, never checked for scope; each item's 5C-measured length",
+     "goat_order": [
+      "ruled out",
+      "draw item",
+      "5C: no screened window",
+      "5C: DI near full scale"
+     ],
+     "not_counted": {
+      "MedleyDB": "the panel's source: test bands, and multitrack stems with no stored DI screen",
+      "sets 4 to 6 (incl. BKS)": "held out (clean_di.refuse_held_out; BKS and the panel are the deciding test bands)",
+      "intakes outside the clean-DI library manifest (cambridge-new, telefunken-new)": "no stored section screen",
+      "Guitar-TECHS P3": "never used (clean_di.refuse_held_out)"
+     },
+     "dry_check_2026_11_28": "hours --dry at declaration (nothing written): library 0.889 h (320 sections), EGDB 1.791 h, EGFxSet 0.958 h, GOAT apart 4.262 h (117 items)"
+    },
+    "terms": {
+     "loudar_code": "MIT (michalsvento/loudar at loudar_run.LOUDAR_COMMIT)",
+     "loudar_checkpoint": "GuitarFx-175000.pt: tagged MIT on Hugging Face (msvento/loudar at loudar_run.LOUDAR_REVISION), trained on GOAT (CC BY-NC, granted on request)",
+     "m2l_autoencoder": "linear-cae 0.1.4's m2l (BernardoTorres/linear_consistency_autoencoders), Apache-2.0 as the codec manifest and the ledger's phase_scratch_codec record it (a retrained Music2Latent; not Music2Latent's CC BY-NC weights)",
+     "goat": "CC BY-NC, granted on request; the prior's own training data",
+     "use": "research use only; no model is kept and nothing ships"
+    },
+    "no_model": "no model, optimizer state or weights file is ever written; time writes only time-<stamp>.json; PF/fs/prior-probe/ holds JSON and the 16 segments only",
+    "commands": [
+     "$MAIN -m learn.prior_probe hours",
+     "$MAIN -m learn.prior_probe prep",
+     "$LV learn/prior_probe.py check --code ~/ndsp-presets/tools/loudar --models ~/ndsp-presets/tools/codec-models",
+     "$LV learn/prior_probe.py time --steps 200",
+     "$MAIN -m learn.prior_probe read"
+    ],
+    "outputs": "PF/fs/prior-probe/: hours.json, prep.json, segments/seg-00.npy to seg-15.npy, check.json, time-<stamp>.json, outcome.json",
+    "order": "hours and prep (main .venv, CPU); check (CPU at 4 threads and MPS; not beside renders); time (MPS; may run beside the envelope floors, but the quoted rate comes only from an idle block); read, hand-back, light audit, then phase_scratch_prior_probe_outcome",
+    "stop_rule": "one PP code, then stop; 200 steps say nothing about whether a fine-tune helps; the fine-tune needs its own declaration and go",
+    "names": "phase_scratch_prior_probe, prior_probe, prior-probe, PP-: no hits on main before this declaration (only a binary .flac matches PP-); not under phase_scratch_loudar's guarded prefix",
+    "later_keys": "phase_scratch_prior_probe_outcome",
+    "code": "learn/prior_probe.py (new; learn/loudar_run.py and LOUDAR's files unchanged); tests tests/test_prior_probe.py",
+    "public_repo": "git gets 12-hex tags only; GOAT item ids, part keys and paths stay under PF/fs/prior-probe/"
    }
   },
   {
