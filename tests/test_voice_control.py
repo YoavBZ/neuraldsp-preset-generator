@@ -647,7 +647,12 @@ def test_the_declaration_in_the_ledger():
     doc = json.loads((REPO / "docs" / "dev-test-ledger.json").read_text())
     e = next(t for t in doc["tests"] if t["test_id"] == V.LEDGER_ID)
     d = e[VC.PHASE]
-    assert d["plan"].startswith(V.PLAN) and list(e)[-1] == VC.PHASE              # appended last
+    ks = list(e)                                                                  # appended in order
+    assert d["plan"].startswith(V.PLAN) and set(ks[ks.index(VC.PHASE) + 1:]) <= {VC.PHASE_DRY, VC.PHASE_OUTCOME}
+    if VC.PHASE_DRY in e:                                                        # the build's hash PR
+        h = e[VC.PHASE_DRY]
+        assert len(h["sha256"]) == 64 and h["proofs_hold"] is True and h["parts"] == V.PARTS
+        assert set(h["proofs"]) == set(VC.PROOFS) and all(v == "47 of 47" for v in h["proofs"].values())
     assert tuple(d["table"]["codes"]) == VC.XC_DECLARED and d["table"]["last_row"] == "anything else"
     assert tuple(d["proofs"])[:-1] == VC.PROOFS and d["hash_key"] == VC.PHASE_DRY and "stops" in d["proofs"]
     assert d["renders"]["expected"] == 148 and d["renders"]["ceiling_no_carry"] == V.CONTROL_RENDERS == 188
