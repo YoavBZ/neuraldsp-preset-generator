@@ -571,6 +571,12 @@ def test_the_declaration_in_the_ledger():
     for v in ("+0.501 [+0.399, +0.603]", "+0.028 [+0.020, +0.037]", "XW-part"):
         assert v in json.dumps(d["seen"]), v
     assert E.ORACLE in json.dumps(d["table"])
+    assert "only through the clamp" not in json.dumps(d)                        # the wording fix (#665's review)
+    if E.PHASE_DRY in ENTRY:                                                     # the build's hash PR
+        h = ENTRY[E.PHASE_DRY]
+        assert len(h["sha256"]) == 64 and h["proofs_hold"] is True and h["parts"] == E.PARTS and h["renders"] == 0
+        assert set(h["proofs"]) == set(E.PROOFS) and all(v == "47 of 47" for v in h["proofs"].values())
+        assert set(h["realised_error_medians_47"]) == set(E.BUILT) == set(h["realised_error_ranges_47"])
 
 
 def test_the_plan_doc_holds_the_band_table():
@@ -580,3 +586,4 @@ def test_the_plan_doc_holds_the_band_table():
     for code in E.XE_DECLARED:
         assert code in doc
     assert "phase_scratch_envelope" in doc and "window suffices; group undecided" in doc
+    assert "only through the clamp" not in doc and "only through the" not in E.TRANSFORM["level_align"]

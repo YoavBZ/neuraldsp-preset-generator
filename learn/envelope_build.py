@@ -73,8 +73,9 @@ CHOICES = {
                    "the two signals' arbitrary levels (on 3 real parts, unaligned, the level offset was 17-20 dB and "
                    "40-100% of vt-part's cells clamped). The finish (song_bank.measure: a re-EQ to the average guitar, "
                    "then -22.9 LUFS) and chain's -22.9 LUFS re-level every guitar, so the factor reaches a finished "
-                   "guitar only through the clamp; it is recorded per part as target_align_db; proof 4 runs on the "
-                   "unscaled target",
+                   "guitar through the clamp and through the 0-dB cells (edge bins and floored cells), which the "
+                   "alignment places at the source's level; it is recorded per part as target_align_db; proof 4 "
+                   "runs on the unscaled target",
 }
 
 
