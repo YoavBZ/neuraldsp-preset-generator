@@ -654,6 +654,13 @@ def test_the_declaration_in_the_ledger():
         h = e[VC.PHASE_DRY]
         assert len(h["sha256"]) == 64 and h["proofs_hold"] is True and h["parts"] == V.PARTS
         assert set(h["proofs"]) == set(VC.PROOFS) and all(v == "47 of 47" for v in h["proofs"].values())
+    if VC.PHASE_OUTCOME in e:                                                    # the audited read
+        o = e[VC.PHASE_OUTCOME]
+        assert set(V.CONTROL_OUTCOME_FIELDS) <= set(o) and o["code"] in VC.XC_CODES and V.iso_date(o["date"])
+        assert len(o["rows_sha256"]) == len(o["report_sha256"]) == 64 and "audited" in o["phase"]
+        assert VC.gate_state(o["code"], o["coverage_label"]) in ("open", "waiver", "shut")
+        if VC.gate_state(o["code"], o["coverage_label"]) == "open" and e[V.PHASE_OUTCOME]["code"] in V.SPEND_CODES:
+            assert all(V.spend_refusal(e, kind) is None for kind in V.SPEND_KINDS)
     assert tuple(d["table"]["codes"]) == VC.XC_DECLARED and d["table"]["last_row"] == "anything else"
     assert tuple(d["proofs"])[:-1] == VC.PROOFS and d["hash_key"] == VC.PHASE_DRY and "stops" in d["proofs"]
     assert d["renders"]["expected"] == 148 and d["renders"]["ceiling_no_carry"] == V.CONTROL_RENDERS == 188

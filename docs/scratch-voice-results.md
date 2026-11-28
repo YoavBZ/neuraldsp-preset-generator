@@ -139,3 +139,130 @@ Readings come from `paired_reading`. Unmarked S, N, F and T cells read worse, an
 - **Only the true-DI world.** Other presets, the ear and product conditions are not covered. Notes, onsets and the judge's DI all come from the true DI.
 - **One preset.**
 - **The EQ re-fit** of `song_bank.measure` inside N and K is not priced.
+
+## The unclaimed-groups control: results (`phase_scratch_voice_control_outcome`)
+
+Plan: [scratch-voice-plan.md, "The unclaimed-groups control"](scratch-voice-plan.md#the-unclaimed-groups-control-phase_scratch_voice_control). Ledger `preset-ladder`: `phase_scratch_voice_control`, `_control_dry` and `_control_outcome`.
+- **Run:** 2026-11-28.
+- **Audit:** 2026-11-28 (independent, Opus), CONFIRMED WITH CAVEATS. The audit recomputed every figure exactly.
+- **Scope:** every number is by the score (J0), at one preset (row (b)'s answer). Nothing here is by ear.
+
+### The code: XC-stands, by the score
+
+The unclaimed onset groups were dropped from both guitars: from `tr-di`, giving `tr-uc`, and from `vc-own`, giving `vc-uc`. The terms on the 40:
+
+| Term | What it prices | The 40 | Reading |
+|---|---|---|---|
+| S | ln(d_tr-di / d_vc-own), reproduced from the stored files | +0.501 [+0.399, +0.603] | worse |
+| **Sx** | S without the unclaimed groups | **+0.456 [+0.363, +0.550]** | worse |
+| **Ux** | S − Sx: what the unclaimed groups hold of S | **+0.044 [+0.017, +0.072]** | matches |
+| Ubx | the bank guitar's move, ln(d_tr-di / d_tr-uc) | −0.064 [−0.130, +0.001] | matches |
+| Urx | the real-sound guitar's move, ln(d_vc-own / d_vc-uc) | −0.109 [−0.188, −0.030] | better: the drop removed real playing |
+
+- **The code.** Ux reads matches, so the code is **XC-stands**. Its upper end is under 0.10 and its mean under 0.05.
+- **Labels and the gate.** `coverage_label` is none: the coverage-clean subset reads XC-stands too. The read is not refusal-sensitive, because nothing was refused. The spend gate opens on this code.
+- **Identities.** Ux = Ubx − Urx on every part, to within 2.2e-16. Ux, Ubx and Urx are exactly 0 on the 12 carried parts.
+- **Fieller's share** Ux/S: 0.089 [0.035, 0.140].
+
+**What the table says next.** Price the sound routes against S. S stays an upper bound: wrong pitches, bends and articulation stay inside it, and this control addresses only the extra attacks.
+
+### The caveats (binding, from the audit)
+
+1. **XC-stands rests on a mean 0.006 under the 0.05 line.** The sturdy claim is that a heard-size share is ruled out on the 40. Ux is small, positive and not zero: its whole interval lies above zero.
+2. **Dilution over-states Ux on the 40.** Quote both subsets:
+   - coverage-clean 26: Ux +0.009 [+0.001, +0.018];
+   - coverage-moved 14: Ux +0.121 [+0.028, +0.213], where the drop also removed real playing (Urx −0.30).
+3. **On clean and on GOAT, Ux reads undecided,** carried by `ea5fc54a8160`:
+   - clean 20: +0.069 [+0.013, +0.124];
+   - GOAT 24: +0.062 [+0.011, +0.113].
+4. **S stays an upper bound.** Sx is not "the bank's sound". At one preset, S and Sx also carry any static tone difference a search would absorb, and the note errors the gate can't see.
+5. **The control can't tell an extra attack from a real soft or late one.** 40 of the 161 dropped groups on the 40 have a true rise within ±50 ms of the onset: likely timing errors (a real attack nearby); dropping them removed real playing, which feeds the dilution.
+6. **Kept audio is re-levelled on moved parts.** The hiss removal, the finish's EQ re-fit and the −22.9 LUFS step re-run on both guitars without the dropped notes. On the parts with drops, the kept audio's level change outside the dropped spans (`rms_ratio_db`) runs from −3.62 to +0.71 dB on `tr-uc` and from −4.81 to +0.68 dB on `vc-uc`; both lows are on `ea5fc54a8160`. So on those parts Ubx and Urx are not pure note-removal effects.
+7. **All by the score, at one preset.** Nothing is by ear, and floors don't predict search gain.
+8. **The run.**
+   - 140 renders, not the declared about 148, because 4 more `vc-uc` guitars carry.
+   - `rows.json` sha256 `172ef12290ca78e0af60cd3ae784dedcaf734f18c2709fa505325c81f3d7d6e9`.
+   - `report.json` sha256 `90623d69c6a9333555c5c1d135f7b9221d6079c178108135774073793e76983b`.
+
+### What may and may not be claimed
+
+**May:**
+- By the score, on the 40, the unclaimed onset groups do not hold a heard-size part of S. Ux reads matches, at +0.044 [+0.017, +0.072], about 9% of S.
+- The sound routes are priced against S, which stays an upper bound.
+- Without the unclaimed groups, real audio inside our windows closes at most Sx, +0.456, which still reads worse: the upper bound stays heard-size.
+- The share is small, positive and not zero.
+
+**May not:**
+- That the unclaimed groups cost nothing: Ux is above zero.
+- That the result holds on clean or on GOAT: Ux reads undecided on both.
+- That Sx is the bank's sound, or a sound gap.
+- That an extra attack has been told apart from a real soft or late one.
+- Anything by ear, or any search or product gain.
+
+### The terms on the declared splits
+
+| Set | S | Sx | Ux | Ubx | Urx |
+|---|---|---|---|---|---|
+| **The 40** | +0.501 [+0.399, +0.603] | +0.456 [+0.363, +0.550] worse | +0.044 [+0.017, +0.072] matches | −0.064 [−0.130, +0.001] matches | −0.109 [−0.188, −0.030] better |
+| Coverage-clean 26 | +0.517 [+0.384, +0.651] | +0.508 [+0.373, +0.643] worse | +0.009 [+0.001, +0.018] matches | +0.008 [−0.001, +0.017] matches | −0.002 [−0.004, +0.001] matches |
+| Coverage-moved 14 | +0.579 [+0.158, +0.999] | +0.458 [+0.126, +0.790] worse | +0.121 [+0.028, +0.213] worse | −0.181 [−0.364, +0.003] matches | −0.301 [−0.499, −0.103] better |
+| All 47 | +0.429 [+0.351, +0.508] | +0.399 [+0.326, +0.472] worse | +0.031 [+0.012, +0.049] matches | −0.045 [−0.089, −0.001] matches | −0.076 [−0.129, −0.023] matches |
+| Clean 20 | +0.671 [+0.451, +0.891] | +0.602 [+0.427, +0.778] worse | +0.069 [+0.013, +0.124] undecided | −0.039 [−0.099, +0.021] matches | −0.108 [−0.214, −0.002] better |
+| Crunch 20 | +0.331 [+0.269, +0.393] | +0.311 [+0.245, +0.377] worse | +0.020 [+0.005, +0.035] matches | −0.090 [−0.216, +0.036] matches | −0.110 [−0.242, +0.022] matches |
+| BKS 16 | +0.465 [+0.277, +0.653] | +0.438 [+0.273, +0.603] worse | +0.027 [+0.001, +0.052] matches | −0.030 [−0.103, +0.044] matches | −0.057 [−0.133, +0.020] matches |
+| GOAT 24 | +0.537 [+0.438, +0.635] | +0.475 [+0.371, +0.578] worse | +0.062 [+0.011, +0.113] undecided | −0.099 [−0.214, +0.016] matches | −0.161 [−0.304, −0.018] better |
+
+The coverage-clean parts are those whose held-half uncovered weight the drop leaves exactly unchanged: 26 of the 40 (11 BKS, 15 GOAT), 17 with drops and 9 carried. Their membership was hashed in `phase_scratch_voice_control_dry` before any floor.
+
+### Beside the code
+
+- **Each cluster of the 40 left out:** every reading is kept.
+
+  | Term | Mean range |
+  |---|---|
+  | S | +0.454 to +0.515 |
+  | Sx | +0.415 to +0.470 |
+  | Ux | +0.031 to +0.046 (lowest lower end +0.012, highest upper end +0.075) |
+  | Ubx | −0.070 to −0.036 |
+  | Urx | −0.113 to −0.080 |
+
+- **The three largest parts on the 40:**
+
+  | Term | Parts and values | The 40 without them |
+  |---|---|---|
+  | Ux | `ea5fc54a8160` +0.69, `c1ea6ef819b3` +0.244, `a3b1b27272d3` +0.227 (all coverage-moved) | +0.019 [+0.010, +0.028] |
+  | Ubx | `e8d444a97729` −1.426, `ea5fc54a8160` −0.73, `ddcdb0c10557` −0.336 | −0.018 [−0.053, +0.017] |
+  | Urx | `e8d444a97729` −1.498, `ea5fc54a8160` −1.42, `ddcdb0c10557` −0.41 | −0.045 [−0.077, −0.013] |
+  | Sx | `8ae994594bad` 1.085, `b2ce529e68f9` 1.078, `3ee6335d235b` 0.977 | +0.427 [+0.343, +0.511] |
+
+  Without `ea5fc54a8160` alone, Ux is +0.031.
+- **The 4 parts where only `vc-uc` carries.** On these parts the dropped notes' windows lie inside other notes' windows, so `vc-uc` is byte-identical to `vc-own` and Urx = 0. There Ux = Ubx:
+
+  | Part | Set | Ux |
+  |---|---|---|
+  | `89b6da562e67` | GOAT | +0.112 |
+  | `9c2b0e8c6bea` | BKS | +0.066 |
+  | `3ee6335d235b` | GOAT | −0.010 |
+  | `90074e8047e2` | GOAT | +0.002 |
+
+  All four are coverage-clean.
+- **The drop** (the build, `phase_scratch_voice_control_dry`):
+  - on the 40: 161 of 1,464 groups, 204 notes, 198 of them played;
+  - on the 47: 173 of 1,748 groups, 222 notes, 216 played.
+  - The uncovered share on the 40 rises from a mean 5.6% to 11.9% (median 2.3% to 4.6%).
+
+### What ran
+
+- **Build:**
+  - zero renders, 111 s on 3 shards and 121 s with the combine, from a detached worktree of origin/main at 8bc321eb;
+  - all seven proofs and the three stop checks held on 47 of 47;
+  - `build.json` sha256 `7e97075f…` (`phase_scratch_voice_control_dry`).
+- **Floors:**
+  - 132 renders plus 8 for the repeat check, 140 in all, in 151 s on 3 processes, from a detached worktree of origin/main at e1ccee29;
+  - 12 parts carry both guitars, and 4 more carry `vc-uc` alone (16 `vc-uc` and 12 `tr-uc` carries);
+  - the repeat check is exact: on `f2030431a5bb` and `60c856cd5dc4`, the stored `tr-di` and `vc-own` repeat their floors, distance and render sha256;
+  - 0 refusals and 0 reruns.
+- **Read:**
+  - `python -m learn.voice_control read` ran once, zero renders;
+  - every check held: the proofs, the repeat check, S reproduced (per part exactly against the sound-gap `rows.json`, and on the 40 to the stored interval), the identity, and zero on the carried parts.
+- **Audit:** the independent audit (Opus) recomputed every term from the floor records and the stored floors and matched `report.json` exactly. It rebuilt the code by hand: XC-stands. Its verdict was CONFIRMED WITH CAVEATS.

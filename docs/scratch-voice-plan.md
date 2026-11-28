@@ -236,7 +236,7 @@ From the planner's zero-render probe (in memory, from a frozen worktree at 96b2e
 
 ## The unclaimed-groups control (`phase_scratch_voice_control`)
 
-Declared 2026-11-28, on the user's route call "Control, then price routes". The planner's plan passed an independent review (Opus, high) with eight binding amendments, which win where they differ from the plan. The orchestrator's calls: keep "drops" literally (the reviewer agrees); rename the terms as amendment 8 asks; take the review's non-binding notes 2–5 and 7. Ledger `preset-ladder` `phase_scratch_voice_control`, then the hash PR `phase_scratch_voice_control_dry` and the results PR `phase_scratch_voice_control_outcome`. Code: `learn/voice_control.py`. Not run.
+Declared 2026-11-28, on the user's route call "Control, then price routes". The planner's plan passed an independent review (Opus, high) with eight binding amendments, which win where they differ from the plan. The orchestrator's calls: keep "drops" literally (the reviewer agrees); rename the terms as amendment 8 asks; take the review's non-binding notes 2–5 and 7. Ledger `preset-ladder` `phase_scratch_voice_control`, then the hash PR `phase_scratch_voice_control_dry` and the results PR `phase_scratch_voice_control_outcome`. Code: `learn/voice_control.py`. Run 2026-11-28: **XC-stands** by the score ([results](scratch-voice-results.md#the-unclaimed-groups-control-results-phase_scratch_voice_control_outcome)); audited 2026-11-28 (independent, Opus), CONFIRMED WITH CAVEATS.
 
 ### Goal
 
@@ -322,6 +322,11 @@ The floors are read as in the main test: row (b)'s answer, the held half, the tr
 3. **Floors** (`python -m learn.voice_control floor --shard k/3`, then `--rerun` for any refusal). `voice_floors`' body runs on the control's own world (amendment 7): its own guitars, stored carry sources (`tr-di`, `vc-own`), repeat guitars and paths under `PF/fs/voice/control/`, so the main test's `repeat/` records never stand in. Verify first: on the two check parts, the stored `tr-di` and `vc-own` repeat their stored floors, distance and render sha256 (8 renders). Byte-identical guitars carry their parent's stored floor and name it.
 4. **Read** (`python -m learn.voice_control read`, zero renders, once). Before the code, it verifies that S reproduces per part from `rows.json`, that Ux = Ubx − Urx to 1e-12, and that Ux is exactly 0 on carried parts.
 5. **Audit**, then the results PR with `phase_scratch_voice_control_outcome`.
+
+   **Done 2026-11-28.**
+   - **Floors:** 140 renders (12 `tr-uc` and 16 `vc-uc` carries), 151 s on 3 processes. The repeat check was exact, and nothing was refused.
+   - **Read:** **XC-stands**. Ux is +0.044 [+0.017, +0.072] on the 40 and reads matches; `coverage_label` is none.
+   - **Audit:** independent (Opus), CONFIRMED WITH CAVEATS. See [the results](scratch-voice-results.md#the-unclaimed-groups-control-results-phase_scratch_voice_control_outcome).
 
 ### Cost (measured rates only)
 
