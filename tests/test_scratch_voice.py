@@ -73,7 +73,7 @@ def test_the_key_prefix_is_outside_every_guarded_prefix():
 
 def test_the_code_files():
     assert V.CODE_FILES[0] == "learn/scratch_voice.py" and len(set(V.CODE_FILES)) == len(V.CODE_FILES)
-    assert V.UNIT_FILES == ("learn/voice_build.py", "learn/voice_floors.py")
+    assert V.UNIT_FILES == ("learn/voice_build.py", "learn/voice_floors.py", "learn/voice_control.py")
     for f in (V.MODULE,) + V.PINNED:
         assert (REPO / f).exists(), f
     assert "learn/scratch_readerr.py" not in V.CODE_FILES     # the note track's file: the build's proofs cover it
@@ -487,9 +487,21 @@ def test_the_spend_gate():
             assert "control" in V.spend_refusal(m, kind) and "waiver" in V.spend_refusal(m, kind)
             assert V.spend_refusal(dict(m, **{V.PHASE_CONTROL: {}}), kind)        # declared is not run
             assert V.spend_refusal(dict(m, **{V.PHASE_CONTROL_OUTCOME: {}}), kind)   # an outcome needs its code
-            assert V.spend_refusal(dict(m, **{V.PHASE_CONTROL_OUTCOME: {"code": "x"}}), kind) is None
-            assert V.spend_refusal(dict(m, **{V.PHASE_WAIVER: {"user_words": "go", "date": "2026-11-27"}}),
-                                   kind) is None
+            assert "not a declared XC code" in V.spend_refusal(dict(m, **{V.PHASE_CONTROL_OUTCOME: {"code": "x"}}),
+                                                                kind)     # the control's review, amendment 3
+            for c in ("XC-stands", "XC-part", "XC-undecided"):
+                assert V.spend_refusal(dict(m, **{V.PHASE_CONTROL_OUTCOME: {"code": c, "coverage_label": None}}),
+                                       kind) is None
+            assert "no coverage_label" in V.spend_refusal(                       # #658's review: never fail open
+                dict(m, **{V.PHASE_CONTROL_OUTCOME: {"code": "XC-part"}}), kind)
+            for c in ("XC-anomaly", "XC-notes"):
+                assert V.spend_refusal(dict(m, **{V.PHASE_CONTROL_OUTCOME: {"code": c, "coverage_label": None}}),
+                                       kind)
+            # a waiver alone, unscoped or scoped, opens nothing without the control's outcome (#658's review)
+            assert V.spend_refusal(dict(m, **{V.PHASE_WAIVER: {"user_words": "go", "date": "2026-11-27"}}), kind)
+            assert V.spend_refusal(dict(m, **{V.PHASE_WAIVER: {"user_words": "go", "date": "2026-11-28",
+                                                              "answers_code": "XC-notes",
+                                                              "spend_kinds": list(V.SPEND_KINDS)}}), kind)
             assert V.spend_refusal(dict(m, **{V.PHASE_WAIVER: {"date": "2026-11-27"}}), kind)
     assert "no synthesis spend" in V.spend_refusal({V.PHASE_OUTCOME: {"code": "XV-notes"}}, "synthesis")
     with pytest.raises(ValueError):
@@ -503,7 +515,7 @@ def test_require_spend_refuses_off_main_and_closed(monkeypatch):
     monkeypatch.setattr(V, "on_main", lambda: ({V.PHASE_OUTCOME: {"code": "XV-both"}}, None))
     with pytest.raises(SystemExit, match="control"):
         V.require_spend("synthesis")
-    m = {V.PHASE_OUTCOME: {"code": "XV-both"}, V.PHASE_CONTROL_OUTCOME: {"code": "a control code"}}
+    m = {V.PHASE_OUTCOME: {"code": "XV-both"}, V.PHASE_CONTROL_OUTCOME: {"code": "XC-stands"}}
     monkeypatch.setattr(V, "on_main", lambda: (m, None))
     assert V.require_spend("search-row") is m
 
