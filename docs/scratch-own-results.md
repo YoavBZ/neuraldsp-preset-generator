@@ -9,7 +9,7 @@ The row repeats build 2's search with one change. The dry guitar is the stored `
 | Figure | What it prices | The 40 | Reading |
 |---|---|---|---|
 | **D_own** = G(`fs-own`) − G(build 2) | what real audio inside our note windows buys the search | **−0.191 [−0.261, −0.122]** | better |
-| −D_own | build 2 against the row | +0.191 [+0.122, +0.261] | worse (a heard-size gain is not ruled out) |
+| −D_own | build 2 against the row | +0.191 [+0.122, +0.261] | worse (a heard-size gain from real audio is shown, by the score) |
 | **C_own** = G(`fs-own`) − G(row (b)) | what is left against the true DI | **+0.082 [+0.018, +0.146]** | undecided |
 
 - D_own reads better and C_own does not read matches, so the declared code is **XW-part**.
@@ -48,8 +48,9 @@ The row repeats build 2's search with one change. The dry guitar is the stored `
 6. **The search mask moves with the guitar, but the effect is small and unrelated.**
    - J0's playing frames on the search half are set from the dry guitar. The audit replicated the masks for the true DI, `tr-di` and `vc-own`.
    - On the 40, the overlap (Jaccard) of `vc-own`'s playing frames with `tr-di`'s has a median of 0.996 and a minimum of 0.890. It is below 0.95 on 3 parts and exactly 1 on 16.
-   - The mean difference in playing frames is 4.3 of about 418.
+   - The mean absolute difference is 4.3 frames (signed −1.5), of about 398 playing frames (418 in the half).
    - Spearman against D_own: the overlap −0.10; the difference in playing frames +0.12.
+   - The held-half score's mask is set by the true DI for every row, so the mask enters D_own only through what the search finds.
 
 ## The figures (the 40 unless named; recomputed by the audit)
 

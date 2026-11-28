@@ -9539,7 +9539,7 @@
      "one_per_partner": "33 parts, 30 on the 40: D_own -0.203 [-0.298, -0.107] better; C_own +0.100 [+0.026, +0.174] undecided; against row (c) -0.100 matches",
      "loudar": "fs-own cp50 less ld-stem G50 on BKS+panel (23 parts, bp_rows): -0.112 [-0.265, +0.041] matches, its negative undecided; part-weighted -0.116; BKS -0.110, panel -0.114: the oracle ceiling is not shown to sit above the released song-only rebuild on unseen sets",
      "ranks": "Spearman against -D_own on the 40: the stored S +0.47, the control's Ux -0.26",
-     "frame_mask": "the audit's replicated search-half masks on the 40: vc-own's playing frames against tr-di's, Jaccard median 0.996, minimum 0.890, below 0.95 on 3 parts; mean difference 4.3 of about 418 frames; Spearman with D_own -0.10 (overlap), +0.12 (frame difference): small and unrelated"
+     "frame_mask": "the audit's replicated search-half masks on the 40: vc-own's playing frames against tr-di's, Jaccard median 0.996, minimum 0.890, below 0.95 on 3 parts; mean absolute difference 4.3 frames (signed -1.5), of about 398 playing frames (418 in the half); Spearman with D_own -0.10 (overlap), +0.12 (frame difference): small and unrelated. The held-half score's mask is set by the true DI for every row, so the mask enters D_own only through what the search finds"
     },
     "may_claim": [
      "about 70% of build 2's search cost against row (b) is recovered, by the score (Fieller 0.70 [0.52, 0.92])",
