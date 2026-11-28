@@ -9434,6 +9434,58 @@
      "PF/fs/voice/control/rows.json",
      "PF/fs/voice/control/report.json"
     ]
+   },
+   "phase_scratch_own_answers": {
+    "phase": "Phase 4's hash PR (docs/scratch-own-plan.md): the fs-own row's answers, before any score",
+    "sha256": "dcd1c691162db1d5117cb16fb6008d6824211c89dd9f0483b7ff61e537c65db0",
+    "file": "PF/fs/own/answers.json",
+    "row": "fs-own: the stored vc-own (build.json's, main's phase_scratch_voice_dry) searched against xlnoG@-3 blanked outside the search half, through scratch_notes' and scratch_search's shared steps, as fs-refit",
+    "ran": "2026-11-28: check-score, check-search, then search --shard 0/3, 1/3, 2/3 in parallel (three render processes, setopt no_bg_nice, caffeinate -i), then answers (zero renders), all from a fresh detached worktree of main at 309636c9 (#661), after the control's outcome XC-stands (coverage_label null) opened the gate; require_own and require_spend('search-row') held before launch",
+    "checks": {
+     "check_score": {
+      "passed": true,
+      "renders": 40,
+      "mismatches": 0,
+      "sha256": "37f6be25d081a3934c3ec2b120b5e0b088c1cdcb303f7e3cbd6222cd9bbaf28f"
+     },
+     "check_search": {
+      "passed": true,
+      "renders": 22,
+      "mismatches": 0,
+      "sha256": "b196908d2a434561a1ca894a06428e150f0826c37b796c59468774e55c1a0a06"
+     },
+     "note": "both reproduce row (c)'s stored files exactly through the row's own path (score_row_part; run_part with row (c)'s start reference)"
+    },
+    "build_sha256": "52fea1ed4d805e509cd63640443a73640b9fc58bcf1cabe82b8e56ebc924d8bf",
+    "parts": 47,
+    "refused": 0,
+    "reruns": 0,
+    "carried": 0,
+    "search_renders": 12335,
+    "start_reference_renders": 94,
+    "renders": 12429,
+    "shards": {
+     "0/3": {
+      "renders": 4244,
+      "seconds": 6457
+     },
+     "1/3": {
+      "renders": 4252,
+      "seconds": 6417
+     },
+     "2/3": {
+      "renders": 3933,
+      "seconds": 6247
+     }
+    },
+    "wall": "14:31 to 16:19 (about 1.8 h); no rerun pass was needed (no part refused)",
+    "renders_so_far": {
+     "checks": 62,
+     "search": 12429,
+     "all": 12491
+    },
+    "draw_sha256": "b9672bc333e08afb17ef967c5535b3d73c8b307cf57351f80b23823e29bde050",
+    "next": "score --shard k/3 (about 940 renders), then reproduce and read (XW_TABLE on D_own = G(fs-own) - G(build 2) and C_own = G(fs-own) - G(row (b)), the 40)"
    }
   },
   {

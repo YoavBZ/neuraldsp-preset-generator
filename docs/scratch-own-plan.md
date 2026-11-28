@@ -1,6 +1,6 @@
 # The `vc-own` search row, `fs-own` (`phase_scratch_own`)
 
-Declared 2026-11-28, on the user's go for this row ("Yes, run it (Recommended)", after the control). The planner's plan passed an independent review (Opus, high) with eleven binding amendments, which win where they differ from the plan; non-binding notes 1, 2, 3, 9 and 10 are taken. The orchestrator's calls: the codes are `XW-*` (amendment 2; `XO` is the X_oracle arm); the control's terms are Ux, Sx, Ubx and Urx; the spectral-envelope steps are deferred, with no name reserved; and, after the control's review, the user's renewed word under a waiting control code is recorded once, in `phase_scratch_voice_waiver`, not under this row's keys. Ledger `preset-ladder` `phase_scratch_own`, then `phase_scratch_own_answers` and `phase_scratch_own_outcome`. Code: `learn/scratch_own.py`. Not run.
+Declared 2026-11-28, on the user's go for this row ("Yes, run it (Recommended)", after the control). The planner's plan passed an independent review (Opus, high) with eleven binding amendments, which win where they differ from the plan; non-binding notes 1, 2, 3, 9 and 10 are taken. The orchestrator's calls: the codes are `XW-*` (amendment 2; `XO` is the X_oracle arm); the control's terms are Ux, Sx, Ubx and Urx; the spectral-envelope steps are deferred, with no name reserved; and, after the control's review, the user's renewed word under a waiting control code is recorded once, in `phase_scratch_voice_waiver`, not under this row's keys. Ledger `preset-ladder` `phase_scratch_own`, then `phase_scratch_own_answers` and `phase_scratch_own_outcome`. Code: `learn/scratch_own.py`. Checks and search run 2026-11-28 (see Phase status); the score waits for the answers' hash on main.
 
 ## Goal
 
@@ -107,6 +107,14 @@ With weighting and checkpoint:
 | 7 | Audit, results PR | 0 | `phase_scratch_own_outcome` |
 
 About 13,400 renders in all. The basis: `fs-refit`'s search took 4,239 + 4,228 + 3,929 = 12,396 renders (the longest shard 6,652 s), its score 940 renders at 703–728 s a shard, and its checks 40 + 22 = 62.
+
+## Phase status
+
+- **2026-11-28, phases 2 to 4** (from a fresh detached worktree of main at 309636c9, after the control's XC-stands):
+  - `check-score` passed (40 renders, no mismatch) and `check-search` passed (22 renders, no mismatch): both repeat row (c) exactly.
+  - `search --shard 0/3, 1/3, 2/3`: 4,244, 4,252 and 3,933 renders in 6,457, 6,417 and 6,247 s (12,429 in all, 94 of them start references). No part refused, so no rerun pass ran.
+  - `answers`: 47 parts, 0 refused; sha256 dcd1c691…, hashed in `phase_scratch_own_answers`.
+- **Next:** `score --shard k/3` once the hash is on main, then `reproduce` and `read`.
 
 ## Guards
 
