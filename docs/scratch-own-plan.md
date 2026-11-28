@@ -1,6 +1,6 @@
 # The `vc-own` search row, `fs-own` (`phase_scratch_own`)
 
-Declared 2026-11-28, on the user's go for this row ("Yes, run it (Recommended)", after the control). The planner's plan passed an independent review (Opus, high) with eleven binding amendments, which win where they differ from the plan; non-binding notes 1, 2, 3, 9 and 10 are taken. The orchestrator's calls: the codes are `XW-*` (amendment 2; `XO` is the X_oracle arm); the control's terms are Ux, Sx, Ubx and Urx; the spectral-envelope steps are deferred, with no name reserved; and, after the control's review, the user's renewed word under a waiting control code is recorded once, in `phase_scratch_voice_waiver`, not under this row's keys. Ledger `preset-ladder` `phase_scratch_own`, then `phase_scratch_own_answers` and `phase_scratch_own_outcome`. Code: `learn/scratch_own.py`. Checks and search run 2026-11-28 (see Phase status); the score waits for the answers' hash on main.
+Declared 2026-11-28, on the user's go for this row ("Yes, run it (Recommended)", after the control). The planner's plan passed an independent review (Opus, high) with eleven binding amendments, which win where they differ from the plan; non-binding notes 1, 2, 3, 9 and 10 are taken. The orchestrator's calls: the codes are `XW-*` (amendment 2; `XO` is the X_oracle arm); the control's terms are Ux, Sx, Ubx and Urx; the spectral-envelope steps are deferred, with no name reserved; and, after the control's review, the user's renewed word under a waiting control code is recorded once, in `phase_scratch_voice_waiver`, not under this row's keys. Ledger `preset-ladder` `phase_scratch_own`, then `phase_scratch_own_answers` and `phase_scratch_own_outcome`. Code: `learn/scratch_own.py`. Run 2026-11-28: XW-part, shrunk-sensitive, audited 2026-11-28 (independent, Opus), CONFIRMED WITH CAVEATS; [results](scratch-own-results.md).
 
 ## Goal
 
@@ -114,7 +114,11 @@ About 13,400 renders in all. The basis: `fs-refit`'s search took 4,239 + 4,228 +
   - `check-score` passed (40 renders, no mismatch) and `check-search` passed (22 renders, no mismatch): both repeat row (c) exactly.
   - `search --shard 0/3, 1/3, 2/3`: 4,244, 4,252 and 3,933 renders in 6,457, 6,417 and 6,247 s (12,429 in all, 94 of them start references). No part refused, so no rerun pass ran.
   - `answers`: 47 parts, 0 refused; sha256 dcd1c691…, hashed in `phase_scratch_own_answers`.
-- **Next:** `score --shard k/3` once the hash is on main, then `reproduce` and `read`.
+- **2026-11-28, phases 5 to 7** (from a fresh detached worktree of main at 44a686f2):
+  - `score --shard 0/3, 1/3, 2/3`: 320 + 320 + 300 = 940 renders (711–736 s a shard); the scoring control on 47 of 47 parts, with no rerun.
+  - `reproduce` held, and `read` ran once: **XW-part**, shrunk-sensitive (`phase_scratch_own_outcome`; [results](scratch-own-results.md)). 13,431 renders in all.
+  - Audited 2026-11-28 (independent, Opus): CONFIRMED WITH CAVEATS.
+- **Next:** the user picks the sound route; under XW-part the spectral-envelope steps are unlocked, on their own declaration.
 
 ## Guards
 
